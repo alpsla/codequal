@@ -28,6 +28,7 @@ Comprehensive monitoring system for CodeQual, tracking performance, security, fi
 
 ### 🔧 System-Specific Monitoring
 - [Model Selection Fallback Monitoring](./model-selection-fallback-monitoring.md) - OpenRouter key rotation and emergency fallback alerts
+- [Service Health Tracking](./service-health-tracking.md) - LSP/SARIF upload failures, 404 errors, and service availability monitoring
 
 ## Quick Start
 
@@ -69,6 +70,7 @@ curl http://localhost:3001/api/monitoring/metrics
 - **Security**: Unauthorized access, rate limits
 - **Financial**: Daily costs, per-analysis costs
 - **Critical**: Failure rates, storage limits
+- **Service Health**: LSP/SARIF upload failures, 404 errors, URL validation failures
 
 ## Configuration Files
 

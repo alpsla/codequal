@@ -1,0 +1,194 @@
+name: CodeQual Analysis
+
+# TEMPORARILY DISABLED: API endpoint not yet deployed
+# Re-enable when api.codequal.dev is live
+#
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened]
+
+on:
+  workflow_dispatch:  # Manual trigger only until API is deployed
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run CodeQual Analysis
+        id: codequal
+        env:
+          CODEQUAL_API_KEY: ${{ secrets.CODEQUAL_API_KEY }}
+        run: |
+          # Call CodeQual API to analyze PR
+          HTTP_CODE=$(curl -w "%{http_code}" -X POST https://api.codequal.dev/v1/analyze \
+            -H "Authorization: Bearer $CODEQUAL_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "pr_number": ${{ github.event.pull_request.number }},
+              "base_sha": "${{ github.event.pull_request.base.sha }}",
+              "head_sha": "${{ github.event.pull_request.head.sha }}",
+              "source": "github_actions"
+            }' -o analysis-result.json)
+
+          # Check if request was successful
+          if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 201 ]; then
+            echo "Error: CodeQual API returned status code $HTTP_CODE"
+            cat analysis-result.json
+            exit 1
+          fi
+
+          echo "Analysis completed successfully"
+          cat analysis-result.json
+
+      - name: Download SARIF Report
+        if: success()
+        run: |
+          # Extract SARIF URL and download
+          SARIF_URL=$(jq -r '.sarif_url // empty' analysis-result.json)
+
+          if [ -n "$SARIF_URL" ]; then
+            echo "Downloading SARIF from: $SARIF_URL"
+            curl -f -o codequal-results.sarif "$SARIF_URL"
+
+            # Validate SARIF file
+            if jq empty codequal-results.sarif 2>/dev/null; then
+              echo "SARIF file is valid JSON"
+            else
+              echo "Error: Invalid SARIF JSON"
+              exit 1
+            fi
+          else
+            echo "No SARIF URL provided"
+          fi
+
+      - name: Upload SARIF to GitHub Security
+        if: success() && hashFiles('codequal-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: codequal-results.sarif
+          category: codequal
+
+      - name: Download LSP Actions
+        if: success()
+        run: |
+          # Extract LSP actions URL and download
+          LSP_URL=$(jq -r '.lsp_actions_url // empty' analysis-result.json)
+
+          if [ -n "$LSP_URL" ]; then
+            echo "Downloading LSP actions from: $LSP_URL"
+            curl -f -o codequal-lsp-actions.json "$LSP_URL"
+            echo "LSP actions downloaded successfully"
+          else
+            echo "No LSP actions URL provided"
+          fi
+
+      - name: Post PR Comment
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read analysis result
+            let result;
+            try {
+              result = JSON.parse(fs.readFileSync('./analysis-result.json', 'utf8'));
+            } catch (error) {
+              console.error('Error reading analysis result:', error);
+              return;
+            }
+
+            // Build comment body
+            const summary = result.summary || 'Analysis completed';
+            const reportUrl = result.report_url || '';
+            const decision = result.decision || 'PENDING';
+            const issues = result.issues || {};
+
+            // Format issue counts
+            const critical = issues.critical || 0;
+            const high = issues.high || 0;
+            const medium = issues.medium || 0;
+            const low = issues.low || 0;
+            const total = critical + high + medium + low;
+
+            // Determine status icon
+            const statusIcon = decision === 'APPROVED' ? '✅' : decision === 'DECLINED' ? '❌' : '⏳';
+
+            // Create comment body
+            let commentBody = `## ${statusIcon} CodeQual Analysis\n\n`;
+            commentBody += `**Decision:** ${decision}\n\n`;
+
+            if (total > 0) {
+              commentBody += `### Issues Found: ${total}\n\n`;
+              commentBody += `| Severity | Count |\n`;
+              commentBody += `|----------|-------|\n`;
+              if (critical > 0) commentBody += `| 🔴 Critical | ${critical} |\n`;
+              if (high > 0) commentBody += `| 🟠 High | ${high} |\n`;
+              if (medium > 0) commentBody += `| 🟡 Medium | ${medium} |\n`;
+              if (low > 0) commentBody += `| 🔵 Low | ${low} |\n`;
+              commentBody += '\n';
+            } else {
+              commentBody += '✨ No issues found!\n\n';
+            }
+
+            if (summary) {
+              commentBody += `### Summary\n\n${summary}\n\n`;
+            }
+
+            if (reportUrl) {
+              commentBody += `📊 [View Full Report](${reportUrl})\n\n`;
+            }
+
+            commentBody += '---\n';
+            commentBody += '*Powered by [CodeQual](https://codequal.dev)*';
+
+            // Post comment
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+              console.log('Comment posted successfully');
+            } catch (error) {
+              console.error('Error posting comment:', error);
+            }
+
+      - name: Upload Analysis Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codequal-analysis
+          path: |
+            analysis-result.json
+            codequal-results.sarif
+            codequal-lsp-actions.json
+          retention-days: 30
+
+      - name: Check Analysis Status
+        if: success()
+        run: |
+          # Fail the workflow if PR is declined
+          DECISION=$(jq -r '.decision // "PENDING"' analysis-result.json)
+
+          if [ "$DECISION" = "DECLINED" ]; then
+            echo "❌ CodeQual analysis declined this PR"
+            exit 1
+          elif [ "$DECISION" = "APPROVED" ]; then
+            echo "✅ CodeQual analysis approved this PR"
+          else
+            echo "⏳ CodeQual analysis is pending"
+          fi

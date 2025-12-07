@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "group_id": "dockerfile-security-missing-user-missing-user-high-semgrep",
+  "rule": "dockerfile.security.missing-user.missing-user",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "Add a dedicated non-root user and switch to it using the USER instruction in the Dockerfile. Create the user with appropriate permissions and ensure the application runs under that user context.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "FROM openjdk:11-jre-slim\n# Create a non-root user\nRUN addgroup --system --gid 1001 appgroup && \\\n    adduser --system --uid 1001 --gid 1001 appuser\n# Switch to the non-root user\nUSER appuser:appgroup\n# Rest of the Dockerfile..."
+    },
+    "instructions": "Add a dedicated non-root user and switch to it using the USER instruction in the Dockerfile. Create the user with appropriate permissions and ensure the application runs under that user context."
+  },
+  "locations": [
+    {
+      "file": "packages/agents/docker/analyzer-java-v5.3/Dockerfile",
+      "line": 189,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/docker/analyzer-java-v6.0/Dockerfile",
+      "line": 205,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "services/api/Dockerfile",
+      "line": 16,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 3,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 2
+  }
+}

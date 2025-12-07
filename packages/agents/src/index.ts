@@ -16,6 +16,7 @@ export { RecommendationService } from './services/recommendation-service';
 export { EducationalCompilationService } from './services/educational-compilation-service';
 export { SkillTrackingService } from './services/skill-tracking-service';
 export { IssueResolutionDetector } from './services/issue-resolution-detector';
+export { ModelTokenTracker, TokenUsageSummary } from './services/model-token-tracker';
 
 // Mock exports for compatibility
 export const EnhancedMultiAgentExecutor = class {
@@ -46,12 +47,9 @@ export const ReporterAgent = class {
   }
 };
 
-export interface StandardReport {
-  id: string;
-  type: string;
-  content: any;
-  metadata: any;
-}
+// Re-export the REAL StandardReport from report-formatter.service
+// Do NOT define a stub here - it shadows the real interface!
+export type { StandardReport } from './services/report-formatter.service';
 
 // Temporarily commented out two-branch exports due to build issues
 // These need to be re-enabled after fixing missing dependencies in two-branch

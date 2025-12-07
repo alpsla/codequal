@@ -1,0 +1,218 @@
+rules:
+  # ============================================================================
+  # INCOMPLETE STRING ESCAPING RULES
+  # ============================================================================
+  # These rules detect when string escaping is incomplete - specifically when
+  # backslashes are not escaped first, allowing attackers to bypass subsequent
+  # escape sequences.
+  #
+  # Example vulnerable code:
+  #   body.replace(/"/g, '\\"')  // Attacker uses: \" → \\" breaks escaping
+  #
+  # Fixed code:
+  #   body.replace(/\\/g, '\\\\').replace(/"/g, '\\"')  // Escape \ first
+  # ============================================================================
+
+  - id: codequal-incomplete-double-quote-escaping
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Incomplete string escaping: double quotes are escaped but backslashes
+      are not escaped first. An attacker can use a backslash to bypass the
+      quote escaping (e.g., \" becomes \\"). Always escape backslashes first:
+      str.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    metadata:
+      cwe:
+        - "CWE-116: Improper Encoding or Escaping of Output"
+        - "CWE-78: OS Command Injection"
+      owasp:
+        - "A03:2021 - Injection"
+      confidence: HIGH
+      impact: HIGH
+      category: security
+      subcategory:
+        - vuln
+      references:
+        - https://codeql.github.com/codeql-query-help/javascript/js-incomplete-string-escaping/
+    patterns:
+      - pattern-either:
+          # Direct .replace(/"/g, ...) without prior backslash escaping
+          - pattern: $STR.replace(/"/g, ...)
+          - pattern: $STR.replace(/'/g, ...)
+          - pattern: $STR.replace(new RegExp('"', ...), ...)
+          - pattern: $STR.replace(new RegExp("'", ...), ...)
+      - pattern-not-inside: $STR.replace(/\\/g, ...).replace(...)
+      - pattern-not-inside: $STR.replace(/\\\\/g, ...).replace(...)
+      - metavariable-pattern:
+          metavariable: $STR
+          pattern-not: |
+            "..."
+
+  - id: codequal-incomplete-backtick-escaping
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Incomplete string escaping: backticks are escaped but backslashes are
+      not escaped first. This can allow shell command injection when the
+      string is used in a shell context. Always escape backslashes first:
+      str.replace(/\\/g, '\\\\').replace(/`/g, '\\`')
+    metadata:
+      cwe:
+        - "CWE-116: Improper Encoding or Escaping of Output"
+        - "CWE-78: OS Command Injection"
+      owasp:
+        - "A03:2021 - Injection"
+      confidence: HIGH
+      impact: HIGH
+      category: security
+      subcategory:
+        - vuln
+    patterns:
+      - pattern-either:
+          - pattern: $STR.replace(/`/g, ...)
+          - pattern: $STR.replace(new RegExp('`', ...), ...)
+      - pattern-not-inside: $STR.replace(/\\/g, ...).replace(...)
+      - pattern-not-inside: $STR.replace(/\\\\/g, ...).replace(...)
+      - metavariable-pattern:
+          metavariable: $STR
+          pattern-not: |
+            "..."
+
+  - id: codequal-incomplete-dollar-escaping
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Incomplete string escaping: dollar signs are escaped but backslashes
+      are not escaped first. This can allow shell variable injection when
+      the string is used in a shell context. Always escape backslashes first:
+      str.replace(/\\/g, '\\\\').replace(/\$/g, '\\$')
+    metadata:
+      cwe:
+        - "CWE-116: Improper Encoding or Escaping of Output"
+        - "CWE-78: OS Command Injection"
+      owasp:
+        - "A03:2021 - Injection"
+      confidence: HIGH
+      impact: HIGH
+      category: security
+      subcategory:
+        - vuln
+    patterns:
+      - pattern-either:
+          - pattern: $STR.replace(/\$/g, ...)
+          - pattern: $STR.replace(new RegExp('\\$', ...), ...)
+      - pattern-not-inside: $STR.replace(/\\/g, ...).replace(...)
+      - pattern-not-inside: $STR.replace(/\\\\/g, ...).replace(...)
+      - metavariable-pattern:
+          metavariable: $STR
+          pattern-not: |
+            "..."
+
+  # ============================================================================
+  # SHELL COMMAND INJECTION FROM FILE PATHS
+  # ============================================================================
+  # Detects when file paths are used directly in shell commands without
+  # proper escaping, which can lead to command injection.
+  # ============================================================================
+
+  - id: codequal-shell-injection-from-path
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      File path used directly in shell command without proper escaping.
+      If the path contains shell metacharacters (spaces, quotes, $, etc.),
+      it could lead to command injection. Use single-quote escaping:
+      const escaped = path.replace(/'/g, "'\\''");
+      execSync(`command '${escaped}'`);
+    metadata:
+      cwe:
+        - "CWE-78: OS Command Injection"
+      owasp:
+        - "A03:2021 - Injection"
+      confidence: MEDIUM
+      impact: HIGH
+      category: security
+      subcategory:
+        - vuln
+    patterns:
+      - pattern-either:
+          - pattern: execSync(`... ${$PATH} ...`)
+          - pattern: execSync(`... $${$PATH} ...`)
+          - pattern: exec(`... ${$PATH} ...`, ...)
+          - pattern: spawn($CMD, [..., $PATH, ...], ...)
+      - pattern-not-inside: |
+          $ESCAPED = $PATH.replace(/'/g, ...);
+          ...
+      - metavariable-regex:
+          metavariable: $PATH
+          regex: ".*[pP]ath.*|.*[fF]ile.*|.*[dD]ir.*|.*[sS]cript.*"
+
+  # ============================================================================
+  # UNSAFE EXEC WITH USER INPUT
+  # ============================================================================
+  # Detects execSync/exec calls with template strings that include variables
+  # which could be user-controlled.
+  # ============================================================================
+
+  - id: codequal-unsafe-exec-template
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Potentially unsafe shell command execution with interpolated values.
+      If any interpolated value contains shell metacharacters, it could lead
+      to command injection. Consider using spawn() with an array of arguments,
+      or properly escape the values before interpolation.
+    metadata:
+      cwe:
+        - "CWE-78: OS Command Injection"
+      owasp:
+        - "A03:2021 - Injection"
+      confidence: MEDIUM
+      impact: HIGH
+      category: security
+      subcategory:
+        - vuln
+    patterns:
+      - pattern-either:
+          - pattern: execSync(`$CMD ${$VAR}`)
+          - pattern: execSync(`$CMD ${$VAR} $REST`)
+          - pattern: execSync(`${$VAR}`)
+          - pattern: exec(`$CMD ${$VAR}`, ...)
+          - pattern: exec(`$CMD ${$VAR} $REST`, ...)
+      - pattern-not: execSync(`$LITERAL`)
+      - metavariable-pattern:
+          metavariable: $VAR
+          pattern-not: |
+            "..."
+
+  # ============================================================================
+  # ADDITIONAL INJECTION RULES
+  # ============================================================================
+
+  - id: codequal-gh-cli-injection
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      GitHub CLI command with potentially unescaped user input. The title
+      and body parameters should have both backslashes and quotes escaped
+      to prevent command injection.
+    metadata:
+      cwe:
+        - "CWE-78: OS Command Injection"
+      owasp:
+        - "A03:2021 - Injection"
+      confidence: HIGH
+      impact: HIGH
+      category: security
+    patterns:
+      - pattern-either:
+          - pattern: execSync(`gh issue create --title "${$TITLE}" ...`)
+          - pattern: execSync(`gh pr create --title "${$TITLE}" ...`)
+          - pattern: execSync(`gh issue create ... --body "${$BODY}"`)
+          - pattern: execSync(`gh pr create ... --body "${$BODY}"`)
+      - pattern-not-inside: |
+          $ESCAPED = $TITLE.replace(/\\/g, ...).replace(/"/g, ...);
+          ...
+      - pattern-not-inside: |
+          $ESCAPED = $BODY.replace(/\\/g, ...).replace(/"/g, ...);
+          ...

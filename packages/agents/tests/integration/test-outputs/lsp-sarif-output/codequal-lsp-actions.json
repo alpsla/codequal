@@ -1,0 +1,238 @@
+[
+  {
+    "title": "Apply All Fixes (2 issues)",
+    "kind": "quickfix",
+    "edit": {
+      "changes": {
+        "file:///Users/alpinro/Code Prjects/codequal/packages/agents/tests/integration/src/main/resources/application.properties": [
+          {
+            "range": {
+              "start": {
+                "line": 16,
+                "character": 0
+              },
+              "end": {
+                "line": 24,
+                "character": 0
+              }
+            },
+            "newText": "# Before (vulnerable)\n# spring.boot.admin.client.enabled=true\n\n# After (secure)\nmanagement.endpoints.web.exposure.exclude=env,logfile,heapdump\nmanagement.endpoints.web.exposure.include=health,info\nspring.security.user.name=admin\nspring.security.user.password=securePassword123"
+          }
+        ],
+        "file:///Users/alpinro/Code Prjects/codequal/packages/agents/tests/integration/.mvn/wrapper/MavenWrapperDownloader.java": [
+          {
+            "range": {
+              "start": {
+                "line": 91,
+                "character": 0
+              },
+              "end": {
+                "line": 99,
+                "character": 0
+              }
+            },
+            "newText": "public class MavenWrapperDownloader {\n    // ... other code\n    public static void main(String[] args) {\n        // Remove or comment out debug logging\n        // System.out.println(\"Downloading from: \" + MAVEN_WRAPPER_URL);\n        // ... rest of the method\n    }\n}"
+          }
+        ]
+      }
+    },
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 0
+          },
+          "end": {
+            "line": 17,
+            "character": 0
+          }
+        },
+        "severity": 1,
+        "code": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+        "source": "codequal-semgrep",
+        "message": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only"
+      },
+      {
+        "range": {
+          "start": {
+            "line": 91,
+            "character": 0
+          },
+          "end": {
+            "line": 92,
+            "character": 0
+          }
+        },
+        "severity": 2,
+        "code": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+        "source": "codequal-semgrep",
+        "message": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output."
+      }
+    ]
+  },
+  {
+    "title": "Apply High Severity Fixes (1 issues)",
+    "kind": "quickfix",
+    "edit": {
+      "changes": {
+        "file:///Users/alpinro/Code Prjects/codequal/packages/agents/tests/integration/src/main/resources/application.properties": [
+          {
+            "range": {
+              "start": {
+                "line": 16,
+                "character": 0
+              },
+              "end": {
+                "line": 24,
+                "character": 0
+              }
+            },
+            "newText": "# Before (vulnerable)\n# spring.boot.admin.client.enabled=true\n\n# After (secure)\nmanagement.endpoints.web.exposure.exclude=env,logfile,heapdump\nmanagement.endpoints.web.exposure.include=health,info\nspring.security.user.name=admin\nspring.security.user.password=securePassword123"
+          }
+        ]
+      }
+    },
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 0
+          },
+          "end": {
+            "line": 17,
+            "character": 0
+          }
+        },
+        "severity": 1,
+        "code": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+        "source": "codequal-semgrep",
+        "message": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only"
+      }
+    ]
+  },
+  {
+    "title": "Apply Medium Severity Fixes (1 issues)",
+    "kind": "quickfix",
+    "edit": {
+      "changes": {
+        "file:///Users/alpinro/Code Prjects/codequal/packages/agents/tests/integration/.mvn/wrapper/MavenWrapperDownloader.java": [
+          {
+            "range": {
+              "start": {
+                "line": 91,
+                "character": 0
+              },
+              "end": {
+                "line": 99,
+                "character": 0
+              }
+            },
+            "newText": "public class MavenWrapperDownloader {\n    // ... other code\n    public static void main(String[] args) {\n        // Remove or comment out debug logging\n        // System.out.println(\"Downloading from: \" + MAVEN_WRAPPER_URL);\n        // ... rest of the method\n    }\n}"
+          }
+        ]
+      }
+    },
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 91,
+            "character": 0
+          },
+          "end": {
+            "line": 92,
+            "character": 0
+          }
+        },
+        "severity": 2,
+        "code": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+        "source": "codequal-semgrep",
+        "message": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output."
+      }
+    ]
+  },
+  {
+    "title": "Fix: Spring Actuator Fully Enabled",
+    "kind": "quickfix",
+    "edit": {
+      "changes": {
+        "file:///Users/alpinro/Code Prjects/codequal/packages/agents/tests/integration/src/main/resources/application.properties": [
+          {
+            "range": {
+              "start": {
+                "line": 16,
+                "character": 0
+              },
+              "end": {
+                "line": 24,
+                "character": 0
+              }
+            },
+            "newText": "# Before (vulnerable)\n# spring.boot.admin.client.enabled=true\n\n# After (secure)\nmanagement.endpoints.web.exposure.exclude=env,logfile,heapdump\nmanagement.endpoints.web.exposure.include=health,info\nspring.security.user.name=admin\nspring.security.user.password=securePassword123"
+          }
+        ]
+      }
+    },
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 16,
+            "character": 0
+          },
+          "end": {
+            "line": 17,
+            "character": 0
+          }
+        },
+        "severity": 1,
+        "code": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+        "source": "codequal-semgrep",
+        "message": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only"
+      }
+    ]
+  },
+  {
+    "title": "Fix: Active Debug Code Printstacktrace",
+    "kind": "quickfix",
+    "edit": {
+      "changes": {
+        "file:///Users/alpinro/Code Prjects/codequal/packages/agents/tests/integration/.mvn/wrapper/MavenWrapperDownloader.java": [
+          {
+            "range": {
+              "start": {
+                "line": 91,
+                "character": 0
+              },
+              "end": {
+                "line": 99,
+                "character": 0
+              }
+            },
+            "newText": "public class MavenWrapperDownloader {\n    // ... other code\n    public static void main(String[] args) {\n        // Remove or comment out debug logging\n        // System.out.println(\"Downloading from: \" + MAVEN_WRAPPER_URL);\n        // ... rest of the method\n    }\n}"
+          }
+        ]
+      }
+    },
+    "diagnostics": [
+      {
+        "range": {
+          "start": {
+            "line": 91,
+            "character": 0
+          },
+          "end": {
+            "line": 92,
+            "character": 0
+          }
+        },
+        "severity": 2,
+        "code": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+        "source": "codequal-semgrep",
+        "message": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output."
+      }
+    ]
+  }
+]

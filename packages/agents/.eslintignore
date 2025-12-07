@@ -3,3 +3,8 @@ node_modules/
 coverage/
 tests/**/*.js
 jest.config.js
+# Test fixture with intentional ESLint errors for dogfooding
+src/eslint-test-fixture.ts
+# JS files not in tsconfig
+src/two-branch/tests/jest.setup.js
+src/types/recommendation-types.js

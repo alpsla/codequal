@@ -1,0 +1,48 @@
+# CodeQual Auto-Fix Patch
+# Generated: 2025-11-12T01:32:24.686Z
+# Repository: spring-projects/spring-petclinic
+# PR: #950
+#
+# To apply this patch:
+#   git apply codequal-fixes.patch
+#
+
+diff --git a/src/main/resources/application.properties b/src/main/resources/application.properties
+--- a/src/main/resources/application.properties
++++ b/src/main/resources/application.properties
+@@ -17,7 +17,7 @@
+-    14 | spring.messages.basename=messages/messages
+-    15 | 
+-    16 | # Actuator
+->   17 | management.endpoints.web.exposure.include=*
+-    18 | 
+-    19 | # Logging
+-    20 | logging.level.org.springframework=INFO
++# Before (vulnerable)
++# spring.boot.admin.client.enabled=true
++# After (secure)
++management.endpoints.web.exposure.exclude=env,logfile,heapdump
++management.endpoints.web.exposure.include=health,info
++spring.security.user.name=admin
++spring.security.user.password=securePassword123
+
+diff --git a/.mvn/wrapper/MavenWrapperDownloader.java b/.mvn/wrapper/MavenWrapperDownloader.java
+--- a/.mvn/wrapper/MavenWrapperDownloader.java
++++ b/.mvn/wrapper/MavenWrapperDownloader.java
+@@ -92,7 +92,8 @@
+-    89 |             System.exit(0);
+-    90 |         } catch (Throwable e) {
+-    91 |             System.out.println("- Error downloading");
+->   92 |             e.printStackTrace();
+-    93 |             System.exit(1);
+-    94 |         }
+-    95 |     }
++public class MavenWrapperDownloader {
++    // ... other code
++    public static void main(String[] args) {
++        // Remove or comment out debug logging
++        // System.out.println("Downloading from: " + MAVEN_WRAPPER_URL);
++        // ... rest of the method
++    }
++}
+

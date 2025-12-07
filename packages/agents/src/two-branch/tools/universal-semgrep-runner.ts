@@ -121,9 +121,9 @@ export class UniversalSemgrepRunner {
         -v "${repoPath}:${workspaceDir}" \
         -w ${workspaceDir} \
         ${dockerImage} \
-        semgrep --config=auto --json --output=${containerOutputPath} ${workspaceDir} 2>&1 || true`;
+        semgrep --config=auto --jobs=2 --json --output=${containerOutputPath} ${workspaceDir} 2>&1 || true`;
       
-      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024, timeout: 120000 });
+      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024, timeout: 600000 }); // 10 minutes
       
       return true;
     } catch (error: any) {
@@ -140,9 +140,9 @@ export class UniversalSemgrepRunner {
     outputFileName: string
   ): Promise<boolean> {
     try {
-      const command = `cd ${repoPath} && semgrep --config=auto --json -o ${outputFileName} . 2>&1 || true`;
+      const command = `cd ${repoPath} && semgrep --config=auto --jobs=2 --json -o ${outputFileName} . 2>&1 || true`;
       
-      await execAsync(command, { maxBuffer: 50 * 1024 * 1024, timeout: 120000 });
+      await execAsync(command, { maxBuffer: 50 * 1024 * 1024, timeout: 600000 }); // 10 minutes
       
       return true;
     } catch (error: any) {
@@ -162,9 +162,9 @@ export class UniversalSemgrepRunner {
       const dockerCommand = `docker run --rm \
         -v "${repoPath}:/src" \
         returntocorp/semgrep:latest \
-        semgrep --config=auto --json --output=/src/${outputFileName} /src 2>&1 || true`;
+        semgrep --config=auto --jobs=2 --json --output=/src/${outputFileName} /src 2>&1 || true`;
       
-      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024, timeout: 120000 });
+      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024, timeout: 600000 }); // 10 minutes
       
       return true;
     } catch (error: any) {

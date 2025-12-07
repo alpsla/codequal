@@ -21,6 +21,22 @@ import { AppScoreManager } from './v9-app-score-manager';
 import { SkillScoreManager } from './v9-skill-score-manager';
 import { LSPSARIFConverter } from './lsp-sarif-converter';
 import { GitLabCodeQualityConverter } from './gitlab-codequality-converter';
+import { classifyIssue, getClassificationStats } from '../../fix-agent/issue-classifier';
+import { getRouteSummary, EnrichedIssue as FixEnrichedIssue } from '../../fix-agent/fix-router';
+import {
+  getOptimizedPrompt,
+  generateDynamicPrompt,
+  buildAIFixRequest,
+  AIFixPrompt,
+  IssueContext
+} from '../../fix-agent/ai-fix-prompts';
+import {
+  getManualReviewInfo,
+  generateManualReviewMessage,
+  canAIHelp,
+  getAIPromptHint,
+  ManualReviewInfo
+} from '../../fix-agent/manual-review-reasons';
 
 // Load environment variables
 dotenv.config();
@@ -173,7 +189,7 @@ export interface GroupSummary {
   severity: string;
   count: number;
   category: string;
-  attachment: string;
+  attachment?: string;
   ide_fix_file?: string;  // NEW: For IDE integration
 }
 
@@ -200,13 +216,13 @@ export interface CursorFixData {
   tool: string;  // ENHANCEMENT: Added for manifest enrichment
   severity: string;
   description: string;
-  
+
   // Fix pattern for automated application
   fix_pattern: FixPattern;
-  
+
   // All locations to apply fix
   locations: FixLocation[];
-  
+
   // Metadata for IDE
   metadata: {
     total_occurrences: number;
@@ -218,26 +234,53 @@ export interface CursorFixData {
 }
 
 export interface FixPattern {
-  type: 'regex' | 'ast' | 'template';
-  
+  type: 'regex' | 'ast' | 'template' | 'ai-generated' | 'manual-review';
+
   // For regex-based fixes
   find_regex?: string;
   replace_template?: string;
-  
+
   // For AST-based fixes (more complex)
   ast_transformation?: {
     node_type: string;
     transform: string;
   };
-  
+
   // Example of before/after
   example: {
     before: string;
     after: string;
   };
-  
+
   // Human-readable instructions
   instructions: string;
+
+  // Three-Tier Fix System integration (Session 35)
+  fixTier?: 1 | 2 | 3;
+  fixerTool?: string;           // Tool name (eslint, ruff, sorald, ai)
+  fixerCommand?: string;        // Command to execute (eslint --fix, ruff check --fix)
+  confidence?: number;          // 0-100, confidence in the fix
+
+  // For Tier 3 (AI-generated fixes)
+  aiPrompt?: {
+    systemPrompt: string;
+    userPromptTemplate: string;
+    outputFormat: 'diff' | 'full-file' | 'code-block';
+    maxTokens: number;
+    temperature: number;
+    requiredContext: ('file' | 'function' | 'class' | 'imports' | 'related-files')[];
+  };
+
+  // For manual review (when auto-fix is not possible)
+  manualReview?: {
+    reason: string;              // CONTEXT_REQUIRED, SECURITY_DECISION, etc.
+    explanation: string;         // User-friendly explanation
+    userAction: string;          // What the user should do
+    aiCanHelp: boolean;          // Can AI generate a suggestion?
+    aiPromptHint?: string;       // Hint for AI if it can help
+    exampleFix?: string;         // Example of what a fix might look like
+    riskLevel: 'low' | 'medium' | 'high';
+  };
 }
 
 export interface FixLocation {
@@ -258,11 +301,12 @@ export class V9GroupedReportFormatter {
   private appScoreManager: AppScoreManager | null = null;
   private SHOW_PERF_SUBMETRICS = false;
   private skillScoreManager: SkillScoreManager | null = null;
-  private repoPath: string | null = null;  // Local repo path for snippet extraction
+  private repoPath: string | undefined = undefined;  // Local repo path for snippet extraction
   // BUG-76: AI enrichment dependencies
   private modelConfigResolver: any = null;
   private detectedLanguage = 'java';
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
+  private serviceHealthTracker: any = null;  // ServiceHealthTracker for monitoring
   // Feature toggles for optional sections
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
@@ -284,11 +328,13 @@ export class V9GroupedReportFormatter {
     try {
       const supabaseUrl = process.env.SUPABASE_URL;
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      
+
       if (supabaseUrl && supabaseKey) {
         this.supabase = createClient(supabaseUrl, supabaseKey);
         this.appScoreManager = new AppScoreManager(this.supabase);
         this.skillScoreManager = new SkillScoreManager(this.supabase);
+        // Initialize service health tracker for monitoring (lazy-loaded)
+        this.initializeServiceHealthTracker();
         // Supabase scoring managers initialized successfully
       } else {
         // Supabase credentials not found - will use simplified scoring
@@ -299,53 +345,154 @@ export class V9GroupedReportFormatter {
   }
 
   /**
+   * Initialize service health tracker (lazy-loaded to avoid constructor async issues)
+   */
+  private async initializeServiceHealthTracker(): Promise<void> {
+    if (!this.serviceHealthTracker && this.supabase) {
+      try {
+        const { ServiceHealthTracker } = await import('../monitoring/service-health-tracker');
+        this.serviceHealthTracker = new ServiceHealthTracker(this.supabase);
+      } catch (error) {
+        console.warn('[V9GroupedReportFormatter] Failed to initialize ServiceHealthTracker:', error);
+      }
+    }
+  }
+
+  /**
    * SESSION 24: Upload attachments to Supabase Storage and get public URLs
    * @param ideFixFiles Array of IDE fix files to upload
    * @param metadata Report metadata for generating unique analysis ID
    * @returns Updated ideFixFiles with public URLs
    */
+  /**
+   * Upload with retry logic and rate limiting protection
+   */
+  private async uploadWithRetry(
+    filePath: string,
+    content: string | Blob,
+    options: { contentType: string; cacheControl: string; upsert: boolean },
+    maxRetries = 3,
+    retryDelay = 1000
+  ): Promise<{ data: any; error: any }> {
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const uploadResult = await this.supabase!.storage
+          .from('v9-attachments')
+          .upload(filePath, content, options);
+
+        // Check if error is HTML response (authentication/permission issue)
+        if (uploadResult.error) {
+          const errorMessage = uploadResult.error.message || String(uploadResult.error);
+          if (errorMessage.includes('<!DOCTYPE') || errorMessage.includes('<html')) {
+            console.error(`[Supabase Upload] ❌ HTML response detected (likely auth/permission issue):`, errorMessage.substring(0, 200));
+            // Don't retry HTML errors - they indicate a configuration issue
+            return uploadResult;
+          }
+
+          // Retry on transient errors
+          if (attempt < maxRetries) {
+            const delay = retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
+            console.warn(`[Supabase Upload] ⚠️  Upload failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            lastError = uploadResult.error;
+            continue;
+          }
+        }
+
+        return uploadResult;
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('<!DOCTYPE') || errorMessage.includes('<html')) {
+          console.error(`[Supabase Upload] ❌ HTML response in catch (likely auth/permission issue):`, errorMessage.substring(0, 200));
+          return { data: null, error };
+        }
+
+        if (attempt < maxRetries) {
+          const delay = retryDelay * Math.pow(2, attempt - 1);
+          console.warn(`[Supabase Upload] ⚠️  Upload exception (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          lastError = error;
+          continue;
+        }
+
+        return { data: null, error };
+      }
+    }
+
+    return { data: null, error: lastError };
+  }
+
   private async uploadAttachmentsToSupabase(
     ideFixFiles: IDEFixFile[],
-    metadata: any
+    metadata: any,
+    analysisTimestamp: number  // BUG-DOG-04 FIX: Use consistent timestamp across all uploads
   ): Promise<IDEFixFile[]> {
     if (!this.supabase || ideFixFiles.length === 0) {
       console.log('[Supabase Upload] Skipped - no Supabase client or no files');
       return ideFixFiles;
     }
 
-    // Generate unique analysis ID
-    const timestamp = Date.now();
+    // BUG-DOG-04 FIX: Use passed analysisTimestamp (not new Date.now())
     const repoName = metadata.repository?.split('/').pop() || 'unknown';
-    const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${timestamp}`;
-    
+    const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${analysisTimestamp}`;
+
     console.log(`[Supabase Upload] Starting upload for ${ideFixFiles.length} files to analysis: ${analysisId}`);
 
-    // Upload each file
-    const uploadPromises = ideFixFiles.map(async (file) => {
+    // Upload files sequentially to avoid rate limiting (with small delay between uploads)
+    const updatedFiles: IDEFixFile[] = [];
+
+    for (let i = 0; i < ideFixFiles.length; i++) {
+      const file = ideFixFiles[i];
       try {
+        // Add delay between uploads to avoid rate limiting (except for first file)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between uploads
+        }
+
         const filePath = `${analysisId}/${file.filename}`;
         const fileContent = JSON.stringify(file.content, null, 2);
         const fileSizeKB = Math.round(fileContent.length / 1024);
-        
+
         // SESSION 25: Check file size (Supabase free tier has 50MB limit per file)
         if (fileSizeKB > 10000) {  // 10MB warning threshold
           console.warn(`[Supabase Upload] Large file: ${file.filename} (${fileSizeKB}KB)`);
         }
-        
-        // Upload to Supabase Storage
-        // SESSION 25 FIX: Use upsert: true to overwrite existing files from previous test runs
-        const { data, error } = await this.supabase!.storage
-          .from('v9-attachments')
-          .upload(filePath, fileContent, {
+
+        // Upload to Supabase Storage with retry logic
+        const { data, error } = await this.uploadWithRetry(
+          filePath,
+          fileContent,
+          {
             contentType: 'application/json',
             cacheControl: '3600',
             upsert: true  // Allow overwriting existing files
-          });
+          }
+        );
 
         if (error) {
           console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error.message || error);
           console.error(`[Supabase Upload] Error details:`, JSON.stringify(error, null, 2));
-          return file; // Return original file on error
+
+          // Track upload failure
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackUploadFailure({
+              service: 'manifest',
+              filename: file.filename,
+              error: error,
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId,
+              errorDetails: {
+                statusCode: (error as any).statusCode,
+                error: (error as any).error
+              }
+            });
+          }
+
+          updatedFiles.push(file); // Return original file on error
+          continue;
         }
 
         // Get public URL
@@ -357,20 +504,46 @@ export class V9GroupedReportFormatter {
         const updatedFile = { ...file };
         (updatedFile as any).publicUrl = urlData.publicUrl;
         console.log(`[Supabase Upload] ✅ Uploaded ${file.filename} → ${urlData.publicUrl}`);
-        
-        return updatedFile;
+
+        // Track upload success
+        if (this.serviceHealthTracker) {
+          await this.serviceHealthTracker.trackUploadSuccess({
+            service: 'manifest',
+            filename: file.filename,
+            url: urlData.publicUrl,
+            fileSize: fileContent.length,
+            repositoryUrl: metadata.repository,
+            prNumber: metadata.prNumber,
+            analysisId
+          });
+        }
+
+        updatedFiles.push(updatedFile);
       } catch (error) {
         console.error(`[Supabase Upload] Error uploading ${file.filename}:`, error);
-        return file; // Return original file on error
-      }
-    });
 
-    // Wait for all uploads
-    const updatedFiles = await Promise.all(uploadPromises);
-    
+        // Track upload failure
+        if (this.serviceHealthTracker) {
+          await this.serviceHealthTracker.trackUploadFailure({
+            service: 'manifest',
+            filename: file.filename,
+            error: error as Error,
+            repositoryUrl: metadata.repository,
+            prNumber: metadata.prNumber,
+            analysisId,
+            errorDetails: {
+              error: (error as any)?.message || String(error)
+            }
+          });
+        }
+
+        updatedFiles.push(file); // Return original file on error
+      }
+    }
+
     const successCount = updatedFiles.filter(f => (f as any).publicUrl).length;
     console.log(`[Supabase Upload] Completed: ${successCount}/${ideFixFiles.length} files uploaded successfully`);
-    
+
     return updatedFiles;
   }
 
@@ -380,7 +553,7 @@ export class V9GroupedReportFormatter {
   private getCuratedResourcesForRule(ruleId: string): Array<{ title: string; url: string }> {
     return getCuratedResourcesForRule(ruleId);
   }
-  
+
   /**
    * BUG-76: Enrich issues with AI-generated fix suggestions
    * Strategy: 1 AI call per group (cost-optimized)
@@ -400,7 +573,7 @@ export class V9GroupedReportFormatter {
       this.detectedRepoSize
     );
   }
-  
+
   /**
    * Generate grouped report with attachments
    */
@@ -417,12 +590,12 @@ export class V9GroupedReportFormatter {
       prTitle?: string;
       branch?: string;
       baseBranch?: string;
-      
+
       // Author Information
       prAuthor?: string;
       prAuthorEmail?: string;
       organizationName?: string;
-      
+
       // Code Statistics
       totalFiles: number;
       totalLinesOfCode?: number;
@@ -430,17 +603,17 @@ export class V9GroupedReportFormatter {
       linesAdded?: number;
       linesDeleted?: number;
       languageBreakdown?: Record<string, number>;
-      
+
       // Decision & Analysis
       decision: string;
       blockingCount: number;
-      
+
       // Performance Metrics
       totalDuration?: number;
       cloneTime?: number;
       analysisTime?: number;
       reportGenerationTime?: number;
-      
+
       // Timestamp
       analyzedAt?: string;
       analyzerVersion?: string;
@@ -451,7 +624,11 @@ export class V9GroupedReportFormatter {
       modelsUsed?: Array<any> | Record<string, any>;
     }
   ): Promise<GroupedReportOutput> {
-    
+
+    // BUG-DOG-04 FIX: Generate single timestamp for ALL uploads (manifest, LSP, SARIF)
+    // This ensures consistent analysisId across all files
+    const analysisTimestamp = Date.now();
+
     const markdown: string[] = [];
     let ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
 
@@ -460,8 +637,59 @@ export class V9GroupedReportFormatter {
     console.log(`[DEBUG-PR#] metadata.repository: ${metadata.repository}`);
     console.log(`[DEBUG-PR#] ==========================================\n`);
 
+    // FALSE POSITIVE BUG FIX: Validate tools actually executed
+    const toolsExecuted = metadata.toolPerformance?.length || 0;
+
+    if (toolsExecuted === 0) {
+      console.log(`\n[FALSE POSITIVE FIX] ⚠️  WARNING: No tools were executed!`);
+      console.log(`[FALSE POSITIVE FIX] Returning ERROR report instead of false positive APPROVED`);
+      console.log(`[FALSE POSITIVE FIX] This prevents misleading 100/100 scores when analysis fails\n`);
+
+      // Return ERROR report instead of APPROVED
+      // Note: Decision/score/grade are conveyed in the markdown report text
+      return {
+        markdown: this.generateAnalysisFailureReport(metadata),
+        ideFixFiles: [],
+        attachments: [],
+        mapping: {
+          version: '1.0',
+          generated_at: new Date().toISOString(),
+          repository: metadata.repository || 'unknown',
+          pr_number: metadata.prNumber || 0,
+          total_issues: 0,
+          total_groups: 0,
+          groups: [],
+          statistics: {
+            by_severity: { critical: 0, high: 0, medium: 0, low: 0 },
+            by_category: { security: 0, performance: 0, best_practice: 0, style: 0, other: 0 },
+            by_tool: {}
+          }
+        }
+      };
+    }
+
+    console.log(`[FALSE POSITIVE FIX] ✅ Tools executed: ${toolsExecuted} - continuing with normal report generation\n`);
+
+    // BUG #89 DEBUG: Check what issues we receive
+    console.log(`\n[BUG #89] ====== ISSUE COUNT AT ENTRY ======`);
+    console.log(`[BUG #89] Total issues received: ${issues.length}`);
+    const categoryCounts = {
+      NEW: issues.filter(i => i.category === 'NEW').length,
+      EXISTING_MODIFIED: issues.filter(i => i.category === 'EXISTING_MODIFIED').length,
+      RESOLVED: issues.filter(i => i.category === 'RESOLVED').length,
+      EXISTING_REST: issues.filter(i => i.category === 'EXISTING_REST').length,
+      UNKNOWN: issues.filter(i => !i.category || !['NEW', 'EXISTING_MODIFIED', 'RESOLVED', 'EXISTING_REST'].includes(i.category)).length
+    };
+    console.log(`[BUG #89] Category breakdown:`);
+    console.log(`[BUG #89]   - NEW: ${categoryCounts.NEW}`);
+    console.log(`[BUG #89]   - EXISTING_MODIFIED: ${categoryCounts.EXISTING_MODIFIED}`);
+    console.log(`[BUG #89]   - RESOLVED: ${categoryCounts.RESOLVED}`);
+    console.log(`[BUG #89]   - EXISTING_REST: ${categoryCounts.EXISTING_REST}`);
+    console.log(`[BUG #89]   - UNKNOWN/MISSING: ${categoryCounts.UNKNOWN}`);
+    console.log(`[BUG #89] ====================================\n`);
+
     // Store repoPath for snippet extraction
-    this.repoPath = metadata.repoPath || null;
+    this.repoPath = metadata.repoPath || undefined;
 
     // OPTIMIZATION: Severity classification now integrated into specialized agents (saves ~150 tokens per group)
     // Each agent classifies severity AS PART of generating fix suggestions (1 AI call instead of 2)
@@ -479,16 +707,42 @@ export class V9GroupedReportFormatter {
     const costByAgent = enrichmentResult.costByAgent || {};
     const tokensByAgent = enrichmentResult.tokensByAgent || {};
 
+    // BUG #89 FIX: Ensure enrichedIssues is never empty when issues exist
+    // This handles the case where AI enrichment returns empty array (e.g., when all issues are EXISTING_REST)
+    // Fix MUST be here (BEFORE line 750 where summary is generated), not after
+    if (enrichedIssues.length === 0 && issues.length > 0) {
+      console.log(`\n[BUG #89] ⚠️  WARNING: 0 enriched issues but ${issues.length} raw issues exist!`);
+      console.log(`[BUG #89] AI enrichment returned empty array - using raw issues as fallback`);
+      console.log(`[BUG #89] This typically happens when all issues are EXISTING_REST (no NEW issues)`);
+
+      // Re-populate enrichedIssues from original issues array
+      enrichedIssues.push(...issues.map(issue => ({
+        file: issue.file || '',
+        line: issue.line || 0,
+        column: issue.column || 0,
+        rule: issue.rule || 'unknown',
+        tool: issue.tool || 'unknown',
+        severity: (issue.severity || 'medium') as 'critical' | 'high' | 'medium' | 'low',
+        message: issue.message || 'No description provided',
+        category: (issue.category || 'EXISTING_REST') as 'NEW' | 'EXISTING_MODIFIED' | 'RESOLVED' | 'EXISTING_REST',
+        detectedCategory: issue.detectedCategory || 'Code Quality',
+        snippet: issue.snippet || ''
+      })));
+
+      console.log(`[BUG #89] ✅ Populated enrichedIssues with ${enrichedIssues.length} issues`);
+      console.log(`[BUG #89] All issues will now appear in the summary table\n`);
+    }
+
     // BUG #6 + SESSION 21 FIX: Enhance agentPerformance with model AND cost information
     if (metadata.agentPerformance && Array.isArray(metadata.agentPerformance)) {
       console.log('[BUG #6] Enhancing agentPerformance with model and cost information...');
       console.log('[BUG #6] Models by agent:', JSON.stringify(modelsByAgent || {}));
-      
+
       // SESSION 22 FIX: Safely handle optional costByAgent
       const costs = costByAgent || {};
       const tokens = tokensByAgent || {};
       if (Object.keys(costs).length > 0) {
-        console.log('[SESSION 21] Costs by agent:', JSON.stringify(Object.fromEntries(Object.entries(costs).map(([k,v]) => [k, `$${v.toFixed(4)}`]))));
+        console.log('[SESSION 21] Costs by agent:', JSON.stringify(Object.fromEntries(Object.entries(costs).map(([k, v]) => [k, `$${v.toFixed(4)}`]))));
       }
 
       metadata.agentPerformance.forEach((agent: any) => {
@@ -503,13 +757,13 @@ export class V9GroupedReportFormatter {
         } else {
           console.log(`[BUG #6] ⚠️  No model found for ${agentName} (category: ${agentCategory})`);
         }
-        
+
         // SESSION 21 FIX: Add actual cost from OpenRouter
         if (costs[agentCategory]) {
           agent.cost = costs[agentCategory];
           console.log(`[SESSION 21] ✅ Set cost for ${agentName}: $${agent.cost.toFixed(4)}`);
         }
-        
+
         // Add token usage
         if (tokens[agentCategory]) {
           agent.tokensUsed = tokens[agentCategory];
@@ -520,26 +774,54 @@ export class V9GroupedReportFormatter {
     // Update group severities based on AI-classified issues
     // After AI classification updates individual issue severities, we need to update
     // each group's severity to reflect the AI-classified issues (not original severities)
+    // BUG FIX: Match by rule + tool + ORIGINAL severity to preserve separate groups
+    // (e.g., npm-audit issues with same rule but different severities should stay separate)
     const updatedGroups = groups.map(group => {
-      // Find all issues in this group (match by rule + tool, not severity, since it changed)
+      // Find all issues in this group (match by rule + tool + ORIGINAL severity)
+      // This preserves separate groups for different severities (critical vs medium vs low)
       const groupIssues = enrichedIssues.filter(issue =>
-        issue.rule === group.rule && issue.tool === group.tool
+        issue.rule === group.rule &&
+        issue.tool === group.tool &&
+        // Use original group severity to match, not AI-classified severity
+        // This ensures groups with different original severities stay separate
+        issue.severity === group.severity
       );
 
       if (groupIssues.length === 0) {
-        return group; // No issues, keep original
+        // Fallback: if no exact match, try without severity (for backwards compatibility)
+        const fallbackIssues = enrichedIssues.filter(issue =>
+          issue.rule === group.rule && issue.tool === group.tool
+        );
+        if (fallbackIssues.length === 0) {
+          return group; // No issues, keep original
+        }
+
+        // Use fallback issues but preserve original group severity
+        const severities = fallbackIssues.map(issue => issue.severity);
+        const hasCritical = severities.includes('critical');
+        const hasHigh = severities.includes('high');
+        const hasMedium = severities.includes('medium');
+
+        const aiSeverity = hasCritical ? 'critical' :
+          hasHigh ? 'high' :
+            hasMedium ? 'medium' : 'low';
+
+        return {
+          ...group,
+          severity: aiSeverity as 'critical' | 'high' | 'medium' | 'low'
+        };
       }
 
-      // Determine the highest severity among AI-classified issues
+      // Determine the highest severity among AI-classified issues in this group
       const severities = groupIssues.map(issue => issue.severity);
       const hasCritical = severities.includes('critical');
       const hasHigh = severities.includes('high');
       const hasMedium = severities.includes('medium');
 
-      // Update group severity to highest severity found
+      // Update group severity to highest severity found (but preserve group separation)
       const aiSeverity = hasCritical ? 'critical' :
-                         hasHigh ? 'high' :
-                         hasMedium ? 'medium' : 'low';
+        hasHigh ? 'high' :
+          hasMedium ? 'medium' : 'low';
 
       return {
         ...group,
@@ -568,32 +850,37 @@ export class V9GroupedReportFormatter {
     // Header
     markdown.push(this.generateHeader(metadata));
     markdown.push('');
-    
+
     // Executive Summary
     // SESSION 13 FIX #4 (BUG-87): Use updatedGroups with AI-classified severities
     markdown.push(await this.generateExecutiveSummary(enrichedIssues, updatedGroups, metadata));
     markdown.push('');
 
+    // BUG #89: Removed old incorrect fix (was here at line 779-809)
+    // The correct fix is now at line 630-654 (BEFORE summary generation at line 776)
+    // This ensures enrichedIssues is populated BEFORE generateExecutiveSummary() uses it
+    const updatedGroupsToUse = updatedGroups;
+
     // Issue Groups by Severity (CRITICAL FIRST, then HIGH)
     // SESSION 13 FIX #4 (BUG-87): Filter by AI-classified severities (updatedGroups)
-    const critical = updatedGroups.filter(g => g.severity === 'critical');
-    const high = updatedGroups.filter(g => g.severity === 'high');
-    const medium = updatedGroups.filter(g => g.severity === 'medium');
-    const low = updatedGroups.filter(g => g.severity === 'low');
-    
+    const critical = updatedGroupsToUse.filter(g => g.severity === 'critical');
+    const high = updatedGroupsToUse.filter(g => g.severity === 'high');
+    const medium = updatedGroupsToUse.filter(g => g.severity === 'medium');
+    const low = updatedGroupsToUse.filter(g => g.severity === 'low');
+
     // Critical Issues (highest priority)
     if (critical.length > 0) {
       markdown.push('## 🔴 Critical Issues (Immediate Action Required)\n');
       for (const group of critical) {
         markdown.push(await this.generateGroupSection(group, enrichedIssues, true));
-        
+
         // Generate IDE fix file (BUG FIX #33: Simplified - only one file per group with all locations)
         const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues);
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
       markdown.push('');
     }
-    
+
     // SESSION 24: First generate all IDE fix files
     if (high.length > 0) {
       for (const group of high) {
@@ -601,35 +888,35 @@ export class V9GroupedReportFormatter {
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
     }
-    
+
     if (medium.length > 0) {
       for (const group of medium) {
         const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues);
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
     }
-    
+
     if (low.length > 0) {
       for (const group of low) {
         const ideFixFile = await this.generateIDEFixFile(group, enrichedIssues);
         if (ideFixFile) ideFixFiles.push(ideFixFile);
       }
     }
-    
+
     // SESSION 25 FIX: Upload fix files FIRST (without manifest) to get public URLs
     // Then create manifest with public URLs, then upload manifest
     if (ideFixFiles.length > 0) {
       // Step 1: Upload all fix files (excluding manifest) to get public URLs
       const fixFilesOnly = ideFixFiles.filter(f => f.filename !== 'all-issues-manifest.json');
-      const uploadedFixFiles = await this.uploadAttachmentsToSupabase(fixFilesOnly, metadata);
-      
+      const uploadedFixFiles = await this.uploadAttachmentsToSupabase(fixFilesOnly, metadata, analysisTimestamp);
+
       // Step 2: Create manifest with public URLs from uploaded files
       const enrichManifestEntry = (f: IDEFixFile) => {
         const uploadedFile = uploadedFixFiles.find(uf => uf.filename === f.filename);
-        const publicUrl = uploadedFile && (uploadedFile as any).publicUrl 
-          ? (uploadedFile as any).publicUrl 
+        const publicUrl = uploadedFile && (uploadedFile as any).publicUrl
+          ? (uploadedFile as any).publicUrl
           : `attachments/${f.filename}`; // Fallback to relative path
-        
+
         const issueDesc = this.getIssueDescription(f.content.rule, f.content.tool, f.content.severity);
         return {
           filename: f.filename,
@@ -643,7 +930,7 @@ export class V9GroupedReportFormatter {
           impact: this.getImpactSummary(f.content.rule, f.content.tool, f.content.severity),
           priority: this.getPriority(f.content.severity),
           occurrences: f.content.metadata?.total_occurrences || f.content.locations?.length || 0,
-          autoFixable: this.canAutoFix({ tool: f.content.tool } as IssueGroup)
+          autoFixable: this.canAutoFix({ rule: f.content.rule, tool: f.content.tool, severity: f.content.severity } as IssueGroup)
         };
       };
 
@@ -666,26 +953,27 @@ export class V9GroupedReportFormatter {
           }
         } as any
       };
-      
+
       // Step 3: Upload manifest file to Supabase
-      const uploadedManifest = await this.uploadAttachmentsToSupabase([manifestFile], metadata);
-      
+      const uploadedManifest = await this.uploadAttachmentsToSupabase([manifestFile], metadata, analysisTimestamp);
+
       // Step 4: Combine uploaded fix files with uploaded manifest
       ideFixFiles = [...uploadedFixFiles, ...uploadedManifest];
-      
+
       // Log summary
       const totalWithUrls = ideFixFiles.filter(f => (f as any).publicUrl).length;
       console.log(`[Manifest] ✅ Created manifest with ${totalWithUrls}/${ideFixFiles.length} files having Supabase URLs`);
 
       // SESSION 25-27: Generate LSP, SARIF, and GitLab formats
-      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata);
+      // BUG-DOG-04 FIX: Pass analysisTimestamp to ensure consistent IDs across all files
+      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata, analysisTimestamp);
 
       // SESSION 26-27: Store URLs for metadata footer (type assertion needed for dynamic properties)
       if (lspUrl) (metadata as any).lspUrl = lspUrl;
       if (sarifUrl) (metadata as any).sarifUrl = sarifUrl;
       if (gitlabUrl) (metadata as any).gitlabUrl = gitlabUrl;
     }
-    
+
     // SESSION 24: Now generate markdown with public URLs
     if (high.length > 0) {
       markdown.push('## 🟠 High Priority Issues\n');
@@ -694,7 +982,7 @@ export class V9GroupedReportFormatter {
       }
       markdown.push('');
     }
-    
+
     if (medium.length > 0) {
       markdown.push('## 🟡 Medium Priority Issues\n');
       for (const group of medium) {
@@ -702,7 +990,7 @@ export class V9GroupedReportFormatter {
       }
       markdown.push('');
     }
-    
+
     if (low.length > 0) {
       markdown.push('## 🟢 Low Priority Issues\n');
       for (const group of low) {
@@ -710,9 +998,9 @@ export class V9GroupedReportFormatter {
       }
       markdown.push('');
     }
-    
+
     // Manifest already created and uploaded above with public URLs
-    
+
     // BUG FIX #19: Add CheckStyle auto-fix guidance if CheckStyle issues found
     const checkstyleGroups = groups.filter(g => g.tool === 'checkstyle');
     if (checkstyleGroups.length > 0) {
@@ -720,11 +1008,11 @@ export class V9GroupedReportFormatter {
       markdown.push(this.generateCheckStyleAutoFixGuide(checkstyleCount));
       markdown.push('');
     }
-    
+
     // Business Impact Analysis (aggregate from enrichedIssues)
     markdown.push(this.generateBusinessImpact(enrichedIssues, groups));
     markdown.push('');
-    
+
     // Educational Resources (aggregate from enrichedIssues)
     // Use issue-specific training with YouTube links by default (better UX)
     // Falls back to generic if EDU_USE_GENERIC=true
@@ -734,25 +1022,25 @@ export class V9GroupedReportFormatter {
       markdown.push(await this.generateEducationalResourcesBrave(enrichedIssues));
     }
     markdown.push('');
-    
+
     // Skills Tracking (developer progress and ranking)
     markdown.push(await this.generateSkillsTracking(enrichedIssues, metadata));
     markdown.push('');
-    
+
     // Analysis Metadata (performance metrics)
     markdown.push(this.generateAnalysisMetadata(metadata));
     markdown.push('');
-    
+
     // PR Comment (personalized, ready-to-paste)
     markdown.push(this.generatePRComment(enrichedIssues, groups, metadata));
     markdown.push('');
-    
+
     // Footer (BUG FIX #33: Only IDE fix files now, no separate location attachments)
-    markdown.push(this.generateFooter(groups, ideFixFiles, metadata));
-    
+    markdown.push(this.generateFooter(groups, ideFixFiles, metadata, enrichedIssues));
+
     // Generate mapping index (BUG FIX #33: Only IDE fix files)
     const mapping = this.generateMapping(enrichedIssues, groups, metadata, ideFixFiles);
-    
+
     return {
       markdown: markdown.join('\n'),
       attachments: [],  // BUG FIX #33: Empty for backward compatibility, will be removed in future version
@@ -760,7 +1048,7 @@ export class V9GroupedReportFormatter {
       ideFixFiles
     };
   }
-  
+
   /**
    * BUG FIX #41: Find full path for a file by its basename
    * Uses find command to locate file in repository
@@ -770,21 +1058,21 @@ export class V9GroupedReportFormatter {
       // Already has path or no repo available
       return null;
     }
-    
+
     try {
       const result = execSync(
-        `find "${this.repoPath}" -type f -name "${basename}" | grep -v "/\\.git/" | head -1`,
-        { encoding: 'utf-8' }
-      ).trim();
-      
-      if (result) {
-        // Convert to relative path
-        return result.replace(this.repoPath + '/', '');
+        `find "${this.repoPath}" -name "${basename}" -type f 2>/dev/null | head -1`,
+        { encoding: 'utf-8', timeout: 5000 }
+      );
+      const fullPath = result.trim();
+      if (fullPath) {
+        // Return path relative to repo root
+        return fullPath.replace(this.repoPath + '/', '');
       }
-    } catch (error) {
-      // File not found or command failed
+    } catch {
+      // Ignore errors from find command
     }
-    
+
     return null;
   }
 
@@ -795,14 +1083,14 @@ export class V9GroupedReportFormatter {
   private async extractSnippetsForLocations(issues: EnrichedIssue[]): Promise<IssueLocation[]> {
     if (!this.repoPath) {
       // BUG FIX #41: Even without repoPath, normalize paths for consistency
-      return issues.map(issue => {
+      const locations = issues.map(issue => {
         let normalizedPath = issue.file;
         if (normalizedPath.startsWith('/workspace/')) {
           normalizedPath = normalizedPath.replace('/workspace/', '');
         } else if (normalizedPath.startsWith('workspace/')) {
           normalizedPath = normalizedPath.replace('workspace/', '');
         }
-        
+
         return {
           file: normalizedPath,
           line: issue.line || 0,
@@ -811,21 +1099,24 @@ export class V9GroupedReportFormatter {
           category: issue.category
         };
       });
+
+      // Deduplicate identical locations (e.g., npm-audit issues all point to package.json:1)
+      return this.deduplicateLocations(locations);
     }
 
     const { CodeSnippetExtractor } = await import('../utils/code-snippet-extractor');
     const path = await import('path');
-    
+
     // BUG FIX #33: Increased snippet limit per group (was 100 globally, now 1000 per group)
     // This allows IDEs to show more context without killing performance
     // For groups with >1000 issues, only first 1000 get snippets (rest have location only)
     const SNIPPET_LIMIT = 1000;
     const locations: IssueLocation[] = [];
-    
+
     for (let i = 0; i < issues.length; i++) {
       const issue = issues[i];
       let snippet = issue.snippet || '';
-      
+
       // BUG FIX #41: Normalize path once at the beginning for consistency
       let normalizedPath = issue.file;
       if (normalizedPath.startsWith('/workspace/')) {
@@ -833,18 +1124,33 @@ export class V9GroupedReportFormatter {
       } else if (normalizedPath.startsWith('workspace/')) {
         normalizedPath = normalizedPath.replace('workspace/', '');
       }
-      
+
       // Extract snippet if missing and within limit
       if (i < SNIPPET_LIMIT && (!snippet || snippet === 'N/A' || snippet.trim().length === 0) && issue.file && issue.line) {
         try {
-          const fullPath = path.join(this.repoPath!, normalizedPath);
-          snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';
+          // BUG FIX: For npm-audit issues, always use root package.json
+          // npm-audit issues are assigned to 'package.json' but might resolve to subdirectory
+          let fileToExtract = normalizedPath;
+          if (issue.tool === 'npm-audit' && (normalizedPath === 'package.json' || normalizedPath.endsWith('/package.json'))) {
+            // Try root package.json first
+            const rootPackageJson = path.join(this.repoPath!, 'package.json');
+            if (fs.existsSync(rootPackageJson)) {
+              fileToExtract = 'package.json';
+            }
+          }
+
+          const fullPath = path.join(this.repoPath!, fileToExtract);
+          if (fs.existsSync(fullPath)) {
+            snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';
+          } else {
+            snippet = '';
+          }
         } catch (error) {
           // Extraction failed - use empty snippet
           snippet = '';
         }
       }
-      
+
       // BUG FIX #41: Always use normalized path in output (consistent with report display)
       locations.push({
         file: normalizedPath,
@@ -854,10 +1160,52 @@ export class V9GroupedReportFormatter {
         category: issue.category
       });
     }
-    
-    return locations;
+
+    // Deduplicate identical locations (e.g., npm-audit issues all point to package.json:1)
+    return this.deduplicateLocations(locations);
   }
-  
+
+  /**
+   * Deduplicate locations that are identical (same file, line, column)
+   * For npm-audit issues, all locations point to package.json:1, so we only keep one
+   * BUG FIX: For npm-audit, prefer root package.json over subdirectory package.json files
+   */
+  private deduplicateLocations(locations: IssueLocation[]): IssueLocation[] {
+    const seen = new Map<string, IssueLocation>();
+
+    // BUG FIX: For npm-audit issues, prefer root package.json
+    // If we have multiple package.json files, prioritize the root one
+    const packageJsonLocations = locations.filter(loc => loc.file === 'package.json' || loc.file.endsWith('/package.json'));
+    if (packageJsonLocations.length > 1) {
+      // Find root package.json (shortest path)
+      const rootPackageJson = packageJsonLocations.reduce((root, loc) => {
+        const rootDepth = root.file.split('/').length;
+        const locDepth = loc.file.split('/').length;
+        return locDepth < rootDepth ? loc : root;
+      });
+
+      // Replace all package.json locations with root one
+      locations = locations.map(loc => {
+        if (loc.file === 'package.json' || loc.file.endsWith('/package.json')) {
+          return { ...rootPackageJson, file: 'package.json' };
+        }
+        return loc;
+      });
+    }
+
+    for (const location of locations) {
+      // Create a unique key: file:line:column
+      const key = `${location.file}:${location.line}:${location.column || 0}`;
+
+      // Keep the first occurrence (or one with a longer snippet if available)
+      if (!seen.has(key) || (location.snippet && location.snippet.length > (seen.get(key)?.snippet?.length || 0))) {
+        seen.set(key, location);
+      }
+    }
+
+    return Array.from(seen.values());
+  }
+
   /**
    * Generate report header with complete metadata
    */
@@ -865,51 +1213,92 @@ export class V9GroupedReportFormatter {
     return generateHeader(metadata, this.SHOW_PERF_SUBMETRICS);
   }
 
+  /**
+   * Generate error report when tool orchestration fails
+   * (FALSE POSITIVE BUG FIX)
+   */
+  private generateAnalysisFailureReport(metadata: any, errorMessage?: string): string {
+    const analysisDate = formatDate(metadata.analyzedAt);
+
+    return `# ❌ Code Quality Analysis Failed
+
+## Repository Information
+
+**Repository:** ${metadata.repoUrl ? `[${metadata.repository}](${metadata.repoUrl})` : metadata.repository}
+**Pull Request:** #${metadata.prNumber}${metadata.prTitle ? ` - ${metadata.prTitle}` : ''}
+**Analysis Date:** ${analysisDate}
+
+## ❌ Analysis Error
+
+**Status:** ANALYSIS FAILED
+**Reason:** No analysis tools were executed successfully
+
+### Error Details
+
+\`\`\`
+${errorMessage || 'Unknown error - check tool orchestrator logs for details'}
+\`\`\`
+
+### Recommended Action
+
+**Review the error above and check the tool orchestrator logs** for additional context. Common issues include:
+- Repository paths with spaces or special characters
+- Git configuration problems
+- Missing tool dependencies
+- Permission issues
+
+---
+
+*This is an error report - code quality analysis could not be completed.*
+*Please resolve the error above and retry the analysis.*
+`;
+  }
+
   private _REMOVED_generateHeader_LEGACY(metadata: any): string {
     // BUG FIX #71: Support both 'APPROVE' and 'APPROVED' (metadata uses 'APPROVE', but some places use 'APPROVED')
     const icon = (metadata.decision === 'APPROVE' || metadata.decision === 'APPROVED') ? '✅' : '⛔';
     const analysisDate = this.formatDate(metadata.analyzedAt);
-    
+
     // Calculate net change in lines
     const linesAdded = metadata.linesAdded || 0;
     const linesDeleted = metadata.linesDeleted || 0;
     const netChange = linesAdded - linesDeleted;
-    
+
     // Format duration
     const durationDisplay = this.formatDuration(metadata.totalDuration);
-    
+
     let header = `# 🔍 Code Quality Analysis Report
 
 ## Repository Information
 
 **Repository:** ${metadata.repoUrl ? `[${metadata.repository}](${metadata.repoUrl})` : metadata.repository}  
 **Pull Request:** #${metadata.prNumber}${metadata.prTitle ? ` - ${metadata.prTitle}` : ''}  `;
-    
+
     if (metadata.prAuthor) {
       header += `\n**Author:** ${metadata.prAuthor}${metadata.prAuthorEmail ? ` (${metadata.prAuthorEmail})` : ''}  `;
     }
-    
+
     if (metadata.organizationName) {
       header += `\n**Organization:** ${metadata.organizationName}  `;
     }
-    
+
     if (metadata.branch && metadata.baseBranch) {
       header += `\n**Source Branch:** ${metadata.branch}  
 **Target Branch:** ${metadata.baseBranch}  `;
     }
-    
+
     header += `\n**Analysis Date:** ${analysisDate}  
 **Repository Size:** ${(metadata.totalFiles || 0).toLocaleString()} files`;
-    
+
     if (metadata.totalLinesOfCode) {
       header += ` | ${metadata.totalLinesOfCode.toLocaleString()} lines`;
     }
-    
+
     if (metadata.analyzerVersion) {
       header += `  
 **Analyzer Version:** ${metadata.analyzerVersion}`;
     }
-    
+
     // Add PR Impact section if data available
     if (metadata.filesModified || metadata.linesAdded || metadata.linesDeleted) {
       header += `
@@ -917,7 +1306,7 @@ export class V9GroupedReportFormatter {
 ## PR Impact
 
 **Files Modified:** ${Math.min(metadata.filesModified || 0, metadata.totalFiles || (metadata.filesModified || 0))}  `;
-      
+
       if (metadata.linesAdded !== undefined || metadata.linesDeleted !== undefined) {
         header += `
 **Lines Added:** +${linesAdded}  
@@ -925,7 +1314,7 @@ export class V9GroupedReportFormatter {
 **Net Change:** ${netChange > 0 ? '+' : ''}${netChange} lines  `;
       }
     }
-    
+
     // Add Analysis Performance section if data available
     if (metadata.totalDuration) {
       header += `
@@ -933,23 +1322,23 @@ export class V9GroupedReportFormatter {
 ## Analysis Performance
 
 **Total Duration:** ${durationDisplay}  `;
-      
+
       if (this.SHOW_PERF_SUBMETRICS && metadata.cloneTime) {
         header += `
 **Clone Time:** ${this.formatDuration(metadata.cloneTime)}  `;
       }
-      
+
       if (this.SHOW_PERF_SUBMETRICS && metadata.analysisTime) {
         header += `
 **Analysis Time:** ${this.formatDuration(metadata.analysisTime)}  `;
       }
-      
+
       if (this.SHOW_PERF_SUBMETRICS && metadata.reportGenerationTime) {
         header += `
 **Report Generation:** ${this.formatDuration(metadata.reportGenerationTime)}  `;
       }
     }
-    
+
     // Add Decision section
     header += `
 
@@ -958,24 +1347,24 @@ export class V9GroupedReportFormatter {
 **Result:** ${icon} **${metadata.decision}**${metadata.blockingCount > 0 ? ` (${metadata.blockingCount} blocking issues)` : ''}
 
 ---`;
-    
+
     return header;
   }
-  
+
   /**
    * Format date for display
    */
   private formatDate(dateString?: string): string {
     return formatDate(dateString);
   }
-  
+
   /**
    * Format duration in milliseconds to human-readable string
    */
   private formatDuration(durationMs?: number): string {
     return formatDuration(durationMs);
   }
-  
+
   /**
    * Calculate impact score from issues
    * Critical: 5 points, High: 3 points, Medium: 1 point, Low: 0.5 points
@@ -992,7 +1381,7 @@ export class V9GroupedReportFormatter {
     });
     return impact;
   }
-  
+
   /**
    * Calculate quality score (0-100) with full category breakdown
    * 
@@ -1030,7 +1419,7 @@ export class V9GroupedReportFormatter {
   }> {
     return calculateQualityScore(issues, metadata, this.appScoreManager, this.skillScoreManager);
   }
-  
+
   /**
    * Check if we already have scores for this exact commit
    * Prevents score decay when re-running analysis on unchanged code
@@ -1049,10 +1438,10 @@ export class V9GroupedReportFormatter {
     if (!this.appScoreManager || !this.skillScoreManager || !metadata.commitSHA) {
       return null;
     }
-    
+
     try {
       const supabase = (this.appScoreManager as any).supabase;
-      
+
       // Query both scores in parallel
       const [appResult, skillResult] = await Promise.all([
         supabase
@@ -1075,14 +1464,14 @@ export class V9GroupedReportFormatter {
           .limit(1)
           .single()
       ]);
-      
+
       const appScore = appResult.data;
       const skillScore = skillResult.data;
-      
+
       // Only use cache if BOTH scores exist
       if (appScore && skillScore) {
         console.log(`[V9ReportFormatter] ✅ Found cached scores - APP: ${appScore.overall_score}, Skill: ${skillScore.overall_score}`);
-        
+
         // BUG FIX #10, #50: Reconstruct categoryScores from individual columns
         // Use nullish coalescing to allow 0 scores (not falsy fallback)
         const categoryScores = {
@@ -1092,7 +1481,7 @@ export class V9GroupedReportFormatter {
           dependency: appScore.dependency_score ?? 50,
           codeQuality: appScore.code_quality_score ?? 50
         };
-        
+
         // Determine grade
         const score = appScore.overall_score;
         let grade: string;
@@ -1101,7 +1490,7 @@ export class V9GroupedReportFormatter {
         else if (score >= 70) grade = 'C';
         else if (score >= 60) grade = 'D';
         else grade = 'F';
-        
+
         return {
           score: appScore.overall_score,
           grade,
@@ -1118,7 +1507,7 @@ export class V9GroupedReportFormatter {
           }
         };
       }
-      
+
       return null;
     } catch (error: any) {
       // No cached scores found or error - will calculate fresh
@@ -1128,7 +1517,7 @@ export class V9GroupedReportFormatter {
       return null;
     }
   }
-  
+
   /**
    * Full V9 category-based scoring with Supabase persistence
    * 
@@ -1154,7 +1543,7 @@ export class V9GroupedReportFormatter {
       const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
       const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
       const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
-      
+
       // Group issues by detected category (Security, Performance, etc.)
       const issuesByCategory = {
         security: issues.filter(i => i.detectedCategory === 'Security'),
@@ -1163,7 +1552,7 @@ export class V9GroupedReportFormatter {
         dependency: issues.filter(i => i.detectedCategory === 'Dependencies'),
         codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
       };
-      
+
       // Calculate per-category scores
       const categoryScores = {
         security: this.calculateCategoryScore(issuesByCategory.security),
@@ -1172,7 +1561,7 @@ export class V9GroupedReportFormatter {
         dependency: this.calculateCategoryScore(issuesByCategory.dependency),
         codeQuality: this.calculateCategoryScore(issuesByCategory.codeQuality)
       };
-      
+
       // BUG FIX #44: Calculate APP score (minimum of categories - weakest link)
       const appScore = Math.min(
         categoryScores.security,
@@ -1181,11 +1570,11 @@ export class V9GroupedReportFormatter {
         categoryScores.dependency,
         categoryScores.codeQuality
       );
-      
+
       // BUG FIX #44: Calculate Skill score (AVERAGE of category scores)
       const skillScore = Math.round(
         (categoryScores.security + categoryScores.performance + categoryScores.architecture +
-         categoryScores.dependency + categoryScores.codeQuality) / 5
+          categoryScores.dependency + categoryScores.codeQuality) / 5
       );
 
       // FIX BUG #2: Calculate blocking issues (NEW + EXISTING_MODIFIED with CRITICAL/HIGH)
@@ -1197,12 +1586,12 @@ export class V9GroupedReportFormatter {
       // Save to Supabase with commit SHA for caching (BUG FIXES #7, #8, #9, #10)
       if (this.appScoreManager && metadata.repository) {
         console.log(`[V9ReportFormatter] 💾 Saving APP score: ${appScore}/100 for ${metadata.repository} PR #${metadata.prNumber || 0} (commit: ${metadata.commitSHA?.slice(0, 7) || 'unknown'})`);
-        
+
         const supabase = (this.appScoreManager as any).supabase;
         const { error } = await supabase.from('app_scores').insert({
           repo_name: metadata.repository,
           pr_number: metadata.prNumber || 0,
-          commit_sha: metadata.commitSHA || null,
+          commit_sha: metadata.commitSHA || undefined,
           overall_score: appScore,
           // BUG FIX #10: Map categoryScores to individual columns (not JSONB)
           security_score: categoryScores.security,
@@ -1220,24 +1609,24 @@ export class V9GroupedReportFormatter {
           // FIX BUG #2: Count blocking issues from NEW + EXISTING_MODIFIED with CRITICAL/HIGH severity
           blocking_issues_count: blockingIssuesCount
         });
-        
+
         if (error) {
           console.error('[V9ReportFormatter] ❌ Failed to save APP score:', error.message);
         } else {
           console.log('[V9ReportFormatter] ✅ APP score saved successfully');
         }
       }
-      
+
       if (this.skillScoreManager && metadata.prAuthorEmail && metadata.repository) {
         console.log(`[V9ReportFormatter] 💾 Saving Skill score: ${skillScore}/100 for ${metadata.prAuthorEmail} PR #${metadata.prNumber || 0} (commit: ${metadata.commitSHA?.slice(0, 7) || 'unknown'})`);
-        
+
         const supabase = (this.skillScoreManager as any).supabase;
         const { error } = await supabase.from('skill_scores').insert({
           developer_email: metadata.prAuthorEmail,
           developer_name: metadata.prAuthor || metadata.prAuthorEmail,
           repo_name: metadata.repository,
           pr_number: metadata.prNumber || 0,
-          commit_sha: metadata.commitSHA || null,
+          commit_sha: metadata.commitSHA || undefined,
           overall_score: skillScore,
           // BUG FIX #10: Map categoryScores to individual columns (not JSONB)
           security_score: categoryScores.security,
@@ -1253,14 +1642,14 @@ export class V9GroupedReportFormatter {
           medium_issues_count: issues.filter(i => i.severity === 'medium').length,
           low_issues_count: issues.filter(i => i.severity === 'low').length
         });
-        
+
         if (error) {
           console.error('[V9ReportFormatter] ❌ Failed to save Skill score:', error.message);
         } else {
           console.log('[V9ReportFormatter] ✅ Skill score saved successfully');
         }
       }
-      
+
       // Determine grade based on appScore
       let grade: string;
       if (appScore >= 90) grade = 'A';
@@ -1268,7 +1657,7 @@ export class V9GroupedReportFormatter {
       else if (appScore >= 70) grade = 'C';
       else if (appScore >= 60) grade = 'D';
       else grade = 'F';
-      
+
       return {
         score: appScore,
         grade,
@@ -1288,7 +1677,7 @@ export class V9GroupedReportFormatter {
       return this.calculateSimplifiedScore(issues);
     }
   }
-  
+
   /**
    * Calculate APP SCORE for a single category (Security, Performance, etc.)
    * BUG FIXES #20-23: Simplified scoring logic
@@ -1307,7 +1696,7 @@ export class V9GroupedReportFormatter {
   private _REMOVED_calculateCategoryScore_LEGACY(categoryIssues: EnrichedIssue[]): number {
     const BASE = 50;  // BUG FIX #35: Universal baseline 50/100 for all categories (neutral)
     let adjustment = 0;
-    
+
     categoryIssues.forEach(issue => {
       const weight = {
         critical: 5.0,
@@ -1315,7 +1704,7 @@ export class V9GroupedReportFormatter {
         medium: 1.0,
         low: 0.5
       }[issue.severity] || 1.0;
-      
+
       // Simple logic: All issues affect app health equally
       if (issue.category === 'RESOLVED') {
         adjustment += weight;  // Bonus for fixes
@@ -1324,10 +1713,10 @@ export class V9GroupedReportFormatter {
         adjustment -= weight;
       }
     });
-    
+
     return Math.max(0, Math.min(100, Math.round(BASE + adjustment)));
   }
-  
+
   /**
    * Simplified scoring (fallback when Supabase unavailable)
    */
@@ -1338,19 +1727,19 @@ export class V9GroupedReportFormatter {
   private _REMOVED_calculateSimplifiedScore_LEGACY(issues: EnrichedIssue[]): any {
     const baseScore = 100.0;
     let deduction = 0;
-    
+
     // Separate issues by category for breakdown
     const newIssues = issues.filter(i => i.category === 'NEW');
     const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
     const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
     const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
-    
+
     // Count blocking issues (critical or high severity NEW/EXISTING_MODIFIED)
-    const blockingIssues = issues.filter(i => 
-      (i.severity === 'critical' || i.severity === 'high') && 
+    const blockingIssues = issues.filter(i =>
+      (i.severity === 'critical' || i.severity === 'high') &&
       (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
     );
-    
+
     // Apply severity and category weights to calculate deduction
     issues.forEach(issue => {
       // Severity weight
@@ -1360,33 +1749,33 @@ export class V9GroupedReportFormatter {
         medium: 1.0,
         low: 0.5
       }[issue.severity] || 1.0;
-      
+
       // Category weight - NEW issues get full deduction, existing get reduced impact
       const categoryWeight = {
         'NEW': 1.0,                    // Full deduction (introduced in this PR)
         'EXISTING_MODIFIED': 0.5,      // 50% deduction (existing but touched)
         'EXISTING_REST': 0.1           // 10% deduction (existing, untouched)
       }[issue.category] || 0.1;
-      
+
       deduction += severityWeight * categoryWeight;
     });
-    
+
     // Extra penalty for blocking issues
     const blockingPenalty = blockingIssues.length * 2.5;
     deduction += blockingPenalty;
-    
+
     // Bonus for resolved issues (encourage fixing existing problems)
     const bonus = resolvedIssues.reduce((sum, issue) => {
       const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
       return sum + weight;
     }, 0);
-    
+
     // Calculate final score
     let finalScore = baseScore - deduction + bonus;
-    
+
     // Clamp score between 0 and 100
     finalScore = Math.max(0, Math.min(100, finalScore));
-    
+
     // Determine grade
     let grade: string;
     if (finalScore >= 90) grade = 'A';
@@ -1394,23 +1783,23 @@ export class V9GroupedReportFormatter {
     else if (finalScore >= 70) grade = 'C';
     else if (finalScore >= 60) grade = 'D';
     else grade = 'F';
-    
+
     // Calculate individual category deductions for breakdown
     const newIssuesDeduction = newIssues.reduce((sum, i) => {
       const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
       return sum + (weight * 1.0);
     }, 0);
-    
+
     const existingModifiedDeduction = existingModified.reduce((sum, i) => {
       const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
       return sum + (weight * 0.5);
     }, 0);
-    
+
     const existingRestDeduction = existingRest.reduce((sum, i) => {
       const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
       return sum + (weight * 0.1);
     }, 0);
-    
+
     return {
       score: Math.round(finalScore * 10) / 10,  // Round to 1 decimal
       grade,
@@ -1426,7 +1815,7 @@ export class V9GroupedReportFormatter {
       }
     };
   }
-  
+
   /**
    * Get quality score interpretation
    */
@@ -1467,7 +1856,7 @@ export class V9GroupedReportFormatter {
       };
     }
   }
-  
+
   /**
    * Generate executive summary
    */
@@ -1478,13 +1867,22 @@ export class V9GroupedReportFormatter {
   ): Promise<string> {
     const bySeverity = this.groupBySeverity(issues);
     const byCategory = this.groupByCategory(issues);
-    
+
+    // BUG-084 FIX: Group by detectedCategory for Category Scores filtering
+    const byDetectedCategory: Record<string, number> = {
+      'Security': issues.filter(i => i.detectedCategory === 'Security').length,
+      'Performance': issues.filter(i => i.detectedCategory === 'Performance').length,
+      'Architecture': issues.filter(i => i.detectedCategory === 'Architecture').length,
+      'Dependencies': issues.filter(i => i.detectedCategory === 'Dependencies').length,
+      'Code Quality': issues.filter(i => i.detectedCategory === 'Code Quality').length
+    };
+
     // Calculate blocking issues (NEW + EXISTING_MODIFIED with critical/high severity)
-    const blockingIssues = issues.filter(i => 
+    const blockingIssues = issues.filter(i =>
       (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
       (i.severity === 'critical' || i.severity === 'high')
     );
-    
+
     // Calculate quality score with full V9 scoring
     const qualityResult = await this.calculateQualityScore(issues, {
       repository: metadata.repository,
@@ -1494,14 +1892,23 @@ export class V9GroupedReportFormatter {
       prAuthorEmail: metadata.prAuthorEmail
     });
     const scoreInterpretation = this.getScoreInterpretation(qualityResult.score);
-    
-    // Calculate auto-fixable coverage
+
+    // Calculate auto-fixable coverage (two-tier system)
+    // Tier 1: Linter auto-fix (technical capability) = 84%
     const autoFixableGroups = groups.filter(g => this.canAutoFix(g));
-    const autoFixableIssues = issues.filter(i => 
+    // Tier 2: Safe auto-apply (safe subset) = 51%
+    const safeAutoApplyGroups = groups.filter(g => this.isSafeToAutoApply(g));
+    const autoFixableIssues = issues.filter(i =>
+      safeAutoApplyGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
+    );
+
+    // BUG-083 FIX: Calculate ALL technically auto-fixable issues (Tier 1 + Tier 2)
+    // This includes both safe auto-apply and those requiring review
+    const technicallyAutoFixableIssues = issues.filter(i =>
       autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
     );
     const fixCoverage = issues.length > 0 ? (autoFixableIssues.length / issues.length * 100) : 0;
-    
+
     return `## 📊 Executive Summary
 
 ### Quality Score
@@ -1513,12 +1920,7 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
 **Score Breakdown**:
 ${qualityResult.categoryScores ? `
 **Category Scores** (Repository Health):
-- 🔒 Security: ${qualityResult.categoryScores.security}/100
-- ⚡ Performance: ${qualityResult.categoryScores.performance}/100
-- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100
-- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100
-- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100
-
+${byDetectedCategory['Security'] > 0 ? `- 🔒 Security: ${qualityResult.categoryScores.security}/100\n` : ''}${byDetectedCategory['Performance'] > 0 ? `- ⚡ Performance: ${qualityResult.categoryScores.performance}/100\n` : ''}${byDetectedCategory['Architecture'] > 0 ? `- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100\n` : ''}${byDetectedCategory['Dependencies'] > 0 ? `- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100\n` : ''}${byDetectedCategory['Code Quality'] > 0 ? `- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100\n` : ''}
 **Overall Scores**:
 - 📱 **APP Score**: ${qualityResult.appScore}/100 (MIN of categories - "weakest link")
 - 👨‍💻 **Skill Score**: ${qualityResult.skillScore}/100 (AVG of categories)
@@ -1526,16 +1928,37 @@ ${qualityResult.categoryScores ? `
 > Scores saved to Supabase for tracking trends over time
 
 ${(() => {
-  // Enhancement #1: Calculate auto-fixable issues
-  const autoFixableGroups = groups.filter(g => this.canAutoFix(g));
-  const autoFixableCount = autoFixableGroups.reduce((sum, g) => sum + g.count, 0);
-  const autoFixPercent = issues.length > 0 ? Math.round((autoFixableCount / issues.length) * 100) : 0;
-  
-  if (autoFixableCount > 0) {
-    return `\n> 🚀 **Quick Win**: ${autoFixableCount.toLocaleString()} issues (${autoFixPercent}%) can be automatically fixed using the attached manifest file!\n`;
-  }
-  return '';
-})()}
+          // Enhancement #1: Calculate all three tiers of fixes
+          const safeAutoApplyGroups = groups.filter(g => this.isSafeToAutoApply(g));
+          const safeAutoApplyCount = safeAutoApplyGroups.reduce((sum, g) => sum + g.count, 0);
+          const safeAutoApplyPercent = issues.length > 0 ? Math.round((safeAutoApplyCount / issues.length) * 100) : 0;
+
+          const advancedAutoFixGroups = groups.filter(g => this.canAutoFix(g));
+          const advancedAutoFixCount = advancedAutoFixGroups.reduce((sum, g) => sum + g.count, 0);
+          const advancedAutoFixPercent = issues.length > 0 ? Math.round((advancedAutoFixCount / issues.length) * 100) : 0;
+
+          // Calculate manual review count (issues not auto-fixable)
+          const manualReviewCount = issues.length - advancedAutoFixCount;
+          const manualReviewPercent = issues.length > 0 ? Math.round((manualReviewCount / issues.length) * 100) : 0;
+
+          // Always show all three tiers to account for 100% of issues
+          const tier1Text = safeAutoApplyCount > 0
+            ? `${safeAutoApplyCount.toLocaleString()} issues (${safeAutoApplyPercent}%) - Apply immediately, no testing needed`
+            : `0 issues - No simple fixes available`;
+
+          const tier2Text = advancedAutoFixCount > 0
+            ? `${advancedAutoFixCount.toLocaleString()} issues (${advancedAutoFixPercent}%) - Requires testing before applying`
+            : `0 issues - No advanced fixes available`;
+
+          const tier3Text = manualReviewCount > 0
+            ? `${manualReviewCount.toLocaleString()} issues (${manualReviewPercent}%) - AI provides fix guidance`
+            : `0 issues - All issues are auto-fixable!`;
+
+          return `\n> 🚀 **Fix Recommendations** (100% Coverage):
+> - 🟢 **Safe Auto-Fix (Tier 1)**: ${tier1Text}
+> - 🟡 **Advanced Auto-Fix (Tier 2)**: ${tier2Text}
+> - 🔴 **Manual Review (Tier 3)**: ${tier3Text}\n`;
+        })()}
 ` : `
 - Base Score: 100.0
 
@@ -1571,6 +1994,49 @@ ${qualityResult.breakdown.resolutionBonus > 0 ? `
 
 **Total Issues**: ${issues.length.toLocaleString()} (${groups.length} unique types)
 
+${(() => {
+        // BUG-083 FIX: Clear distinction between Manual Review and Auto-Fixable
+        const autoFixCount = technicallyAutoFixableIssues.length;
+        const manualCount = issues.length - autoFixCount;
+        const autoFixPercent = issues.length > 0 ? ((autoFixCount / issues.length) * 100).toFixed(1) : '0.0';
+        const manualPercent = issues.length > 0 ? ((manualCount / issues.length) * 100).toFixed(1) : '0.0';
+
+        return `**Action Required**:
+- 🔴 **Manual Review**: ${manualCount.toLocaleString()} issues (${manualPercent}%) - Requires developer attention
+- 🚀 **Auto-Fixable**: ${autoFixCount.toLocaleString()} issues (${autoFixPercent}%) - Can be fixed automatically via IDE
+${(() => {
+            // BUG FIX: List specific manual review items so user knows what to focus on
+            if (manualCount === 0) return '';
+
+            const manualIssues = issues.filter(i =>
+              !autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
+            );
+
+            // Group by file for cleaner reading
+            const byFile: Record<string, typeof manualIssues> = {};
+            manualIssues.forEach(i => {
+              if (!byFile[i.file]) byFile[i.file] = [];
+              byFile[i.file].push(i);
+            });
+
+            let checklist = `\n### 📋 Manual Review Checklist\n\nThese ${manualCount} issues cannot be auto-fixed and require your expertise:\n\n`;
+
+            Object.entries(byFile).slice(0, 10).forEach(([file, fileIssues]) => {
+              checklist += `**${file}**\n`;
+              fileIssues.forEach(i => {
+                checklist += `- [ ] Line ${i.line}: **${i.rule}** (${i.severity}) - ${i.message}\n`;
+              });
+              checklist += `\n`;
+            });
+
+            if (Object.keys(byFile).length > 10) {
+              checklist += `*(...and ${Object.keys(byFile).length - 10} more files)*\n`;
+            }
+
+            return checklist;
+          })()}`;
+      })()}
+
 **By Severity**:
 - 🔴 Critical: ${bySeverity.critical} (${((bySeverity.critical / issues.length) * 100).toFixed(1)}%)
 - 🟠 High: ${bySeverity.high} (${((bySeverity.high / issues.length) * 100).toFixed(1)}%)
@@ -1580,54 +2046,54 @@ ${qualityResult.breakdown.resolutionBonus > 0 ? `
 **By Category & Severity**:
 
 ${(() => {
-  // Calculate severity breakdown per category
-  const categorySeverity = {
-    NEW: { critical: 0, high: 0, medium: 0, low: 0 },
-    EXISTING_MODIFIED: { critical: 0, high: 0, medium: 0, low: 0 },
-    RESOLVED: { critical: 0, high: 0, medium: 0, low: 0 },
-    EXISTING_REST: { critical: 0, high: 0, medium: 0, low: 0 }
-  };
+        // Calculate severity breakdown per category
+        const categorySeverity = {
+          NEW: { critical: 0, high: 0, medium: 0, low: 0 },
+          EXISTING_MODIFIED: { critical: 0, high: 0, medium: 0, low: 0 },
+          RESOLVED: { critical: 0, high: 0, medium: 0, low: 0 },
+          EXISTING_REST: { critical: 0, high: 0, medium: 0, low: 0 }
+        };
 
-  issues.forEach(issue => {
-    const cat = issue.category as keyof typeof categorySeverity;
-    const sev = issue.severity;
-    if (categorySeverity[cat]) {
-      categorySeverity[cat][sev] = (categorySeverity[cat][sev] || 0) + 1;
-    }
-  });
+        issues.forEach(issue => {
+          const cat = issue.category as keyof typeof categorySeverity;
+          const sev = issue.severity;
+          if (categorySeverity[cat]) {
+            categorySeverity[cat][sev] = (categorySeverity[cat][sev] || 0) + 1;
+          }
+        });
 
-  return `| Category | Critical | High | Medium | Low | Total |
+        return `| Category | Critical | High | Medium | Low | Total |
 |----------|----------|------|--------|-----|-------|
 | 🆕 NEW | ${categorySeverity.NEW.critical} | ${categorySeverity.NEW.high} | ${categorySeverity.NEW.medium} | ${categorySeverity.NEW.low} | **${byCategory.NEW}** |
 | ⚠️ EXISTING_MODIFIED | ${categorySeverity.EXISTING_MODIFIED.critical} | ${categorySeverity.EXISTING_MODIFIED.high} | ${categorySeverity.EXISTING_MODIFIED.medium} | ${categorySeverity.EXISTING_MODIFIED.low} | **${byCategory.EXISTING_MODIFIED}** |
 | ✅ RESOLVED | ${categorySeverity.RESOLVED.critical} | ${categorySeverity.RESOLVED.high} | ${categorySeverity.RESOLVED.medium} | ${categorySeverity.RESOLVED.low} | **${byCategory.RESOLVED}** |
 | 📝 EXISTING_REST | ${categorySeverity.EXISTING_REST.critical} | ${categorySeverity.EXISTING_REST.high} | ${categorySeverity.EXISTING_REST.medium} | ${categorySeverity.EXISTING_REST.low} | **${byCategory.EXISTING_REST}** |
 | **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** |`;
-})()}
+      })()}
 
 **App Health Score by Category**:
 
 ${(() => {
-  // BUG #4 FIX: Show APP scores (baseScore=100) for clarity
-  // Developer Skill scores (baseScore=50) are shown in "Skills Growth Tracker" section
-  const byDetectedCategory: Record<string, {critical: number, high: number, medium: number, low: number, total: number}> = {
-    'Security': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
-    'Performance': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
-    'Architecture': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
-    'Dependencies': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
-    'Code Quality': { critical: 0, high: 0, medium: 0, low: 0, total: 0 }
-  };
+        // BUG #4 FIX: Show APP scores (baseScore=100) for clarity
+        // Developer Skill scores (baseScore=50) are shown in "Skills Growth Tracker" section
+        const byDetectedCategory: Record<string, { critical: number, high: number, medium: number, low: number, total: number }> = {
+          'Security': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+          'Performance': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+          'Architecture': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+          'Dependencies': { critical: 0, high: 0, medium: 0, low: 0, total: 0 },
+          'Code Quality': { critical: 0, high: 0, medium: 0, low: 0, total: 0 }
+        };
 
-  issues.forEach(issue => {
-    const cat = issue.detectedCategory || 'Code Quality';
-    if (byDetectedCategory[cat]) {
-      const sev = issue.severity;
-      byDetectedCategory[cat][sev] = (byDetectedCategory[cat][sev] || 0) + 1;
-      byDetectedCategory[cat].total += 1;
-    }
-  });
+        issues.forEach(issue => {
+          const cat = issue.detectedCategory || 'Code Quality';
+          if (byDetectedCategory[cat]) {
+            const sev = issue.severity;
+            byDetectedCategory[cat][sev] = (byDetectedCategory[cat][sev] || 0) + 1;
+            byDetectedCategory[cat].total += 1;
+          }
+        });
 
-  return `| Category | Critical | High | Medium | Low | Total | Score |
+        return `| Category | Critical | High | Medium | Low | Total | Score |
 |----------|----------|------|--------|-----|-------|-------|
 | 🔒 Security | ${byDetectedCategory['Security'].critical} | ${byDetectedCategory['Security'].high} | ${byDetectedCategory['Security'].medium} | ${byDetectedCategory['Security'].low} | **${byDetectedCategory['Security'].total}** | **${qualityResult.breakdown?.categoryScores?.security ?? qualityResult.categoryScores?.security ?? 'N/A'}/100** |
 | ⚡ Performance | ${byDetectedCategory['Performance'].critical} | ${byDetectedCategory['Performance'].high} | ${byDetectedCategory['Performance'].medium} | ${byDetectedCategory['Performance'].low} | **${byDetectedCategory['Performance'].total}** | **${qualityResult.breakdown?.categoryScores?.performance ?? qualityResult.categoryScores?.performance ?? 'N/A'}/100** |
@@ -1635,7 +2101,7 @@ ${(() => {
 | 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.categoryScores?.dependency ?? qualityResult.categoryScores?.dependency ?? 'N/A'}/100** |
 | ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.categoryScores?.codeQuality ?? qualityResult.categoryScores?.codeQuality ?? 'N/A'}/100** |
 | **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** | - |`;
-})()}
+      })()}
 
 > **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
 
@@ -1659,6 +2125,54 @@ ${this.SHOW_FIX_COVERAGE ? `**Fix Coverage**:
 
 ---
 
+### 🤖 AI Fix Recommendations & Auto-Fix Capability
+
+**Two-Tier Fix System**:
+
+1. **Fix Recommendations (100% Coverage)** ✅
+   - AI generates code fixes for ALL ${issues.length.toLocaleString()} issues
+   - Shows WHAT to change, WHY it matters, and HOW to fix it
+   - Educational guidance for developers
+
+2. **Safe Auto-Apply (${((autoFixableIssues.length / issues.length) * 100).toFixed(1)}% Coverage)** 🚀
+   - ${autoFixableIssues.length.toLocaleString()} issues marked \`safe_auto_apply: true\`
+   - High-confidence fixes that can be applied without review
+   - Remaining ${(issues.length - autoFixableIssues.length).toLocaleString()} issues have fixes but need developer review
+
+**Three-Tier Fix System** (see "Fix Recommendations" above):
+
+CodeQual uses a deterministic fix routing system to maximize automation while maintaining safety:
+
+${(() => {
+        const breakdown = this.calculateTierBreakdown(groups);
+        return `**Fix Tier Breakdown**:
+- 🟢 **Tier 1 (Native Tools)**: ${breakdown.tier1.issues.toLocaleString()} issues (${breakdown.tier1.percent.toFixed(1)}%) - \`eslint --fix\`, \`ruff --fix\`, etc. (95% confidence)
+- 🟡 **Tier 2 (Dedicated Fixers)**: ${breakdown.tier2.issues.toLocaleString()} issues (${breakdown.tier2.percent.toFixed(1)}%) - Sorald, autoflake, OpenRewrite (85% confidence)
+- 🟠 **Tier 3 (AI Fallback)**: ${breakdown.tier3.issues.toLocaleString()} issues (${breakdown.tier3.percent.toFixed(1)}%) - AI-generated fixes requiring review (60% confidence)
+
+**Auto-Fix Coverage**: ${breakdown.autoFixable.toLocaleString()} issues (${breakdown.autoFixPercent.toFixed(1)}%) can be automatically fixed (Tier 1 + Tier 2)`;
+      })()}
+
+**Confidence Breakdown**:
+${(() => {
+        const byConfidence: Record<string, number> = { high: 0, medium: 0, low: 0 };
+        // Count issues by their group's confidence level
+        groups.forEach(group => {
+          const conf = this.determineConfidence(group);
+          byConfidence[conf] = (byConfidence[conf] || 0) + group.count;
+        });
+        const total = issues.length || 1;
+        return `- 🟢 **High Confidence**: ${byConfidence.high} issues (${((byConfidence.high / total) * 100).toFixed(1)}%) - Safe to auto-apply
+- 🟡 **Medium Confidence**: ${byConfidence.medium} issues (${((byConfidence.medium / total) * 100).toFixed(1)}%) - Review recommended
+- 🟠 **Low Confidence**: ${byConfidence.low} issues (${((byConfidence.low / total) * 100).toFixed(1)}%) - Requires careful review`;
+      })()}
+
+> 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
+>
+> **All issues have guidance** - you're never left wondering how to fix something.
+
+---
+
 ### 🔑 Key Findings
 
 ${this.generateKeyFindings(issues, groups, blockingIssues)}
@@ -1679,9 +2193,11 @@ ${this.generateQuickWins(groups, autoFixableGroups)}
 
 ### 📈 Trends & Recommendations
 
+<!-- NOTE: This section will be enhanced later when API service and CI/CD integration is complete -->
+<!-- For now, keeping minimal recommendations only -->
 ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   }
-  
+
   /**
    * Generate key findings for executive summary
    */
@@ -1691,11 +2207,11 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
   private _REMOVED_generateKeyFindings_LEGACY(issues: EnrichedIssue[], groups: IssueGroup[], blockingIssues: EnrichedIssue[]): string {
     const findings: string[] = [];
-    
+
     // Finding 1: Overall quality assessment
     const newIssues = issues.filter(i => i.category === 'NEW');
     const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
-    
+
     if (newIssues.length === 0 && resolvedIssues.length > 0) {
       findings.push(`✅ **Excellent PR**: No new issues introduced and ${resolvedIssues.length} existing issues fixed`);
     } else if (blockingIssues.length > 0) {
@@ -1705,13 +2221,13 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     } else {
       findings.push(`⚠️ **Attention Needed**: ${newIssues.length} new issues introduced, consider code review`);
     }
-    
+
     // Finding 2: Most common issue type
     const topGroup = groups.sort((a, b) => b.count - a.count)[0];
     if (topGroup && topGroup.count > 10) {
       findings.push(`📊 **Most Common**: ${this.getUserFriendlyTitle(topGroup.rule, topGroup.tool)} appears ${topGroup.count} times`);
     }
-    
+
     // Finding 3: Security concerns
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
     const criticalSecurity = securityIssues.filter(i => i.severity === 'critical');
@@ -1722,19 +2238,19 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     } else {
       findings.push(`✅ **Security**: No security vulnerabilities detected`);
     }
-    
+
     // Finding 4: Auto-fix availability
     const autoFixable = groups.filter(g => this.canAutoFix(g));
     if (autoFixable.length > 0) {
-      const autoFixableCount = issues.filter(i => 
+      const autoFixableCount = issues.filter(i =>
         autoFixable.some(g => g.rule === i.rule && g.tool === i.tool)
       ).length;
       findings.push(`🔧 **Auto-Fix Available**: ${autoFixableCount} issues can be fixed automatically (see IDE integration files)`);
     }
-    
+
     return findings.map(f => `- ${f}`).join('\n');
   }
-  
+
   /**
    * Generate critical blockers section
    */
@@ -1750,7 +2266,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     if (blockingIssues.length === 0) {
       return `✅ **No critical blockers** - PR can be merged once reviewed\n\nAll identified issues are either low/medium severity or in unchanged code.`;
     }
-    
+
     // Group blockers by rule and compute priority score (severity > category > spread)
     const severityWeight = (sev: string) => sev === 'critical' ? 100 : sev === 'high' ? 60 : 0;
     const categoryWeight = (cat?: string) => {
@@ -1771,20 +2287,20 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         return { group: g, matches, filesSpread, score };
       })
       .sort((a, b) => b.score - a.score);
-    
+
     let content = `⛔ **${blockingIssues.length} issues must be fixed before merge**\n\n`;
     content += `**Fix Order (highest priority first):**\n\n`;
-    
+
     blockerGroups.forEach((entry, idx) => {
       const { group, matches, filesSpread, score } = entry;
       const icon = group.severity === 'critical' ? '🔴' : '🟠';
       content += `${idx + 1}. ${icon} **${this.getUserFriendlyTitle(group.rule, group.tool)}**\n`;
       content += `   - Severity: ${group.severity.toUpperCase()}\n`;
       content += `   - Category: ${group.detectedCategory || 'Code Quality'}\n`;
-    content += `   - Occurrences: ${group.count} (in ${filesSpread} files)\n`;
-    content += `   - Priority Score: ${score}\n`;
-    content += `     *(Priority = Severity[${severityWeight(group.severity)}] + Category[${categoryWeight(group.detectedCategory)}] + File Spread[log₂(${filesSpread})×10])*\n`;
-    // Include all example locations for clarity (may be long for large spreads)
+      content += `   - Occurrences: ${group.count} (in ${filesSpread} files)\n`;
+      content += `   - Priority Score: ${score}\n`;
+      content += `     *(Priority = Severity[${severityWeight(group.severity)}] + Category[${categoryWeight(group.detectedCategory)}] + File Spread[log₂(${filesSpread})×10])*\n`;
+      // Include all example locations for clarity (may be long for large spreads)
       const examples = matches.map(i => `${i.file}:${i.line || 0}`);
       if (examples.length > 0) {
         content += `   - Examples:\n`;
@@ -1792,7 +2308,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       }
       content += `\n`;
     });
-    
+
     // BUG FIX #29: Add detailed Priority Score explanation footnote
     content += `\n---\n\n`;
     content += `**📘 Priority Score Calculation**\n\n`;
@@ -1815,10 +2331,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     content += `   - Rationale: Issues spread across many files require more effort to fix\n\n`;
     content += `**Formula**: \`Priority = Severity + Category + File Spread\`\n\n`;
     content += `**Example**: A critical security issue in 4 files = 100 + 30 + 20 = **150 points**\n`;
-    
+
     return content;
   }
-  
+
   /**
    * Generate quick wins section
    */
@@ -1830,92 +2346,105 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     if (autoFixableGroups.length === 0) {
       return `No auto-fixable issues identified. Manual fixes required for all issues.`;
     }
-    
+
     // Sort by impact (high count + low severity = quick win)
     const quickWins = autoFixableGroups
       .filter(g => g.severity === 'medium' || g.severity === 'low')
       .sort((a, b) => b.count - a.count)
       .slice(0, 5); // Top 5 quick wins
-    
+
     if (quickWins.length === 0) {
       return `Auto-fix available for ${autoFixableGroups.length} critical/high issues (not quick wins, but important).`;
     }
-    
+
     let content = `**${quickWins.reduce((sum, g) => sum + g.count, 0)} issues** can be fixed automatically with **minimal effort**:\n\n`;
-    
+
     quickWins.forEach((group, idx) => {
       content += `${idx + 1}. **${this.getUserFriendlyTitle(group.rule, group.tool)}** (${group.count} occurrences)\n`;
       content += `   - Effort: Low (automated fix available)\n`;
       content += `   - Impact: Improves code quality and consistency\n`;
       content += `   - Action: Download IDE fix file from attachments\n\n`;
     });
-    
+
     content += `> 💡 **Tip**: Use Cursor IDE integration to apply all fixes with one click!`;
-    
+
     return content;
   }
-  
+
   /**
    * Generate trends and recommendations for leadership
    */
   private async generateTrendsAndRecommendations(issues: EnrichedIssue[], metadata: any): Promise<string> {
     let content = '';
-    
+
     // Trend analysis (if we have skill score manager and author info)
     if (this.skillScoreManager && metadata.prAuthorEmail) {
       try {
         const history = await this.skillScoreManager.getScoreTrend(
-          metadata.prAuthorEmail, 
+          metadata.prAuthorEmail,
           metadata.repository
         );
-        
+
         if (history && history.length > 1 && !history.every((v: number) => v === history[0])) {
-          const trend = history[history.length - 1] > history[0] ? 'improving' : 
-                       history[history.length - 1] < history[0] ? 'declining' : 'stable';
+          const trend = history[history.length - 1] > history[0] ? 'improving' :
+            history[history.length - 1] < history[0] ? 'declining' : 'stable';
           const trendIcon = trend === 'improving' ? '📈' : trend === 'declining' ? '📉' : '➡️';
-          
-          content += `**Developer Trend**: ${trendIcon} Code quality is **${trend}**\n`;
+
+          content += `**Your Performance Trend**: ${trendIcon} Code quality is **${trend}**\n`;
           content += `- Last ${history.length} PRs: ${history.join(' → ')}\n`;
-          content += trend === 'improving' 
+          content += trend === 'improving'
             ? `- ✅ Positive trajectory - keep up the good work!\n\n`
             : trend === 'declining'
-            ? `- ⚠️ Declining quality - consider pair programming or additional reviews\n\n`
-            : `- Consistent quality - maintain current practices\n\n`;
+              ? `- ⚠️ Declining quality - consider pair programming or additional reviews\n\n`
+              : `- Consistent quality - maintain current practices\n\n`;
         }
       } catch (error) {
         // Silent fail - trend is optional
       }
     }
-    
+
     // Leadership recommendations
-    content += `**Recommendations for Leadership:**\n\n`;
-    
+    // NOTE: This section will be enhanced later when API service and CI/CD integration is complete
+    // For now, we'll keep it minimal or remove it based on user preference
+
     const newIssues = issues.filter(i => i.category === 'NEW');
-    const criticalCount = issues.filter(i => i.severity === 'critical').length;
+    // BUG-080 FIX: Count both CRITICAL and HIGH severity NEW/EXISTING_MODIFIED issues as blocking
+    // HIGH severity issues are also blockers, not just critical
+    const blockingIssues = issues.filter(i =>
+      (i.severity === 'critical' || i.severity === 'high') &&
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
+    );
+    const blockingCount = blockingIssues.length;
+    const criticalCount = blockingIssues.filter(i => i.severity === 'critical').length;
+    const highCount = blockingIssues.filter(i => i.severity === 'high').length;
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
-    
-    // Enhancement #1: Auto-fix mention in recommendations
-    const autoFixableIssues = issues.filter(i => 
-      this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
+
+    // Enhancement #1: Auto-fix mention in recommendations (safe auto-apply subset)
+    const autoFixableIssues = issues.filter(i =>
+      this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
     const autoFixPercent = issues.length > 0 ? Math.round((autoFixableIssues.length / issues.length) * 100) : 0;
-    
+
     if (autoFixableIssues.length > 0) {
       content += `🚀 **Quick Win**: Use the attached manifest file to automatically fix ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) - saving significant development time!\n\n`;
     }
-    
-    if (criticalCount > 0) {
-      content += `1. **Immediate Action**: ${criticalCount} critical issues require senior developer review before deployment\n`;
+
+    if (blockingCount > 0) {
+      // BUG-080 FIX: Show breakdown of critical vs high severity blocking issues
+      const criticalMsg = criticalCount > 0 ? `${criticalCount} critical` : '';
+      const highMsg = highCount > 0 ? `${highCount} high` : '';
+      const severityBreakdown = [criticalMsg, highMsg].filter(m => m).join(' and ');
+      content += `1. **Immediate Action**: ${blockingCount} blocking issues (${severityBreakdown}) require review before deployment\n`;
     } else {
-      content += `1. **Quality Status**: No critical issues - PR meets baseline quality standards\n`;
+      content += `1. **Quality Status**: No blocking issues - PR meets baseline quality standards\n`;
     }
-    
+
     if (securityIssues.length > 5) {
       content += `2. **Security Training**: Consider security training for the team (${securityIssues.length} security issues found)\n`;
     } else {
       content += `2. **Security Posture**: Security practices are adequate\n`;
     }
-    
+
     if (newIssues.length > 50) {
       content += `3. **Code Review Process**: High issue count (${newIssues.length} new) suggests need for more thorough pre-commit review\n`;
     } else {
@@ -1924,8 +2453,8 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         content += `3. **Development Velocity**: Issue count is manageable - good balance of speed and quality\n`;
       }
     }
-    
-    const autoFixable = issues.filter(i => 
+
+    const autoFixable = issues.filter(i =>
       this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
     if (autoFixable.length > issues.length * 0.3) {
@@ -1935,10 +2464,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         content += `4. **Code Quality**: Most issues require manual attention - allocate development time accordingly\n`;
       }
     }
-    
+
     return content;
   }
-  
+
   /**
    * Convert technical rule name to user-friendly title
    * Phase D: User-friendly titles
@@ -1946,7 +2475,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   private getUserFriendlyTitle(rule: string, tool: string): string {
     return getUserFriendlyTitle(rule, tool);
   }
-  
+
   /**
    * Detect issue category from rule name, tool, and message
    * Phase E: Category-specific enhancements
@@ -1954,7 +2483,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   private detectCategory(rule: string, tool: string, message: string): string {
     return detectCategory(rule, tool, message);
   }
-  
+
   /**
    * Calculate risk level based on category and severity
    * Phase E: Risk assessment
@@ -1968,7 +2497,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   } {
     return calculateRiskLevel(category, severity, rule);
   }
-  
+
   /**
    * Get category-specific context and guidance
    * Phase E: Category-aware recommendations
@@ -1982,7 +2511,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   } {
     return getCategoryContext(category, severity);
   }
-  
+
   /**
    * Get priority guidance for fixing issues
    * Phase E: Priority-based action plan
@@ -2000,7 +2529,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   } {
     return getPriorityGuidance(category, severity, count, riskLevel);
   }
-  
+
   /**
    * Generate comprehensive issue description
    * Phase D: What/Why/Causes/Impact
@@ -2113,7 +2642,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         ],
         impact: 'Credential theft, unauthorized access, data breaches, and complete system compromise. Violates all security compliance standards.'
       },
-      
+
       // ===== Exception Handling =====
       'AvoidThrowingRawExceptionTypes': {
         what: 'Code throws generic exception types (Exception, RuntimeException, Throwable) instead of specific exception classes.',
@@ -2137,7 +2666,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         ],
         impact: 'System instability, inability to recover from fatal errors, and difficult-to-diagnose runtime issues.'
       },
-      
+
       // ===== Logging & Debugging =====
       'SystemPrintln': {
         what: 'Using System.out.println() or System.err.println() for output instead of a proper logging framework.',
@@ -2172,7 +2701,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         ],
         impact: 'Security information disclosure, no centralized error logging, difficult production debugging, and poor error analytics.'
       },
-      
+
       // ===== Concurrency =====
       'AvoidUsingVolatile': {
         what: 'Using the volatile keyword for thread synchronization instead of proper concurrency utilities.',
@@ -2207,7 +2736,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         ],
         impact: 'Subtle race conditions leading to partially-constructed objects, random crashes, and data corruption that\'s extremely hard to debug.'
       },
-      
+
       // ===== Performance =====
       'UseStringBufferForStringAppends': {
         what: 'Using string concatenation (+) in loops instead of StringBuilder/StringBuffer.',
@@ -2242,7 +2771,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         ],
         impact: 'Wasted memory allocations, buffer resizing overhead, and negated performance benefits of StringBuilder.'
       },
-      
+
       // ===== Code Quality =====
       'ClassWithOnlyPrivateConstructorsShouldBeFinal': {
         what: 'Utility class with only private constructors is not marked as final.',
@@ -2288,7 +2817,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         ],
         impact: 'Subtle bugs in subclasses, uninitialized state access, NullPointerExceptions, and hard-to-debug inheritance issues.'
       },
-      
+
       // ===== Resource Management =====
       'CloseResource': {
         what: 'File, stream, socket, or database connection is opened but not properly closed in finally block or try-with-resources.',
@@ -2313,7 +2842,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Higher risk of resource leaks, more verbose code, potential for forgotten close() calls, and missing exception suppression.'
       }
     };
-    
+
     // Normalize rule name - remove duplicate suffix (e.g., "command-injection.command-injection" → "command-injection")
     let normalizedRule = rule;
     const parts = rule.split('.');
@@ -2321,27 +2850,27 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       // Remove duplicate suffix
       normalizedRule = parts.slice(0, -1).join('.');
     }
-    
+
     // Try exact match with normalized rule
     if (descriptions[normalizedRule]) {
       return descriptions[normalizedRule];
     }
-    
+
     // Try exact match with original rule
     if (descriptions[rule]) {
       return descriptions[rule];
     }
-    
+
     // Try case-insensitive match
     const ruleLower = normalizedRule.toLowerCase();
     const matchingKey = Object.keys(descriptions).find(key => key.toLowerCase() === ruleLower);
     if (matchingKey) {
       return descriptions[matchingKey];
     }
-    
+
     // BUG FIX #55 & #56: Smart fallback logic for common patterns
     const ruleText = rule.toLowerCase();
-    
+
     // SQL Injection patterns
     if (ruleText.includes('sql') || ruleText.includes('injection')) {
       return {
@@ -2356,7 +2885,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Complete database compromise, data breaches affecting customer data, compliance violations (GDPR, SOC2, PCI-DSS), financial losses, and reputational damage. This is OWASP Top 10 #1 vulnerability.'
       };
     }
-    
+
     // CVE (Dependency vulnerabilities)
     if (ruleText.startsWith('cve-') || tool.toLowerCase() === 'dependency-check') {
       const cveMatch = rule.match(/CVE-(\d{4})-(\d+)/i);
@@ -2373,7 +2902,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: `${severity === 'critical' ? 'Critical' : 'High'} security risk with publicly available exploits. Could lead to remote code execution, data theft, or system compromise. Compliance frameworks (SOC2, ISO 27001) require timely patching of known vulnerabilities.`
       };
     }
-    
+
     // Command Injection patterns
     if (ruleText.includes('command') || ruleText.includes('exec') || ruleText.includes('process')) {
       return {
@@ -2388,7 +2917,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Complete system compromise, unauthorized data access, malware installation, lateral movement to other systems, and potential supply chain attacks. OWASP Top 10 A03:2021 (Injection).'
       };
     }
-    
+
     // XSS patterns
     if (ruleText.includes('xss') || ruleText.includes('cross-site')) {
       return {
@@ -2403,7 +2932,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Session hijacking, credential theft, malware distribution, defacement, and phishing attacks. OWASP Top 10 A03:2021 (Injection).'
       };
     }
-    
+
     // Path Traversal
     if (ruleText.includes('path') || ruleText.includes('traversal') || ruleText.includes('directory')) {
       return {
@@ -2418,7 +2947,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Exposure of sensitive files (/etc/passwd, database credentials, API keys), source code leaks, and potential remote code execution when combined with file upload.'
       };
     }
-    
+
     // Weak Crypto
     if (ruleText.includes('crypto') || ruleText.includes('cipher') || ruleText.includes('hash') || ruleText.includes('md5') || ruleText.includes('sha1')) {
       return {
@@ -2433,7 +2962,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Data confidentiality breach, password cracking, authentication bypass, compliance violations (PCI-DSS requires AES-256), and regulatory fines.'
       };
     }
-    
+
     // Logging/Performance
     if (ruleText.includes('log') || ruleText.includes('guard') || ruleText.includes('performance')) {
       return {
@@ -2448,7 +2977,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         impact: 'Unnecessary CPU overhead (5-15% in high-throughput systems), increased garbage collection, reduced throughput, higher cloud costs, and poor scalability under load.'
       };
     }
-    
+
     // Generic description based on tool and severity (last resort)
     const genericWhat = `This issue was detected by ${tool} as a ${severity} severity problem. Rule: ${rule}`;
     const genericWhy = severity === 'critical' || severity === 'high'
@@ -2460,10 +2989,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       'Quick implementation without following standards',
       'Lack of code review or static analysis integration'
     ];
-    const genericImpact = severity === 'critical' || severity === 'high' 
+    const genericImpact = severity === 'critical' || severity === 'high'
       ? 'Could lead to security breaches, data loss, system instability, or production outages. Requires immediate attention.'
       : 'May reduce code quality, increase maintenance costs, and accumulate technical debt over time.';
-    
+
     return {
       what: genericWhat,
       why: genericWhy,
@@ -2471,14 +3000,14 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       impact: genericImpact
     };
   }
-  
+
   /**
    * BUG FIX #65: Generate generic fix guidance when AI enrichment is not available
    */
   private getGenericFixGuidance(rule: string, tool: string, severity: string): string {
     const ruleLower = rule.toLowerCase();
     const toolLower = tool.toLowerCase();
-    
+
     // SQL Injection
     if (ruleLower.includes('sql') || ruleLower.includes('injection')) {
       return `**Fix Strategy**:
@@ -2492,7 +3021,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Validate and sanitize all user input
 4. Never trust external data sources`;
     }
-    
+
     // CVE/Dependency issues
     if (ruleLower.startsWith('cve-') || toolLower === 'dependency-check') {
       const cveMatch = rule.match(/CVE-(\d{4})-(\d+)/i);
@@ -2504,7 +3033,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 4. Test thoroughly after updating to ensure compatibility
 5. Consider using automated dependency scanning in CI/CD`;
     }
-    
+
     // Logging/Performance
     if (ruleLower.includes('log') || ruleLower.includes('guard')) {
       return `**Fix Strategy**:
@@ -2519,7 +3048,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Avoid calling expensive methods (toString(), JSON serialization) in log statements
 4. Consider using structured logging for production`;
     }
-    
+
     // Command Injection
     if (ruleLower.includes('command') || ruleLower.includes('exec') || ruleLower.includes('process')) {
       return `**Fix Strategy**:
@@ -2532,7 +3061,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Avoid shell invocation entirely - use Java APIs instead
 4. Never concatenate user input into command strings`;
     }
-    
+
     // BUG FIX #74: Add specific guidance for common PMD rules
     // System.out.println
     if (ruleLower.includes('systemprintln') || ruleLower.includes('system.out')) {
@@ -2547,7 +3076,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Configure log levels (DEBUG, INFO, WARN, ERROR) in application.properties
 4. Use parameterized logging (\`{}\`) to avoid string concatenation`;
     }
-    
+
     // AvoidThrowingRawExceptionTypes
     if (ruleLower.includes('avoidthrowingrawexceptiontypes') || ruleLower.includes('raw') && ruleLower.includes('exception')) {
       return `**Fix Strategy**:
@@ -2563,7 +3092,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Use unchecked exceptions (RuntimeException) for programming errors
 4. Use checked exceptions for recoverable errors`;
     }
-    
+
     // AvoidReassigningParameters
     if (ruleLower.includes('avoidreassigningparameters') || ruleLower.includes('reassign')) {
       return `**Fix Strategy**:
@@ -2582,7 +3111,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Use descriptive names for local variables
 4. Consider making parameters explicitly \`final\``;
     }
-    
+
     // PMD generic (for other rules)
     if (toolLower === 'pmd') {
       return `**Fix Strategy**:
@@ -2591,7 +3120,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Consider using IDE auto-fix features (IntelliJ, Eclipse, VS Code with PMD plugin)
 4. Run \`mvn pmd:check\` locally before committing`;
     }
-    
+
     // CheckStyle
     if (toolLower === 'checkstyle') {
       return `**Fix Strategy**:
@@ -2604,7 +3133,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Configure IDE to use Google Java Style Guide or project-specific style
 4. Enable "Format on Save" in IDE settings`;
     }
-    
+
     // SpotBugs
     if (toolLower === 'spotbugs') {
       return `**Fix Strategy**:
@@ -2613,7 +3142,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Use IDE plugins (IntelliJ SpotBugs plugin) for inline suggestions
 4. Run \`mvn spotbugs:check\` to verify fix`;
     }
-    
+
     // BUG FIX #74: Add specific guidance for common Semgrep security rules
     // XSS patterns
     if (ruleLower.includes('xss') || ruleLower.includes('cross-site')) {
@@ -2628,7 +3157,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Implement Content Security Policy (CSP) headers
 4. Never use dangerous methods like \`innerHTML\` with untrusted data`;
     }
-    
+
     // Weak Random
     if (ruleLower.includes('weak-random') || ruleLower.includes('random')) {
       return `**Fix Strategy**:
@@ -2642,7 +3171,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Use \`Random\` only for non-security purposes (games, testing, simulations)
 4. Consider using \`UUID.randomUUID()\` for unique identifiers`;
     }
-    
+
     // Path Traversal
     if (ruleLower.includes('path') || ruleLower.includes('traversal')) {
       return `**Fix Strategy**:
@@ -2659,7 +3188,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Never concatenate user input directly into file paths
 4. Restrict file operations to specific directories`;
     }
-    
+
     // Semgrep generic (for other security rules)
     if (toolLower === 'semgrep') {
       return `**Fix Strategy**:
@@ -2668,7 +3197,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 3. Use secure coding practices and security-focused code reviews
 4. Consider using Semgrep in CI/CD to prevent regressions`;
     }
-    
+
     // Generic fallback
     return `**Fix Strategy**:
 1. Review the issue description and understand the root cause
@@ -2677,7 +3206,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 4. Test thoroughly to ensure the fix doesn't introduce regressions
 5. Consider using IDE plugins for ${tool} to get inline suggestions`;
   }
-  
+
   /**
    * Generate group section
    * Phase D: Enhanced with user-friendly titles and descriptions
@@ -2694,11 +3223,11 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       medium: '🟡',
       low: '🟢'
     }[group.severity];
-    
-    const groupIssues = allIssues.filter(i => 
+
+    const groupIssues = allIssues.filter(i =>
       i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
     );
-    
+
     const representative = groupIssues[0];
     const canAutoFix = this.canAutoFix(group);
 
@@ -2721,86 +3250,86 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     }
 
     let section = `### ${severityIcon} ${friendlyTitle}\n\n`;
-    
+
     // Phase D: Quick metadata bar
     section += `**Severity**: ${group.severity.toUpperCase()} | `;
     section += `**Tool**: ${group.tool} | `;
     section += `**Found in**: ${group.count} files | `;
     section += `**Category**: ${representative?.category || group.category}`;
-    
+
     // SESSION 24: Remove individual auto-fix links to emphasize 1-click solution
     // Auto-fix availability is shown in the IDE Integration section at the end
-    
+
     section += '\n\n';
     section += '---\n\n';
-    
+
     // Phase D: Comprehensive description
     section += `#### 📋 What is this issue?\n\n`;
     section += `${issueDesc.what}\n\n`;
-    
+
     section += `#### 🎯 Why does it matter?\n\n`;
     section += `${issueDesc.why}\n\n`;
-    
+
     section += `#### 🔍 Common causes:\n\n`;
     issueDesc.causes.forEach(cause => {
       section += `- ${cause}\n`;
     });
     section += '\n';
-    
+
     section += `#### ⚠️ Impact if not fixed:\n\n`;
     section += `${issueDesc.impact}\n\n`;
-    
+
     // Phase E: Category-specific enhancements
     const detectedCategory = this.detectCategory(group.rule, group.tool, representative?.message || group.description);
     // ENHANCEMENT #1: Pass rule name for rule-specific risk adjustments (e.g., GuardLogStatement → MEDIUM)
     const riskLevel = this.calculateRiskLevel(detectedCategory, group.severity, group.rule);
     const categoryContext = this.getCategoryContext(detectedCategory, group.severity);
     const priorityGuidance = this.getPriorityGuidance(detectedCategory, group.severity, group.count, riskLevel.level);
-    
+
     // Phase E: Risk Assessment
     section += `#### ${riskLevel.emoji} Risk Assessment\n\n`;
     // Avoid confusion with severity: explicitly label as risk
     section += `**Overall Risk**: ${riskLevel.color} **${riskLevel.level}**\n\n`;
     section += `${riskLevel.description}\n\n`;
-    
+
     section += `**Category**: ${detectedCategory}  \n`;
     section += `**Focus**: ${categoryContext.focus}\n\n`;
-    
+
     // NOTE: Business Impact, Action Plan, and Resources are now in the standalone 
     // "Business Impact Analysis" section at the report level (not per-issue)
-    
+
     // BUG FIX #30: Improved code example section with smart file selection
     // Prefer issues with actual extractable code over generated files (JMH benchmarks, etc.)
     let exampleIssue: EnrichedIssue | undefined = representative;
-    
+
     // First, try to find an issue with an existing snippet
     if (!exampleIssue?.snippet || exampleIssue.snippet === 'N/A' || exampleIssue.snippet.trim().length === 0) {
       exampleIssue = groupIssues.find(i => i.snippet && i.snippet !== 'N/A' && i.snippet.trim().length > 0) || exampleIssue;
     }
-    
+
     // If still no snippet, try to find a real source file (not generated)
     if (!exampleIssue?.snippet || exampleIssue.snippet === 'N/A' || exampleIssue.snippet.trim().length === 0) {
       // Prefer files that are likely to exist (not JMH benchmarks, not generated)
-      exampleIssue = groupIssues.find(i => 
-        i.file && i.line && 
-        !i.file.includes('_jmhTest') && 
+      exampleIssue = groupIssues.find(i =>
+        i.file && i.line &&
+        !i.file.includes('_jmhTest') &&
         !i.file.includes('generated')
       ) || groupIssues.find(i => !!i.file && !!i.line) || representative;
     }
 
     if (exampleIssue?.file) {
       section += `#### 📍 Representative Example\n\n`;
-      
+
       // BUG FIX #41: Find full path if we only have filename
       let displayPath = exampleIssue.file;
-      
+
       // Strip /workspace/ prefix if present
       if (displayPath.startsWith('/workspace/')) {
         displayPath = displayPath.replace('/workspace/', '');
       } else if (displayPath.startsWith('workspace/')) {
         displayPath = displayPath.replace('workspace/', '');
       }
-      
+
       // If we only have filename (no path separator), try to find full path
       if (!displayPath.includes('/')) {
         const fullPath = await this.findFullPath(displayPath);
@@ -2808,13 +3337,13 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           displayPath = fullPath;
         }
       }
-      
+
       section += `**Location**: \`${displayPath}\``;
-        if (exampleIssue.line) {
-          section += ` (Line ${exampleIssue.line})`;
-        }
-        section += '\n\n';
-      
+      if (exampleIssue.line) {
+        section += ` (Line ${exampleIssue.line})`;
+      }
+      section += '\n\n';
+
       // BUG FIX #24: Try to get snippet - use existing or extract on-the-fly
       let snippet = exampleIssue.snippet;
       if ((!snippet || snippet === 'N/A' || snippet.trim().length === 0) && exampleIssue.file && exampleIssue.line) {
@@ -2822,14 +3351,14 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         try {
           const { CodeSnippetExtractor } = await import('../utils/code-snippet-extractor');
           const path = await import('path');
-          
+
           // BUG FIX #41: Use the same normalized path for extraction
           const relativePath = displayPath;
-          
+
           // Build full file path if repoPath is available
           const fullPath = this.repoPath ? path.join(this.repoPath, relativePath) : relativePath;
-          snippet = await CodeSnippetExtractor.extractSnippet(fullPath, exampleIssue.line, 3);
-          
+          snippet = await CodeSnippetExtractor.extractSnippet(fullPath, exampleIssue.line, 3) || undefined;
+
           if (!snippet || snippet.trim().length === 0) {
             console.warn(`[V9GroupedReportFormatter] Empty snippet extracted for ${displayPath}:${exampleIssue.line}`);
           }
@@ -2838,7 +3367,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           // Continue without snippet
         }
       }
-      
+
       if (snippet && snippet !== 'N/A' && snippet.trim().length > 0) {
         section += `**Code**:\n\n`;
         const language = this.getLanguageFromFile(exampleIssue.file);
@@ -2850,41 +3379,41 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         const aiCode = representative.fixSuggestion.correctedCode.trim();
         // Only remove <think> tags, keep everything else
         const cleanCode = aiCode.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '').trim();
-        
+
         if (cleanCode && cleanCode.length >= 20) {
           section += `**Code** (AI-generated example):\n\n`;
           const language = this.getLanguageFromFile(exampleIssue.file);
           section += `\`\`\`${language}\n`;
           section += cleanCode;
-        section += '\n```\n\n';
-      } else {
+          section += '\n```\n\n';
+        } else {
           section += `> Code snippet unavailable. See fix recommendation below.\n\n`;
         }
       } else {
         section += `> Code snippet unavailable. See fix recommendation below.\n\n`;
       }
     }
-    
+
     // Phase D: Improved fix recommendations
     // BUG FIX #65: Always show "How to Fix", even without AI enrichment
     if (expanded) {
       section += `#### 🔧 How to Fix\n\n`;
-      
+
       // BUG FIX #69: Only show AI-generated code examples if they exist
       // The fix guidance (generic or AI) is already shown above
       const hasValidSnippet = representative?.snippet && representative.snippet !== 'N/A' && representative.snippet.trim().length > 0;
       const hasValidFix = representative?.fixSuggestion?.correctedCode && typeof representative.fixSuggestion.correctedCode === 'string' && representative.fixSuggestion.correctedCode.trim().length > 0;
-      
+
       if (representative?.fixSuggestion) {
         // AI-enriched fix available
         // BUG FIX #11: Clean ALL AI content using helper function
         const cleanFix = this.cleanAIContent(representative.fixSuggestion.fix);
         section += `${cleanFix}\n\n`;
-        
+
         // Show AI-generated code example if available
         if (hasValidFix) {
           const cleanCorrectedCode = this.cleanAIContent(representative.fixSuggestion.correctedCode);
-          
+
           // If after cleaning, the code is valid, show it
           if (cleanCorrectedCode && cleanCorrectedCode.length >= 20) {
             if (hasValidSnippet) {
@@ -2911,7 +3440,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         section += `\n\n`;
         // BUG FIX #69: Don't show "requires context" message - generic guidance is already provided
       }
-      
+
       // BUG FIX #68: Check if fixSuggestion exists before accessing bestPractices
       if (representative?.fixSuggestion?.bestPractices && representative.fixSuggestion.bestPractices.length > 0) {
         section += `**Best Practices to Follow**:\n\n`;
@@ -2922,20 +3451,20 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         section += '\n';
       }
     }
-    
+
     // Phase D: Improved footer with file count and link
     section += `#### 📎 All Occurrences\n\n`;
     section += `This issue appears in **${group.count} ${group.count === 1 ? 'file' : 'files'}** across your codebase.\n\n`;
-    
+
     if (canAutoFix) {
       section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
     }
-    
+
     section += '---\n\n';
-    
+
     return section;
   }
-  
+
   /**
    * Helper to strip AI reasoning tags from content
    * BUG FIX #11, #12, #46 CORRECTED: Remove only <think> tags and obvious AI artifacts
@@ -3036,15 +3565,15 @@ mvn spotless:check  # Verify (use in CI)
     group: IssueGroup,
     allIssues: EnrichedIssue[]
   ): Promise<IDEFixFile | null> {
-    const groupIssues = allIssues.filter(i => 
+    const groupIssues = allIssues.filter(i =>
       i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
     );
-    
+
     const representative = groupIssues[0];
     if (!representative) return null;
-    
+
     const groupId = this.sanitizeGroupId(group);
-    
+
     // Generate IDE fix file (for all groups, not just auto-fixable)
     // This allows IDEs to display all issues, even if they can't auto-fix them
     return {
@@ -3053,7 +3582,7 @@ mvn spotless:check  # Verify (use in CI)
       content: await this.generateCursorFixData(group, groupIssues, representative)
     };
   }
-  
+
   /**
    * Generate Cursor IDE fix data (BUG FIX #24: Now async for snippet extraction)
    * ENHANCEMENT: Added tool field for manifest enrichment
@@ -3064,7 +3593,7 @@ mvn spotless:check  # Verify (use in CI)
     representative: EnrichedIssue
   ): Promise<CursorFixData> {
     const fixPattern = this.extractFixPattern(group, representative);
-    
+
     return {
       version: "1.0",
       group_id: this.sanitizeGroupId(group),
@@ -3072,11 +3601,11 @@ mvn spotless:check  # Verify (use in CI)
       tool: group.tool,  // ENHANCEMENT: Added for manifest enrichment
       severity: group.severity,
       description: representative.fixSuggestion?.explanation || '',
-      
+
       fix_pattern: fixPattern,
-      
+
       locations: await this.extractSnippetsForLocations(groupIssues),
-      
+
       metadata: {
         total_occurrences: group.count,
         confidence: this.determineConfidence(group),
@@ -3086,7 +3615,7 @@ mvn spotless:check  # Verify (use in CI)
       }
     };
   }
-  
+
   /**
    * SESSION 25-27: Generate LSP, SARIF, and GitLab Code Quality formats
    * These formats enable:
@@ -3097,7 +3626,8 @@ mvn spotless:check  # Verify (use in CI)
   private async generateLSPAndSARIFFormats(
     enrichedIssues: EnrichedIssue[],
     groups: IssueGroup[],
-    metadata: any
+    metadata: any,
+    analysisTimestamp: number  // BUG-DOG-04 FIX: Use consistent timestamp across all uploads
   ): Promise<{ lspUrl?: string; sarifUrl?: string; gitlabUrl?: string }> {
     try {
       const converter = new LSPSARIFConverter();
@@ -3127,9 +3657,9 @@ mvn spotless:check  # Verify (use in CI)
 
       // Upload to Supabase if available
       if (this.supabase) {
-        const timestamp = Date.now();
+        // BUG-DOG-04 FIX: Use passed analysisTimestamp (not new Date.now())
         const repoName = metadata.repository?.split('/').pop() || 'unknown';
-        const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${timestamp}`;
+        const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${analysisTimestamp}`;
 
         // Define filenames
         const lspFilename = 'codequal-lsp-actions.json';
@@ -3140,16 +3670,37 @@ mvn spotless:check  # Verify (use in CI)
         console.log(`[LSP/SARIF] Uploading LSP to: ${analysisId}/${lspFilename}`);
         console.log(`[LSP/SARIF] LSP content size: ${lspContent.length} bytes`);
 
-        const { data: lspData, error: lspError } = await this.supabase.storage
-          .from('v9-attachments')
-          .upload(`${analysisId}/${lspFilename}`, lspContent, {
+        // Upload LSP file with retry logic
+        const { data: lspData, error: lspError } = await this.uploadWithRetry(
+          `${analysisId}/${lspFilename}`,
+          lspContent,
+          {
             contentType: 'application/json',
             cacheControl: '3600',
             upsert: true
-          });
+          }
+        );
+
+        // Ensure service health tracker is initialized
+        await this.initializeServiceHealthTracker();
 
         if (lspError) {
           console.error(`[LSP/SARIF] ❌ LSP upload failed:`, lspError);
+          // Track upload failure
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackUploadFailure({
+              service: 'lsp',
+              filename: lspFilename,
+              error: lspError,
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId,
+              errorDetails: {
+                statusCode: (lspError as any).statusCode,
+                error: (lspError as any).error
+              }
+            });
+          }
         } else if (lspData) {
           console.log(`[LSP/SARIF] ✅ LSP upload successful, path: ${lspData.path}`);
           const { data: lspUrlData } = this.supabase.storage
@@ -3157,8 +3708,30 @@ mvn spotless:check  # Verify (use in CI)
             .getPublicUrl(`${analysisId}/${lspFilename}`);
           lspUrl = lspUrlData.publicUrl;
           console.log(`[LSP/SARIF] ✅ LSP uploaded: ${lspUrl}`);
+          // Track upload success
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackUploadSuccess({
+              service: 'lsp',
+              filename: lspFilename,
+              url: lspUrl,
+              fileSize: lspContent.length,
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId
+            });
+          }
         } else {
           console.error(`[LSP/SARIF] ❌ LSP upload: No data and no error (unexpected state)`);
+          // Track unexpected state
+          if (this.serviceHealthTracker) {
+            await this.serviceHealthTracker.trackServiceError({
+              service: 'lsp',
+              error: 'LSP upload: No data and no error (unexpected state)',
+              repositoryUrl: metadata.repository,
+              prNumber: metadata.prNumber,
+              analysisId
+            });
+          }
         }
 
         // Upload SARIF file
@@ -3182,22 +3755,26 @@ mvn spotless:check  # Verify (use in CI)
             // Use resumable upload for files > 6MB (Supabase recommendation)
             if (sarifContent.length > 6 * 1024 * 1024) {
               console.log(`[LSP/SARIF] Using resumable upload (file > 6MB)`);
-              uploadResult = await this.supabase.storage
-                .from('v9-attachments')
-                .upload(`${analysisId}/${sarifFilename}`, sarifBlob, {
+              uploadResult = await this.uploadWithRetry(
+                `${analysisId}/${sarifFilename}`,
+                sarifBlob,
+                {
                   contentType: 'application/json',
                   cacheControl: '3600',
                   upsert: true
-                });
+                }
+              );
             } else {
               console.log(`[LSP/SARIF] Using standard upload (file ≤ 6MB)`);
-              uploadResult = await this.supabase.storage
-                .from('v9-attachments')
-                .upload(`${analysisId}/${sarifFilename}`, sarifContent, {
+              uploadResult = await this.uploadWithRetry(
+                `${analysisId}/${sarifFilename}`,
+                sarifContent,
+                {
                   contentType: 'application/json',
                   cacheControl: '3600',
                   upsert: true
-                });
+                }
+              );
             }
 
             const { data: sarifData, error: sarifError } = uploadResult;
@@ -3209,6 +3786,21 @@ mvn spotless:check  # Verify (use in CI)
                 statusCode: (sarifError as any).statusCode,
                 error: (sarifError as any).error
               });
+              // Track upload failure
+              if (this.serviceHealthTracker) {
+                await this.serviceHealthTracker.trackUploadFailure({
+                  service: 'sarif',
+                  filename: sarifFilename,
+                  error: sarifError,
+                  repositoryUrl: metadata.repository,
+                  prNumber: metadata.prNumber,
+                  analysisId,
+                  errorDetails: {
+                    statusCode: (sarifError as any).statusCode,
+                    error: (sarifError as any).error
+                  }
+                });
+              }
             } else if (sarifData) {
               console.log(`[LSP/SARIF] ✅ SARIF upload successful, path: ${sarifData.path}`);
               const { data: sarifUrlData } = this.supabase.storage
@@ -3216,8 +3808,30 @@ mvn spotless:check  # Verify (use in CI)
                 .getPublicUrl(`${analysisId}/${sarifFilename}`);
               sarifUrl = sarifUrlData.publicUrl;
               console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrl}`);
+              // Track upload success
+              if (this.serviceHealthTracker) {
+                await this.serviceHealthTracker.trackUploadSuccess({
+                  service: 'sarif',
+                  filename: sarifFilename,
+                  url: sarifUrl,
+                  fileSize: sarifContent.length,
+                  repositoryUrl: metadata.repository,
+                  prNumber: metadata.prNumber,
+                  analysisId
+                });
+              }
             } else {
               console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
+              // Track unexpected state
+              if (this.serviceHealthTracker) {
+                await this.serviceHealthTracker.trackServiceError({
+                  service: 'sarif',
+                  error: 'SARIF upload: No data and no error (unexpected state)',
+                  repositoryUrl: metadata.repository,
+                  prNumber: metadata.prNumber,
+                  analysisId
+                });
+              }
             }
           }
         } catch (sarifUploadError) {
@@ -3251,13 +3865,16 @@ mvn spotless:check  # Verify (use in CI)
           console.log(`[GitLab] Uploading to: ${analysisId}/${gitlabFilename}`);
           console.log(`[GitLab] Content size: ${gitlabContent.length} bytes`);
 
-          const { data: gitlabData, error: gitlabError } = await this.supabase.storage
-            .from('v9-attachments')
-            .upload(`${analysisId}/${gitlabFilename}`, gitlabContent, {
+          // Upload GitLab file with retry logic
+          const { data: gitlabData, error: gitlabError } = await this.uploadWithRetry(
+            `${analysisId}/${gitlabFilename}`,
+            gitlabContent,
+            {
               contentType: 'application/json',
               cacheControl: '3600',
               upsert: true
-            });
+            }
+          );
 
           if (gitlabError) {
             console.error(`[GitLab] ❌ Upload failed:`, gitlabError);
@@ -3285,89 +3902,272 @@ mvn spotless:check  # Verify (use in CI)
       return {};
     }
   }
-  
+
   /**
-   * Extract fix pattern for IDE automation
+   * Extract fix pattern for IDE automation using Three-Tier Fix System
+   *
+   * Session 35: Enhanced with hybrid fix strategy
+   * - Tier 1: Native tool fixes (eslint --fix, ruff --fix) - 95% confidence
+   * - Tier 2: Dedicated fixer tools (Sorald, autoflake) - 85% confidence
+   * - Tier 3: AI-generated fixes with specific prompts - 90% confidence (specific) / 60% (generic)
+   * - Manual Review: When AI can't help, provide user-friendly guidance
    */
   private extractFixPattern(group: IssueGroup, representative: EnrichedIssue): FixPattern {
-    // Extract pattern based on rule type
     const fix = representative.fixSuggestion;
-    
-    if (group.rule === 'AvoidUsingVolatile') {
+    const classification = classifyIssue(group.rule, group.tool);
+
+    // Determine issue category for AI prompts
+    const issueCategory = this.determineIssueCategory(classification.issueType);
+
+    // Tier 1 & 2: Native tools and dedicated fixers
+    if (classification.fixTier <= 2 && classification.fixable) {
+      // Special case: AvoidUsingVolatile with regex pattern
+      if (group.rule === 'AvoidUsingVolatile') {
+        return {
+          type: 'regex',
+          fixTier: classification.fixTier,
+          fixerTool: 'sorald',
+          fixerCommand: 'sorald repair --source',
+          confidence: 85,
+          find_regex: 'private volatile (\\w+) (\\w+)( = .+)?;',
+          replace_template: 'private final Atomic$1 $2 = new Atomic$1($3);',
+          example: {
+            before: 'private volatile boolean running = true;',
+            after: 'private final AtomicBoolean running = new AtomicBoolean(true);'
+          },
+          instructions: 'Replace volatile primitive types with AtomicXXX equivalents'
+        };
+      }
+
+      // Standard Tier 1/2 fix
       return {
-        type: 'regex',
-        find_regex: 'private volatile (\\w+) (\\w+)( = .+)?;',
-        replace_template: 'private final Atomic$1 $2 = new Atomic$1($3);',
+        type: 'template',
+        fixTier: classification.fixTier,
+        fixerTool: this.getFixerToolForRule(group.tool, classification.issueType),
+        fixerCommand: this.getFixerCommand(group.tool, classification.issueType),
+        confidence: classification.fixTier === 1 ? 95 : 85,
         example: {
-          before: 'private volatile boolean running = true;',
-          after: 'private final AtomicBoolean running = new AtomicBoolean(true);'
+          before: representative.snippet || '',
+          after: fix?.correctedCode || ''
         },
-        instructions: 'Replace volatile primitive types with AtomicXXX equivalents'
+        instructions: fix?.fix || 'Apply the suggested fix'
       };
     }
-    
-    // Generic pattern
+
+    // Tier 3: Generate DYNAMIC AI prompt for ANY issue
+    // This works for ALL rules, not just hardcoded ones
+    const issueContext: IssueContext = {
+      ruleId: group.rule,
+      tool: group.tool,
+      message: representative.message || group.rule,
+      category: issueCategory,
+      severity: (group.severity || 'medium') as 'critical' | 'high' | 'medium' | 'low',
+      filePath: representative.file || '',
+      lineNumber: representative.line || 0,
+      language: this.detectedLanguage || 'typescript',
+      codeContext: representative.snippet || '',
+      snippet: representative.snippet,
+    };
+
+    // Get optimized prompt (uses known patterns when available, dynamic otherwise)
+    const aiPrompt = getOptimizedPrompt(issueContext);
+
+    // All Tier 3 issues get AI-generated fixes with dynamic prompts
     return {
-      type: 'template',
+      type: 'ai-generated',
+      fixTier: 3,
+      fixerTool: 'ai',
+      confidence: aiPrompt.temperature <= 0.1 ? 90 : 75,  // Lower temp = higher confidence
       example: {
         before: representative.snippet || '',
         after: fix?.correctedCode || ''
       },
-      instructions: fix?.fix || 'Apply the suggested fix'
+      instructions: fix?.fix || `AI-generated fix for ${group.rule}`,
+      aiPrompt: {
+        systemPrompt: aiPrompt.systemPrompt,
+        userPromptTemplate: aiPrompt.userPromptTemplate,
+        outputFormat: aiPrompt.outputFormat,
+        maxTokens: aiPrompt.maxTokens,
+        temperature: aiPrompt.temperature,
+        requiredContext: aiPrompt.requiredContext
+      }
     };
+
   }
-  
+
   /**
-   * Determine if group can be auto-fixed
+   * Determine issue category for AI prompt lookup
+   */
+  private determineIssueCategory(issueType: string): 'security' | 'quality' | 'performance' {
+    switch (issueType) {
+      case 'security':
+        return 'security';
+      case 'performance':
+        return 'performance';
+      default:
+        return 'quality';  // style, maintainability, compatibility, etc. → quality
+    }
+  }
+
+  /**
+   * Get fixer tool for a rule based on tool and issue type
+   */
+  private getFixerToolForRule(tool: string, issueType: string): string {
+    const normalizedTool = tool.toLowerCase();
+
+    // TypeScript/JavaScript
+    if (['eslint', 'typescript-eslint'].includes(normalizedTool)) return 'eslint';
+    if (normalizedTool === 'prettier') return 'prettier';
+
+    // Python
+    if (normalizedTool === 'ruff') return 'ruff';
+    if (issueType === 'quality') return 'autoflake';
+    if (issueType === 'compatibility') return 'pyupgrade';
+
+    // Java
+    if (['pmd', 'checkstyle', 'spotbugs'].includes(normalizedTool)) return 'sorald';
+
+    // Go
+    if (normalizedTool === 'golangci-lint') return 'golangci-lint';
+
+    return 'ai';
+  }
+
+  /**
+   * Get fixer command for a tool and issue type
+   */
+  private getFixerCommand(tool: string, issueType: string): string {
+    const normalizedTool = tool.toLowerCase();
+
+    // TypeScript/JavaScript
+    if (['eslint', 'typescript-eslint'].includes(normalizedTool)) return 'eslint --fix';
+    if (normalizedTool === 'prettier') return 'prettier --write';
+
+    // Python
+    if (normalizedTool === 'ruff') return 'ruff check --fix';
+    if (issueType === 'quality') return 'autoflake --in-place --remove-all-unused-imports';
+    if (issueType === 'compatibility') return 'pyupgrade --py38-plus';
+
+    // Java
+    if (['pmd', 'checkstyle', 'spotbugs'].includes(normalizedTool)) return 'sorald repair --source';
+
+    // Go
+    if (normalizedTool === 'golangci-lint') return 'golangci-lint run --fix';
+
+    return 'ai';
+  }
+
+  /**
+   * Determine if group can be auto-fixed using Three-Tier Fix System
+   * Tier 1: Native tool fixes (eslint --fix, ruff --fix) - 95% confidence
+   * Tier 2: Dedicated fixer tools (Sorald, autoflake) - 85% confidence
+   * Tier 3: AI-generated fixes (fallback) - 60% confidence, needs review
+   *
    * BUG FIX #13: Include all CheckStyle rules (100% auto-fixable with IDE formatters)
    * SESSION 19 FIX: Include Semgrep, Dependency-Check, SpotBugs
+   * SESSION 34 FIX: Use Three-Tier Fix System classifier for accurate routing
    */
   private canAutoFix(group: IssueGroup): boolean {
+    // Use Three-Tier Fix System classifier
+    const classification = classifyIssue(group.rule, group.tool);
+
+    // Tier 1 and Tier 2 are auto-fixable (native tools and dedicated fixers)
+    if (classification.fixTier <= 2 && classification.fixable) {
+      return true;
+    }
+
+    // Fallback: Legacy tool-based checks for tools not in classifier
     // CheckStyle: All rules auto-fixable with IDE formatters
     if (group.tool === 'checkstyle') {
       return true;
     }
-    
-    // PMD: Common auto-fixable rules
-    const autoFixablePMDRules = [
-      'AvoidUsingVolatile',
-      'GuardLogStatement',
-      'SystemPrintln',
-      'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-      'ReturnEmptyCollectionRatherThanNull',
-      'UnusedImports',
-      'AvoidStarImport',
-      'SimplifyBooleanReturns',
-      'SimplifyBooleanExpressions'
-    ];
-    
-    if (autoFixablePMDRules.includes(group.rule)) {
-      return true;
-    }
-    
+
     // Semgrep: AI-generated security fixes are IDE-applicable
     if (group.tool === 'semgrep') {
       return true;
     }
-    
+
     // Dependency-Check: IDEs can update dependencies
     if (group.tool === 'dependency-check') {
       return true;
     }
-    
+
     // npm-audit: IDEs can update npm dependencies
     if (group.tool === 'npm-audit') {
       return true;
     }
-    
+
     // SpotBugs: Many rules have clear fixes
     if (group.tool === 'spotbugs') {
       return true;
     }
-    
+
     return false;
   }
-  
+
+  /**
+   * Get fix tier for a specific issue using Three-Tier Fix System
+   * Returns: 1 (native tool), 2 (dedicated fixer), or 3 (AI fallback)
+   */
+  private getFixTier(group: IssueGroup): 1 | 2 | 3 {
+    const classification = classifyIssue(group.rule, group.tool);
+    return classification.fixTier;
+  }
+
+  /**
+   * Calculate Three-Tier Fix System breakdown for issues
+   */
+  private calculateTierBreakdown(groups: IssueGroup[]): {
+    tier1: { count: number; issues: number; percent: number };
+    tier2: { count: number; issues: number; percent: number };
+    tier3: { count: number; issues: number; percent: number };
+    autoFixable: number;
+    autoFixPercent: number;
+  } {
+    let tier1Count = 0, tier1Issues = 0;
+    let tier2Count = 0, tier2Issues = 0;
+    let tier3Count = 0, tier3Issues = 0;
+    let totalIssues = 0;
+
+    for (const group of groups) {
+      const tier = this.getFixTier(group);
+      totalIssues += group.count;
+
+      if (tier === 1) {
+        tier1Count++;
+        tier1Issues += group.count;
+      } else if (tier === 2) {
+        tier2Count++;
+        tier2Issues += group.count;
+      } else {
+        tier3Count++;
+        tier3Issues += group.count;
+      }
+    }
+
+    const autoFixable = tier1Issues + tier2Issues;
+
+    return {
+      tier1: {
+        count: tier1Count,
+        issues: tier1Issues,
+        percent: totalIssues > 0 ? (tier1Issues / totalIssues) * 100 : 0
+      },
+      tier2: {
+        count: tier2Count,
+        issues: tier2Issues,
+        percent: totalIssues > 0 ? (tier2Issues / totalIssues) * 100 : 0
+      },
+      tier3: {
+        count: tier3Count,
+        issues: tier3Issues,
+        percent: totalIssues > 0 ? (tier3Issues / totalIssues) * 100 : 0
+      },
+      autoFixable,
+      autoFixPercent: totalIssues > 0 ? (autoFixable / totalIssues) * 100 : 0
+    };
+  }
+
   /**
    * ENHANCEMENT: Get category from tool name for manifest enrichment
    */
@@ -3379,7 +4179,7 @@ mvn spotless:check  # Verify (use in CI)
     // PMD can be multiple categories - use generic
     return 'Code Quality';
   }
-  
+
   /**
    * ENHANCEMENT: Format rule name to human-readable title
    */
@@ -3393,7 +4193,7 @@ mvn spotless:check  # Verify (use in CI)
     // Handle camelCase like "SystemPrintln" → "System Println"
     return rule.replace(/([A-Z])/g, ' $1').trim();
   }
-  
+
   /**
    * ENHANCEMENT: Get short impact summary for manifest
    */
@@ -3414,40 +4214,49 @@ mvn spotless:check  # Verify (use in CI)
     const firstSentence = whatText.match(/^[^.!?]+[.!?]/)?.[0] || whatText.substring(0, 120);
     return firstSentence.trim() + (whatText.length > 120 ? '...' : '');
   }
-  
+
   /**
    * ENHANCEMENT: Calculate priority score for sorting in manifest
    */
   private calculatePriority(severity: string, category: string, fileCount: number): number {
     let score = 0;
-    
+
     // Severity weight (0-100)
     if (severity === 'critical') score += 100;
     else if (severity === 'high') score += 60;
     else if (severity === 'medium') score += 30;
     else if (severity === 'low') score += 10;
-    
+
     // Category weight (0-30)
     if (category === 'Security') score += 30;
     else if (category === 'Performance') score += 15;
     else if (category === 'Architecture') score += 10;
     else score += 5;
-    
+
     // File spread weight (0-20) - log scale
     score += Math.min(20, Math.log2(fileCount + 1) * 10);
-    
+
     return Math.round(score);
   }
-  
+
   /**
    * Determine confidence level for auto-fix
    */
   private determineConfidence(group: IssueGroup): 'high' | 'medium' | 'low' {
-    if (group.rule === 'AvoidUsingVolatile') return 'high';
-    if (group.rule === 'GuardLogStatement') return 'medium';
+    // High Confidence: Safe to auto-apply without review
+    if (this.isSafeToAutoApply(group)) {
+      return 'high';
+    }
+
+    // Medium Confidence: Can be auto-fixed but requires review
+    if (this.canAutoFix(group)) {
+      return 'medium';
+    }
+
+    // Low Confidence: Manual fix required
     return 'low';
   }
-  
+
   /**
    * Get programming language from file extension for syntax highlighting
    */
@@ -3476,19 +4285,63 @@ mvn spotless:check  # Verify (use in CI)
     if (file.endsWith('.sql')) return 'sql';
     return 'text';
   }
-  
+
   /**
-   * Determine if safe to auto-apply without review
+   * Determine if safe to auto-apply without review (TIER 1: Safe Auto-Fix)
+   * Based on Two-Tier Fix System: high confidence + low risk
+   * This is a strict subset of canAutoFix() - only non-breaking, safe changes
+   *
+   * TIER 1 (Safe): Apply immediately, no testing needed (~15-20%)
+   * - Unused code removal
+   * - Style/formatting fixes
+   * - Simple non-breaking refactors
    */
   private isSafeToAutoApply(group: IssueGroup): boolean {
-    // Only simple, non-breaking changes
-    const safeRules = [
+    // Java: CheckStyle - All style/formatting fixes are safe
+    if (group.tool === 'checkstyle') {
+      return true;
+    }
+
+    // Java: PMD - Only simple, non-breaking fixes
+    const safePMDRules = [
+      'UnusedImports',
+      'AvoidStarImport',
+      'SystemPrintln',
       'GuardLogStatement',
+      'SimplifyBooleanReturns',
+      'SimplifyBooleanExpressions',
       'ClassWithOnlyPrivateConstructorsShouldBeFinal'
     ];
-    return safeRules.includes(group.rule);
+    if (safePMDRules.includes(group.rule)) {
+      return true;
+    }
+
+    // TypeScript: Architecture - Only unused exports are safe
+    if (group.tool === 'architecture' && group.rule === 'unused-export') {
+      return true;
+    }
+
+    // TypeScript: Simple ESLint fixes (if available)
+    if (group.tool === 'eslint') {
+      const safeESLintRules = [
+        'no-unused-vars',
+        'no-console',
+        'prefer-const',
+        'no-var'
+      ];
+      if (safeESLintRules.includes(group.rule)) {
+        return true;
+      }
+    }
+
+    // Security, Dependencies, Type Errors: Require manual review (TIER 2)
+    // - Semgrep: Security issues need testing
+    // - Dependency-Check: CVE upgrades need testing
+    // - npm-audit: Dependency upgrades need testing
+    // - TypeScript: Type errors could break code
+    return false;
   }
-  
+
   /**
    * Extract required imports from fix
    */
@@ -3501,10 +4354,10 @@ mvn spotless:check  # Verify (use in CI)
     if (fix.includes('AtomicInteger')) imports.push('java.util.concurrent.atomic.AtomicInteger');
     if (fix.includes('AtomicLong')) imports.push('java.util.concurrent.atomic.AtomicLong');
     if (fix.includes('Collections.emptyList')) imports.push('java.util.Collections');
-    
+
     return imports.length > 0 ? imports : undefined;
   }
-  
+
   /**
    * Generate mapping index
    */
@@ -3543,7 +4396,7 @@ mvn spotless:check  # Verify (use in CI)
       }
     };
   }
-  
+
   /**
    * Generate Business Impact Analysis with real financial calculations
    */
@@ -3586,26 +4439,26 @@ mvn spotless:check  # Verify (use in CI)
       }
       baseFixHours = Math.max(0, baseFixHours - autoFixOriginalHours + autoFixAdjustedHours);
     }
-    
+
     const developerRate = 150; // $150/hour average
     const totalFixCost = Math.round(baseFixHours * developerRate);
     const fixDays = Math.ceil(baseFixHours / 8);
-    
+
     // Calculate issues by detected category
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
     const performanceIssues = issues.filter(i => i.detectedCategory === 'Performance');
     const architectureIssues = issues.filter(i => i.detectedCategory === 'Architecture');
     const dependencyIssues = issues.filter(i => i.detectedCategory === 'Dependencies');
     const codeQualityIssues = issues.filter(i => i.detectedCategory === 'Code Quality');
-    
+
     // Calculate potential exploit costs
     const hasSecurityIssues = securityIssues.length > 0;
     const hasCriticalSecurity = securityIssues.filter(i => i.severity === 'critical').length > 0;
-    
+
     let minExploitCost: number;
     let maxExploitCost: number;
     let exploitDesc: string;
-    
+
     if (hasCriticalSecurity) {
       minExploitCost = 50000;
       maxExploitCost = 500000;
@@ -3623,20 +4476,20 @@ mvn spotless:check  # Verify (use in CI)
       maxExploitCost = 50000;
       exploitDesc = 'Technical debt accumulation, slower development velocity';
     }
-    
+
     const roi = Math.round(minExploitCost / Math.max(totalFixCost, 1));
-    
+
     const immediateRisk = blocking.length > 0 ? '🔴 High' : '🟢 Low';
-    
+
     return `## 💼 Business Impact Analysis
 
 ### Executive Summary
-${blocking.length > 0 
-  ? `⚠️ **Critical attention required:** ${blocking.length} blocking issue${blocking.length > 1 ? 's' : ''} must be resolved before deployment to avoid security vulnerabilities or system failures.` 
-  : blockingCritical.length > 0 
-    ? `🟡 **Action recommended:** ${blockingCritical.length} critical issue${blockingCritical.length > 1 ? 's' : ''} should be addressed to maintain code quality and prevent future problems.`
-    : `✅ **Acceptable quality:** Issues identified are manageable and can be addressed systematically through normal development cycles.`
-}
+${blocking.length > 0
+        ? `⚠️ **Critical attention required:** ${blocking.length} blocking issue${blocking.length > 1 ? 's' : ''} must be resolved before deployment to avoid security vulnerabilities or system failures.`
+        : blockingCritical.length > 0
+          ? `🟡 **Action recommended:** ${blockingCritical.length} critical issue${blockingCritical.length > 1 ? 's' : ''} should be addressed to maintain code quality and prevent future problems.`
+          : `✅ **Acceptable quality:** Issues identified are manageable and can be addressed systematically through normal development cycles.`
+      }
 
 ### Financial Impact
 | Metric | Value |
@@ -3673,31 +4526,55 @@ ${blocking.length > 0
 - **Risk Level:** Overall impact assessment based on severity distribution
 
 ### Recommendations
-${blocking.length > 0 ? `
-1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment
-2. **Priority:** Address remaining blockers first
+${(() => {
+        // Check if blocking issues are auto-fixable
+        const blockingAutoFixable = blocking.filter(i =>
+          this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
+        ).length;
+        const allBlockingAutoFixable = blockingAutoFixable === blocking.length && blocking.length > 0;
+
+        if (blocking.length > 0) {
+          if (allBlockingAutoFixable) {
+            return `
+1. **Immediate Action:** Apply fixes for ${blocking.length} blocking issues using 1-click autofix (see IDE Integration section above)
+2. **Quick Fix:** All blocking issues are auto-fixable - use LSP batch actions to fix in < 1 second
 3. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
 4. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
-` : blockingCritical.length + blockingHigh.length > 0 ? `
+`;
+          } else {
+            return `
+1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment (${blockingAutoFixable} auto-fixable, ${blocking.length - blockingAutoFixable} require manual review)
+2. **Quick Fix:** Apply ${blockingAutoFixable} auto-fixable issues using 1-click autofix (see IDE Integration section)
+3. **Priority:** Address remaining ${blocking.length - blockingAutoFixable} blockers manually
+4. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
+5. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
+`;
+          }
+        } else if (blockingCritical.length + blockingHigh.length > 0) {
+          return `
 1. **Priority:** Address ${blockingCritical.length} critical issues in current sprint
 2. **Planning:** Schedule ${blockingHigh.length} high-severity issues for upcoming work
 3. **Continuous Improvement:** Integrate static analysis into CI/CD to prevent new issues
-` : `
+`;
+        } else {
+          return `
 1. **Maintain Quality:** Continue current development practices
 2. **Address Backlog:** Systematically reduce ${backlogMedium.length + backlogLow.length} identified issues
 3. **Prevention:** Integrate static analysis into CI/CD pipeline
-`}
+`;
+        }
+      })()}
 
 **Note:** Each issue group section above includes detailed business impact analysis specific to that issue type.`;
   }
-  
+
   /**
    * Get exploit cost explanation helper
    */
   private getExploitCostExplanation(criticalCount: number, highCount: number, securityCount: number): string {
     return getExploitCostExplanation(criticalCount, highCount, securityCount);
   }
-  
+
   /**
    * Get risk impact level helper
    * BUG FIX #75: Consider blocking status and severity for accurate risk assessment
@@ -3713,7 +4590,7 @@ ${blocking.length > 0 ? `
   private calculateIssueWeightedSkillScore(issues: EnrichedIssue[]): number {
     return calculateIssueWeightedSkillScore(issues);
   }
-  
+
   /**
    * Generate Educational Resources based on actual issues found
    */
@@ -3721,7 +4598,7 @@ ${blocking.length > 0 ? `
     const critical = issues.filter(i => i.severity === 'critical');
     const high = issues.filter(i => i.severity === 'high');
     const priorityIssues = [...critical, ...high];
-    
+
     // If no priority issues, show general message
     if (priorityIssues.length === 0) {
       return `## 📚 Educational Resources
@@ -3735,16 +4612,16 @@ Continue following best practices and consider integrating static analysis into 
 - [📏 Effective Java](https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/) - Joshua Bloch
 - [🏗️  Software Architecture Fundamentals](https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/)`;
     }
-    
+
     let content = `## 📚 Educational Resources
 
 **Priority training for ${priorityIssues.length} critical/high-severity issues:**
 
 `;
-    
+
     // Group by detected category
     const categories = Array.from(new Set(priorityIssues.map(i => i.detectedCategory).filter(Boolean)));
-    
+
     if (categories.length === 0) {
       // Fallback if categories not detected - use tool-based categorization
       content += `### Immediate Focus Areas\n\n`;
@@ -3754,116 +4631,159 @@ Continue following best practices and consider integrating static analysis into 
       content += `- [🔒 Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n`;
     } else {
       // Generate category-specific resources
-    categories.forEach(category => {
+      categories.forEach(category => {
         const categoryIssues = priorityIssues.filter(i => i.detectedCategory === category);
         const criticalCount = categoryIssues.filter(i => i.severity === 'critical').length;
         const highCount = categoryIssues.filter(i => i.severity === 'high').length;
-        
+
         content += `### ${category} (${criticalCount} critical, ${highCount} high)\n\n`;
         content += `**Priority:** ${criticalCount > 0 ? '🔴 Immediate' : '🟠 High'}\n\n`;
-      
-      switch (category) {
-        case 'Security':
+
+        switch (category) {
+          case 'Security':
             content += `**Phase 1: Security Fundamentals (Week 1-2)**\n`;
             content += `- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Top security risks and mitigations\n`;
             content += `- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference\n`;
             content += `- [🎯 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses\n`;
             content += `- [📖 Secure Coding in Java](https://www.oracle.com/java/technologies/javase/seccodeguide.html) - Oracle guidelines\n\n`;
-            
+
             content += `**Phase 2: Specific Vulnerabilities (Week 3-4)**\n`;
             content += `- [🛡️ SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)\n`;
             content += `- [🔐 Command Injection Defense](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)\n`;
             content += `- [🔑 Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)\n`;
             content += `- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive labs\n\n`;
-          break;
-            
-        case 'Performance':
+            break;
+
+          case 'Performance':
             content += `**Phase 1: Performance Fundamentals (Week 1-2)**\n`;
             content += `- [⚡ Java Performance Tuning Guide](https://www.oracle.com/technical-resources/articles/javase/perftuning.html) - Official Oracle guide\n`;
             content += `- [📖 Java Concurrency in Practice](https://jcip.net/) - Brian Goetz (essential reading)\n`;
             content += `- [🔧 JVM Performance Optimization](https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/) - GC tuning\n`;
             content += `- [📊 Profiling with JMH](https://openjdk.java.net/projects/code-tools/jmh/) - Microbenchmarking\n\n`;
-            
+
             content += `**Phase 2: Advanced Topics (Week 3-4)**\n`;
             content += `- [🎯 Lock-Free Programming](https://mechanical-sympathy.blogspot.com/) - Martin Thompson's blog\n`;
             content += `- [📚 High Performance Java Persistence](https://vladmihalcea.com/books/high-performance-java-persistence/) - Vlad Mihalcea\n`;
             content += `- [🔬 Memory Management Deep Dive](https://www.baeldung.com/java-memory-management-interview-questions)\n\n`;
-          break;
-            
-        case 'Architecture':
+            break;
+
+          case 'Architecture':
             content += `**Phase 1: Design Principles (Week 1-2)**\n`;
             content += `- [🏗️  Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin\n`;
             content += `- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals\n`;
             content += `- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns\n`;
             content += `- [🔧 Effective Java](https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/) - Joshua Bloch\n\n`;
-            
+
             content += `**Phase 2: Architecture Patterns (Week 3-4)**\n`;
             content += `- [🎨 Microservices Patterns](https://microservices.io/patterns/) - Chris Richardson\n`;
             content += `- [📖 Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans\n`;
             content += `- [🏛️ Software Architecture Fundamentals](https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/)\n\n`;
-          break;
-            
-        case 'Dependencies':
+            break;
+
+          case 'Dependencies':
             content += `**Phase 1: Dependency Management (Week 1-2)**\n`;
             content += `- [📦 Maven Dependency Management](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) - Official guide\n`;
             content += `- [🛡️ OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) - Vulnerability scanning\n`;
             content += `- [🔄 Semantic Versioning](https://semver.org/) - Version numbering best practices\n`;
             content += `- [🔍 Snyk Learn](https://learn.snyk.io/) - Security vulnerability education\n\n`;
-            
+
             content += `**Phase 2: Security & Updates (Week 3-4)**\n`;
             content += `- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities\n`;
             content += `- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details\n`;
             content += `- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels\n\n`;
-          break;
-            
-        case 'Code Quality':
-        default:
+            break;
+
+          case 'Code Quality':
+          default:
             content += `**Phase 1: Clean Code Basics (Week 1-2)**\n`;
             content += `- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin\n`;
             content += `- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Martin Fowler techniques\n`;
             content += `- [🔧 Code Smells](https://refactoring.guru/refactoring/smells) - Common anti-patterns\n`;
             content += `- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices\n\n`;
-            
+
             content += `**Phase 2: Advanced Topics (Week 3-4)**\n`;
             content += `- [✅ Test-Driven Development](https://www.oreilly.com/library/view/test-driven-development/0321146530/) - Kent Beck\n`;
             content += `- [🎯 Working Effectively with Legacy Code](https://www.oreilly.com/library/view/working-effectively-with/0131177052/) - Michael Feathers\n`;
             content += `- [📊 Code Quality Metrics](https://www.baeldung.com/java-static-code-analysis-tutorial) - Static analysis\n\n`;
-          break;
-      }
-    });
+            break;
+        }
+      });
     }
-    
+
     return generateEducationalResources(issues);
   }
 
   private async generateEducationalResourcesBrave(issues: EnrichedIssue[]): Promise<string> {
     return generateEducationalResourcesBrave(issues);
   }
-  
+
   /**
    * BUG FIX #32: Extract Git teammates from repository history
    * Adapted from v9-integrated-analyzer.ts discoverTeamFromGit()
+   *
+   * BUG #4 FIX (Session 30): Filter to only ACTIVE/CURRENT team members
+   * - Only includes developers who committed in the last 6 months
+   * - Removes historical developers who left the team
+   * - Solves "Ranking: #3 of 3 developers" when only 1 active developer
    */
   private discoverTeamFromGit(repoPath: string): Array<{ email: string; name?: string; totalPRs?: number }> {
     try {
-      
+
       if (!fs.existsSync(`${repoPath}/.git`)) {
         return [];
       }
-      
-      // Get last 200 commits (email::name format)
-      const out = execSync(`git -C ${repoPath} log --format=%ae:::%an -n 200`, { 
-        stdio: ['ignore', 'pipe', 'ignore'] 
-      }).toString();
-      
-      const lines = out.split('\n').filter(Boolean);
-      const map = new Map<string, { email: string; name?: string; totalPRs: number }>();
-      
+
+      // BUG #4 FIX: Get commits from last 6 months only (active developers)
+      // This filters out historical developers who left the team
+      // SECURITY FIX: Quote repoPath to prevent command injection
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const sinceDate = sixMonthsAgo.toISOString().split('T')[0];
+
+      const result = execSync(
+        `git log --since="${sinceDate}" --format="%ae:::%an" --no-merges`,
+        { cwd: repoPath, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
+      );
+
+      const lines = result.trim().split('\n').filter(line => line.trim());
+      const map = new Map<string, { email: string; name?: string; totalPRs?: number }>();
+
+      // Test data patterns to exclude
+      const testEmails = ['test@example.com', 'example@test.com', 'test@test.com'];
+      const testNames = ['test user', 'example user', 'john doe', 'jane doe'];
+
+      // BUG #4 COMPLETE FIX (Session 30): Filter out bot/AI commits
+      // Excludes Claude Code, Anthropic bots, and other automated commits
+      const botEmailPatterns = [
+        '@anthropic.com',           // Anthropic bots
+        'claude',                   // Claude Code commits
+        'bot@',                     // Generic bot emails
+        '[bot]',                    // GitHub bot notation
+        'no-reply',                 // No-reply addresses
+        'noreply'                   // Alternative no-reply format
+      ];
+
       for (const line of lines) {
         const [email, name] = line.split(':::');
         if (!email) continue;
-        
-        const key = email.trim().toLowerCase();
+
+        const emailLower = email.trim().toLowerCase();
+        const nameLower = (name || '').trim().toLowerCase();
+
+        // Skip test users
+        if (testEmails.some(testEmail => emailLower === testEmail || emailLower.includes('test'))) {
+          continue;
+        }
+        if (testNames.some(testName => nameLower.includes(testName))) {
+          continue;
+        }
+
+        // BUG #4 FIX: Skip bot/AI commits (Claude Code, Anthropic, etc.)
+        if (botEmailPatterns.some(pattern => emailLower.includes(pattern))) {
+          continue;
+        }
+
+        const key = emailLower;
         if (!map.has(key)) {
           map.set(key, { email: key, name: (name || '').trim(), totalPRs: 1 });
         } else {
@@ -3871,7 +4791,7 @@ Continue following best practices and consider integrating static analysis into 
           v.totalPRs += 1;
         }
       }
-      
+
       return Array.from(map.values()).slice(0, 25); // Top 25 contributors
     } catch (error) {
       console.warn('[V9GroupedReportFormatter] Failed to discover Git teammates:', error);
@@ -3887,14 +4807,14 @@ Continue following best practices and consider integrating static analysis into 
     if (!this.skillScoreManager || !metadata.prAuthor || !metadata.prAuthorEmail) {
       return '';
     }
-    
+
     try {
       // BUG FIX #14-16: Calculate current PR scores first, then build accurate leaderboard
       // This fixes: ranking logic, score mismatch, and fake teammates
-      
+
       // Get score trend (last 5 PRs)
       const history = await this.skillScoreManager.getScoreTrend(metadata.prAuthorEmail, metadata.repository);
-      
+
       // Calculate current category scores from this PR
       // BUG FIX: Only count NEW + EXISTING_MODIFIED issues (exclude EXISTING_REST)
       const security = issues.filter(i =>
@@ -3917,44 +4837,40 @@ Continue following best practices and consider integrating static analysis into 
         i.detectedCategory === 'Code Quality' &&
         (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
       );
-      
-      // BUG #5 FIX: Skills Tracking uses baseScore=50 (developer performance baseline)
+
+      // BUG #1 FIX (Session 30): Fetch developer's baseline score from Supabase
+      // New users: 50 (default), Existing users: their last overall score (e.g., 40)
+      // This fixes Security score showing 21/100 instead of 11/100
+      const developerBaseline = await this.skillScoreManager.getBaselineScore(
+        metadata.prAuthorEmail,
+        metadata.repository
+      );
+      console.log(`[Skills] Using baseline ${developerBaseline} for ${metadata.prAuthorEmail} (Supabase saved score)`);
+
+      // Calculate category scores using developer's baseline (not hardcoded 50)
       const categoryScores = {
-        security: this.calculateCategoryScore(security, 50),
-        performance: this.calculateCategoryScore(performance, 50),
-        architecture: this.calculateCategoryScore(architecture, 50),
-        dependencies: this.calculateCategoryScore(dependencies, 50),
-        codeQuality: this.calculateCategoryScore(codeQuality, 50)
+        security: this.calculateCategoryScore(security, developerBaseline),
+        performance: this.calculateCategoryScore(performance, developerBaseline),
+        architecture: this.calculateCategoryScore(architecture, developerBaseline),
+        dependencies: this.calculateCategoryScore(dependencies, developerBaseline),
+        codeQuality: this.calculateCategoryScore(codeQuality, developerBaseline)
       };
-      
+
+      // BUG #2 DEBUG (Session 30): Log individual category scores to verify calculation
+      console.log(`[Skills] Category Scores Breakdown:`);
+      console.log(`  Security: ${categoryScores.security}`);
+      console.log(`  Performance: ${categoryScores.performance}`);
+      console.log(`  Architecture: ${categoryScores.architecture}`);
+      console.log(`  Dependencies: ${categoryScores.dependencies}`);
+      console.log(`  Code Quality: ${categoryScores.codeQuality}`);
+
       // BUG FIX #44: Skill score = AVERAGE of category scores
       const currentPRScore = Math.round(
-        (categoryScores.security + categoryScores.performance + categoryScores.architecture + 
-         categoryScores.dependencies + categoryScores.codeQuality) / 5
+        (categoryScores.security + categoryScores.performance + categoryScores.architecture +
+          categoryScores.dependencies + categoryScores.codeQuality) / 5
       );
-      
-      // BUG FIX #32: Fetch Git teammates first, then merge with Supabase data
-      let gitTeammates: Array<{ email: string; name?: string; totalPRs?: number }> = [];
-      if (this.repoPath) {
-        gitTeammates = this.discoverTeamFromGit(this.repoPath);
-        console.log(`[V9GroupedReportFormatter] Discovered ${gitTeammates.length} Git teammates from repository`);
-      }
-      
-      // BUG FIX #57: Pass repository to get repo-specific leaderboard (prevents cross-repo contamination)
-      // Build team leaderboard from Supabase (only actual teammates from this repository)
-      let supabaseLeaderboard = await this.skillScoreManager.getLeaderboard(100, metadata.repository); // Repository-specific
-      
-      // Filter out obviously fake test data (names like "unknown", "Test Developer", etc.)
-      const fakeNames = ['unknown', 'test developer', 'alice developer', 'bob developer', 'test'];
-      supabaseLeaderboard = supabaseLeaderboard.filter((dev: any) => {
-        const nameLower = (dev.name || '').toLowerCase();
-        return !fakeNames.some(fake => nameLower.includes(fake));
-      });
-      
-      // BUG FIX #32: Merge Git teammates with Supabase teammates
-      // For Git teammates not in Supabase, add them with baseline 50/100 score
-      const teamLeaderboard = [...supabaseLeaderboard];
-      
+      console.log(`[Skills] Overall Score: (${categoryScores.security} + ${categoryScores.performance} + ${categoryScores.architecture} + ${categoryScores.dependencies} + ${categoryScores.codeQuality}) / 5 = ${currentPRScore}`);
+
       // BUG FIX: Use normalized email comparison to prevent duplicates
       const normalizeEmailForDedup = (email: string) => {
         if (!email) return '';
@@ -3964,13 +4880,60 @@ Continue following best practices and consider integrating static analysis into 
         }
         return email.toLowerCase();
       };
-      
+
+      // BUG FIX #32: Fetch Git teammates first, then merge with Supabase data
+      let gitTeammates: Array<{ email: string; name?: string; totalPRs?: number }> = [];
+      if (this.repoPath) {
+        gitTeammates = this.discoverTeamFromGit(this.repoPath);
+        console.log(`[V9GroupedReportFormatter] Discovered ${gitTeammates.length} Git teammates from repository`);
+      }
+
+      // BUG FIX #57: Pass repository to get repo-specific leaderboard (prevents cross-repo contamination)
+      // Build team leaderboard from Supabase (only actual teammates from this repository)
+      let supabaseLeaderboard = await this.skillScoreManager.getLeaderboard(100, metadata.repository); // Repository-specific
+
+      // BUG FIX: Filter out users not from this repository
+      // Only include users who have commits in this repository's Git history
+      const gitEmails = new Set(gitTeammates.map(t => normalizeEmailForDedup(t.email)));
+
+      // Filter out obviously fake test data (names like "unknown", "Test Developer", etc.)
+      const fakeNames = ['unknown', 'test developer', 'alice developer', 'bob developer', 'test', 'codequal test'];
+      const testEmails = ['test@codequal.local', 'test@example.com', 'test-user@example.com'];
+      supabaseLeaderboard = supabaseLeaderboard.filter((dev: any) => {
+        const nameLower = (dev.name || '').toLowerCase();
+        const emailLower = (dev.email || '').toLowerCase();
+
+        // Filter out fake names
+        if (fakeNames.some(fake => nameLower.includes(fake))) {
+          return false;
+        }
+
+        // Filter out test emails
+        if (testEmails.some(testEmail => emailLower === testEmail || emailLower.includes('test@'))) {
+          return false;
+        }
+
+        // BUG FIX: Only include users who have commits in this repository
+        // If we have Git teammates, only show users from Git history
+        if (gitEmails.size > 0) {
+          return gitEmails.has(normalizeEmailForDedup(dev.email));
+        }
+
+        // If no Git history available, include all Supabase users for this repo
+        return true;
+      });
+
+      // BUG FIX #32: Merge Git teammates with Supabase teammates
+      // For Git teammates not in Supabase, add them with baseline 50/100 score
+      const teamLeaderboard = [...supabaseLeaderboard];
+
       for (const gitDev of gitTeammates) {
         const normalizedGitEmail = normalizeEmailForDedup(gitDev.email);
-        const existsInSupabase = teamLeaderboard.some((dev: any) => 
-          normalizeEmailForDedup(dev.email) === normalizedGitEmail
+        const existsInSupabase = teamLeaderboard.some((dev: any) =>
+          normalizeEmailForDedup(dev.email) === normalizedGitEmail ||
+          (dev.name && gitDev.name && dev.name.toLowerCase().trim() === gitDev.name.toLowerCase().trim())
         );
-        
+
         if (!existsInSupabase) {
           // Add Git teammate with baseline score (hasn't been analyzed yet)
           teamLeaderboard.push({
@@ -3978,15 +4941,15 @@ Continue following best practices and consider integrating static analysis into 
             email: gitDev.email,
             score: 50,  // Baseline: neutral score
             avgScore: 50,
-            totalPRs: 0  // No analyzed PRs yet (from Supabase)
+            totalPRs: gitDev.totalPRs || 0  // Use Git commit count if available
           });
         }
       }
-      
+
       // Update or add current developer with current PR score
       console.log(`[Skills] DEBUG: currentPRScore calculated as ${currentPRScore}`);
       console.log(`[Skills] DEBUG: Looking for ${metadata.prAuthorEmail} in leaderboard of ${teamLeaderboard.length} devs`);
-      
+
       // BUG FIX: Normalize email comparison to handle GitHub's different email formats
       // GitHub uses: username@users.noreply.github.com OR userid+username@users.noreply.github.com
       const normalizeEmail = (email: string) => {
@@ -3998,15 +4961,16 @@ Continue following best practices and consider integrating static analysis into 
         }
         return email.toLowerCase();
       };
-      
+
       const normalizedAuthorEmail = normalizeEmail(metadata.prAuthorEmail);
       console.log(`[Skills] DEBUG: Normalized email: ${normalizedAuthorEmail}`);
-      
-      const currentDevIndex = teamLeaderboard.findIndex((d: any) => 
-        normalizeEmail(d.email) === normalizedAuthorEmail
+
+      const currentDevIndex = teamLeaderboard.findIndex((d: any) =>
+        normalizeEmail(d.email) === normalizedAuthorEmail ||
+        (d.name && metadata.prAuthor && d.name.toLowerCase().trim() === metadata.prAuthor.toLowerCase().trim())
       );
       console.log(`[Skills] DEBUG: Found at index ${currentDevIndex}`);
-      
+
       if (currentDevIndex >= 0) {
         // Update existing entry with current PR score
         const oldScore = teamLeaderboard[currentDevIndex].score;
@@ -4026,7 +4990,7 @@ Continue following best practices and consider integrating static analysis into 
           totalPRs: 1
         });
       }
-      
+
       // Sort by score (descending) to get correct ranking
       console.log(`[Skills] DEBUG: Before sort, ${metadata.prAuthor} score is ${teamLeaderboard.find((d: any) => normalizeEmail(d.email) === normalizedAuthorEmail)?.score}`);
       console.log(`[Skills] DEBUG: Before sort, all entries with matching normalized email:`);
@@ -4035,9 +4999,9 @@ Continue following best practices and consider integrating static analysis into 
           console.log(`[Skills] DEBUG:   [${idx}] ${d.email}: score=${d.score}, avgScore=${d.avgScore}`);
         }
       });
-      
+
       teamLeaderboard.sort((a: any, b: any) => b.score - a.score);
-      
+
       console.log(`[Skills] DEBUG: After sort, ${metadata.prAuthor} score is ${teamLeaderboard.find((d: any) => normalizeEmail(d.email) === normalizedAuthorEmail)?.score}`);
       console.log(`[Skills] DEBUG: After sort, all entries with matching normalized email:`);
       teamLeaderboard.forEach((d: any, idx: number) => {
@@ -4045,32 +5009,33 @@ Continue following best practices and consider integrating static analysis into 
           console.log(`[Skills] DEBUG:   [${idx}] ${d.email}: score=${d.score}, avgScore=${d.avgScore}`);
         }
       });
-      
+
       // Calculate rank (position in sorted leaderboard) - use normalized email
       const rank = teamLeaderboard.findIndex((d: any) => normalizeEmail(d.email) === normalizedAuthorEmail) + 1;
       const totalDevelopers = teamLeaderboard.length;
-      
+
       // Team average from cleaned leaderboard
       const teamAvg = teamLeaderboard.length > 0
         ? Math.round(teamLeaderboard.reduce((sum: number, dev: any) => sum + dev.score, 0) / teamLeaderboard.length)
         : 50;
-      
+
       // SESSION 25 DEBUG: Show full leaderboard to understand ranking
       console.log(`[Skills] DEBUG: Full leaderboard (sorted by score):`);
       teamLeaderboard.forEach((dev: any, idx: number) => {
         console.log(`[Skills] DEBUG:   [${idx}] ${dev.name || dev.email}: ${dev.score}/100`);
       });
-      
+
       let content = `## 👥 Skills Tracking\n\n`;
-      
-      // Developer Score Card
+
+      // BUG #4 FIX (Session 30): Only show ranking when there are multiple developers
+      // Solo developer (totalDevelopers === 1) doesn't need ranking display
       content += `### ${metadata.prAuthor}'s Performance\n\n`;
       content += `**Overall Score:** ${currentPRScore}/100\n`;
-      if (rank > 0) {
+      if (rank > 0 && totalDevelopers > 1) {
         content += `**Ranking:** #${rank} of ${totalDevelopers} developers\n`;
       }
       content += `**Team Average:** ${teamAvg}/100\n\n`;
-      
+
       // Category Breakdown
       content += `### Category Breakdown\n\n`;
       content += `| Category | Your Score | Team Avg | Status |\n`;
@@ -4080,17 +5045,18 @@ Continue following best practices and consider integrating static analysis into 
       content += `| 🏗️  Architecture | ${categoryScores.architecture}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.architecture, teamAvg)} |\n`;
       content += `| 📦 Dependencies | ${categoryScores.dependencies}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.dependencies, teamAvg)} |\n`;
       content += `| ✨ Code Quality | ${categoryScores.codeQuality}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.codeQuality, teamAvg)} |\n\n`;
-      
-      // Trend Analysis (if history available) – hide if flat or insufficient
+
+      // BUG #3 FIX (Session 30): Clarify this is developer's OWN performance trend (not team comparison)
+      // Shows "Your Performance Trend" even for solo developers (tracks personal improvement)
       if (history && history.length > 1 && !history.every((v: number) => v === history[0])) {
-        const trend = history[history.length - 1] > history[0] ? '📈 Improving' : 
-                     history[history.length - 1] < history[0] ? '📉 Declining' : '➡️  Stable';
-        
-        content += `### Trend (Last ${history.length} PRs)\n\n`;
+        const trend = history[history.length - 1] > history[0] ? '📈 Improving' :
+          history[history.length - 1] < history[0] ? '📉 Declining' : '➡️  Stable';
+
+        content += `### Your Performance Trend (Last ${history.length} PRs)\n\n`;
         content += `**Status:** ${trend}\n`;
         content += `**Scores:** ${history.join(' → ')}\n\n`;
       }
-      
+
       // Learning Recommendations based on weak categories
       const weakCategories = [];
       if (categoryScores.security < teamAvg) weakCategories.push('Security');
@@ -4098,7 +5064,7 @@ Continue following best practices and consider integrating static analysis into 
       if (categoryScores.architecture < teamAvg) weakCategories.push('Architecture');
       if (categoryScores.dependencies < teamAvg) weakCategories.push('Dependencies');
       if (categoryScores.codeQuality < teamAvg) weakCategories.push('Code Quality');
-      
+
       if (weakCategories.length > 0) {
         content += `### 🎯 Focus Areas\n\n`;
         content += `Consider improving these categories where you're below team average:\n\n`;
@@ -4107,43 +5073,112 @@ Continue following best practices and consider integrating static analysis into 
         });
         content += `\n`;
       }
-      
+
       // Top Performers (motivation) - use updated teamLeaderboard
       if (teamLeaderboard.length > 0) {
         content += `### 🏆 Top Performers\n\n`;
         content += `| Rank | Developer | Score | PRs Analyzed |\n`;
         content += `|------|-----------|-------|-------------|\n`;
-        
-        // Debug: Log the top 5 performers
-        console.log(`[Skills] Top 5 performers:`);
-        teamLeaderboard.slice(0, 5).forEach((dev: any, idx: number) => {
+
+        // BUG-074 FIX: Filter out AI agents from Top Performers
+        // AI agents should not appear in human performance metrics
+        const isAIAgent = (dev: any): boolean => {
+          const name = (dev.name || '').toLowerCase();
+          const email = (dev.email || '').toLowerCase();
+
+          // Known AI agent patterns
+          const aiNamePatterns = ['claude', 'gpt', 'copilot', 'bot', 'dependabot', 'renovate'];
+          const aiEmailPatterns = ['noreply@anthropic.com', 'noreply@openai.com', 'bot@', '[bot]', 'dependabot', 'renovate'];
+
+          const hasAIName = aiNamePatterns.some(pattern => name.includes(pattern));
+          const hasAIEmail = aiEmailPatterns.some(pattern => email.includes(pattern));
+
+          return hasAIName || hasAIEmail;
+        };
+
+        const humanPerformers = teamLeaderboard.filter((dev: any) => !isAIAgent(dev));
+
+        // BUG-083 FIX: Deduplicate users by BOTH email AND name
+        // Same user may appear with different emails but same name (e.g., alpsla with 3 different emails)
+        const deduplicatedPerformers = humanPerformers.reduce((acc: any[], dev: any) => {
+          const normalizedEmail = (dev.email || '').toLowerCase().trim();
+          const normalizedName = (dev.name || '').toLowerCase().trim();
+
+          // Find existing by email OR by name (if name is meaningful)
+          const existing = acc.find((d: any) => {
+            const existingEmail = (d.email || '').toLowerCase().trim();
+            const existingName = (d.name || '').toLowerCase().trim();
+
+            // Match by email
+            if (existingEmail && normalizedEmail && existingEmail === normalizedEmail) {
+              return true;
+            }
+
+            // Match by name (if both have meaningful names, not just emails)
+            if (existingName && normalizedName &&
+              existingName.length > 2 && normalizedName.length > 2 &&
+              !existingName.includes('@') && !normalizedName.includes('@') &&
+              existingName === normalizedName) {
+              return true;
+            }
+
+            return false;
+          });
+
+          if (existing) {
+            // Merge: weighted average score, sum PRs
+            const totalPRs = (existing.totalPRs || 1) + (dev.totalPRs || 1);
+            const weightedScore = (
+              (existing.score * (existing.totalPRs || 1)) +
+              (dev.score * (dev.totalPRs || 1))
+            ) / totalPRs;
+            existing.score = Math.round(weightedScore);
+            existing.totalPRs = totalPRs;
+            // Keep the most descriptive name and primary email
+            if (!existing.name && dev.name) existing.name = dev.name;
+            // Prefer non-noreply email
+            if (existing.email && existing.email.includes('noreply') && dev.email && !dev.email.includes('noreply')) {
+              existing.email = dev.email;
+            }
+          } else {
+            acc.push({ ...dev });
+          }
+          return acc;
+        }, []);
+
+        // Re-sort after deduplication
+        deduplicatedPerformers.sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+
+        // Debug: Log the top 5 performers (humans only, deduplicated)
+        console.log(`[Skills] Top 5 human performers (filtered ${teamLeaderboard.length - humanPerformers.length} AI agents, deduplicated ${humanPerformers.length - deduplicatedPerformers.length} duplicates):`);
+        deduplicatedPerformers.slice(0, 5).forEach((dev: any, idx: number) => {
           console.log(`[Skills] ${idx + 1}. ${dev.name} (${dev.email}): ${dev.score}/100`);
         });
-        
-        teamLeaderboard.slice(0, 5).forEach((dev: any, idx: number) => {
+
+        deduplicatedPerformers.slice(0, 5).forEach((dev: any, idx: number) => {
           const isCurrent = normalizeEmail(dev.email) === normalizeEmail(metadata.prAuthorEmail);
           const highlight = isCurrent ? '**' : '';
           content += `| ${idx + 1} | ${highlight}${dev.name || dev.email}${highlight} | ${highlight}${dev.score}/100${highlight} | ${highlight}${dev.totalPRs || 1}${highlight} |\n`;
         });
         content += `\n`;
       }
-      
+
       content += `> 💡 **Note:** Scores are based on code quality in your PRs. Higher scores mean fewer issues introduced!`;
-      
+
       return content;
     } catch (error) {
       console.error('[V9GroupedReportFormatter] Error generating skills tracking:', error);
       return ''; // Silent fail - skills tracking is optional
     }
   }
-  
+
   private getStatusEmoji(yourScore: number, teamAvg: number): string {
     if (yourScore >= teamAvg + 10) return '🌟 Excellent';
     if (yourScore >= teamAvg) return '✅ Above Average';
     if (yourScore >= teamAvg - 10) return '➡️ Average';
     return '⚠️ Below Average';
   }
-  
+
   /**
    * Generate Analysis Metadata with complete performance details
    */
@@ -4162,7 +5197,7 @@ Continue following best practices and consider integrating static analysis into 
     const cloneTime = Math.max(metadata.cloneTime || 0, 0);
     const analysisTime = Math.max(metadata.analysisTime || 0, 0);
     const reportTime = Math.max(metadata.reportGenerationTime || 0, 0);
-    
+
     const cachedNote = (cloneTime === 0) ? ' (cached)' : '';
     // BUG FIX #17: Removed duplicate "Performance Metrics" section (already shown at top of report)
     let content = `## 📊 Analysis Metadata
@@ -4233,18 +5268,18 @@ Continue following best practices and consider integrating static analysis into 
     if (this.SHOW_EFFICIENCY_ANALYSIS && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
       content += `\n### Cost & Efficiency Analysis
 `;
-      
+
       // Calculate totals
       const totalCost = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.cost || 0), 0);
       const totalIssues = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.issuesFound || agent.issues || 0), 0);
       const totalTime = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.duration || 0), 0);
-      
+
       content += `\n**Overall Efficiency:**\n`;
       content += `- Total Cost: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + totalCost.toFixed(4)}\n`;
       content += `- Cost per Issue: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + (totalIssues > 0 ? (totalCost / totalIssues).toFixed(6) : '0.000000')}\n`;
       content += `- Issues per Second: ${totalTime > 0 ? ((totalIssues / totalTime) * 1000).toFixed(2) : '0.00'}\n`;
       content += `- Cost per Second: ${(totalCost === 0 || totalCost < 0.0001) ? 'FREE' : '$' + (totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000') + '/s'}\n\n`;
-      
+
       // Performance recommendations
       // MODEL NAME BUG FIX (2025-10-30): Include model in efficiency ranking
       content += `**Agent Efficiency Ranking:**\n\n`;
@@ -4294,17 +5329,17 @@ Continue following best practices and consider integrating static analysis into 
         const badge = isFree
           ? '🎁 FREE'
           : !isFinite(agent.costPerIssue)
-          ? 'N/A'
-          : agent.costPerIssue < 0.001 ? '⚡ Excellent'
-          : agent.costPerIssue < 0.01 ? '✅ Good'
-          : agent.costPerIssue < 0.1 ? '⚠️ Average' : '🔴 Expensive';
+            ? 'N/A'
+            : agent.costPerIssue < 0.001 ? '⚡ Excellent'
+              : agent.costPerIssue < 0.01 ? '✅ Good'
+                : agent.costPerIssue < 0.1 ? '⚠️ Average' : '🔴 Expensive';
         const costPerIssueStr = isFree
           ? 'FREE/issue'
           : isFinite(agent.costPerIssue) ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A cost/issue';
         const modelInfo = agent.model !== 'N/A' ? ` (${agent.model})` : '';
         content += `${rank} **${agent.name}**${modelInfo}: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
       });
-      
+
       // Replacement recommendations (only for paid models)
       const expensiveAgents = agentEfficiency.filter((a: any) => a.cost >= 0.0001 && a.costPerIssue > 0.05);
       if (expensiveAgents.length > 0) {
@@ -4317,12 +5352,12 @@ Continue following best practices and consider integrating static analysis into 
         content += `- All agents using FREE models - excellent cost efficiency! 🎉\n`;
       }
     }
-    
+
     // Add Tool Efficiency Analysis
     if (metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
       content += `\n### Tool Efficiency Analysis
 `;
-      
+
       const toolEfficiency = metadata.toolPerformance
         .map((tool: any) => {
           const issues = tool.issuesFound || tool.issues || 0;
@@ -4337,16 +5372,16 @@ Continue following best practices and consider integrating static analysis into 
           };
         })
         .sort((a: any, b: any) => b.efficiency - a.efficiency);
-      
+
       content += `\n**Tool Performance Ranking:**\n\n`;
       toolEfficiency.forEach((tool: any, idx: number) => {
         const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-        const speed = tool.issuesPerSec > 10 ? '⚡ Fast' : 
-                     tool.issuesPerSec > 1 ? '✅ Good' : 
-                     tool.issuesPerSec > 0.1 ? '⚠️ Slow' : '🐌 Very Slow';
+        const speed = tool.issuesPerSec > 10 ? '⚡ Fast' :
+          tool.issuesPerSec > 1 ? '✅ Good' :
+            tool.issuesPerSec > 0.1 ? '⚠️ Slow' : '🐌 Very Slow';
         content += `${rank} **${tool.name}**: ${tool.issues} issues in ${(tool.time / 1000).toFixed(1)}s (${tool.issuesPerSec.toFixed(2)}/s) ${speed}\n`;
       });
-      
+
       // BUG FIX #18: Removed "Performance Concerns" section
       // Can't compare tools with different purposes (CheckStyle finds 498K style issues, Semgrep finds 11 security issues)
       // Each tool has its own nature - execution time varies by codebase size and tool purpose
@@ -4375,10 +5410,10 @@ Continue following best practices and consider integrating static analysis into 
  - **Report Format:** Grouped (Compact with 99.8% cost reduction)
  - **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types`;
     }
-    
+
     return content;
   }
-  
+
   /**
    * Generate PR Comment (personalized, ready-to-paste)
    */
@@ -4387,18 +5422,18 @@ Continue following best practices and consider integrating static analysis into 
   }
 
   private _REMOVED_generatePRComment_LEGACY(issues: EnrichedIssue[], groups: IssueGroup[], metadata: any): string {
-    const blocking = issues.filter(i => 
-      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+    const blocking = issues.filter(i =>
+      (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
       (i.severity === 'critical' || i.severity === 'high')
     );
     const resolved = issues.filter(i => i.category === 'RESOLVED');
-    
+
     const emoji = metadata.decision === 'APPROVED' ? '✅' : '⛔';
     const decision = metadata.decision || 'PENDING';
-    
+
     const greeting = this.getPersonalizedGreeting(metadata.prAuthor);
     const encouragement = this.getPersonalizedEncouragement(blocking.length, resolved.length);
-    
+
     return `## 💬 PR Comment Template
 
 **Ready-to-paste comment for your pull request:**
@@ -4422,7 +5457,32 @@ ${blocking.slice(0, 5).map(i => `- **${i.rule}** in \`${i.file}\`${i.line ? `:${
 ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### ✅ No Blocking Issues\nThis PR can be merged once approved by reviewers.'}
 
 ### 💡 Quick Stats
-- Auto-fixable: ${issues.filter(i => this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length}/${issues.length} issues (${groups.filter(g => this.canAutoFix(g)).length}/${groups.length} types)
+
+**Fix Recommendations (100% Coverage):**
+${(() => {
+        const safeCount = issues.filter(i => this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
+        const safePercent = Math.round(safeCount / issues.length * 100);
+        const advancedCount = issues.filter(i => this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
+        const advancedPercent = Math.round(advancedCount / issues.length * 100);
+        const manualCount = issues.length - advancedCount;
+        const manualPercent = Math.round(manualCount / issues.length * 100);
+
+        const tier1 = safeCount > 0
+          ? `${safeCount} issues (${safePercent}%) - Apply immediately`
+          : `0 issues - No simple fixes`;
+        const tier2 = advancedCount > 0
+          ? `${advancedCount} issues (${advancedPercent}%) - Requires testing`
+          : `0 issues - No advanced fixes`;
+        const tier3 = manualCount > 0
+          ? `${manualCount} issues (${manualPercent}%) - AI-guided manual review`
+          : `0 issues - All auto-fixable!`;
+
+        return `- 🟢 **Safe Auto-Fix (Tier 1)**: ${tier1}
+- 🟡 **Advanced Auto-Fix (Tier 2)**: ${tier2}
+- 🔴 **Manual Review (Tier 3)**: ${tier3}`;
+      })()}
+
+**By Severity:**
 - Critical: ${issues.filter(i => i.severity === 'critical').length}
 - High: ${issues.filter(i => i.severity === 'high').length}
 - Medium: ${issues.filter(i => i.severity === 'medium').length}
@@ -4431,7 +5491,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 
 > 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.`;
   }
-  
+
   /**
    * Get personalized greeting
    *
@@ -4443,7 +5503,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
     // Always use time-neutral greeting (user may read report hours/days later)
     return 'Hi';
   }
-  
+
   /**
    * Get personalized encouragement
    */
@@ -4460,16 +5520,17 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       return `There are ${blockingCount} issues that need to be addressed. I've provided detailed fix suggestions for each. Let me know if you need any help! 🚀`;
     }
   }
-  
+
   /**
    * Generate footer
    */
   private generateFooter(
     groups: IssueGroup[],
     ideFixFiles: IDEFixFile[],
-    metadata: any
+    metadata: any,
+    enrichedIssues?: EnrichedIssue[]
   ): string {
-    return generateFooter(groups, ideFixFiles, metadata);
+    return generateFooter(groups, ideFixFiles, metadata, enrichedIssues);
   }
 
   private _REMOVED_generateFooter_LEGACY(
@@ -4480,11 +5541,11 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
     // ENHANCEMENT #3: Removed Issue Groups Mapping (not useful for end users)
     // BUG FIX #70: Don't show empty "Attachments" header - combine with IDE Fix Files section
     let footer = '';
-    
+
     if (ideFixFiles.length > 0) {
       footer += `## 🔗 Attachments\n\n`;
       footer += `### 🛠️ IDE Fix Files (Lazy Loading)\n\n`;
-      
+
       // BUG FIX #48: Explain Bug #34 lazy loading architecture
       footer += `**🚀 Instant-start IDE integration** with lazy loading:\n\n`;
       footer += `📦 **1 manifest file** to load in your IDE:\n`;
@@ -4494,7 +5555,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `- ⬇️  **High/Medium/Low issues** lazy loaded in background\n`;
       footer += `- 🎯 **Priority-based download** (critical → high → medium → low)\n`;
       footer += `- 📊 **Progress tracking** while you fix issues\n\n`;
-      
+
       // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
       const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
       const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
@@ -4520,16 +5581,16 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       if (highCount > 0) footer += `- 🟠 High: ${highCount} (lazy loaded after critical)\n`;
       if (mediumCount > 0) footer += `- 🟡 Medium: ${mediumCount} (lazy loaded after high)\n`;
       if (lowCount > 0) footer += `- 🟢 Low: ${lowCount} (lazy loaded after medium)\n`;
-      
+
       // ENHANCEMENT #4: Universal IDE instructions with prompt examples
       footer += `\n**How to use** (Universal IDE Integration):\n\n`;
       footer += `**For Any IDE** (Cursor, VS Code, IntelliJ, Windsurf, etc.):\n\n`;
-      
+
       footer += `**Step 1: Load the Manifest**\n`;
       footer += `1. Download \`all-issues-manifest.json\` from \`attachments/\` directory\n`;
       footer += `2. Open your IDE\n`;
       footer += `3. Load/import the JSON file (method varies by IDE)\n\n`;
-      
+
       footer += `**Step 2: Fix Issues with Single Command**\n\n`;
       footer += `**Simple prompt** (one command does everything):\n`;
       footer += `\`\`\`\n`;
@@ -4550,7 +5611,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `        [Applies fixes with real-time progress]\n`;
       footer += `        ✅ Critical: 2/2 fixed (100%)\n`;
       if (highCount > 0) {
-        footer += `        🔄 High: 5/${highCount} fixed (${Math.round((5/highCount)*100)}%)...\n`;
+        footer += `        🔄 High: 5/${highCount} fixed (${Math.round((5 / highCount) * 100)}%)...\n`;
       }
       footer += `        ⏳ Medium: Waiting for high to complete...\n`;
       footer += `\`\`\`\n\n`;
@@ -4560,7 +5621,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `- Fixes issues in severity order (critical → high → medium → low)\n`;
       footer += `- Shows live progress updates\n`;
       footer += `- Downloads next priority issues in background\n\n`;
-      
+
       // BUG FIX #64: Updated validation workflow (CodeQual re-scan, not IDE)
       footer += `**Step 3: Validate Your Fixes with CodeQual**\n\n`;
       footer += `After committing your fixes, CodeQual will automatically re-analyze your PR to confirm the issues are resolved:\n\n`;
@@ -4589,7 +5650,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `- 🎯 Catch any regressions or incomplete fixes\n`;
       footer += `- 🏆 Earn "First Clean PR" achievement\n\n`;
       footer += `> **Note:** Auto-fix tools can resolve most style and formatting issues (${Math.round((autoFixableCount / totalFixable) * 100)}% in this PR), but complex security or logic issues may require manual review.\n\n`;
-      
+
       footer += `**Why this works**:\n`;
       footer += `- ⚡ **Zero wait time** - critical issues embedded for instant access\n`;
       footer += `- 🎯 **Priority-first** - most important issues available immediately\n`;
@@ -4598,28 +5659,28 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
       footer += `- 🛡️  **Human-in-the-loop** - you review before applying for safety\n`;
       footer += `- 🔄 **Validation workflow** - automated before/after comparison\n`;
     }
-    
+
     footer += `\n---\n\n`;
     footer += `*Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  \n`;
     footer += `*${new Date().toISOString()}*`;
-    
+
     return footer;
   }
-  
+
   // Helper methods
-  
+
   private sanitizeGroupId(group: IssueGroup): string {
     return `${group.rule}-${group.severity}-${group.tool}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
   }
-  
+
   private groupBySeverity(issues: EnrichedIssue[]): Record<string, number> {
     return groupBySeverity(issues);
   }
-  
+
   private groupByCategory(issues: EnrichedIssue[]): Record<string, number> {
     return groupByCategory(issues);
   }
-  
+
   private groupByTool(issues: EnrichedIssue[]): Record<string, number> {
     return groupByTool(issues);
   }

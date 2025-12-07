@@ -20,6 +20,14 @@
         "@codequal/testing/*": ["packages/testing/src/*"],
         "@codequal/ui": ["packages/ui/src"],
         "@codequal/ui/*": ["packages/ui/src/*"]
-    }
-    }
+      }
+    },
+    "files": [],
+    "references": [
+      { "path": "./packages/core" },
+      { "path": "./packages/agents" },
+      { "path": "./packages/database" },
+      { "path": "./packages/testing" },
+      { "path": "./apps/api" }
+    ]
   }

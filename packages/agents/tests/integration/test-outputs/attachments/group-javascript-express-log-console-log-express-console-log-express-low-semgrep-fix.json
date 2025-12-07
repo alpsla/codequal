@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-log-console-log-express-console-log-express-low-semgrep",
+  "rule": "javascript.express.log.console-log-express.console-log-express",
+  "tool": "semgrep",
+  "severity": "low",
+  "description": "Sanitize user input before logging by removing or encoding special characters that could be interpreted as control sequences. Use a logging framework that supports structured logging with proper escaping or apply custom sanitization logic to prevent injection of malicious content.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const sanitizedInput = userInput.replace(/[\\r\\n\\t]/g, ' ');\nlogger.info(`User action performed: ${sanitizedInput}`);"
+    },
+    "instructions": "Sanitize user input before logging by removing or encoding special characters that could be interpreted as control sequences. Use a logging framework that supports structured logging with proper escaping or apply custom sanitization logic to prevent injection of malicious content."
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "line": 127,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "line": 385,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "docker/agents/hybrid-agent-enhanced.js",
+      "line": 281,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 3,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 2
+  }
+}

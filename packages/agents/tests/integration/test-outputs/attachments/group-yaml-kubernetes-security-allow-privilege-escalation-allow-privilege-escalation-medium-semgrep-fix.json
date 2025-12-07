@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "group_id": "yaml-kubernetes-security-allow-privilege-escalation-allow-privilege-escalation-medium-semgrep",
+  "rule": "yaml.kubernetes.security.allow-privilege-escalation.allow-privilege-escalation",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Add securityContext with allowPrivilegeEscalation set to false in the pod specification. This prevents containers from escalating privileges and limits potential damage from compromised containers.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: builder-job\nspec:\n  template:\n    spec:\n      containers:\n      - name: builder\n        image: my-builder-image\n        securityContext:\n          allowPrivilegeEscalation: false\n      restartPolicy: Never"
+    },
+    "instructions": "Add securityContext with allowPrivilegeEscalation set to false in the pod specification. This prevents containers from escalating privileges and limits potential damage from compromised containers."
+  },
+  "locations": [
+    {
+      "file": "kubernetes/builder-job.yaml",
+      "line": 12,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/export-import-images.yaml",
+      "line": 84,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

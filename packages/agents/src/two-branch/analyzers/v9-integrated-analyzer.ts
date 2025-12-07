@@ -441,6 +441,20 @@ and actionable recommendations. Focus on business value and team productivity.`;
     console.log(`[DEBUG-PR#] data.repository: ${data.repository}`);
     console.log(`[DEBUG-PR#] =====================================\n`);
 
+    // NEW BUG DEBUG: Check mainOutputs and prOutputs
+    console.log(`\n[NEW-BUG] ====== OUTPUTS DEBUG ======`);
+    console.log(`[NEW-BUG] data.mainOutputs: ${data.mainOutputs ? data.mainOutputs.length : 'undefined'} outputs`);
+    console.log(`[NEW-BUG] data.prOutputs: ${data.prOutputs ? data.prOutputs.length : 'undefined'} outputs`);
+    if (data.mainOutputs && data.mainOutputs.length > 0) {
+      const mainIssuesCount = data.mainOutputs.reduce((acc: number, o: any) => acc + (o.parsedIssues?.length || 0), 0);
+      console.log(`[NEW-BUG] Total main branch issues: ${mainIssuesCount}`);
+    }
+    if (data.prOutputs && data.prOutputs.length > 0) {
+      const prIssuesCount = data.prOutputs.reduce((acc: number, o: any) => acc + (o.parsedIssues?.length || 0), 0);
+      console.log(`[NEW-BUG] Total PR branch issues: ${prIssuesCount}`);
+    }
+    console.log(`[NEW-BUG] =============================\n`);
+
     // Delegate report compilation to extracted service
     const result = await compileV9Report(
       {

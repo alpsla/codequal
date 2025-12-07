@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-security-audit-xss-direct-response-write-direct-response-write-medium-semgrep",
+  "rule": "javascript.express.security.audit.xss.direct-response-write.direct-response-write",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "1. Use a templating engine that automatically escapes HTML content (e.g., Handlebars, EJS with escaping enabled)\n2. Manually escape user input before writing to response using HTML encoding functions\n3. Implement Content Security Policy (CSP) headers as defense-in-depth\n4. Validate and sanitize all user inputs server-side before rendering",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const escapedInput = escapeHtml(userInput);\nresponse.write(`<div>${escapedInput}</div>`);\n\n// Or using a templating engine:\n// res.render('template', { data: userInput }); // where template engine escapes by default"
+    },
+    "instructions": "1. Use a templating engine that automatically escapes HTML content (e.g., Handlebars, EJS with escaping enabled)\n2. Manually escape user input before writing to response using HTML encoding functions\n3. Implement Content Security Policy (CSP) headers as defense-in-depth\n4. Validate and sanitize all user inputs server-side before rendering"
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/progress.ts",
+      "line": 336,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "apps/api/src/routes/unified-progress.ts",
+      "line": 148,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

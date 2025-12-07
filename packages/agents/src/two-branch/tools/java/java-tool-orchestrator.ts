@@ -204,35 +204,48 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
 
   /**
    * Get tools to run based on analysis mode (required by base)
+   *
+   * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
+   * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
+   * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
    */
-  protected getToolsToRun(mode: AnalysisMode, branch: 'base' | 'pr'): string[] {
+  protected getToolsToRun(
+    mode: AnalysisMode,
+    branch: 'base' | 'pr',
+    userTier?: 'basic' | 'pro'
+  ): string[] {
     const tools: string[] = [];
-    
+
     // PMD - Always included (code quality)
     if (this.config.pmd.enabled && shouldJavaToolRun('pmd', mode)) {
       tools.push('pmd');
     }
-    
-    // Semgrep - Always included (security)
+
+    // Semgrep - Security analysis
+    // SESSION 34 OPTIMIZATION:
+    // - BASIC tier (default): Run Semgrep here (Step 3), skip Step 5.5
+    // - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
     if (this.config.semgrep.enabled && shouldJavaToolRun('semgrep', mode)) {
-      tools.push('semgrep');
+      if (userTier !== 'pro') {
+        tools.push('semgrep');
+      }
     }
-    
+
     // Checkstyle - Only in thorough/complete modes
     if (this.config.checkstyle?.enabled && shouldJavaToolRun('checkstyle', mode)) {
       tools.push('checkstyle');
     }
-    
+
     // Dependency-Check - Standard and above
     if (this.config.dependencyCheck?.enabled && shouldJavaToolRun('dependency-check', mode)) {
       tools.push('dependency-check');
     }
-    
+
     // SpotBugs - Only in complete mode (requires compilation)
     if (this.config.spotbugs?.enabled && shouldJavaToolRun('spotbugs', mode)) {
       tools.push('spotbugs');
     }
-    
+
     return tools;
   }
 

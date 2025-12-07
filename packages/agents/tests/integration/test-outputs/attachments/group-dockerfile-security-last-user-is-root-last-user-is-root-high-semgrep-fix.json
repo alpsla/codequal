@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "dockerfile-security-last-user-is-root-last-user-is-root-high-semgrep",
+  "rule": "dockerfile.security.last-user-is-root.last-user-is-root",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "Add a non-root user and switch to it after running root commands. Use 'USER <non-root-user>' after executing necessary root operations. Ensure the user has appropriate permissions for the application to run.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "FROM node:16-alpine\nRUN addgroup -g 1001 -g 1001 nodejs\nRUN adduser -D -u 1001 nodejs\n# Install dependencies and build app as root\nRUN npm install\n# Switch to non-root user\nUSER nodejs\nEXPOSE 3000\nCMD [\"npm\", \"start\"]"
+    },
+    "instructions": "Add a non-root user and switch to it after running root commands. Use 'USER <non-root-user>' after executing necessary root operations. Ensure the user has appropriate permissions for the application to run."
+  },
+  "locations": [
+    {
+      "file": "packages/core/src/services/deepwiki-tools/docker/Dockerfile",
+      "line": 16,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

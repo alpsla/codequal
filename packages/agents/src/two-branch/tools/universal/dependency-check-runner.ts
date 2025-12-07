@@ -79,16 +79,18 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
   private pgDatabase: string;
   private pgUser: string;
   private pgPassword: string;
-  
+
   constructor(workspacePath: string, language: string) {
     super({
       name: 'dependency-check',
       language,
       workspacePath,
-      outputFile: path.join(workspacePath, 'dependency-check-report.json'),
+      // FIX: Dependency-Check creates a directory and writes dependency-check-report.json inside it
+      // So we specify the directory path, not the full file path
+      outputFile: path.join(workspacePath, 'dependency-check-output'),
       timeout: 300000 // 5 minutes - SESSION 19 FIX: Increased for PostgreSQL queries
     });
-    
+
     // PostgreSQL connection configuration
     // Note: Environment variables should be loaded by the test file via dotenv.config()
     // Oracle Cloud PostgreSQL (verified working Nov 7, 2025)
@@ -97,52 +99,52 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
     this.pgDatabase = process.env.DEPCHECK_DB_NAME || 'depcheck';
     this.pgUser = process.env.DEPCHECK_DB_USER || 'depcheck_scanner';
     this.pgPassword = process.env.DEPCHECK_DB_PASSWORD || 'depcheck123';
-    
+
     // SESSION 24 DEBUG: Log environment and configuration
     console.log(`[Dependency-Check] Environment check:`);
     console.log(`  DEPCHECK_DB_HOST from env: ${process.env.DEPCHECK_DB_HOST || 'NOT SET'}`);
     console.log(`  DEPCHECK_DB_USER from env: ${process.env.DEPCHECK_DB_USER || 'NOT SET'}`);
     console.log(`  Using config: ${this.pgHost}:${this.pgPort}/${this.pgDatabase} (user: ${this.pgUser})`);
   }
-  
+
   /**
    * Execute Dependency-Check and return standardized issues
    */
   async execute(): Promise<Issue[]> {
     const startTime = Date.now();
-    
+
     try {
       // Check prerequisites
       await this.checkPrerequisites();
-      
+
       // SESSION 24 FIX: Skip PostgreSQL connection test (causes 300s timeout)
       // The dependency-check.sh command handles its own connection testing
-      
+
       // Build and run command
       const command = this.buildCommand();
       console.log(`[Universal Dependency-Check] 🚀 Starting scan with PostgreSQL backend...`);
       const { stdout, stderr } = await this.runCommand(command);
-      
+
       // Parse output
       const issues = this.parseOutput(stdout || stderr);
-      
+
       // Log summary
       const duration = (Date.now() - startTime) / 1000;
       this.logSummary(issues, duration);
-      
+
       // Cleanup output file
       this.cleanupOutputFile();
-      
+
       return issues;
-      
+
     } catch (error: any) {
       console.error(`[Universal Dependency-Check] ❌ Error: ${error.message}`);
-      
+
       // Return empty array on error (don't fail entire analysis)
       return [];
     }
   }
-  
+
   /**
    * SESSION 22 FIX: Test PostgreSQL connection before running
    */
@@ -152,29 +154,29 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       // The dependency-check.sh command itself will test the connection
       console.log('[Universal Dependency-Check] ⏭️  Skipping psql connection test (uses dependency-check.sh built-in test)');
       return true;  // Assume PostgreSQL is available
-      
+
     } catch (error) {
       // If we can't even skip the test, just continue
       console.warn('[Universal Dependency-Check] ⚠️  Connection test error (skipped)');
       return true;
     }
   }
-  
+
   /**
    * Build Dependency-Check command with PostgreSQL backend
    */
   protected buildCommand(): string {
     const { outputFile, workspacePath } = this.config;
-    
+
     // JDBC connection string for PostgreSQL
     const jdbcUrl = `jdbc:postgresql://${this.pgHost}:${this.pgPort}/${this.pgDatabase}?socketTimeout=30`;
-    
+
     // SESSION 24 FIX: Log what we're using
     console.log(`[Dependency-Check] Building command with:`);
     console.log(`  - PostgreSQL: ${this.pgHost}:${this.pgPort}/${this.pgDatabase}`);
     console.log(`  - User: ${this.pgUser}`);
     console.log(`  - Workspace: ${workspacePath}`);
-    
+
     // Dependency-Check command
     // --scan: directory to scan
     // --format: JSON for structured output
@@ -183,7 +185,7 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
     // --dbUser/--dbPassword: database credentials
     // --disableAssembly: skip .NET assembly analysis (faster)
     // --enableExperimental: enable experimental analyzers
-    
+
     return `dependency-check.sh \
       --scan "${workspacePath}" \
       --format JSON \
@@ -196,33 +198,48 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       --project dependency-check-${this.config.language} \
       2>&1 || true`;
   }
-  
+
   /**
    * Parse Dependency-Check JSON output
    */
   protected parseOutput(output: string): Issue[] {
     const issues: Issue[] = [];
-    
+
     try {
-      // Read from output file
-      if (!this.config.outputFile || !fs.existsSync(this.config.outputFile)) {
-        console.warn(`[Universal Dependency-Check] ⚠️ Output file not found`);
+      // FIX: Dependency-Check writes to outputFile/dependency-check-report.json
+      // So we need to construct the full path to the actual report file
+      const reportPath = path.join(this.config.outputFile!, 'dependency-check-report.json');
+
+      if (!fs.existsSync(reportPath)) {
+        console.warn(`[Universal Dependency-Check] ⚠️ Output file not found: ${reportPath}`);
+        console.warn(`[Universal Dependency-Check] 📁 Output directory: ${this.config.outputFile}`);
+
+        // Debug: List what files are in the output directory
+        try {
+          if (fs.existsSync(this.config.outputFile!)) {
+            const files = fs.readdirSync(this.config.outputFile!);
+            console.warn(`[Universal Dependency-Check] 📋 Files in output directory: ${files.join(', ')}`);
+          }
+        } catch (e) {
+          // Ignore listing errors
+        }
+
         return issues;
       }
-      
-      const fileContent = fs.readFileSync(this.config.outputFile, 'utf-8');
+
+      const fileContent = fs.readFileSync(reportPath, 'utf-8');
       const depCheckData: DependencyCheckOutput = JSON.parse(fileContent);
-      
+
       // Log scan info
       console.log(`[Universal Dependency-Check] 📊 Engine: ${depCheckData.scanInfo.engineVersion}`);
       console.log(`[Universal Dependency-Check] 📊 Dependencies scanned: ${depCheckData.dependencies.length}`);
-      
+
       // Process each dependency
       for (const dependency of depCheckData.dependencies || []) {
         if (!dependency.vulnerabilities || dependency.vulnerabilities.length === 0) {
           continue;
         }
-        
+
         // Process each vulnerability
         for (const vulnerability of dependency.vulnerabilities) {
           const issue = this.convertVulnerabilityToIssue(dependency, vulnerability);
@@ -231,14 +248,14 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
           }
         }
       }
-      
+
     } catch (error: any) {
       console.error(`[Universal Dependency-Check] ❌ Failed to parse output: ${error.message}`);
     }
-    
+
     return issues;
   }
-  
+
   /**
    * Convert Dependency-Check vulnerability to V9 Issue
    */
@@ -250,16 +267,16 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       // Determine severity from CVSS score
       const cvssScore = vulnerability.cvssv3?.baseScore || vulnerability.cvssv2?.score || 0;
       const severity = this.determineSeverity(cvssScore);
-      
+
       // Extract CVE ID from name (e.g., "CVE-2021-44228")
       const cveId = vulnerability.name.match(/CVE-\d{4}-\d+/)?.[0];
-      
+
       // Clean file path
       const filePath = this.cleanFilePath(dependency.filePath);
-      
+
       // Build descriptive message
       const message = `${vulnerability.name}: ${vulnerability.description.substring(0, 200)}`;
-      
+
       return this.createIssue({
         tool: 'dependency-check',
         category: 'Dependency',
@@ -272,13 +289,13 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
         cweId: vulnerability.cwe,
         ruleId: vulnerability.name
       });
-      
+
     } catch (error: any) {
       console.warn(`[Universal Dependency-Check] ⚠️ Failed to convert vulnerability: ${error.message}`);
       return null;
     }
   }
-  
+
   /**
    * Check if Dependency-Check is installed and PostgreSQL is accessible
    */
@@ -292,14 +309,14 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
         'Dependency-Check not found. Ensure it is installed and in PATH.'
       );
     }
-    
+
     // SESSION 24 FIX: Skip PostgreSQL connection test
     // The psql command hangs waiting for password, causing 300s timeout
     // dependency-check.sh will test the connection itself
     console.log(`[Universal Dependency-Check] ⏭️  Skipping PostgreSQL connection test`);
     console.log(`[Universal Dependency-Check] 🔗 Using PostgreSQL: ${this.pgHost}:${this.pgPort}/${this.pgDatabase}`);
   }
-  
+
   /**
    * Cleanup temporary output file
    */

@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "yaml-github-actions-security-run-shell-injection-run-shell-injection-high-semgrep",
+  "rule": "yaml.github-actions.security.run-shell-injection.run-shell-injection",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "1. Store untrusted data in an environment variable using `env:`\n2. Reference the environment variable with double-quotes in the command\n3. Use GitHub's built-in security scanning for workflow vulnerabilities",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "env:\n  GITHUB_DATA: ${{ github.context }}\nrun: echo \"$GITHUB_DATA\" | jq ."
+    },
+    "instructions": "1. Store untrusted data in an environment variable using `env:`\n2. Reference the environment variable with double-quotes in the command\n3. Use GitHub's built-in security scanning for workflow vulnerabilities"
+  },
+  "locations": [
+    {
+      "file": ".github/workflows/e2e-base.yml",
+      "line": 35,
+      "snippet": "    32 |           git config --global user.name \"Create React App\"\n    33 |           git config --global user.email \"cra@email.com\"\n    34 |       - name: Run tests\n>   35 |         run: ${{ inputs.testScript }}\n    36 | ",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

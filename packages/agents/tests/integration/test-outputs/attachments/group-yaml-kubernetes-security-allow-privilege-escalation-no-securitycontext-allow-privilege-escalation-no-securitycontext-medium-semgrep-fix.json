@@ -1,0 +1,654 @@
+{
+  "version": "1.0",
+  "group_id": "yaml-kubernetes-security-allow-privilege-escalation-no-securitycontext-allow-privilege-escalation-no-securitycontext-medium-semgrep",
+  "rule": "yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Add a securityContext to the container specification with allowPrivilegeEscalation set to false. Reference: Kubernetes Security Context documentation and CIS Kubernetes Benchmark v1.6.0 4.2.1.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "securityContext:\n  allowPrivilegeEscalation: false\n  runAsNonRoot: true\n  readOnlyRootFilesystem: true"
+    },
+    "instructions": "Add a securityContext to the container specification with allowPrivilegeEscalation set to false. Reference: Kubernetes Security Context documentation and CIS Kubernetes Benchmark v1.6.0 4.2.1."
+  },
+  "locations": [
+    {
+      "file": "docker/agents/k8s-deployment.yaml",
+      "line": 19,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "docker/agents/k8s-deployment.yaml",
+      "line": 71,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "docker/agents/k8s-full-hybrid.yaml",
+      "line": 378,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "docker/agents/k8s-hybrid-simple.yaml",
+      "line": 54,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "docker/agents/kaniko-build.yaml",
+      "line": 272,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/analyzer-deployment.yaml",
+      "line": 17,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-all-10-fresh.yaml",
+      "line": 109,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-all-10-fresh.yaml",
+      "line": 142,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-all-10-fresh.yaml",
+      "line": 176,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-rust-prebuilt.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-rust-v5-do.yaml",
+      "line": 13,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-rust-v5-fixed.yaml",
+      "line": 172,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/build-rust-v5-lightweight.yaml",
+      "line": 13,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 34,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 112,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 191,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 292,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/emergency-rebuild-go-fixed.yaml",
+      "line": 30,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/emergency-rebuild.yaml",
+      "line": 47,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/emergency-rebuild.yaml",
+      "line": 80,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed-containers.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed-containers.yaml",
+      "line": 52,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed-containers.yaml",
+      "line": 94,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 194,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 228,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 262,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 296,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 330,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 364,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-go-v3.yaml",
+      "line": 12,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-go-v4-fixed.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-java-rust-final.yaml",
+      "line": 293,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-java-rust-final.yaml",
+      "line": 329,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-job.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 49,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 86,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 123,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 160,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 197,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-missing-cs-cpp.yaml",
+      "line": 52,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-missing-cs-cpp.yaml",
+      "line": 86,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-perl-simple.yaml",
+      "line": 23,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 47,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 84,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 121,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 158,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 12,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 80,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 140,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 225,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 281,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-rust-fixed.yaml",
+      "line": 22,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 11,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 54,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 97,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 140,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-builder-85-tools.yaml",
+      "line": 109,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-builder.yaml",
+      "line": 55,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-cpp-builder.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-csharp-builder.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 11,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 45,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 79,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 113,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 147,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 20,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 48,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 76,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 104,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 132,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 160,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 188,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 216,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 244,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 272,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/production/api-deployment.yaml",
+      "line": 26,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/python-deployment-v2.yaml",
+      "line": 20,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 104,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 181,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 290,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 385,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 435,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/rebuild-all-10.yaml",
+      "line": 13,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/restore-from-k8s.yaml",
+      "line": 11,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "kubernetes/simple-test-pod.yaml",
+      "line": 8,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/docker/kaniko-build-java-v5.2.yaml",
+      "line": 104,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-complete.yaml",
+      "line": 57,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-complete.yaml",
+      "line": 154,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-minimal.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-simple.yaml",
+      "line": 10,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod.yaml",
+      "line": 116,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/dependency-check-updater-cronjob.yaml",
+      "line": 55,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/deployment-python.yaml",
+      "line": 28,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/environments/production-current.yaml",
+      "line": 71,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/environments/production-current.yaml",
+      "line": 136,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/environments/staging.yaml",
+      "line": 58,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/java-analysis-job-fixed.yaml",
+      "line": 22,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/java-analysis-job.yaml",
+      "line": 18,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/java-analysis-simple.yaml",
+      "line": 13,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/k8s/pod-management-strategy.yaml",
+      "line": 255,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 39,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 84,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 125,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 194,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "services/api/kubernetes/dev/api-deployment.yaml",
+      "line": 17,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 105,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 53
+  }
+}

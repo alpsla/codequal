@@ -277,7 +277,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     res.json({
-      organizations: memberships?.map(m => Object.assign(
+      organizations: memberships?.map((m: { organization?: unknown; role?: string; joined_at?: string }) => Object.assign(
         {},
         m.organization || {},
         {
@@ -392,15 +392,15 @@ router.get('/:organizationId/members', checkOrgMembership, async (req: Request, 
     }
     
     // Fetch user profiles separately
-    const userIds = members?.map(m => m.user_id) || [];
+    const userIds = members?.map((m: { user_id: string }) => m.user_id) || [];
     const { data: profiles } = await getSupabase()
       .from('user_profiles')
       .select('user_id, email, full_name, avatar_url')
       .in('user_id', userIds);
     
     // Merge the data
-    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-    const membersWithProfiles = members?.map(member => ({
+    const profileMap = new Map(profiles?.map((p: { user_id: string }) => [p.user_id, p]) || []);
+    const membersWithProfiles = members?.map((member: { user_id: string }) => ({
       ...member,
       user: profileMap.get(member.user_id) || { user_id: member.user_id }
     })) || [];

@@ -22,7 +22,7 @@ SESSION_*.md
 *_VERIFICATION*.md
 *_FIXES*.md
 *_IMPLEMENTATION*.md
-*_GUIDE.md
+# *_GUIDE.md
 DEBUG_*.md
 OPENROUTER_*.md
 KEY_*.md
@@ -47,4 +47,5 @@ user-reports-validation/
 # Test artifacts and logs
 user-reports/
 test-results/
+test-outputs/
 *.log

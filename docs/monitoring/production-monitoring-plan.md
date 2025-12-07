@@ -17,6 +17,12 @@ A comprehensive monitoring strategy for CodeQual to track performance, errors, r
 - Service authentication middleware
 - Comprehensive monitoring documentation
 
+### ✅ Completed (January 2025)
+- Service Health Tracking for LSP/SARIF uploads and URL validation
+- 404 error tracking and alerting
+- Service availability metrics and dashboards
+- Automatic fallback to error_logs table
+
 ## Implementation Phases
 
 ### Phase 1: Foundation ✅ COMPLETED
@@ -166,7 +172,29 @@ app.get('/ready', (req, res) => {
 ```
 
 ### Phase 2: Enhanced Observability 🔄 PARTIALLY COMPLETE
-**Status: 60% Complete**  
+**Status: 70% Complete** (Updated January 2025)
+
+#### 2.5 Service Health Tracking ✅ COMPLETED (January 2025)
+
+**Service Health Monitoring** tracks critical service operations:
+- LSP/SARIF file uploads to Supabase Storage
+- URL validation (404 errors, timeouts)
+- Service errors and unexpected states
+- Upload success/failure rates
+
+**Implementation:**
+- `ServiceHealthTracker` class tracks all health events
+- `service_health_events` table stores events in Supabase
+- Automatic fallback to `error_logs` if table doesn't exist
+- Grafana queries and dashboards ready for visualization
+
+**Key Metrics:**
+- Upload success rate by service (LSP, SARIF, GitLab)
+- 404 error count and frequency
+- Service availability percentage
+- Recent failures timeline
+
+**See:** [Service Health Tracking Documentation](./service-health-tracking.md)  
 **Priority: HIGH**
 
 Some components have been implemented, others are in progress.

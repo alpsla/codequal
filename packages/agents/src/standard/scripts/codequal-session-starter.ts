@@ -112,7 +112,9 @@ class CodeQualSessionStarter {
     try {
       if (fs.existsSync(this.quickSetupScript)) {
         console.log(chalk.gray('Running quick-setup.sh...'));
-        execSync(`bash ${this.quickSetupScript}`, { 
+        // Use shell quoting to prevent command injection from file paths
+        const escapedScript = this.quickSetupScript.replace(/'/g, "'\\''");
+        execSync(`bash '${escapedScript}'`, {
           cwd: this.projectRoot,
           stdio: 'inherit'
         });
@@ -140,7 +142,9 @@ class CodeQualSessionStarter {
           console.log(chalk.gray('Starting MCP services...'));
           const dockerScript = path.join(this.agentsDir, 'start-secure-mcp-stack.sh');
           if (fs.existsSync(dockerScript)) {
-            execSync(`bash ${dockerScript}`, { stdio: 'pipe' });
+            // Use shell quoting to prevent command injection from file paths
+            const escapedDockerScript = dockerScript.replace(/'/g, "'\\''");
+            execSync(`bash '${escapedDockerScript}'`, { stdio: 'pipe' });
           }
         }
 
@@ -348,7 +352,7 @@ class CodeQualSessionStarter {
    */
   private async checkServicePort(port: number): Promise<boolean> {
     try {
-      execSync(`curl -s http://localhost:${port}/health`, { stdio: 'pipe' });
+      execSync(`lsof -i :${port}`, { encoding: 'utf-8', stdio: 'pipe' });
       return true;
     } catch {
       return false;
@@ -356,11 +360,11 @@ class CodeQualSessionStarter {
   }
 
   /**
-   * Check Redis
+   * Check Redis connection
    */
   private async checkRedis(): Promise<boolean> {
     try {
-      const output = execSync('redis-cli ping', { 
+      const output = execSync('redis-cli ping', {
         encoding: 'utf-8',
         stdio: 'pipe'
       });

@@ -9,12 +9,11 @@
   "scripts": {
     "dev": "npx turbo run dev",
     "build": "bash scripts/build-packages.sh",
-    "build:database": "bash scripts/build-database.sh", 
     "clean-build": "bash scripts/clean-build.sh",
     "lint": "npx turbo run lint",
     "test": "npx turbo run test",
     "test:healthy": "node scripts/manage-test-health.js skip && npx turbo run test",
-    "test:all": "node scripts/manage-test-health.js enable && npx turbo run test", 
+    "test:all": "node scripts/manage-test-health.js enable && npx turbo run test",
     "test:report": "node scripts/manage-test-health.js report",
     "typecheck": "npx turbo run typecheck",
     "lint:fix": "npx turbo run lint -- --fix",
@@ -73,6 +72,7 @@
     "@typescript-eslint/parser": "^5.54.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-perf-standard": "^1.0.3",
     "prettier": "^2.8.4",
     "ts-jest": "^29.3.2",
     "turbo": "^2.0.0",
@@ -82,7 +82,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
     "@supabase/supabase-js": "^2.49.4",
-    "yaml": "^2.3.1"
+    "yaml": "^2.3.1",
+    "lodash": "4.17.15",
+    "axios": "0.18.0"
   },
   "packageManager": "npm@10.8.2"
 }

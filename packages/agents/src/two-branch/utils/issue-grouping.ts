@@ -92,6 +92,11 @@ export function groupIssues<T extends {
   for (const issue of issues) {
     const key = `${issue.tool}|${issue.rule}|${issue.severity}`;
     
+    // Debug: Log npm-audit grouping to diagnose duplication
+    if (issue.tool === 'npm-audit') {
+      console.log(`[DEBUG grouping] npm-audit issue - key: ${key}, rule: ${issue.rule}, severity: ${issue.severity}, message: ${issue.message.substring(0, 60)}`);
+    }
+    
     let group = groupMap.get(key);
     if (!group) {
       group = {
@@ -124,9 +129,65 @@ export function groupIssues<T extends {
   }
   
   // Convert to array and sort by count (most common first)
-  const groups = Array.from(groupMap.values()).sort((a, b) => b.count - a.count);
+  let groups = Array.from(groupMap.values()).sort((a, b) => b.count - a.count);
   
-  // Calculate costs
+  // BUG FIX: Deduplicate groups with same rule+tool+severity but different descriptions
+  // This handles cases where grouping key is correct but groups were created separately
+  // (e.g., npm-audit issues with same rule but different messages)
+  const deduplicatedGroups = new Map<string, IssueGroup>();
+  let duplicatesFound = 0;
+  
+  // Debug: Log npm-audit groups before deduplication
+  const npmAuditGroups = groups.filter(g => g.tool === 'npm-audit');
+  if (npmAuditGroups.length > 1) {
+    console.log(`[DEDUP DEBUG] Found ${npmAuditGroups.length} npm-audit groups before deduplication:`);
+    npmAuditGroups.forEach((g, i) => {
+      console.log(`[DEDUP DEBUG]   Group ${i + 1}: rule="${g.rule}", tool="${g.tool}", severity="${g.severity}", count=${g.count}`);
+    });
+  }
+  
+  for (const group of groups) {
+    const dedupKey = `${group.tool}|${group.rule}|${group.severity}`;
+    const existing = deduplicatedGroups.get(dedupKey);
+    
+    if (existing) {
+      duplicatesFound++;
+      console.log(`[DEDUP] Merging duplicate group: ${dedupKey} (existing count: ${existing.count}, new count: ${group.count})`);
+      // Merge: combine counts, merge examples, keep longer description
+      existing.count += group.count;
+      existing.costSaved += group.costSaved;
+      // Merge examples (avoid duplicates, keep max 5)
+      const existingFiles = new Set(existing.examples.map(e => `${e.file}:${e.line}`));
+      for (const example of group.examples) {
+        const exampleKey = `${example.file}:${example.line}`;
+        if (!existingFiles.has(exampleKey) && existing.examples.length < 5) {
+          existing.examples.push(example);
+          existingFiles.add(exampleKey);
+        }
+      }
+      // Keep the longer/more descriptive description
+      if (group.description.length > existing.description.length) {
+        existing.description = group.description;
+      }
+      // Preserve AI analysis if either group has it
+      if (group.aiAnalyzed && !existing.aiAnalyzed) {
+        existing.aiAnalyzed = group.aiAnalyzed;
+        existing.fixSuggestion = group.fixSuggestion;
+        existing.educationalLinks = group.educationalLinks;
+      }
+    } else {
+      deduplicatedGroups.set(dedupKey, { ...group });
+    }
+  }
+  
+  // Convert back to array and re-sort
+  groups = Array.from(deduplicatedGroups.values()).sort((a, b) => b.count - a.count);
+  
+  if (duplicatesFound > 0) {
+    console.log(`[DEDUP] ✅ Combined ${duplicatesFound} duplicate groups. Final groups: ${groups.length} (was ${groups.length + duplicatesFound})`);
+  }
+  
+  // Calculate costs (after deduplication)
   const costPerAnalysis = 0.003;
   const totalIssues = issues.length;
   const uniqueGroups = groups.length;
@@ -135,10 +196,8 @@ export function groupIssues<T extends {
   const savings = costWithoutGrouping - costWithGrouping;
   const savingsPercent = totalIssues > 0 ? (savings / costWithoutGrouping) * 100 : 0;
   
-  // Calculate cost saved per group
+  // Recalculate cost saved per group after deduplication
   groups.forEach(group => {
-    // Cost saved = (instances - 1) * cost_per_analysis
-    // We analyze once, so we save on (n-1) analyses
     group.costSaved = (group.count - 1) * costPerAnalysis;
   });
   

@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
+    "composite": true,
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020"
+    ],
     "rootDir": "./src",
     "outDir": "./dist",
     "declaration": true,
@@ -17,12 +20,24 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@codequal/core": ["../core/dist"],
-      "@codequal/core/*": ["../core/dist/*"],
-      "@codequal/database": ["../database/dist"],
-      "@codequal/database/*": ["../database/dist/*"],
-      "@codequal/mcp-hybrid": ["../mcp-hybrid/dist"],
-      "@codequal/mcp-hybrid/*": ["../mcp-hybrid/dist/*"]
+      "@codequal/core": [
+        "../core/dist"
+      ],
+      "@codequal/core/*": [
+        "../core/dist/*"
+      ],
+      "@codequal/database": [
+        "../database/dist"
+      ],
+      "@codequal/database/*": [
+        "../database/dist/*"
+      ],
+      "@codequal/mcp-hybrid": [
+        "../mcp-hybrid/dist"
+      ],
+      "@codequal/mcp-hybrid/*": [
+        "../mcp-hybrid/dist/*"
+      ]
     }
   },
   "include": [

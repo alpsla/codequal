@@ -85,6 +85,50 @@ const TEST_SCENARIOS: TestScenario[] = [
 - Follow the EXACT pattern from Java canonical test
 - DO NOT try to "simplify" or "improve" the logic
 
+## 🔄 SESSION TRANSITION DOCUMENTATION (CRITICAL)
+
+**⚠️ MANDATORY: Session Continuity Protocol**
+
+### At the START of Every Session:
+
+1. **FIRST READ:** `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md`
+   - Contains current project status
+   - Lists completed work from previous session
+   - Provides detailed TODO list for next steps
+   - Documents known issues and blockers
+   - Includes verification results and test status
+
+2. **Understand Context Before Starting:**
+   - Review session achievements
+   - Check pending critical issues
+   - Read immediate next priorities
+   - Note any known bugs or blockers
+
+### At the END of Every Session:
+
+1. **UPDATE:** `packages/agents/src/two-branch/docs/next/QUICK_START_NEXT_SESSION.md`
+   - Document all completed work
+   - List any new bugs or issues discovered
+   - Create detailed TODO list for next session
+   - Update current phase and status
+   - Include file paths, commit hashes, and verification results
+
+2. **Provide Clear Handoff:**
+   - Summarize achievements
+   - Document pending work with priority levels
+   - Note any blockers requiring user action
+   - Include copy-paste ready commands for next session
+
+### Why This Matters:
+
+- **Prevents Duplicate Work**: Know what's already been done
+- **Maintains Context**: Understand current project state
+- **Tracks Progress**: See evolution of work across sessions
+- **Identifies Blockers**: Know what needs user intervention
+- **Ensures Continuity**: Seamless transition between sessions
+
+**CRITICAL**: Never start work without reading QUICK_START_NEXT_SESSION.md first!
+
 ## Core Development Philosophy
 
 ### KISS (Keep It Simple, Stupid)
@@ -706,6 +750,8 @@ npm run lint:fix
 
 ## ⚠️ Important Notes
 
+- **READ QUICK_START_NEXT_SESSION.md** at the start of EVERY session for context and TODO list
+- **UPDATE QUICK_START_NEXT_SESSION.md** at the end of EVERY session with status and next steps
 - **NEVER ASSUME OR GUESS** - When in doubt, ask for clarification
 - **Always verify file paths and module names** before use
 - **Keep CLAUDE.md updated** when adding new patterns or dependencies

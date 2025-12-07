@@ -24,11 +24,12 @@ import { logger } from '../../utils/logger';
 import { determineCodeQualSeverity } from '../../utils/severity-mapper';
 
 // Import base orchestrator
-import { 
-  BaseToolOrchestrator, 
-  ToolResult, 
+import {
+  BaseToolOrchestrator,
+  ToolResult,
   RawIssue,
-  OrchestrationOptions 
+  OrchestrationOptions,
+  OrchestrationResult
 } from '../base-tool-orchestrator';
 
 // Import existing TypeScript parser
@@ -36,10 +37,10 @@ import { TypeScriptToolParser, TypeScriptIssue } from '../../parsers/typescript-
 
 // Import universal analysis modes
 import type { AnalysisMode } from '../../config/analysis-modes';
-import { 
-  UNIVERSAL_ANALYSIS_MODES, 
+import {
+  UNIVERSAL_ANALYSIS_MODES,
   ToolCategory,
-  getToolsForMode 
+  getToolsForMode
 } from '../../config/analysis-modes';
 
 const execAsync = promisify(exec);
@@ -63,7 +64,7 @@ export interface TypeScriptToolConfig {
     strict: boolean;
     configFile?: string;
   };
-  
+
   // OPTIONAL TOOLS
   npmAudit?: {
     enabled: boolean;
@@ -74,7 +75,17 @@ export interface TypeScriptToolConfig {
     enabled: boolean;
     config: string;
   };
-  
+  dependencyCheck?: {
+    enabled: boolean;
+    failOnCVSS: number;
+    suppressionFile?: string;
+    formats: string[];  // e.g., ['JSON', 'HTML']
+    caching: {
+      enabled: boolean;
+      location: string;
+    };
+  };
+
   // DOCKER CONFIG
   docker: {
     mountPath: string;
@@ -104,6 +115,15 @@ export const DEFAULT_TYPESCRIPT_CONFIG: TypeScriptToolConfig = {
     enabled: true,
     config: 'auto'
   },
+  dependencyCheck: {
+    enabled: true,
+    failOnCVSS: 0,  // Report all CVEs, don't fail build
+    formats: ['JSON'],
+    caching: {
+      enabled: true,
+      location: '/var/lib/dependency-check/data'  // Shared NVD cache
+    }
+  },
   docker: {
     mountPath: '/workspace',
     nodeVersion: '20',
@@ -112,13 +132,16 @@ export const DEFAULT_TYPESCRIPT_CONFIG: TypeScriptToolConfig = {
 };
 
 /**
- * TypeScript tool category mapping
+ * Map TypeScript tools to universal tool categories
  */
 const TYPESCRIPT_TOOL_CATEGORIES = {
   eslint: ToolCategory.CODE_QUALITY,
   typescript: ToolCategory.CODE_QUALITY,
   'npm-audit': ToolCategory.DEPENDENCY_SCAN,
-  semgrep: ToolCategory.SECURITY
+  'dependency-check': ToolCategory.DEPENDENCY_SCAN,
+  semgrep: ToolCategory.SECURITY,
+  performance: ToolCategory.ADVANCED,  // Performance analysis tools
+  architecture: ToolCategory.ADVANCED   // Architecture analysis tools
 };
 
 /**
@@ -129,7 +152,7 @@ function shouldTypeScriptToolRun(toolName: string, mode: AnalysisMode): boolean 
   if (!category) return false;
 
   const modeConfig = UNIVERSAL_ANALYSIS_MODES[mode];
-  
+
   // Check based on tool category
   switch (category) {
     case ToolCategory.CODE_QUALITY:
@@ -167,10 +190,10 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   ) {
     // Call base constructor
     super(dockerImage, '/workspace');
-    
+
     // Merge with defaults
     this.config = { ...DEFAULT_TYPESCRIPT_CONFIG, ...config };
-    
+
     // Initialize parser
     this.parser = new TypeScriptToolParser();
   }
@@ -178,6 +201,42 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   // ============================================================
   // IMPLEMENT ABSTRACT METHODS FROM BASE
   // ============================================================
+
+  /**
+   * Override orchestrate to filter ESLint for monorepos
+   */
+  async orchestrate(
+    repoPath: string,
+    branch: 'base' | 'pr',
+    options: OrchestrationOptions = {}
+  ): Promise<OrchestrationResult> {
+    // Detect monorepo structure before running tools
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const isMonorepo = await (async () => {
+      try {
+        const packagesDir = path.join(repoPath, 'packages');
+        const appsDir = path.join(repoPath, 'apps');
+
+        const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+        const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+
+        return hasPackages || hasApps;
+      } catch {
+        return false;
+      }
+    })();
+
+    // If monorepo, disable ESLint to prevent it from appearing in tool list
+    if (isMonorepo) {
+      logger.info('⏭️  Monorepo detected - disabling ESLint (packages/ or apps/ directory found)');
+      this.config.eslint.enabled = false;
+    }
+
+    // Call parent orchestrate method
+    return super.orchestrate(repoPath, branch, options);
+  }
 
   /**
    * Get language name (required by base)
@@ -188,30 +247,60 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
 
   /**
    * Get tools to run based on analysis mode (required by base)
+   *
+   * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
+   * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
+   * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
    */
-  protected getToolsToRun(mode: AnalysisMode, branch: 'base' | 'pr'): string[] {
+  protected getToolsToRun(
+    mode: AnalysisMode,
+    branch: 'base' | 'pr',
+    userTier?: 'basic' | 'pro'
+  ): string[] {
     const tools: string[] = [];
-    
+
     // ESLint - Always included (code quality + security)
     if (this.config.eslint.enabled && shouldTypeScriptToolRun('eslint', mode)) {
       tools.push('eslint');
     }
-    
+
     // TypeScript Compiler - Always included (type checking)
     if (this.config.typescript.enabled && shouldTypeScriptToolRun('typescript', mode)) {
       tools.push('typescript');
     }
-    
+
     // npm audit - Standard and above (dependency vulnerabilities)
     if (this.config.npmAudit?.enabled && shouldTypeScriptToolRun('npm-audit', mode)) {
       tools.push('npm-audit');
     }
-    
-    // Semgrep - Security analysis (standard and above)
-    if (this.config.semgrep?.enabled && shouldTypeScriptToolRun('semgrep', mode)) {
-      tools.push('semgrep');
+
+    // Dependency-Check - CVE scanning (standard and above)
+    if (this.config.dependencyCheck?.enabled && shouldTypeScriptToolRun('dependency-check', mode)) {
+      tools.push('dependency-check');
     }
-    
+
+    // Semgrep - Security analysis
+    // SESSION 34 OPTIMIZATION:
+    // - BASIC tier (default): Run Semgrep here (Step 3), skip Step 5.5
+    //   Lite Security Agent groups issues + enhances metadata
+    // - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+    //   This saves ~45s by avoiding duplicate Semgrep execution
+    if (this.config.semgrep?.enabled && shouldTypeScriptToolRun('semgrep', mode)) {
+      if (userTier !== 'pro') {
+        tools.push('semgrep');
+      }
+    }
+
+    // Performance Tools - Standard and above (Lighthouse, Bundle Analyzer, ESLint-Perf)
+    if (shouldTypeScriptToolRun('performance', mode)) {
+      tools.push('performance');
+    }
+
+    // Architecture Tools - Standard and above (Madge, Dependency Cruiser, ts-unused-exports)
+    if (shouldTypeScriptToolRun('architecture', mode)) {
+      tools.push('architecture');
+    }
+
     return tools;
   }
 
@@ -220,10 +309,11 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
    */
   protected getAgentToolCategories(): Record<string, string[]> {
     return {
-      'Security': ['semgrep', 'npm-audit'],
+      'Security': ['semgrep', 'npm-audit', 'dependency-check'],
       'Code Quality': ['eslint', 'typescript'],
-      'Performance': ['eslint'],  // ESLint has performance rules
-      'Dependencies': ['npm-audit']
+      'Performance': ['performance'],  // Lighthouse, Bundle Analyzer, ESLint-Perf
+      'Architecture': ['architecture'],  // Madge, Dependency Cruiser, ts-unused-exports
+      'Dependencies': ['npm-audit', 'dependency-check']
     };
   }
 
@@ -232,7 +322,7 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
    * Dispatches to appropriate tool-specific method
    * 
    * UPDATED: Now routes universal tools (Semgrep) to shared runners
-   * This should FIX the Semgrep output issue from Test #1
+   * UPDATED: Added Performance and Architecture tools
    */
   protected async executeTool(
     toolName: string,
@@ -240,26 +330,123 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     branch: 'base' | 'pr',
     options: OrchestrationOptions
   ): Promise<ToolResult> {
-    logger.info(`📦 Executing TypeScript tool: ${toolName}`);
-    
-    // UNIVERSAL TOOLS: Route to shared runners
-    // This ensures same Semgrep behavior across Java, TypeScript, Python, etc.
+    // Route universal tools to shared runners (Semgrep, Dependency-Check)
     if (this.isUniversalTool(toolName)) {
-      logger.info(`🌐 Routing ${toolName} to universal runner`);
       return this.executeUniversalTool(toolName, repoPath, branch, options);
     }
-    
-    // LANGUAGE-SPECIFIC TOOLS: Use TypeScript-specific implementations
-    switch (toolName) {
-      case 'eslint':
-        return this.runESLint(repoPath, branch, options.changedFiles);
-      
+
+    // Route to TypeScript-specific tool methods
+    switch (toolName.toLowerCase()) {
+      case 'eslint': {
+        // Detect monorepo structure before running ESLint to save time
+        // ESLint has issues with monorepos due to root .eslintrc.json with "root": true
+        const fs = await import('fs');
+        const path = await import('path');
+
+        const isMonorepo = await (async () => {
+          try {
+            const packagesDir = path.join(repoPath, 'packages');
+            const appsDir = path.join(repoPath, 'apps');
+
+            const hasPackages = await fs.promises.access(packagesDir).then(() => true).catch(() => false);
+            const hasApps = await fs.promises.access(appsDir).then(() => true).catch(() => false);
+
+            return hasPackages || hasApps;
+          } catch {
+            return false;
+          }
+        })();
+
+        // Skip ESLint immediately for monorepos to save ~2 seconds
+        if (isMonorepo) {
+          logger.info('⏭️  Skipping ESLint - monorepo detected (packages/ or apps/ directory found)');
+          return {
+            tool: 'eslint',
+            success: true,
+            duration: 0,
+            issues: [],
+            rawOutput: 'ESLint skipped - monorepo structure detected',
+            metadata: {
+              filesScanned: 0,
+              issuesFound: 0,
+              severity: { critical: 0, high: 0, medium: 0, low: 0 },
+              skipped: true,
+              skipReason: 'Monorepo detected (packages/ or apps/ directory) - ESLint has configuration conflicts with nested configs'
+            }
+          };
+        }
+
+        // Try to run ESLint for simple repos
+        try {
+          const result = await this.runESLint(repoPath, branch, options.changedFiles);
+
+          // If ESLint found 0 issues and scanned 0 files, mark as skipped
+          const scannedZeroFiles = result.rawOutput.includes('0 files') ||
+            result.rawOutput.includes('Discovered 0 files') ||
+            (result.issues.length === 0 && result.rawOutput.length < 100);
+
+          if (scannedZeroFiles) {
+            return {
+              tool: 'eslint',
+              success: true,
+              duration: result.duration || 0,
+              issues: [],
+              rawOutput: result.rawOutput,
+              metadata: {
+                filesScanned: 0,
+                issuesFound: 0,
+                severity: { critical: 0, high: 0, medium: 0, low: 0 },
+                skipped: true,
+                skipReason: 'ESLint found 0 files to scan'
+              }
+            };
+          }
+
+          // ESLint ran successfully and found files/issues
+          return result;
+        } catch (error: any) {
+          // ESLint failed - skip gracefully
+          logger.warn(`[ESLint] Skipping due to error: ${error.message}`);
+          return {
+            tool: 'eslint',
+            success: true,
+            duration: 0,
+            issues: [],
+            rawOutput: `ESLint skipped: ${error.message}`,
+            metadata: {
+              filesScanned: 0,
+              issuesFound: 0,
+              severity: { critical: 0, high: 0, medium: 0, low: 0 },
+              skipped: true,
+              skipReason: `ESLint execution failed: ${error.message}`
+            }
+          };
+        }
+      }
+
       case 'typescript':
         return this.runTypeScriptCompiler(repoPath, branch);
-      
+
       case 'npm-audit':
         return this.runNpmAudit(repoPath, branch);
-      
+
+      case 'dependency-check':
+        return this.runDependencyCheck(repoPath, branch);
+
+      case 'performance': {
+        // Get all TypeScript/JavaScript files for performance analysis
+        const { stdout: filesOutput } = await execAsync(
+          `find ${repoPath} -type f \\( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \\) | grep -v node_modules | head -100`,
+          { maxBuffer: 10 * 1024 * 1024 }
+        );
+        const files = filesOutput.trim().split('\n').filter(f => f);
+        return this.executePerformanceTools(repoPath, branch, files);
+      }
+
+      case 'architecture': {
+        return this.executeArchitectureTools(repoPath, branch);
+      }
+
       default:
         throw new Error(`Unknown TypeScript tool: ${toolName}`);
     }
@@ -429,6 +616,110 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   // runSemgrep() removed - Semgrep now handled by base class executeUniversalTool()
   // See executeTool() method which routes universal tools to the base class
 
+  /**
+   * Run OWASP Dependency-Check for CVE scanning
+   * Uses shared PostgreSQL/NVD database infrastructure (updated daily at 2am)
+   * Same fast performance as Java (<10s) via shared cache
+   */
+  private async runDependencyCheck(
+    repoPath: string,
+    branch: 'base' | 'pr'
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+    const outputFileName = `dependency-check-${branch}.json`;
+    const outputFile = path.join(repoPath, outputFileName);
+
+    try {
+      logger.info(`🔐 Running Dependency-Check CVE scanning on ${branch} branch...`);
+
+      // Dependency-Check: Use entrypoint bash -c and output to directory
+      // Same infrastructure as Java - shared PostgreSQL/NVD cache
+      const dockerCommand = `docker run --rm \
+        -v "${repoPath}:${this.workspaceDir}" \
+        -v "${this.config.dependencyCheck!.caching.location}:/cache" \
+        ${this.dockerImage} \
+        -c '/opt/dependency-check/bin/dependency-check.sh --scan ${this.workspaceDir} --format JSON --out ${this.workspaceDir} --data /cache --failOnCVSS ${this.config.dependencyCheck!.failOnCVSS} || true'`;
+
+      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
+
+      // Dependency-Check always outputs to dependency-check-report.json
+      const defaultOutputFile = path.join(repoPath, 'dependency-check-report.json');
+
+      // Read from default location
+      const resultContent = await fs.readFile(defaultOutputFile, 'utf-8');
+      const depCheckResult = JSON.parse(resultContent);
+
+      // Rename to our expected filename for consistency
+      await fs.rename(defaultOutputFile, outputFile);
+
+      const issues: RawIssue[] = [];
+
+      if (depCheckResult.dependencies) {
+        for (const dep of depCheckResult.dependencies) {
+          if (dep.vulnerabilities) {
+            for (const vuln of dep.vulnerabilities) {
+              issues.push({
+                tool: 'dependency-check',
+                file: dep.fileName || 'dependencies',
+                line: 1,
+                severity: this.mapCVSSSeverity(vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0),
+                message: vuln.description || `CVE: ${vuln.name}`,
+                rule: vuln.name,
+                category: 'Dependency',
+                cwe: vuln.cwes?.join(', '),
+                autoFixable: false
+              });
+            }
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      logger.info(`✅ Dependency-Check complete: ${issues.length} CVEs found in ${(duration / 1000).toFixed(1)}s`);
+
+      // Count actual dependencies scanned, not just files with issues
+      const filesScanned = depCheckResult.dependencies?.length || 0;
+
+      const severity = {
+        critical: issues.filter(i => i.severity === 'critical').length,
+        high: issues.filter(i => i.severity === 'high').length,
+        medium: issues.filter(i => i.severity === 'medium').length,
+        low: issues.filter(i => i.severity === 'low').length
+      };
+
+      return {
+        tool: 'dependency-check',
+        success: true,
+        duration,
+        issues,
+        metadata: {
+          filesScanned,
+          issuesFound: issues.length,
+          severity
+        }
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Dependency-Check failed: ${error.message}`);
+
+      return {
+        tool: 'dependency-check',
+        success: false,
+        duration,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 },
+          skipped: true,
+          skipReason: `Failed: ${error.message}`
+        }
+      };
+    }
+  }
+
   // ============================================================
   // HELPER METHODS
   // ============================================================
@@ -445,7 +736,8 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       column: tsIssue.column,
       severity: tsIssue.severity,
       message: tsIssue.message,
-      rule: tsIssue.category || tsIssue.code || 'unknown',
+      // Use code field (ESLint rule ID) if available, otherwise category
+      rule: tsIssue.code || tsIssue.category || 'unknown',
       category: this.mapTypeScriptTypeToCategory(tsIssue.type),
       autoFixable: tsIssue.fixable
     };
@@ -495,6 +787,17 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     }
 
     // Style and quality
+    return 'low';
+  }
+
+  /**
+   * Map CVSS score to CodeQual severity
+   * Same mapping as Java for consistency
+   */
+  private mapCVSSSeverity(score: number): 'critical' | 'high' | 'medium' | 'low' {
+    if (score >= 9.0) return 'critical';
+    if (score >= 7.0) return 'high';
+    if (score >= 4.0) return 'medium';
     return 'low';
   }
 }

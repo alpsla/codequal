@@ -1,6 +1,22 @@
 # CodeQual Implementation Plan - October 2025
 
-## Current Status (Updated: 2025-10-24)
+## Current Status (Updated: 2025-11-30)
+
+### 🆕 Session 32 Updates: Two-Tier Product Architecture & Tool Registry
+
+**Architectural Decisions (November 30, 2025):**
+- ✅ Two-Tier Product Model: BASIC (report) vs PRO (auto-fix)
+- ✅ Tool Registry System in Supabase with quarterly research
+- ✅ 70% Overlap Threshold for tool selection decisions
+- ✅ Two-Stage AI Enrichment Pipeline (40-60% token savings)
+- ✅ Commit-Based Caching to skip redundant scans
+- ✅ Language Priority: Python, JS, TS, Java, Go first; Enterprise languages deferred
+
+See `V9_CRITICAL_KNOWLEDGE_BASE.md` Session 32 for complete details.
+
+---
+
+## Previous Status (Updated: 2025-10-24)
 
 ### ✅ Completed (V9 Production Ready)
 1. **V9 Framework**: Complete two-branch analysis system
@@ -910,6 +926,135 @@ Traditional Approach:          API-First Approach:
 - ✅ Unit economics validated in production ($0.01 cost, $8-10 revenue)
 
 **See also:** `docs/marketing/marketing-plan.md` for complete go-to-market strategy (to be created Week 7)
+
+---
+
+## 🆕 Two-Tier Product Architecture (Session 32 - November 2025)
+
+### Product Tiers
+
+| Tier | Price | Features | Target |
+|------|-------|----------|--------|
+| **BASIC** | Free | Report + Fix Recommendations + Educational Content | Developers using other IDEs |
+| **PRO** | $8-10/month | Auto-Fix During Scan + Everything in BASIC | Users wanting automated fixes |
+
+### Unified Scan Pipeline
+
+Both tiers run the SAME scan; only output differs:
+
+```
+Clone → Tools → Categorize → Group → Deduplicate
+                                           ↓
+                              ┌────────────┴────────────┐
+                              ↓                         ↓
+                         BASIC Tier                 PRO Tier
+                    ┌─────────────────┐       ┌─────────────────┐
+                    │ • Issue Report  │       │ • Everything    │
+                    │ • Fix Guidance  │       │   in BASIC      │
+                    │ • Educational   │       │ • Auto-applied  │
+                    │   Content       │       │   Fixes         │
+                    │ • Supabase URL  │       │ • Git Patch     │
+                    └─────────────────┘       └─────────────────┘
+```
+
+### Tool Registry System (Supabase)
+
+**Database Schema:**
+```sql
+CREATE TABLE tool_registry (
+  id UUID PRIMARY KEY,
+  language VARCHAR(20) NOT NULL,
+  category VARCHAR(30) NOT NULL,
+  name VARCHAR(50) NOT NULL,
+
+  -- Capabilities
+  can_scan BOOLEAN DEFAULT true,
+  can_fix BOOLEAN DEFAULT false,
+  fix_coverage INT DEFAULT 0, -- 0-100%
+
+  -- Execution
+  scan_command TEXT,
+  fix_command TEXT,
+  docker_image VARCHAR(100),
+
+  -- Weights (like agent config)
+  weight_accuracy INT DEFAULT 50,
+  weight_speed INT DEFAULT 25,
+  weight_fix_quality INT DEFAULT 15,
+  weight_maintenance INT DEFAULT 10,
+  weighted_score DECIMAL(5,2),
+
+  -- Status
+  is_active BOOLEAN DEFAULT true,
+  last_research_date TIMESTAMP,
+  next_research_date TIMESTAMP,
+
+  UNIQUE(language, category, name)
+);
+```
+
+**15 Tool Categories:**
+- `code_quality`, `security`, `formatting`, `type_checking`
+- `dependency_vuln`, `dependency_update`, `architecture`
+- `dead_code`, `code_duplication`, `complexity`
+- `secrets`, `license`, `performance`, `documentation`, `test_coverage`
+
+### Quarterly Research System
+
+Every 3 months (January, April, July, October):
+
+1. **Researcher Agent** evaluates:
+   - New tools released in each category
+   - Updated versions of existing tools
+   - New AI models for each agent role
+
+2. **70% Overlap Threshold Rule:**
+   - New tool >= 70% overlap with existing → REPLACE if better
+   - New tool < 70% overlap → ADD as complementary
+
+3. **Pre-built Docker Images:**
+   - Week 1-7: Researcher identifies updates
+   - Week 8-14: DevOps builds new Docker images
+   - Week 15: Deploy and update Supabase config
+
+### Two-Stage AI Enrichment
+
+**Goal:** 40-60% token savings
+
+```
+Stage 1: Cheap Model (Haiku/Qwen class)
+├── Prepare issue context
+├── Extract code snippets
+├── Pre-classify issues
+└── Cost: ~$0.001/issue
+
+         ↓
+
+Stage 2: Premium Model (Opus/GPT-4 class)
+├── Generate high-quality fixes
+├── Create educational content
+└── Cost: ~$0.005/issue (vs $0.01 without Stage 1)
+```
+
+### Commit-Based Caching
+
+```typescript
+// Skip scan for same commit, return cached report
+const cacheKey = `${repoUrl}:${prNumber}:${commitSha}`;
+const cached = await redis.get(cacheKey);
+if (cached) return JSON.parse(cached); // Instant!
+```
+
+### Language Priority
+
+| Priority | Languages | Market Share |
+|----------|-----------|--------------|
+| P0 | Python, JS, Java | 69.9% |
+| P1 | TypeScript, Go | 11.4% |
+| P2 | Rust, PHP | 7.5% |
+| Deferred | C#, C++, C | 14.8% (Enterprise) |
+
+---
 
 ## Phase-Based Implementation
 

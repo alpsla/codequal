@@ -51,15 +51,26 @@ interface SemgrepOutput {
 }
 
 export class UniversalSemgrepRunner extends UniversalToolBase {
-  
-  constructor(workspacePath: string, language: string) {
+  private jobs = 2;  // Default: 2 CPUs (optimal when running with other tools)
+  private useCustomRules: boolean;  // Whether to include CodeQual custom rules
+
+  // Path to CodeQual's custom security rules
+  private static readonly CUSTOM_RULES_PATH = path.join(
+    __dirname,
+    'semgrep-rules',
+    'codequal-security.yaml'
+  );
+
+  constructor(workspacePath: string, language: string, jobs = 2, useCustomRules = true) {
     super({
       name: 'semgrep',
       language,
       workspacePath,
       outputFile: path.join(workspacePath, '.semgrep-output.json'),
-      timeout: 120000 // 2 minutes
+      timeout: 600000 // 10 minutes (increased for large repositories)
     });
+    this.jobs = jobs;
+    this.useCustomRules = useCustomRules;
   }
   
   /**
@@ -98,26 +109,67 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
   
   /**
    * Build Semgrep command
+   * 
+   * Uses --jobs parameter (default: 2) to utilize multiple CPU cores.
+   * - jobs=2: Optimal when running alongside other tools (shares 4 CPUs)
+   * - jobs=4: Use all 4 CPUs when Semgrep runs alone (maximum performance)
    */
   protected buildCommand(): string {
     const { outputFile, workspacePath } = this.config;
-    
+
     // Use multiple Semgrep rulesets for comprehensive coverage
     // (can't use --config=auto with --metrics=off)
     // p/security-audit: General security rules
     // p/owasp-top-ten: OWASP Top 10 vulnerabilities
+    // codequal-security.yaml: CodeQual's custom rules for issues like incomplete escaping
+    // --jobs=2: Use 2 CPU cores for parallel execution (optimal for 4-CPU systems)
     // --json for structured output
     // --quiet to suppress progress bars
     // --no-git-ignore to scan all files
     // --metrics=off to disable telemetry
-    
+
+    // Build config flags - always include community rulesets
+    const configFlags = [
+      '--config=p/security-audit',
+      '--config=p/owasp-top-ten'
+    ];
+
+    // Add CodeQual custom rules if available and enabled
+    if (this.useCustomRules && fs.existsSync(UniversalSemgrepRunner.CUSTOM_RULES_PATH)) {
+      configFlags.push(`--config="${UniversalSemgrepRunner.CUSTOM_RULES_PATH}"`);
+      console.log(`[Universal Semgrep] ✅ Using CodeQual custom security rules`);
+    }
+
+    // Exclude documentation and test-related files that typically contain false positives
+    // These files often have intentional "vulnerable" code for testing or examples
+    //
+    // Excluded:
+    // - *.md, *.mdx: Documentation with code examples
+    // - test-outputs, fixtures: Test data directories
+    // - docs/**/*.ts: Documentation TypeScript files
+    // - __mocks__, __snapshots__: Jest mock/snapshot directories
+    // - *.stories.tsx: Storybook story files
+    //
+    // NOT excluded (still scanned):
+    // - *.test.ts, *.spec.ts: Actual test files (may have real issues)
     return `semgrep \
-      --config=p/security-audit \
-      --config=p/owasp-top-ten \
+      ${configFlags.join(' \\\n      ')} \
+      --jobs=${this.jobs} \
       --json \
       --quiet \
       --no-git-ignore \
       --metrics=off \
+      --exclude='*.md' \
+      --exclude='*.mdx' \
+      --exclude='**/test-outputs/**' \
+      --exclude='**/fixtures/**' \
+      --exclude='**/docs/**/*.ts' \
+      --exclude='**/__mocks__/**' \
+      --exclude='**/__snapshots__/**' \
+      --exclude='*.stories.tsx' \
+      --exclude='*.stories.ts' \
+      --exclude='**/testdata/**' \
+      --exclude='**/test_fixtures/**' \
       --output="${outputFile}" \
       "${workspacePath}" 2>&1 || true`;
   }
@@ -245,9 +297,10 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
  */
 export async function runSemgrep(
   workspacePath: string,
-  language: string
+  language: string,
+  jobs = 2
 ): Promise<Issue[]> {
-  const runner = new UniversalSemgrepRunner(workspacePath, language);
+  const runner = new UniversalSemgrepRunner(workspacePath, language, jobs);
   return runner.execute();
 }
 

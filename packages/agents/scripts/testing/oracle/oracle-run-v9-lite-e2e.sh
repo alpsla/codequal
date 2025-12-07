@@ -14,7 +14,7 @@ set -e
 # Oracle Cloud connection details
 ORACLE_IP="129.213.49.128"
 ORACLE_USER="opc"
-SSH_KEY="/Users/alpinro/Code Prjects/codequal/keys/oracle/ssh-key-2025-10-07.key"
+SSH_KEY="/Users/alpinro/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key"
 REMOTE_DIR="/home/opc/codequal"
 
 echo "╔═══════════════════════════════════════════════════════════════╗"
@@ -31,7 +31,6 @@ echo ""
 
 # Create list of files to upload
 FILES_TO_UPLOAD=(
-  "test-v9-lite-e2e.ts"
   ".env"
   "package.json"
   "tsconfig.json"
@@ -47,13 +46,18 @@ for file in "${FILES_TO_UPLOAD[@]}"; do
   fi
 done
 
+# Special handling for test-v9-lite-e2e.ts to preserve directory structure
+echo "   Uploading test-v9-lite-e2e.ts to tests/integration/..."
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${ORACLE_USER}@${ORACLE_IP}" "mkdir -p ${REMOTE_DIR}/packages/agents/tests/integration"
+scp -i "$SSH_KEY" -o StrictHostKeyChecking=no "packages/agents/tests/integration/test-v9-lite-e2e.ts" "${ORACLE_USER}@${ORACLE_IP}:${REMOTE_DIR}/packages/agents/tests/integration/"
+
 # Upload entire src directory (critical for test to run)
 echo "   Uploading src/ directory..."
-rsync -avz -e "ssh -i \"$SSH_KEY\" -o StrictHostKeyChecking=no" \
+rsync -avz --update -e "ssh -i \"$SSH_KEY\" -o StrictHostKeyChecking=no" \
   --exclude 'node_modules' \
   --exclude '.git' \
   --exclude 'dist' \
-  ./src/ \
+  packages/agents/src/ \
   "${ORACLE_USER}@${ORACLE_IP}:${REMOTE_DIR}/packages/agents/src/" 2>&1 | grep -v "sending incremental" || true
 
 echo ""
@@ -104,8 +108,28 @@ ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "${ORACLE_USER}@${ORACLE_IP}" << '
   echo "   Timeout: 45 minutes"
   echo ""
 
+  # Export database credentials for test to use
+  export POSTGRES_HOST="129.213.49.128"
+  export POSTGRES_PORT="5432"
+  export POSTGRES_USER="nvd_user"
+  export POSTGRES_DB="nvd"
+  export POSTGRES_PASSWORD="postgres123"
+  export DATABASE_URL="postgresql://nvd_user:postgres123@129.213.49.128:5432/nvd"
+  
+  export REDIS_HOST="10.116.0.7"
+  export REDIS_PORT="6379"
+  export REDIS_URL="redis://10.116.0.7:6379"
+  
+  echo "   ✅ Database environment variables configured"
+  echo ""
+
   # Run test with extended timeout (45 minutes = 2700 seconds)
-  timeout 2700 npx ts-node test-v9-lite-e2e.ts 2>&1 || {
+  # Compile TypeScript first to avoid ESM/CommonJS loader conflicts
+  echo "   🔨 Compiling TypeScript..."
+  npx tsc --project tsconfig.json --outDir ./dist 2>&1 | head -20 || true
+  
+  echo "   🚀 Running compiled test..."
+  timeout 2700 node ./dist/tests/integration/test-v9-lite-e2e.js 2>&1 || {
     EXIT_CODE=$?
     if [ $EXIT_CODE -eq 124 ]; then
       echo ""

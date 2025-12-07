@@ -1,0 +1,179 @@
+{
+    "name": "codequal-autofix",
+    "displayName": "CodeQual Auto-Fix",
+    "description": "AI-powered code quality fixes with LSP and SARIF integration",
+    "version": "0.1.0",
+    "publisher": "codequal",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Linters",
+        "Programming Languages",
+        "Other"
+    ],
+    "keywords": [
+        "code quality",
+        "auto-fix",
+        "lsp",
+        "sarif",
+        "security"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "codequal.loadSarifFile",
+                "title": "CodeQual: Load SARIF File"
+            },
+            {
+                "command": "codequal.loadSarifFromURL",
+                "title": "CodeQual: Load SARIF from URL"
+            },
+            {
+                "command": "codequal.loadLSPFile",
+                "title": "CodeQual: Load LSP File"
+            },
+            {
+                "command": "codequal.loadLSPFromURL",
+                "title": "CodeQual: Load LSP from URL"
+            },
+            {
+                "command": "codequal.applyAllFixes",
+                "title": "CodeQual: Apply All Fixes"
+            },
+            {
+                "command": "codequal.applyFileFixes",
+                "title": "CodeQual: Apply Fixes for Current File"
+            },
+            {
+                "command": "codequal.applyCriticalSeverityFixes",
+                "title": "CodeQual: Apply Critical Severity Fixes"
+            },
+            {
+                "command": "codequal.applyHighSeverityFixes",
+                "title": "CodeQual: Apply High Severity Fixes"
+            },
+            {
+                "command": "codequal.applyMediumSeverityFixes",
+                "title": "CodeQual: Apply Medium Severity Fixes"
+            },
+            {
+                "command": "codequal.applyLowSeverityFixes",
+                "title": "CodeQual: Apply Low Severity Fixes"
+            },
+            {
+                "command": "codequal.clearDiagnostics",
+                "title": "CodeQual: Clear All Diagnostics"
+            },
+            {
+                "command": "codequal.refresh",
+                "title": "CodeQual: Refresh Data"
+            },
+            {
+                "command": "codequal.showStatistics",
+                "title": "CodeQual: Show Statistics"
+            },
+            {
+                "command": "codequal.refreshIssueTree",
+                "title": "CodeQual: Refresh Issue Tree",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "codequal.navigateToIssue",
+                "title": "CodeQual: Navigate to Issue"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "codequal",
+                    "title": "CodeQual",
+                    "icon": "$(bug)"
+                }
+            ]
+        },
+        "views": {
+            "codequal": [
+                {
+                    "id": "codequalIssues",
+                    "name": "Issues",
+                    "icon": "$(bug)",
+                    "contextualTitle": "CodeQual Issues"
+                }
+            ]
+        },
+        "menus": {
+            "view/title": [
+                {
+                    "command": "codequal.refreshIssueTree",
+                    "when": "view == codequalIssues",
+                    "group": "navigation"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "CodeQual Auto-Fix",
+            "properties": {
+                "codequal.lspFilePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to the LSP actions JSON file"
+                },
+                "codequal.sarifFilePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to the SARIF report file"
+                },
+                "codequal.autoLoadLSP": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically load LSP file on workspace open"
+                },
+                "codequal.autoLoadSARIF": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically load SARIF file on workspace open"
+                },
+                "codequal.showDiagnostics": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show diagnostics (squiggly lines) for issues"
+                },
+                "codequal.supabaseUrl": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Supabase URL for loading remote files"
+                },
+                "codequal.supabaseAnonKey": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Supabase anonymous key for authentication"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile",
+        "lint": "eslint src --ext ts",
+        "package": "vsce package",
+        "test:integration": "npx ts-node scripts/run-integration-tests.ts --verbose",
+        "test:cleanup": "npx ts-node scripts/test-cleanup.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.85.0",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "@vscode/vsce": "^2.22.0",
+        "eslint": "^8.50.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.2.0"
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "python-lang-security-audit-insecure-file-permissions-insecure-file-permissions-medium-semgrep",
+  "rule": "python.lang.security.audit.insecure-file-permissions.insecure-file-permissions",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Replace `0o755` with `0o644` to grant read and write access only to the owner, and read-only access to group and others. Use `os.chmod()` with proper error handling and validate that the permission change is applied correctly.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "import os\n\n# Before\nos.chmod('filename.txt', 0o755)\n\n# After\nos.chmod('filename.txt', 0o644)"
+    },
+    "instructions": "Replace `0o755` with `0o644` to grant read and write access only to the owner, and read-only access to group and others. Use `os.chmod()` with proper error handling and validate that the permission change is applied correctly."
+  },
+  "locations": [
+    {
+      "file": "packages/core/scripts/deepwiki_integration/complete_openrouter_fix.py",
+      "line": 529,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

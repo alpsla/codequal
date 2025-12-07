@@ -57,10 +57,19 @@ export function formatDuration(durationMs?: number): string {
 /**
  * Clean AI-generated content by removing think tags, bug references, etc.
  */
-export function cleanAIContent(content: string): string {
-  if (!content) return content;
-  
-  let cleaned = content;
+export function cleanAIContent(content: string | string[] | any): string {
+  if (!content) return '';
+
+  // BUG-090 FIX: Handle arrays by joining them into a string
+  let cleaned: string;
+  if (Array.isArray(content)) {
+    cleaned = content.join('\n');
+  } else if (typeof content !== 'string') {
+    // Handle objects or other types
+    cleaned = JSON.stringify(content);
+  } else {
+    cleaned = content;
+  }
   
   // Remove <think> blocks (with or without closing tags)
   cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');    // <think>...</think>

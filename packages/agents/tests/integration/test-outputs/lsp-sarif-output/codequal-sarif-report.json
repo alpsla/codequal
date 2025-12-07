@@ -1,0 +1,147 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQual",
+          "version": "9.0.0",
+          "informationUri": "https://github.com/spring-projects/spring-petclinic",
+          "rules": [
+            {
+              "id": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+              "shortDescription": {
+                "text": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled"
+              },
+              "fullDescription": {
+                "text": "This issue was detected by semgrep as a high severity problem. Rule: java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-en..."
+              },
+              "help": {
+                "text": "No fix suggestion available"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+              "shortDescription": {
+                "text": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace"
+              },
+              "fullDescription": {
+                "text": "This issue was detected by semgrep as a medium severity problem. Rule: java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-pr..."
+              },
+              "help": {
+                "text": "No fix suggestion available"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
+          "level": "error",
+          "message": {
+            "text": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/resources/application.properties"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 0,
+                  "snippet": {
+                    "text": "    14 | spring.messages.basename=messages/messages\n    15 | \n    16 | # Actuator\n>   17 | management.endpoints.web.exposure.include=*\n    18 | \n    19 | # Logging\n    20 | logging.level.org.springframework=INFO"
+                  }
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only"
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": "src/main/resources/application.properties"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "startLine": 17,
+                        "startColumn": 0,
+                        "endLine": 25
+                      },
+                      "insertedContent": {
+                        "text": "# Before (vulnerable)\n# spring.boot.admin.client.enabled=true\n\n# After (secure)\nmanagement.endpoints.web.exposure.exclude=env,logfile,heapdump\nmanagement.endpoints.web.exposure.include=health,info\nspring.security.user.name=admin\nspring.security.user.password=securePassword123"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace",
+          "level": "warning",
+          "message": {
+            "text": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".mvn/wrapper/MavenWrapperDownloader.java"
+                },
+                "region": {
+                  "startLine": 92,
+                  "startColumn": 0,
+                  "snippet": {
+                    "text": "    89 |             System.exit(0);\n    90 |         } catch (Throwable e) {\n    91 |             System.out.println(\"- Error downloading\");\n>   92 |             e.printStackTrace();\n    93 |             System.exit(1);\n    94 |         }\n    95 |     }"
+                  }
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Remove or conditionally disable debug print statements in production builds. Use a proper logging framework with appropriate log levels and ensure debug-level logging is disabled in production environments. Consider using build profiles or environment variables to control debug output."
+              },
+              "artifactChanges": [
+                {
+                  "artifactLocation": {
+                    "uri": ".mvn/wrapper/MavenWrapperDownloader.java"
+                  },
+                  "replacements": [
+                    {
+                      "deletedRegion": {
+                        "startLine": 92,
+                        "startColumn": 0,
+                        "endLine": 100
+                      },
+                      "insertedContent": {
+                        "text": "public class MavenWrapperDownloader {\n    // ... other code\n    public static void main(String[] args) {\n        // Remove or comment out debug logging\n        // System.out.println(\"Downloading from: \" + MAVEN_WRAPPER_URL);\n        // ... rest of the method\n    }\n}"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
