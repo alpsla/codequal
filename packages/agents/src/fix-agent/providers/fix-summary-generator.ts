@@ -509,7 +509,7 @@ export class FixSummaryGenerator {
   async writeReports(
     issues: FixReportIssue[],
     outputDir: string,
-    basename: string = 'fix-summary',
+    basename = 'fix-summary',
     metadata?: { repository?: string; prNumber?: number; branch?: string }
   ): Promise<{ markdown: string; json: string; html: string }> {
     // Ensure directory exists

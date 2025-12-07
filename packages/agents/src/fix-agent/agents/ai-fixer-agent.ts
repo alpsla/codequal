@@ -19,6 +19,11 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import {
+  getFixPatternRegistry,
+  createAIFixerVerifier,
+  AIFixerVerifier,
+} from '../fix-pattern-registry';
 
 // ============================================================================
 // TYPES
@@ -113,8 +118,11 @@ export class AIFixerAgent {
   private supabase: SupabaseClient;
   private openRouter: OpenAI;
   private modelCache: Map<string, string> = new Map();
+  private fixerVerifier: AIFixerVerifier | null = null;
+  private submitToRegistry = false;
 
-  constructor() {
+  constructor(options?: { submitToRegistry?: boolean }) {
+    this.submitToRegistry = options?.submitToRegistry ?? false;
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
     }
@@ -530,6 +538,98 @@ Provide the fix as JSON.`;
       modelCache: this.modelCache.size,
     };
   }
+
+  // ==========================================================================
+  // PATTERN REGISTRY INTEGRATION
+  // ==========================================================================
+
+  /**
+   * Enable submission to pattern registry
+   * When enabled, successful AI fixes are verified and submitted to the registry
+   */
+  enableRegistrySubmission(): void {
+    this.submitToRegistry = true;
+    if (!this.fixerVerifier) {
+      this.fixerVerifier = createAIFixerVerifier({
+        maxAttempts: 2,
+        minScore: 80,
+        dryRun: false,
+      });
+    }
+  }
+
+  /**
+   * Disable submission to pattern registry
+   */
+  disableRegistrySubmission(): void {
+    this.submitToRegistry = false;
+  }
+
+  /**
+   * Submit a generated fix to the pattern registry
+   * The fix goes through verification and then the approval workflow
+   */
+  async submitFixToRegistry(
+    issue: AIFixerIssue,
+    recommendation: AIFixRecommendation
+  ): Promise<{ submitted: boolean; patternStatus?: string; message?: string }> {
+    if (!this.submitToRegistry) {
+      return { submitted: false, message: 'Registry submission disabled' };
+    }
+
+    if (!this.fixerVerifier) {
+      this.fixerVerifier = createAIFixerVerifier({
+        maxAttempts: 2,
+        minScore: 80,
+        dryRun: false,
+      });
+    }
+
+    try {
+      const result = await this.fixerVerifier.verifyAndSubmit({
+        ruleId: issue.ruleId,
+        tool: issue.validatorToolId,
+        filePath: issue.file,
+        originalCode: issue.codeContext || '',
+        fixedCode: recommendation.correctedCode,
+        lineNumber: issue.line,
+        issueMessage: issue.message,
+        aiModel: recommendation.model,
+        attemptNumber: 1,
+      });
+
+      if (result.success && result.patternResponse) {
+        console.log(
+          `[AI-Fixer] Fix submitted to registry: ${result.patternResponse.status}`
+        );
+        return {
+          submitted: true,
+          patternStatus: result.patternResponse.status,
+          message: result.patternResponse.message,
+        };
+      }
+
+      return {
+        submitted: false,
+        message: result.failureReason || 'Verification failed',
+      };
+    } catch (error: any) {
+      console.error(`[AI-Fixer] Registry submission error:`, error.message);
+      return { submitted: false, message: error.message };
+    }
+  }
+
+  /**
+   * Get AI Fixer's current trust status in the registry
+   */
+  getAIFixerTrustStatus(): {
+    totalPatterns: number;
+    activePatterns: number;
+    pendingPatterns: number;
+  } {
+    const registry = getFixPatternRegistry();
+    return registry.getAIFixerStats();
+  }
 }
 
 // ============================================================================
@@ -538,21 +638,60 @@ Provide the fix as JSON.`;
 
 let instance: AIFixerAgent | null = null;
 
-export function getAIFixerAgent(): AIFixerAgent {
+export function getAIFixerAgent(options?: { submitToRegistry?: boolean }): AIFixerAgent {
   if (!instance) {
-    instance = new AIFixerAgent();
+    instance = new AIFixerAgent(options);
   }
   return instance;
 }
 
 /**
+ * Reset the AI Fixer Agent singleton (for testing)
+ */
+export function resetAIFixerAgent(): void {
+  instance = null;
+}
+
+/**
  * Process issues through AI-Fixer and return enriched results
  * Convenience function for pipeline integration
+ *
+ * @param issues Issues to process
+ * @param options Processing options
+ * @param options.parallel Number of parallel requests (default 3)
+ * @param options.verbose Enable verbose logging
+ * @param options.submitToRegistry Submit successful fixes to pattern registry
  */
 export async function processIssuesWithAIFixer(
   issues: AIFixerIssue[],
-  options?: { parallel?: number; verbose?: boolean }
+  options?: {
+    parallel?: number;
+    verbose?: boolean;
+    submitToRegistry?: boolean;
+  }
 ): Promise<AIFixerBatchResult> {
-  const agent = getAIFixerAgent();
-  return agent.processBatch(issues, options);
+  const agent = getAIFixerAgent({ submitToRegistry: options?.submitToRegistry });
+
+  if (options?.submitToRegistry) {
+    agent.enableRegistrySubmission();
+  }
+
+  const result = await agent.processBatch(issues, {
+    parallel: options?.parallel,
+    verbose: options?.verbose,
+  });
+
+  // Submit successful fixes to registry if enabled
+  if (options?.submitToRegistry) {
+    console.log('[AI-Fixer] Submitting successful fixes to pattern registry...');
+
+    for (const enriched of result.enrichedIssues) {
+      // Only submit high-confidence fixes
+      if (enriched.fixRecommendation.confidence >= 70) {
+        await agent.submitFixToRegistry(enriched, enriched.fixRecommendation);
+      }
+    }
+  }
+
+  return result;
 }
