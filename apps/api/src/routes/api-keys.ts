@@ -449,7 +449,7 @@ router.get('/:id/usage', async (req: Request, res: Response) => {
       .limit(100);
 
     // Calculate usage by endpoint
-    const endpointUsage = usage?.reduce((acc: Record<string, number>, log) => {
+    const endpointUsage = usage?.reduce((acc: Record<string, number>, log: { method: string; endpoint: string }) => {
       const key = `${log.method} ${log.endpoint}`;
       acc[key] = (acc[key] || 0) + 1;
       return acc;

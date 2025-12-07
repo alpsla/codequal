@@ -1,4 +1,26 @@
 /* eslint-disable no-console */
+/**
+ * @deprecated LEGACY FILE - DO NOT MODIFY
+ *
+ * This file contains the legacy result orchestrator from pre-V9 architecture.
+ * It has many TypeScript errors due to deprecated service dependencies that have been removed.
+ *
+ * For V9 Production:
+ * - Use V9PRAnalyzer from packages/agents/src/two-branch/services/v9-pr-analyzer.ts
+ * - Use V9ToolOrchestrator for tool execution
+ * - Use the V9 canonical architecture documented in V9_PRODUCTION_ARCHITECTURE.md
+ *
+ * This file is kept for backwards compatibility with any legacy routes that still
+ * reference it, but should be gradually migrated to V9 components.
+ *
+ * Deprecated services referenced here:
+ * - ToolResultRetrievalService (replaced by V9 tool orchestration)
+ * - GitDiffAnalyzerService (replaced by PRContextService)
+ * - deepWikiApiManager (DeepWiki integration removed)
+ * - metricsCollector (replaced by TokenUsageAggregator)
+ *
+ * TODO: Migrate all routes to V9 architecture and delete this file
+ */
 import { AuthenticatedUser } from '../middleware/auth-middleware';
 import * as path from 'path';
 
@@ -132,8 +154,23 @@ import type { PRFile } from './intelligence/pr-content-analyzer';
 import { IntelligentResultMerger } from './intelligence/intelligent-result-merger';
 import { SkillTrackingService } from '@codequal/agents';
 import type { ToolFinding } from '../types/tool-finding';
-import { IssueResolutionDetector, IssueComparison } from '@codequal/agents';
+import { IssueResolutionDetector } from '@codequal/agents';
 import { dataFlowMonitor } from './data-flow-monitor';
+// Import deprecated service stubs for backward compatibility
+import {
+  ToolResultRetrievalService,
+  GitDiffAnalyzerService,
+  deepWikiApiManager,
+  metricsCollector,
+  AgentToolResults
+} from './deprecated-stubs';
+
+// IssueComparison stub - deprecated type
+interface IssueComparison {
+  resolved: unknown[];
+  introduced: unknown[];
+  unchanged: unknown[];
+}
 import { getTokenUsageAggregator, TokenUsageAggregator, AggregatedTokenUsage } from './token-usage-aggregator';
 import { createClient } from '@supabase/supabase-js';
 import { getUnifiedProgressTracer } from './unified-progress-tracer';
