@@ -28,6 +28,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import { UniversalToolBase } from './universal-tool-base';
 import { Issue } from '../../analyzers/v9-types';
 
@@ -403,7 +404,6 @@ export async function runCodeQL(
  * Check if CodeQL is available on the system
  */
 export async function isCodeQLAvailable(): Promise<boolean> {
-  const { execSync } = require('child_process');
   try {
     execSync('codeql --version', { stdio: 'pipe' });
     return true;
