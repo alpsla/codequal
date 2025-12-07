@@ -46,20 +46,65 @@ import { Issue } from '../../analyzers/v9-types';
 // Configuration Types
 // =============================================================================
 
+/**
+ * CodeQL Configuration Options
+ *
+ * Default behavior (optimized for typical PRO tier usage):
+ * - threads: 2 (good for shared environments, use 0 for dedicated)
+ * - querySuite: 'security' (faster, covers most issues)
+ * - enableCaching: true (significant speedup on repeat runs)
+ * - cacheTTLDays: 7 (one week, balances storage vs rebuild cost)
+ * - useRamDisk: auto (enabled on Linux)
+ *
+ * For extended analysis (more thorough, ~40% slower):
+ * - Set querySuite: 'security-extended'
+ *
+ * Cache Storage Costs:
+ * - Each database: ~100-500MB depending on codebase size
+ * - 1 week TTL: Typical usage ~1-2GB per workspace
+ * - Storage location: os.tmpdir()/codeql-cache
+ * - Auto-cleanup: Expired caches removed on next run
+ */
 export interface CodeQLConfig {
   /** Number of threads to use (0 = all available, default: 2 for shared environments) */
   threads?: number;
-  /** Query suite: 'security' (faster) or 'security-extended' (more thorough) */
+  /**
+   * Query suite selection:
+   * - 'security': Faster (~40% less time), covers most common vulnerabilities
+   * - 'security-extended': More thorough, includes additional edge cases
+   * Default: 'security' (recommended for most use cases)
+   */
   querySuite?: 'security' | 'security-extended';
-  /** Enable database caching (reuse if source unchanged) */
+  /** Enable database caching (reuse if source unchanged). Default: true */
   enableCaching?: boolean;
-  /** Use RAM disk for temp files on Linux (faster I/O) */
+  /**
+   * Cache TTL in days. Databases older than this are rebuilt.
+   * Default: 7 (one week)
+   * Cost consideration: ~100-500MB per cached database
+   * Set to 0 for no TTL (cache invalidated only by source changes)
+   */
+  cacheTTLDays?: number;
+  /** Use RAM disk for temp files on Linux (faster I/O). Default: auto-detect */
   useRamDisk?: boolean;
-  /** Custom timeout in milliseconds */
+  /** Custom timeout in milliseconds. Default: 900000 (15 minutes) */
   timeout?: number;
   /** Exclude patterns (globs) from analysis */
   excludePatterns?: string[];
 }
+
+/**
+ * Default configuration values
+ * These are optimized for typical PRO tier usage
+ */
+export const CODEQL_DEFAULTS: Required<CodeQLConfig> = {
+  threads: 2,                    // Good for shared environments
+  querySuite: 'security',        // Faster, covers most issues
+  enableCaching: true,           // Significant speedup
+  cacheTTLDays: 7,              // One week cache
+  useRamDisk: os.platform() === 'linux',
+  timeout: 900000,              // 15 minutes
+  excludePatterns: [],          // Use DEFAULT_EXCLUDE_PATTERNS
+};
 
 interface CodeQLResult {
   ruleId: string;
@@ -153,17 +198,15 @@ const DB_CACHE_DIR = path.join(os.tmpdir(), 'codeql-cache');
 export class CodeQLRunner extends UniversalToolBase {
   private dbPath: string;
   private sarifPath: string;
-  private codeqlConfig: CodeQLConfig;
+  private codeqlConfig: Required<CodeQLConfig>;
   private sourceHash: string | null = null;
 
   constructor(workspacePath: string, language: string, config: CodeQLConfig = {}) {
-    // Apply defaults
+    // Merge with defaults (user config overrides defaults)
     const effectiveConfig: Required<CodeQLConfig> = {
-      threads: config.threads ?? 2,  // Default: 2 threads (optimal for shared environments)
-      querySuite: config.querySuite ?? 'security-extended',
-      enableCaching: config.enableCaching ?? true,
-      useRamDisk: config.useRamDisk ?? (os.platform() === 'linux'),
-      timeout: config.timeout ?? 900000,  // 15 minutes
+      ...CODEQL_DEFAULTS,
+      ...config,
+      // Ensure excludePatterns includes defaults if not overridden
       excludePatterns: config.excludePatterns ?? DEFAULT_EXCLUDE_PATTERNS,
     };
 
@@ -191,6 +234,50 @@ export class CodeQLRunner extends UniversalToolBase {
     }
 
     this.sarifPath = this.config.outputFile!;
+
+    // Auto-cleanup expired caches on startup
+    this.cleanupExpiredCaches();
+  }
+
+  /**
+   * Cleanup caches that have exceeded TTL
+   */
+  private cleanupExpiredCaches(): void {
+    if (!this.codeqlConfig.enableCaching || this.codeqlConfig.cacheTTLDays <= 0) {
+      return;
+    }
+
+    try {
+      if (!fs.existsSync(DB_CACHE_DIR)) return;
+
+      const maxAgeMs = this.codeqlConfig.cacheTTLDays * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const entries = fs.readdirSync(DB_CACHE_DIR);
+
+      for (const entry of entries) {
+        if (entry.endsWith('.meta')) {
+          const metaPath = path.join(DB_CACHE_DIR, entry);
+          try {
+            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+            const createdAt = new Date(meta.createdAt).getTime();
+
+            if (now - createdAt > maxAgeMs) {
+              // Cache expired - remove it
+              const dbPath = metaPath.replace('.meta', '');
+              if (fs.existsSync(dbPath)) {
+                fs.rmSync(dbPath, { recursive: true, force: true });
+              }
+              fs.unlinkSync(metaPath);
+              console.log(`[CodeQL] 🗑️ Expired cache removed: ${entry.replace('.meta', '')}`);
+            }
+          } catch {
+            // Skip invalid metadata
+          }
+        }
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 
   /**
@@ -681,6 +768,29 @@ export async function runCodeQLParallel(
     querySuite: 'security-extended',
     enableCaching: true,
     useRamDisk: true,
+  });
+  return runner.execute();
+}
+
+/**
+ * Run CodeQL with extended analysis (more thorough, ~40% slower)
+ * Use when you need comprehensive coverage and have time to spare.
+ *
+ * Differences from default:
+ * - Uses 'security-extended' query suite (additional edge cases)
+ * - ~40% slower but catches more subtle issues
+ * - Recommended for: release branches, security audits, compliance checks
+ */
+export async function runCodeQLExtended(
+  workspacePath: string,
+  language: string
+): Promise<Issue[]> {
+  console.log(`[CodeQL] 🔬 Running EXTENDED analysis (more thorough, ~40% slower)`);
+  const runner = new CodeQLRunner(workspacePath, language, {
+    querySuite: 'security-extended',
+    threads: 2,  // Conservative threading
+    enableCaching: true,
+    cacheTTLDays: 7,
   });
   return runner.execute();
 }

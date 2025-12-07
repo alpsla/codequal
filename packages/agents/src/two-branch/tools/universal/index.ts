@@ -22,9 +22,11 @@ export { UniversalDependencyCheckRunner, runDependencyCheck } from './dependency
 export {
   CodeQLRunner,
   CodeQLConfig,
+  CODEQL_DEFAULTS,
   runCodeQL,
   runCodeQLFast,
   runCodeQLParallel,
+  runCodeQLExtended,
   isCodeQLAvailable,
   clearCodeQLCache,
   getCodeQLCacheStats,
