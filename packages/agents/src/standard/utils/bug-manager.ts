@@ -262,8 +262,11 @@ export class BugManager {
       const body = this.formatGitHubIssueBody(bug);
       
       // Use GitHub CLI if available
+      // Escape backslashes first, then double quotes for proper shell escaping
+      const escapedTitle = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const escapedBody = body.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
       const result = execSync(
-        `gh issue create --title "${title}" --body "${body.replace(/"/g, '\\"')}"`,
+        `gh issue create --title "${escapedTitle}" --body "${escapedBody}"`,
         { encoding: 'utf-8', stdio: 'pipe' }
       );
 

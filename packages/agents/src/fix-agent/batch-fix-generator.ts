@@ -384,7 +384,11 @@ ${blockingIssues.map((i, idx) => `${idx + 1}. Line ${i.line}: ${i.message}`).joi
     // Build the files section separately to avoid complex template nesting
     const filesSection = fileGroups.map(g => {
       const highestSeverity = this.getHighestSeverity(g.issues);
-      const prompt = this.generateFilePrompt(g).replace(/`/g, '\\`').replace(/\$/g, '\\$');
+      // Escape backslashes first, then other special shell characters
+      const prompt = this.generateFilePrompt(g)
+        .replace(/\\/g, '\\\\')
+        .replace(/`/g, '\\`')
+        .replace(/\$/g, '\\$');
 
       return `
 # ${g.file} (${g.issues.length} issues)

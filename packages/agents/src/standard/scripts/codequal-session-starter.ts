@@ -112,7 +112,9 @@ class CodeQualSessionStarter {
     try {
       if (fs.existsSync(this.quickSetupScript)) {
         console.log(chalk.gray('Running quick-setup.sh...'));
-        execSync(`bash ${this.quickSetupScript}`, { 
+        // Use shell quoting to prevent command injection from file paths
+        const escapedScript = this.quickSetupScript.replace(/'/g, "'\\''");
+        execSync(`bash '${escapedScript}'`, {
           cwd: this.projectRoot,
           stdio: 'inherit'
         });
@@ -140,7 +142,9 @@ class CodeQualSessionStarter {
           console.log(chalk.gray('Starting MCP services...'));
           const dockerScript = path.join(this.agentsDir, 'start-secure-mcp-stack.sh');
           if (fs.existsSync(dockerScript)) {
-            execSync(`bash ${dockerScript}`, { stdio: 'pipe' });
+            // Use shell quoting to prevent command injection from file paths
+            const escapedDockerScript = dockerScript.replace(/'/g, "'\\''");
+            execSync(`bash '${escapedDockerScript}'`, { stdio: 'pipe' });
           }
         }
 
