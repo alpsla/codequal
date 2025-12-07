@@ -404,3 +404,96 @@ export {
   type TemplateFixEngineConfig,
   type TemplateFixStats,
 } from './parallel-ai-fixer';
+
+// ================================================================================
+// PROVIDER ADAPTERS (Universal Interface for All Consumers)
+// ================================================================================
+
+// Provider Adapters - Universal interface for Web, API, CI/CD, IDE
+export {
+  // Factory functions
+  createProvider,
+  getAvailableProviders,
+  generateFixData,
+  generateProviderOutput,
+  applyUserSelection,
+  type ProviderType,
+
+  // Core interfaces
+  IProviderAdapter,
+  ProviderOptions,
+  ProviderOutput,
+
+  // Universal data structures
+  UniversalFixData,
+  UniversalIssue,
+  IssueGroupData,
+
+  // Provider-specific outputs
+  WebProviderOutput,
+  APIProviderOutput,
+  CICDProviderOutput,
+  IDEProviderOutput,
+
+  // Web types
+  WebAction,
+
+  // CI/CD types
+  GithubAnnotation,
+
+  // IDE types
+  LSPCodeAction,
+  LSPBatchAction,
+  LSPDiagnostic,
+  LSPWorkspaceEdit,
+  LSPPosition,
+  LSPTextEdit,
+
+  // User selection types
+  UserFixSelection,
+  ApplyFixesResult,
+
+  // Utility functions
+  buildUniversalFixData,
+
+  // Provider implementations
+  WebProvider,
+  createWebProvider,
+  IDEProvider,
+  createIDEProvider,
+  CICDProvider,
+  createCICDProvider,
+
+  // SARIF Generator - GitHub Code Scanning
+  SARIFGenerator,
+  createSARIFGenerator,
+  generateSARIF,
+  generateSARIFToFile,
+  type SARIFGeneratorConfig,
+  type SARIFReport,
+  type SARIFResult,
+  type SARIFLevel,
+
+  // GitLab Code Quality Generator
+  GitLabCodeQualityGenerator,
+  createGitLabCodeQualityGenerator,
+  generateGitLabCodeQuality,
+  generateGitLabCodeQualityToFile,
+  generateGitLabCIJobConfig,
+  type GitLabCodeQualityConfig,
+  // Note: GitLabCodeQualityIssue is also exported from report-output
+  type GitLabCodeQualityIssue as GitLabCodeQualityIssueV2,
+  type GitLabSeverity,
+  type GitLabCategory,
+
+  // Fix Summary Generator - User-facing reports (Markdown, HTML, JSON)
+  FixSummaryGenerator,
+  createFixSummaryGenerator,
+  generateFixSummaryMarkdown,
+  generateFixSummaryHTML,
+  generateFixSummaryJSON,
+  type FixSummaryConfig,
+  type FixSummaryStats,
+  type FixSummaryReport,
+  type ManualReviewGuidance,
+} from './providers';

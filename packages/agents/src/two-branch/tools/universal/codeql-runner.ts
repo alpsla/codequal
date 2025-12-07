@@ -115,6 +115,25 @@ export class CodeQLRunner extends UniversalToolBase {
   }
 
   /**
+   * Build command - not used directly by CodeQL (multi-step process)
+   * This satisfies the abstract method requirement
+   */
+  protected buildCommand(): string {
+    // CodeQL uses a multi-step process (createDatabase + runAnalysis)
+    // This method returns a placeholder - actual commands are in createDatabase/runAnalysis
+    return `codeql database analyze "${this.dbPath}" --format=sarif-latest`;
+  }
+
+  /**
+   * Parse output - wraps parseResults to satisfy abstract method
+   * This satisfies the abstract method requirement
+   */
+  protected parseOutput(_output: string): Issue[] {
+    // CodeQL uses SARIF file parsing, not stdout parsing
+    return this.parseResults();
+  }
+
+  /**
    * Execute CodeQL analysis and return standardized issues
    */
   async execute(): Promise<Issue[]> {
