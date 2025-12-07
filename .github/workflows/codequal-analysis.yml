@@ -1,8 +1,14 @@
 name: CodeQual Analysis
 
+# TEMPORARILY DISABLED: API endpoint not yet deployed
+# Re-enable when api.codequal.dev is live
+#
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened]
+
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Manual trigger only until API is deployed
 
 permissions:
   contents: read
