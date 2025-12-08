@@ -17,9 +17,6 @@ process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
 import { TypeScriptToolOrchestrator } from '../../src/two-branch/tools/typescript/typescript-tool-orchestrator';
 import { createFrameworkDetector } from '../../src/two-branch/utils/framework-detector';
-import { createToolConfigResolver } from '../../src/two-branch/config/universal-tool-config';
-import { V9GroupedReportFormatter } from '../../src/two-branch/analyzers/v9-grouped-report-formatter';
-import { ModelConfigResolver } from '../../src/standard/orchestrator/model-config-resolver';
 import { groupIssues } from '../../src/two-branch/utils/issue-grouping';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -227,43 +224,69 @@ async function runNestJSTest(): Promise<void> {
       console.log('ℹ️ Step 8: BASIC tier - Skipping fix execution (classify only)');
     }
 
-    // 9. Generate report
+    // 9. Save outputs (simplified - skip report generation for now)
     console.log('');
-    console.log('📝 Step 9: Generating report...');
-
-    const modelResolver = new ModelConfigResolver();
-    const formatter = new V9GroupedReportFormatter({
-      modelResolver,
-      tier: TEST_CONFIG.userTier,
-    });
-
-    const report = await formatter.format({
-      repository: TEST_CONFIG.repoUrl,
-      prNumber: TEST_CONFIG.prNumber,
-      baseBranch: mainBranch,
-      headBranch: `pr-${TEST_CONFIG.prNumber}`,
-      issues: categorizedIssues,
-      groupedIssues,
-      metadata: {
-        framework: frameworkInfo.primaryFramework,
-        language: 'typescript',
-        analyzedAt: new Date().toISOString(),
-      }
-    });
-
-    // 10. Save outputs
-    console.log('');
-    console.log('💾 Step 10: Saving outputs...');
+    console.log('💾 Step 9: Saving outputs...');
     fs.mkdirSync(outputDir, { recursive: true });
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    fs.writeFileSync(
-      path.join(outputDir, `nestjs-pro-report-${timestamp}.md`),
-      report.markdown
-    );
+
+    // Save issues JSON
     fs.writeFileSync(
       path.join(outputDir, `nestjs-pro-issues-${timestamp}.json`),
-      JSON.stringify(categorizedIssues, null, 2)
+      JSON.stringify({
+        metadata: {
+          repository: TEST_CONFIG.repoUrl,
+          prNumber: TEST_CONFIG.prNumber,
+          framework: frameworkInfo.primaryFramework,
+          language: 'typescript',
+          analyzedAt: new Date().toISOString(),
+          tier: TEST_CONFIG.userTier,
+          stats: {
+            total: categorizedIssues.length,
+            new: newIssues.length,
+            existing: existingIssues.length,
+            groups: groupedIssues?.length || 0,
+            fixResults: fixResults
+          }
+        },
+        issues: categorizedIssues,
+        groupedIssues: groupedIssues
+      }, null, 2)
+    );
+
+    // Save summary markdown
+    const summaryMd = `# NestJS PRO Tier Analysis - PR #${TEST_CONFIG.prNumber}
+
+## Summary
+- **Repository**: ${TEST_CONFIG.repoUrl}
+- **Framework**: ${frameworkInfo.primaryFramework}
+- **Analysis Date**: ${new Date().toISOString()}
+- **Tier**: ${TEST_CONFIG.userTier}
+
+## Issue Statistics
+| Category | Count |
+|----------|-------|
+| Total Issues | ${categorizedIssues.length} |
+| NEW Issues | ${newIssues.length} |
+| EXISTING Issues | ${existingIssues.length} |
+
+## Fix Results
+${fixResults ? `
+| Metric | Value |
+|--------|-------|
+| Processed | ${fixResults.totalProcessed} |
+| Auto-fixed | ${fixResults.fixed} |
+| Manual Review | ${fixResults.manualReview} |
+| Fix Rate | ${fixResults.totalProcessed > 0 ? ((fixResults.fixed / fixResults.totalProcessed) * 100).toFixed(1) : '0.0'}% |
+` : 'No fix results (BASIC tier or no issues)'}
+
+## Top Rules
+${Object.entries(ruleCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([rule, count]) => `- **${rule}**: ${count} issues`).join('\n')}
+`;
+    fs.writeFileSync(
+      path.join(outputDir, `nestjs-pro-summary-${timestamp}.md`),
+      summaryMd
     );
 
     console.log(`   ✅ Report saved to ${outputDir}`);
