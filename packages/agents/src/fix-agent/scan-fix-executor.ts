@@ -241,7 +241,7 @@ const AI_ERROR_PATTERNS: RegExp[] = [
  */
 const VALID_CODE_INDICATORS: RegExp[] = [
   /^(?:import|from|const|let|var|function|class|def|async|export|return)\s/m,  // Code keywords at line start
-  /[{}\[\]();]/,  // Contains common code syntax
+  /[{}[\]();]/,  // Contains common code syntax
   /=\s*[^=]/,  // Assignment (not comparison)
   /\.\w+\(/,  // Method calls
 ];
@@ -283,7 +283,7 @@ export function validatePatternTemplate(
   if (codeToCheck.length > 50 && !hasCodeIndicators) {
     // Check if it's mostly natural language (high letter-to-symbol ratio)
     const letters = (codeToCheck.match(/[a-zA-Z]/g) || []).length;
-    const symbols = (codeToCheck.match(/[{}\[\]();=<>]/g) || []).length;
+    const symbols = (codeToCheck.match(/[{}[\]();=<>]/g) || []).length;
     const ratio = symbols > 0 ? letters / symbols : letters;
 
     if (ratio > 20) {  // Very high letter-to-symbol ratio = likely prose

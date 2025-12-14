@@ -404,7 +404,7 @@ export class FrameworkPatternStorage {
   async recordPatternApplication(
     patternId: string,
     success: boolean,
-    reverted: boolean = false
+    reverted = false
   ): Promise<void> {
     await this.initialize();
 

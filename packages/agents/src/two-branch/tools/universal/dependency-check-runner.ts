@@ -79,7 +79,7 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
   private pgDatabase: string;
   private pgUser: string;
   private pgPassword: string;
-  private dependencyCheckPath: string = 'dependency-check.sh'; // Default to PATH lookup
+  private dependencyCheckPath = 'dependency-check.sh'; // Default to PATH lookup
 
   /**
    * Find dependency-check.sh in common installation locations

@@ -433,7 +433,7 @@ export class DependencyFixerExecutor extends ToolExecutorBase {
   parseVulnerabilityFromMessage(
     message: string,
     rule: string,
-    severity: string = 'medium'
+    severity = 'medium'
   ): DependencyVulnerability | null {
     // Try to extract package name from various formats
     let packageName: string | null = null;

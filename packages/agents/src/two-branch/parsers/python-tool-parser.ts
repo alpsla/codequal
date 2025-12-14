@@ -9,6 +9,7 @@
  */
 
 import { exec as execCallback } from 'child_process';
+import { existsSync } from 'fs';
 import { promisify } from 'util';
 
 const exec = promisify(execCallback);
@@ -793,12 +794,13 @@ export class PythonToolParser {
 
     const prefix = code.charAt(0);
     switch (prefix) {
-      case 'S':  // Security rules - always high/critical
+      case 'S': {  // Security rules - always high/critical
         // S1xx = low, S2xx = medium, S3xx-S7xx = high
         const secNum = parseInt(code.substring(1));
         if (secNum >= 300) return 'high';
         if (secNum >= 200) return 'medium';
         return 'low';
+      }
       case 'E':  // Errors
         return 'high';
       case 'F':  // Pyflakes (undefined names, etc.)
@@ -834,8 +836,7 @@ export class PythonToolParser {
       // When vulnerabilities found, exits with code 1 but stdout still contains JSON
       // Try requirements.txt first, fallback to environment scan
       const requirementsTxt = `${repoPath}/requirements.txt`;
-      const fs = require('fs');
-      const command = fs.existsSync(requirementsTxt)
+      const command = existsSync(requirementsTxt)
         ? `cd ${repoPath} && pip-audit --format json -r requirements.txt`
         : `cd ${repoPath} && pip-audit --format json`;
 

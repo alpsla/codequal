@@ -504,7 +504,7 @@ export function isPythonVulnerabilityAutoFixable(tool: string, rule: string): bo
 export function parsePythonVulnerabilityFromMessage(
   message: string,
   rule: string,
-  severity: string = 'medium'
+  severity = 'medium'
 ): PipAuditVulnerability | null {
   // Try to extract package name from message
   // Format: "package-name has vulnerability CVE-2023-xxxx"

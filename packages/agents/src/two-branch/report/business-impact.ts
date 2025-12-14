@@ -161,7 +161,7 @@ function getPreCommitHookRecommendation(language: string): string {
  * Includes financial impact, risk assessment, and recommendations
  * SESSION 50 FIX: Added language parameter for language-specific recommendations
  */
-export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[], language: string = 'java'): string {
+export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[], language = 'java'): string {
   // BLOCKERS ONLY: NEW/EXISTING_MODIFIED + critical/high
   const blocking = issues.filter(i =>
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&

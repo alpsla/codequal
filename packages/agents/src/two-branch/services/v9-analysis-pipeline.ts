@@ -181,7 +181,7 @@ async function getToolOrchestrator(language: SupportedLanguage): Promise<ToolOrc
     case 'rust':
     case 'ruby':
     case 'php':
-    default:
+    default: {
       // For languages without specialized orchestrator or patterns,
       // warn and use TypeScript orchestrator as fallback
       // TODO: Create language-specific orchestrators and calibrate patterns
@@ -189,6 +189,7 @@ async function getToolOrchestrator(language: SupportedLanguage): Promise<ToolOrc
       console.warn(`[Pipeline] To add support: 1) Create orchestrator 2) Run pattern calibration`);
       const { TypeScriptToolOrchestrator } = await import('../tools/typescript/typescript-tool-orchestrator');
       return new TypeScriptToolOrchestrator();
+    }
   }
 }
 
@@ -359,7 +360,7 @@ export class V9AnalysisPipeline {
       // maxIssuesToFix is only set explicitly for testing
       mainBranchPath: '',
       prMetadata: {},
-      onProgress: () => {},
+      onProgress: () => { /* Default no-op progress handler */ },
       verbose: false,
       ...config,
     };

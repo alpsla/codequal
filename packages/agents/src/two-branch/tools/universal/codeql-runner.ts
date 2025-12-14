@@ -272,7 +272,7 @@ export class CodeQLRunner extends UniversalToolBase {
   private sarifPath: string;
   private codeqlConfig: Required<CodeQLConfig>;
   private sourceHash: string | null = null;
-  private useDocker: boolean = false;  // ARM64 Docker execution mode
+  private useDocker = false;  // ARM64 Docker execution mode
 
   constructor(workspacePath: string, language: string, config: CodeQLConfig = {}) {
     // Merge with defaults (user config overrides defaults)
