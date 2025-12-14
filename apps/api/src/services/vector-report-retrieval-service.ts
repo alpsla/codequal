@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck - Legacy file, not part of V9 pipeline
 import { createLogger } from '@codequal/core/utils';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
