@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "ts7006-high-typescript",
+  "rule": "TS7006",
+  "tool": "typescript",
+  "severity": "high",
+  "description": "Add explicit type annotation to the 'error' parameter. Identify the appropriate type (e.g., Error, string, or custom type) and apply it directly in the function signature.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "function handleError(error: Error) { /* implementation */ }"
+    },
+    "instructions": "Add explicit type annotation to the 'error' parameter. Identify the appropriate type (e.g., Error, string, or custom type) and apply it directly in the function signature."
+  },
+  "locations": [
+    {
+      "file": "test-autofix-issues.ts",
+      "line": 8,
+      "snippet": "     5 | \n     6 | // Issue 1: Security - child_process with user input (should be fixed)\n     7 | export function unsafeExec(command: string) {\n>    8 |   exec(command, (error, stdout, stderr) => {\n     9 |     console.log(stdout);\n    10 |   });\n    11 | }",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 3,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 2
+  }
+}

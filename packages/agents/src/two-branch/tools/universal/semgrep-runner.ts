@@ -61,7 +61,9 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
     'codequal-security.yaml'
   );
 
-  constructor(workspacePath: string, language: string, jobs = 2, useCustomRules = true) {
+  // SESSION 50 FIX: Disable custom rules by default - they have schema errors
+  // TODO: Fix codequal-security.yaml schema (metavariable-pattern, pattern-not issues)
+  constructor(workspacePath: string, language: string, jobs = 2, useCustomRules = false) {
     super({
       name: 'semgrep',
       language,
@@ -149,6 +151,9 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
     // - docs/**/*.ts: Documentation TypeScript files
     // - __mocks__, __snapshots__: Jest mock/snapshot directories
     // - *.stories.tsx: Storybook story files
+    // - node_modules: SESSION 45 FIX - Always exclude dependencies (major performance boost)
+    // - dist, build, .next: Build artifacts
+    // - .git: Git metadata
     //
     // NOT excluded (still scanned):
     // - *.test.ts, *.spec.ts: Actual test files (may have real issues)
@@ -170,26 +175,43 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
       --exclude='*.stories.ts' \
       --exclude='**/testdata/**' \
       --exclude='**/test_fixtures/**' \
+      --exclude='**/node_modules/**' \
+      --exclude='**/dist/**' \
+      --exclude='**/build/**' \
+      --exclude='**/.next/**' \
+      --exclude='**/.git/**' \
       --output="${outputFile}" \
       "${workspacePath}" 2>&1 || true`;
   }
   
   /**
    * Parse Semgrep JSON output
+   * SESSION 50 FIX: Extract JSON from mixed output (Semgrep outputs log lines before JSON)
    */
   protected parseOutput(output: string): Issue[] {
     const issues: Issue[] = [];
-    
+
     try {
       // Try to read from output file first
       let semgrepData: SemgrepOutput;
-      
+
       if (this.config.outputFile && fs.existsSync(this.config.outputFile)) {
         const fileContent = fs.readFileSync(this.config.outputFile, 'utf-8');
         semgrepData = JSON.parse(fileContent);
       } else {
-        // Fallback to parsing stdout
-        semgrepData = JSON.parse(output);
+        // SESSION 50 FIX: Extract JSON from mixed output
+        // Semgrep outputs log lines, progress bars, etc. before JSON
+        // Look for JSON start: {"version": or {"results":
+        let jsonContent = output;
+        const jsonStartPatterns = ['{"version":', '{"results":'];
+        for (const pattern of jsonStartPatterns) {
+          const idx = output.indexOf(pattern);
+          if (idx !== -1) {
+            jsonContent = output.substring(idx);
+            break;
+          }
+        }
+        semgrepData = JSON.parse(jsonContent);
       }
       
       // Process each finding

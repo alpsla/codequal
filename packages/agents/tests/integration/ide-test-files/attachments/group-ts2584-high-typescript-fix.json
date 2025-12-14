@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "group_id": "ts2584-high-typescript",
+  "rule": "TS2584",
+  "tool": "typescript",
+  "severity": "high",
+  "description": "1. Open tsconfig.json\n2. Add \"lib\": [\"dom\", \"es2020\"] to compilerOptions\n3. Ensure target matches environment requirements\n4. Verify module resolution settings",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "{\n  \"compilerOptions\": {\n    \"lib\": [\"dom\", \"es2020\"],\n    \"target\": \"es2020\",\n    \"module\": \"esnext\",\n    \"strict\": true,\n    \"jsx\": \"react-jsx\"\n  }\n}"
+    },
+    "instructions": "1. Open tsconfig.json\n2. Add \"lib\": [\"dom\", \"es2020\"] to compilerOptions\n3. Ensure target matches environment requirements\n4. Verify module resolution settings"
+  },
+  "locations": [
+    {
+      "file": "packages/cra-template-typescript/template/src/index.tsx",
+      "line": 8,
+      "snippet": "     5 | import reportWebVitals from './reportWebVitals';\n     6 | \n     7 | const root = ReactDOM.createRoot(\n>    8 |   document.getElementById('root') as HTMLElement\n     9 | );\n    10 | root.render(\n    11 |   <React.StrictMode>",
+      "category": "NEW"
+    },
+    {
+      "file": "src/codequal-validation.ts",
+      "line": 19,
+      "snippet": "    16 | }\n    17 | \n    18 | // ESLint Issue 4: Console.log (should be flagged if rule enabled)\n>   19 | console.log('Debug message');\n    20 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test-autofix-issues.ts",
+      "line": 9,
+      "snippet": "     6 | // Issue 1: Security - child_process with user input (should be fixed)\n     7 | export function unsafeExec(command: string) {\n     8 |   exec(command, (error, stdout, stderr) => {\n>    9 |     console.log(stdout);\n    10 |   });\n    11 | }\n    12 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/index.tsx",
+      "line": 5,
+      "snippet": "     2 | import * as ReactDOM from 'react-dom';\n     3 | import App from './App';\n     4 | \n>    5 | ReactDOM.render(<App />, document.getElementById('root'));\n     6 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-typecheck/src/index.tsx",
+      "line": 5,
+      "snippet": "     2 | import * as ReactDOM from 'react-dom';\n     3 | import App from './App';\n     4 | \n>    5 | ReactDOM.render(<App />, document.getElementById('root'));\n     6 | ",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 5,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 3
+  }
+}

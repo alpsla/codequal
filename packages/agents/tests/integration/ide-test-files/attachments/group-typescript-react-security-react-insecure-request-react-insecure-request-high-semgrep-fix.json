@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "group_id": "typescript-react-security-react-insecure-request-react-insecure-request-high-semgrep",
+  "rule": "typescript.react.security.react-insecure-request.react-insecure-request",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "{\n  \"severity\": \"high\",\n  \"issueDescription\": {\n    \"what\": \"The application makes an unencrypted HTTP request, potentially exposing sensitive data to interception and manipulation during transmission.\",\n    \"why\": \"An attacker on the same network can perform man-in-the-middle attacks to capture or modify data being sent over HTTP. This is especially dangerous when transmitting authentication tokens, personal data, or other sensitive information.\",\n    \"causes\": [\n      \"Using HTTP instead of HT...",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "161: // ⚠️ AI-generated fix not available - Manual review required\n162: // Issue: Unencrypted request over HTTP detected.\n163: // See Security documentation for fix patterns\n164: // Context: validation-issues.ts line 161"
+    },
+    "instructions": "{\n  \"severity\": \"high\",\n  \"issueDescription\": {\n    \"what\": \"The application makes an unencrypted HTTP request, potentially exposing sensitive data to interception and manipulation during transmission.\",\n    \"why\": \"An attacker on the same network can perform man-in-the-middle attacks to capture or modify data being sent over HTTP. This is especially dangerous when transmitting authentication tokens, personal data, or other sensitive information.\",\n    \"causes\": [\n      \"Using HTTP instead of HTTPS for network communication\",\n      \"Lack of TLS enforcement in network requests\",\n      \"Insecure default configurations for HTTP clients\"\n    ],\n    \"impact\": \"Data breaches, credential theft, and unauthorized access to sensitive user information. This violates security standards like PCI DSS and GDPR, leading to regulatory fines and loss of customer trust.\"\n  },\n  \"fix\": \"Replace all HTTP requests with HTTPS to ensure encrypted communication. Configure the HTTP client to enforce TLS connections and reject insecure protocols. Use security libraries or frameworks that default to secure connections.\",\n  \"correctedCode\": \"\",\n  \"bestPractices\": [\n    \"Always use HTTPS for external communications\",\n    \"Enforce TLS 1.2 or higher in all network requests\",\n    \"Implement certificate pinning where applicable\"\n  ]\n}",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: typescript.react.security.react-insecure-request.react-insecure-request\nThis is a high quality issue detected by semgrep.\nThe issue is: \"Unencrypted request over HTTP detected.\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: typescript.react.security.react-insecure-request.react-insecure-request (semgrep)\nSEVERITY: high\nMESSAGE: Unencrypted request over HTTP detected.\n\nFILE: packages/agents/src/two-branch/docs/testing/validation-issues.ts\nLINE: 161\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 600,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "packages/agents/src/two-branch/docs/testing/validation-issues.ts",
+      "line": 161,
+      "snippet": "   158 | \n   159 | // 7. Insecure HTTP request\n   160 | function fetchData() {\n>  161 |   fetch('http://api.example.com/data'); // Should use HTTPS\n   162 | }\n   163 | \n   164 | // ==========================================",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

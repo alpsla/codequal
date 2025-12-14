@@ -4,26 +4,30 @@
   "rule": "javascript.express.security.cors-misconfiguration.cors-misconfiguration",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Replace dynamic CORS configuration with hardcoded, trusted origins. Validate and sanitize all user inputs that could affect CORS headers. Implement a whitelist of allowed origins and only set the Access-Control-Allow-Origin header to literal values from this whitelist.",
+  "description": "Implement strict validation and sanitization of user input before applying it to CORS settings. Ensure that only trusted and predefined domains are allowed in CORS configurations. Refer to Semgrep's rule for CORS misconfiguration in Express.js applications for guidance on identifying and mitigating such issues. ([semgrep.dev](https://semgrep.dev/blog/2021/new-high-signal-rules-for-the-javascript-ecosystem/?utm_source=openai))",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "const allowedOrigins = ['https://trusted-domain.com', 'https://another-trusted-domain.com'];\n\napp.use((req, res, next) => {\n  const origin = req.headers.origin;\n  if (allowedOrigins.includes(origin)) {\n    res.setHeader('Access-Control-Allow-Origin', origin);\n  }\n  // ... other CORS headers\n  next();\n});"
+      "after": "const allowedOrigins = ['https://trusted-domain.com'];\nconst corsOptions = {\n  origin: function (origin, callback) {\n    if (allowedOrigins.indexOf(origin) !== -1) {\n      callback(null, true);\n    } else {\n      callback(new Error('Not allowed by CORS'));\n    }\n  }\n};\napp.use(cors(corsOptions));"
     },
-    "instructions": "Replace dynamic CORS configuration with hardcoded, trusted origins. Validate and sanitize all user inputs that could affect CORS headers. Implement a whitelist of allowed origins and only set the Access-Control-Allow-Origin header to literal values from this whitelist."
+    "instructions": "Implement strict validation and sanitization of user input before applying it to CORS settings. Ensure that only trusted and predefined domains are allowed in CORS configurations. Refer to Semgrep's rule for CORS misconfiguration in Express.js applications for guidance on identifying and mitigating such issues. ([semgrep.dev](https://semgrep.dev/blog/2021/new-high-signal-rules-for-the-javascript-ecosystem/?utm_source=openai))"
   },
   "locations": [
     {
       "file": "apps/api/src/routes/auth.ts",
       "line": 18,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "    15 |   const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];\n    16 |   \n    17 |   if (origin && allowedOrigins.includes(origin)) {\n>   18 |     res.header('Access-Control-Allow-Origin', origin);\n    19 |     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');\n    20 |     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');\n    21 |     res.header('Access-Control-Allow-Credentials', 'true');",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 1,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

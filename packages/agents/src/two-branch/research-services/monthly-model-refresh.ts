@@ -97,62 +97,17 @@ const AI_FIXER_ROLE_WEIGHTS: Record<string, { quality: number; speed: number; co
 };
 
 // ============================================================================
-// QUALITY/SPEED ESTIMATES
+// DYNAMIC QUALITY/SPEED SCORING (No hardcoded model estimates)
 // ============================================================================
-
-// Quality scores based on benchmarks and real-world performance
-const MODEL_QUALITY_ESTIMATES: Record<string, number> = {
-  // Top tier (90+)
-  'anthropic/claude-sonnet-4': 95,
-  'anthropic/claude-3.5-sonnet': 93,
-  'openai/gpt-4o': 92,
-  'google/gemini-2.5-pro': 91,
-  'google/gemini-2.0-flash-thinking': 90,
-
-  // High quality (80-89)
-  'google/gemini-2.5-flash': 88,
-  'openai/gpt-4o-mini': 85,
-  'deepseek/deepseek-coder': 84,
-  'qwen/qwen-2.5-coder-32b': 83,
-  'mistral/mistral-large': 82,
-
-  // Good quality (70-79)
-  'qwen/qwen3-coder-flash': 78,
-  'qwen/qwen2.5-coder-7b-instruct': 76,
-  'google/gemini-2.0-flash': 80,
-  'meta-llama/llama-3.1-70b': 77,
-
-  // Acceptable (60-69)
-  'qwen/qwen3-coder:free': 72,  // Free tier, slightly lower quality
-  'google/gemini-2.0-flash-exp:free': 75,
-  'meta-llama/llama-3.1-8b': 65,
-};
-
-// Speed scores (higher = faster, based on typical latency)
-const MODEL_SPEED_ESTIMATES: Record<string, number> = {
-  // Ultra-fast (90+)
-  'google/gemini-2.0-flash': 95,
-  'google/gemini-2.5-flash': 93,
-  'google/gemini-2.0-flash-exp:free': 92,
-  'openai/gpt-4o-mini': 90,
-
-  // Fast (80-89)
-  'qwen/qwen3-coder-flash': 88,
-  'qwen/qwen2.5-coder-7b-instruct': 87,
-  'qwen/qwen3-coder:free': 85,
-  'meta-llama/llama-3.1-8b': 88,
-
-  // Medium (70-79)
-  'openai/gpt-4o': 75,
-  'anthropic/claude-3.5-sonnet': 72,
-  'deepseek/deepseek-coder': 78,
-
-  // Slower (60-69)
-  'anthropic/claude-sonnet-4': 68,
-  'google/gemini-2.5-pro': 65,
-  'mistral/mistral-large': 70,
-  'meta-llama/llama-3.1-70b': 60,
-};
+//
+// Models are scored dynamically based on:
+// 1. Quality: context_length, model tier patterns (opus/sonnet/pro/mini/flash/coder)
+// 2. Speed: Model size patterns (70b/32b/8b/flash/mini)
+// 3. Cost: Live pricing from OpenRouter API
+//
+// This approach allows the researcher to evaluate ANY model without needing
+// to manually add quality estimates for new models.
+// ============================================================================
 
 // ============================================================================
 // MONTHLY MODEL REFRESH SERVICE
@@ -245,56 +200,121 @@ export class MonthlyModelRefreshService {
   }
 
   /**
-   * Get quality score for a model (from estimates or heuristics)
+   * Get quality score for a model (fully dynamic - no hardcoded estimates)
+   *
+   * Scoring based on:
+   * - Model tier patterns (opus/sonnet/pro/mini/flash/coder)
+   * - Model size patterns (70b/32b/8b)
+   * - Context length capability
    */
-  getQualityScore(modelId: string): number {
-    // Check if we have an estimate
-    for (const [pattern, score] of Object.entries(MODEL_QUALITY_ESTIMATES)) {
-      if (modelId.toLowerCase().includes(pattern.toLowerCase()) ||
-          pattern.toLowerCase().includes(modelId.toLowerCase())) {
-        return score;
-      }
+  getQualityScore(modelId: string, contextLength?: number): number {
+    const idLower = modelId.toLowerCase();
+    let score = 60; // Base score for unknown models
+
+    // ==========================================================================
+    // TIER-BASED SCORING (from model name patterns)
+    // ==========================================================================
+
+    // Top tier models (opus, o1, sonnet-4)
+    if (idLower.includes('opus') || idLower.includes('o1-') || idLower.includes('sonnet-4')) {
+      score = 92;
+    }
+    // High tier (sonnet, gpt-4o, gemini-pro)
+    else if (idLower.includes('sonnet') || (idLower.includes('gpt-4o') && !idLower.includes('mini')) || idLower.includes('gemini-2.5-pro')) {
+      score = 88;
+    }
+    // Code-specialized (coder models)
+    else if (idLower.includes('coder') || idLower.includes('codestral')) {
+      score = 80;
+    }
+    // Mid-tier (gpt-4-turbo, gemini-flash, etc.)
+    else if (idLower.includes('turbo') || idLower.includes('gemini-2.5-flash') || idLower.includes('gemini-2.0-flash')) {
+      score = 80;
+    }
+    // Fast/Mini models (still capable, just faster)
+    else if (idLower.includes('mini') || idLower.includes('flash') || idLower.includes('haiku')) {
+      score = 75;
     }
 
-    // Heuristic-based scoring
-    const idLower = modelId.toLowerCase();
+    // ==========================================================================
+    // SIZE-BASED ADJUSTMENTS
+    // ==========================================================================
+    // Extract size from model name (e.g., "70b", "32b", "8b")
+    const sizeMatch = idLower.match(/(\d+)b/);
+    if (sizeMatch) {
+      const sizeB = parseInt(sizeMatch[1], 10);
+      if (sizeB >= 70) score = Math.max(score, 82);      // 70B+ models
+      else if (sizeB >= 30) score = Math.max(score, 78); // 30-69B models (includes MoE)
+      else if (sizeB >= 14) score = Math.max(score, 72); // 14-29B models
+      else if (sizeB >= 7) score = Math.max(score, 68);  // 7-13B models
+    }
 
-    if (idLower.includes('opus') || idLower.includes('sonnet-4')) return 90;
-    if (idLower.includes('gpt-4o') && !idLower.includes('mini')) return 88;
-    if (idLower.includes('gemini-2.5-pro')) return 88;
-    if (idLower.includes('coder') || idLower.includes('code')) return 75;
-    if (idLower.includes('mini') || idLower.includes('flash')) return 70;
-    if (idLower.includes('70b')) return 75;
-    if (idLower.includes('32b')) return 72;
-    if (idLower.includes('8b') || idLower.includes('7b')) return 65;
+    // ==========================================================================
+    // CONTEXT LENGTH BONUS
+    // ==========================================================================
+    if (contextLength) {
+      if (contextLength >= 200000) score += 5;      // 200K+ context
+      else if (contextLength >= 128000) score += 3; // 128K context
+      else if (contextLength >= 64000) score += 1;  // 64K context
+    }
 
-    return 60; // Default for unknown models
+    return Math.min(100, Math.max(0, score));
   }
 
   /**
-   * Get speed score for a model (from estimates or heuristics)
+   * Get speed score for a model (fully dynamic - no hardcoded estimates)
+   *
+   * Scoring based on:
+   * - Speed-focused patterns (flash, mini, haiku, lite)
+   * - Model size inverse relationship (smaller = faster)
+   * - Expensive/heavy patterns (opus, large, pro)
    */
   getSpeedScore(modelId: string): number {
-    // Check if we have an estimate
-    for (const [pattern, score] of Object.entries(MODEL_SPEED_ESTIMATES)) {
-      if (modelId.toLowerCase().includes(pattern.toLowerCase()) ||
-          pattern.toLowerCase().includes(modelId.toLowerCase())) {
-        return score;
-      }
+    const idLower = modelId.toLowerCase();
+    let score = 70; // Base score
+
+    // ==========================================================================
+    // SPEED-FOCUSED MODEL PATTERNS
+    // ==========================================================================
+
+    // Ultra-fast models
+    if (idLower.includes('flash') || idLower.includes('lite')) {
+      score = 95;
+    }
+    // Fast models
+    else if (idLower.includes('mini') || idLower.includes('haiku') || idLower.includes('instant')) {
+      score = 90;
+    }
+    // Standard models
+    else if (idLower.includes('sonnet') || idLower.includes('turbo')) {
+      score = 75;
+    }
+    // Slower models
+    else if (idLower.includes('opus') || idLower.includes('large') || idLower.includes('pro')) {
+      score = 60;
     }
 
-    // Heuristic-based scoring
-    const idLower = modelId.toLowerCase();
+    // ==========================================================================
+    // SIZE-BASED ADJUSTMENTS (smaller = faster)
+    // ==========================================================================
+    const sizeMatch = idLower.match(/(\d+)b/);
+    if (sizeMatch) {
+      const sizeB = parseInt(sizeMatch[1], 10);
+      if (sizeB <= 8) score = Math.max(score, 88);        // 8B or smaller
+      else if (sizeB <= 14) score = Math.max(score, 82);  // 8-14B
+      else if (sizeB <= 32) score = Math.max(score, 75);  // 14-32B
+      else if (sizeB <= 70) score = Math.min(score, 65);  // 32-70B (cap speed)
+      else score = Math.min(score, 55);                   // 70B+ (cap speed)
+    }
 
-    if (idLower.includes('flash')) return 90;
-    if (idLower.includes('mini')) return 88;
-    if (idLower.includes('8b') || idLower.includes('7b')) return 85;
-    if (idLower.includes('32b')) return 70;
-    if (idLower.includes('70b')) return 60;
-    if (idLower.includes('opus') || idLower.includes('large')) return 55;
-    if (idLower.includes('pro')) return 65;
+    // ==========================================================================
+    // MoE BONUS (Mixture of Experts = faster inference)
+    // ==========================================================================
+    if (idLower.includes('moe') || idLower.includes('mixtral')) {
+      score += 8; // MoE models are faster despite parameter count
+    }
 
-    return 70; // Default
+    return Math.min(100, Math.max(0, score));
   }
 
   /**
@@ -309,8 +329,8 @@ export class MonthlyModelRefreshService {
     const completionPrice = parseFloat(model.pricing.completion) * 1_000_000;
     const pricePerMillion = (promptPrice + completionPrice) / 2;
 
-    // Get scores
-    const qualityScore = this.getQualityScore(model.id);
+    // Get scores (all derived dynamically from model metadata)
+    const qualityScore = this.getQualityScore(model.id, model.context_length);
     const speedScore = this.getSpeedScore(model.id);
     const costScore = this.calculateCostScore(pricePerMillion);
 
@@ -378,7 +398,10 @@ export class MonthlyModelRefreshService {
   }
 
   /**
-   * Update Supabase model_configs table
+   * Update Supabase model_configurations table
+   *
+   * IMPORTANT: The actual table is 'model_configurations' (not 'model_configs')
+   * Schema: role, language, size_category, primary_model, fallback_model, weights, reasoning, etc.
    */
   async updateModelConfigs(roleConfigs: RoleConfig[]): Promise<void> {
     if (this.dryRun) {
@@ -396,36 +419,76 @@ export class MonthlyModelRefreshService {
       return;
     }
 
-    console.log('\n💾 Updating Supabase model_configs...');
+    console.log('\n💾 Updating Supabase model_configurations...');
+
+    // Languages to update for each role
+    const languages = [
+      'typescript', 'javascript', 'python', 'java',
+      'go', 'rust', 'ruby', 'php', 'csharp',
+      'c', 'cpp', 'swift', 'kotlin', 'generic'
+    ];
 
     for (const config of roleConfigs) {
       if (!config.best_model) continue;
 
-      try {
-        const { error } = await this.supabase
-          .from('model_configs')
-          .upsert({
-            role: config.role,
-            model_id: config.best_model.model_id,
-            provider: config.best_model.provider,
-            quality_score: config.best_model.quality_score,
-            speed_score: config.best_model.speed_score,
-            cost_score: config.best_model.cost_score,
-            final_score: config.best_model.final_score,
-            price_per_million: config.best_model.price_per_million,
-            weights: config.weights,
-            updated_at: new Date().toISOString(),
-            research_type: 'monthly_refresh',
-          }, { onConflict: 'role' });
+      // BUG-101 FIX: Fallback model should NEVER be free
+      // Free models share rate limits (free-models-per-min), so if primary hits limit,
+      // free fallback will also be rate limited. Always use a PAID fallback.
+      //
+      // Strategy: Pick 2nd best PAID model from candidates, or default to gpt-4o-mini
+      const paidCandidates = config.all_candidates.filter(m =>
+        m.price_per_million > 0 && m.model_id !== config.best_model!.model_id
+      );
+      const secondBestPaid = paidCandidates.length > 0 ? paidCandidates[0] : null;
 
-        if (error) {
-          console.warn(`   ⚠️ Failed to update ${config.role}: ${error.message}`);
-        } else {
-          console.log(`   ✅ Updated ${config.role}: ${config.best_model.model_id}`);
+      // Default paid fallback if no other paid candidates
+      const fallbackModel = secondBestPaid?.model_id || 'openai/gpt-4o-mini';
+
+      // Update for each language
+      for (const language of languages) {
+        try {
+          // BUG-101 FIX: Get provider from secondBestPaid or default
+          const fallbackProvider = secondBestPaid?.provider || 'openai';
+
+          const { error } = await this.supabase
+            .from('model_configurations')  // CORRECT TABLE NAME
+            .upsert({
+              role: config.role,
+              language: language,
+              size_category: 'any',
+              primary_provider: config.best_model.provider,
+              primary_model: config.best_model.model_id,
+              fallback_provider: fallbackProvider,
+              fallback_model: fallbackModel,
+              weights: {
+                ...config.weights,
+                freshness: 0,
+                contextWindow: 0.05
+              },
+              min_requirements: {},
+              reasoning: [
+                `🔄 Monthly refresh ${new Date().toISOString().split('T')[0]}`,
+                `Source: OpenRouter API`,
+                `Primary: ${config.best_model.model_id} ($${config.best_model.price_per_million}/M)`,
+                `Fallback: ${fallbackModel} (${secondBestPaid ? `$${secondBestPaid.price_per_million}/M` : 'default paid'})`,
+                `Score: ${config.best_model.final_score} (Q:${config.best_model.quality_score} S:${config.best_model.speed_score} C:${config.best_model.cost_score})`
+              ],
+              last_updated: new Date().toISOString(),
+              updated_by: 'monthly-model-refresh'
+            }, {
+              onConflict: 'role,language,size_category',
+              ignoreDuplicates: false
+            });
+
+          if (error) {
+            console.warn(`   ⚠️ Failed to update ${config.role}/${language}: ${error.message}`);
+          }
+        } catch (err: any) {
+          console.warn(`   ⚠️ Error updating ${config.role}/${language}:`, err.message);
         }
-      } catch (err) {
-        console.warn(`   ⚠️ Error updating ${config.role}:`, err);
       }
+
+      console.log(`   ✅ Updated ${config.role}: ${config.best_model.model_id} → fallback: ${fallbackModel} (${languages.length} languages)`);
     }
   }
 

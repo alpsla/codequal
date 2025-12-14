@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "group_id": "ts2554-high-typescript",
+  "rule": "TS2554",
+  "tool": "typescript",
+  "severity": "high",
+  "description": "1. Check the function definition's parameter list\n2. Either add parameters to the function signature or remove the argument in the call\n3. Verify related type declarations",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "function myFunction() {\n  // implementation without parameters\n}\n\nmyFunction();"
+    },
+    "instructions": "1. Check the function definition's parameter list\n2. Either add parameters to the function signature or remove the argument in the call\n3. Verify related type declarations"
+  },
+  "locations": [
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.test.ts",
+      "line": 4,
+      "snippet": "     1 | import App from './App';\n     2 | \n     3 | it('reads a typescript file with no syntax error', () => {\n>    4 |   const app = new App({});\n     5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);\n     7 |   expect(app.n).toBe(123);",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

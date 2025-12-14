@@ -4,63 +4,31 @@
   "rule": "java.spring.security.audit.spring-actuator-non-health-enabled.spring-actuator-dangerous-endpoints-enabled",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "1. Disable unnecessary actuator endpoints by setting management.endpoints.web.exposure.exclude=health,info in application.properties\n2. If endpoints are required, implement proper authentication using Spring Security\n3. Restrict access to actuator endpoints to trusted IP addresses or networks only",
+  "description": "To secure Spring Boot Actuator endpoints, implement the following steps:\n\n1. **Disable Unnecessary Endpoints:**\n   - In your `application.properties` or `application.yml`, disable all endpoints by default:\n     ```\n     management.endpoints.enabled-by-default=false\n     ```\n   - Enable only the necessary endpoints:\n     ```\n     management.endpoint.health.enabled=true\n     management.endpoint.info.enabled=true\n     ```\n     ([docs.spring.io](https://docs.spring.io/spring-boot/docs/3.2.12/reference/html/actuator.html?utm_source=openai))\n\n2. **Configure Endpoint Exposure:**\n   - Specify which endpoints are exposed over HTTP:\n     ```\n     management.endpoints.web.exposure.include=health,info\n     ```\n     ([docs.spring.io](https://docs.spring.io/spring-boot/docs/3.2.12/reference/html/actuator.html?utm_source=openai))\n\n3. **Secure Endpoints with Authentication:**\n   - If using Spring Security, configure access control to restrict access to actuator endpoints:\n     ```\n     import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;\n     import org.springframework.context.annotation.Bean;\n     import org.springframework.context.annotation.Configuration;\n     import org.springframework.security.config.annotation.web.builders.HttpSecurity;\n     import org.springframework.security.web.SecurityFilterChain;\n\n     @Configuration(proxyBeanMethods = false)\n     public class SecurityConfig {\n\n         @Bean\n         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {\n             http\n                 .authorizeHttpRequests()\n                 .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole(\"ADMIN\")\n                 .anyRequest().authenticated()\n                 .and()\n                 .httpBasic();\n             return http.build();\n         }\n     }\n     ```\n     ([callicoder.com](https://www.callicoder.com/spring-boot-actuator/?utm_source=openai))\n\n4. **Regularly Review and Update Configurations:**\n   - Periodically audit actuator configurations to ensure they align with security best practices and organizational policies.\n\nBy following these steps, you can mitigate the risks associated with exposed actuator endpoints and enhance the security of your Spring Boot application.",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "management.endpoints.web.exposure.exclude=health,info\n# OR if needed, secure with authentication:\nmanagement.endpoints.web.exposure.include=health,info\nmanagement.endpoint.health.show-details=when-authorized"
+      "after": ""
     },
-    "instructions": "1. Disable unnecessary actuator endpoints by setting management.endpoints.web.exposure.exclude=health,info in application.properties\n2. If endpoints are required, implement proper authentication using Spring Security\n3. Restrict access to actuator endpoints to trusted IP addresses or networks only"
+    "instructions": "To secure Spring Boot Actuator endpoints, implement the following steps:\n\n1. **Disable Unnecessary Endpoints:**\n   - In your `application.properties` or `application.yml`, disable all endpoints by default:\n     ```\n     management.endpoints.enabled-by-default=false\n     ```\n   - Enable only the necessary endpoints:\n     ```\n     management.endpoint.health.enabled=true\n     management.endpoint.info.enabled=true\n     ```\n     ([docs.spring.io](https://docs.spring.io/spring-boot/docs/3.2.12/reference/html/actuator.html?utm_source=openai))\n\n2. **Configure Endpoint Exposure:**\n   - Specify which endpoints are exposed over HTTP:\n     ```\n     management.endpoints.web.exposure.include=health,info\n     ```\n     ([docs.spring.io](https://docs.spring.io/spring-boot/docs/3.2.12/reference/html/actuator.html?utm_source=openai))\n\n3. **Secure Endpoints with Authentication:**\n   - If using Spring Security, configure access control to restrict access to actuator endpoints:\n     ```\n     import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;\n     import org.springframework.context.annotation.Bean;\n     import org.springframework.context.annotation.Configuration;\n     import org.springframework.security.config.annotation.web.builders.HttpSecurity;\n     import org.springframework.security.web.SecurityFilterChain;\n\n     @Configuration(proxyBeanMethods = false)\n     public class SecurityConfig {\n\n         @Bean\n         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {\n             http\n                 .authorizeHttpRequests()\n                 .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole(\"ADMIN\")\n                 .anyRequest().authenticated()\n                 .and()\n                 .httpBasic();\n             return http.build();\n         }\n     }\n     ```\n     ([callicoder.com](https://www.callicoder.com/spring-boot-actuator/?utm_source=openai))\n\n4. **Regularly Review and Update Configurations:**\n   - Periodically audit actuator configurations to ensure they align with security best practices and organizational policies.\n\nBy following these steps, you can mitigate the risks associated with exposed actuator endpoints and enhance the security of your Spring Boot application."
   },
   "locations": [
     {
       "file": "docs/logs.txt",
       "line": 223,
-      "snippet": "",
-      "category": "RESOLVED"
-    },
-    {
-      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
-      "line": 31,
-      "snippet": "",
-      "category": "RESOLVED"
-    },
-    {
-      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
-      "line": 77,
-      "snippet": "",
-      "category": "RESOLVED"
-    },
-    {
-      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
-      "line": 79,
-      "snippet": "",
-      "category": "RESOLVED"
-    },
-    {
-      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
-      "line": 181,
-      "snippet": "",
-      "category": "RESOLVED"
-    },
-    {
-      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
-      "line": 189,
-      "snippet": "",
-      "category": "RESOLVED"
-    },
-    {
-      "file": "packages/agents/spring-petclinic-tsx-test.md",
-      "line": 210,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   220 | management.endpoints.web.exposure.include=*\n   221 | \n   222 | After (application.properties):\n>  223 | management.endpoints.web.exposure.include=health,info\n   224 | management.endpoint.health.show-details=when_authorized\n   225 | \n   226 | SecurityConfig.java:",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
-    "total_occurrences": 7,
-    "confidence": "low",
+    "total_occurrences": 1,
+    "confidence": "medium",
     "safe_auto_apply": false,
-    "estimated_time_seconds": 4
+    "estimated_time_seconds": 1
   }
 }

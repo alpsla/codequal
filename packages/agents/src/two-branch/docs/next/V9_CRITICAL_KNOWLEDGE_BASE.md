@@ -1,6 +1,84 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: December 7, 2025**
+**Last Updated: December 13, 2025**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
+
+---
+
+## 🏗️ Framework-Specific Issue Classification (Session 42)
+
+### Overview
+New system for handling issues based on framework context. Different frameworks have different "normal" patterns - what's a bug in one framework might be intentional in another.
+
+### Issue Disposition Types
+```typescript
+type IssueDisposition =
+  | 'FIX_NOW'              // Apply fix immediately
+  | 'ADD_TO_PATTERNS'      // Fix and save pattern for reuse
+  | 'PATTERN_REUSE'        // Apply existing pattern (FREE - no AI call)
+  | 'FILTER_OUT'           // Known false positive for framework
+  | 'INTENTIONAL_USE'      // Legitimate use, don't fix
+  | 'ENVIRONMENT_ISSUE'    // Missing deps/config, not code issue
+  | 'MANUAL_REVIEW';       // Requires human decision
+```
+
+### Framework Configs
+Each framework defines:
+- **Intentional Patterns**: Code that looks problematic but is correct for this framework
+- **Filter Rules**: Issues to skip based on context (test files, generated code, etc.)
+- **Environment Requirements**: What needs to be installed for proper analysis
+- **Fix Strategies**: Framework-specific fix approaches
+
+### NestJS Example
+```typescript
+// CLI tools using child_process - INTENTIONAL, don't fix
+{
+  ruleId: 'detect-child-process',
+  filePatterns: [/cli\//, /scripts\//],
+  reason: 'CLI tools intentionally spawn processes'
+}
+
+// Missing @nestjs/* modules - ENVIRONMENT issue, not code
+{
+  ruleId: 'TS2307',
+  condition: 'when_missing_deps',
+  fixCommand: 'npx lerna bootstrap'
+}
+```
+
+### Pattern Flywheel Economics
+| Phase | Issues | AI Calls | Cost |
+|-------|--------|----------|------|
+| Week 1 | 1,000 | ~200 | ~$0.60 |
+| Month 2 | 1,000 | ~10 | ~$0.03 |
+| Month 6+ | 1,000 | ~2 | ~$0.006 |
+
+### Key Files
+```
+packages/agents/src/fix-agent/
+├── types/framework-issue-types.ts       # Type definitions
+├── framework-configs/
+│   ├── index.ts                         # Config registry
+│   └── nestjs-config.ts                 # NestJS rules
+└── services/
+    └── framework-issue-classifier.ts    # Classification service
+```
+
+### Usage
+```typescript
+import { classifyIssuesForFramework } from './fix-agent/services';
+
+const result = classifyIssuesForFramework(
+  issues,
+  'nestjs',           // framework
+  '/path/to/repo',    // workingDir
+  false               // dependenciesInstalled
+);
+
+// Result includes:
+// - fixableIssues: Issues to actually fix
+// - filteredIssues: Issues filtered with reasons
+// - costAnalysis: Pattern reuse savings
+```
 
 ---
 
@@ -415,6 +493,56 @@ Every 3 months research both:
 
 ## RECENT FIXES
 
+### Session 53 (Dec 13, 2025) - PYTHON FIXER INTEGRATION & $0 BASIC TIER
+
+**Major Architecture Changes:**
+
+1. **$0 Report Generation (BASIC Tier)**
+   - AI enrichment now uses rule-descriptions when `modelConfigResolver=null`
+   - Saves $1.50+ per report by avoiding 61 AI API calls
+   - File: `src/two-branch/report/ai-enrichment.ts`
+
+2. **Language-Neutral Auto-Fix Detection**
+   - `canAutoFix()` returns `true` by default (no hardcoded tool lists)
+   - Only specific patterns like `circular-dependency`, `god-class` return `false`
+   - Files: `business-impact.ts`, `metadata-footer.ts`, `header-sections.ts`
+
+3. **Python Fixer Tools Integrated into FixOrchestrator**
+   - `PipAuditFixerExecutor` - Python dependency vulnerabilities (`pip-audit --fix`)
+   - `SemgrepAutoFixExecutor` - Security autofix (`semgrep scan --autofix`)
+   - New file: `src/fix-agent/tool-fixers/python-fixer.ts`
+
+4. **BASIC vs PRO Tier in FixOrchestrator**
+   - New config: `userTier: 'basic' | 'pro'`
+   - BASIC tier: Sets `dryRun: true` automatically (recommendations only)
+   - PRO tier: Actually applies fixes
+   - New config: `patternStore: PatternStore` for Supabase pattern lookup
+
+5. **Complete Fix Flow**
+   ```
+   SCAN → GROUP → CHECK PATTERNS → FIXER TOOLS → AI FALLBACK
+                       ↓
+            Pattern EXISTS? → BASIC: suggest / PRO: apply
+                       ↓ (no pattern)
+            Fixer Tools → BASIC: dry-run / PRO: apply
+                       ↓ (still not fixed)
+            AI Fixer → BASIC: recommend / PRO: apply+save
+   ```
+
+**Docker Update:**
+- `Dockerfile.python-quick` now includes `black` and `isort`
+
+**Python Fixer Tool Stack:**
+| Tool | Purpose | Command |
+|------|---------|---------|
+| ruff | Linting + Security | `ruff check --fix` |
+| pip-audit | Dependency vulns | `pip-audit --fix` |
+| semgrep | Security autofix | `semgrep --autofix` |
+| black | Formatting | `black .` |
+| isort | Import sorting | `isort .` |
+
+---
+
 ### Session 41 (Dec 7, 2025) - CodeQL PERFORMANCE OPTIMIZATIONS
 - **CodeQL Runner v2.0** with comprehensive performance optimizations
 - **Fast default**: `querySuite: 'security'` (~40% faster than extended)
@@ -423,6 +551,27 @@ Every 3 months research both:
 - **CODEQL_DEFAULTS** exported for transparency
 - **runCodeQLExtended()** for users wanting thorough analysis
 - **Convenience functions**: `runCodeQL`, `runCodeQLFast`, `runCodeQLParallel`, `runCodeQLExtended`
+- **ARM64 Docker support**: Added QEMU emulation for ARM64 servers
+
+### 🔴 FUTURE: Dedicated x86 Instance for CodeQL (PLANNED)
+**Problem**: CodeQL on ARM64 with QEMU emulation takes ~11 minutes for database creation (vs ~1-2 min on native x86).
+
+**Solution**: Create a dedicated x86_64 Oracle Cloud instance for CodeQL:
+- **Instance Type**: VM.Standard.E4.Flex (x86_64 AMD)
+- **Usage**: Run CodeQL database creation and analysis natively
+- **Expected Speedup**: 5-10x faster than QEMU emulation
+- **API**: REST endpoint for CodeQL analysis requests
+
+**Current Workaround** (ARM64):
+- Docker image: `codeql-runner:latest` (2.5GB with query packs)
+- QEMU emulation via `--platform linux/amd64`
+- Database creation: ~11 minutes (mostly emulation overhead)
+- Analysis: ~30 seconds
+
+**Optimization Strategies**:
+1. **Database Caching**: Cache databases by `hash(repo_url + commit_sha + language)` - reuse for same commit
+2. **Pre-warming**: Start Docker container during repo cloning
+3. **Parallel Database Creation**: Build CodeQL database while other tools run
 
 ### Session 39 (Dec 5, 2025) - HIGH-PERFORMANCE ARCHITECTURE
 - **Parallel AI Fixer** module created for high-performance fix execution
@@ -492,6 +641,55 @@ Sessions documented:
 - Session 28: TypeScript Compilation
 - Session 27: GitLab Integration, Fix Validation
 - Session 26: LSP/SARIF Auto-Fix
+
+---
+
+## 🧪 FUTURE: End-to-End UX Testing Plan
+
+### Overview (Session 46 Note)
+After completing pattern collection for all languages, comprehensive UX testing is required to validate the complete fix implementation flow before production deployment.
+
+### Testing Scope
+
+| Test Area | Description | Priority |
+|-----------|-------------|----------|
+| **PRO Tier Flow** | AI fix generation + pattern saving | P0 |
+| **BASIC Tier Flow** | Pattern-only fixes (no AI) | P0 |
+| **Multi-Language** | All P0/P1 languages (JS, TS, Python, Java, Go) | P0 |
+| **Provider Integration** | Core CodeQual framework integration | P1 |
+| **User Messaging** | Unfixed issue guidance (`getActionableGuidance()`) | P1 |
+
+### Key Test Scenarios
+
+1. **PRO Tier Complete Flow**
+   - PR submission → Tool scan → AI fix generation → Pattern storage
+   - Verify fix quality and success rates
+   - Validate cost tracking
+
+2. **BASIC Tier Pattern-Only**
+   - PR submission → Tool scan → Pattern lookup only
+   - Verify no AI calls made
+   - Validate pattern coverage metrics
+
+3. **Unfixed Issue UX**
+   - Environment issues: Clear "npm install" guidance
+   - Manual review: Actionable suggestions
+   - No pattern available (BASIC): PRO upgrade path
+
+4. **Cross-Language Consistency**
+   - Same issue types should have similar UX
+   - Error messages consistent across languages
+   - Fix confidence display uniform
+
+### Related Code
+- `scan-fix-executor.ts`: `getActionableGuidance()` function
+- `framework-issue-classifier.ts`: Issue disposition logic
+- User-facing messages for all issue types
+
+### When to Execute
+- After pattern collection target reached (500+ patterns/language)
+- Before BASIC tier public launch
+- As part of provider integration milestone
 
 ---
 

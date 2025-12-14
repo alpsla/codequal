@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "group_id": "python-lang-security-audit-insecure-file-permissions-insecure-file-permissions-medium-semgrep",
+  "rule": "python.lang.security.audit.insecure-file-permissions.insecure-file-permissions",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Replace the `0o755` permission with `0o644` which provides read and write access to the owner only, and read-only access to group and others. This follows the principle of least privilege and reduces potential attack surface. Use os.chmod() with the more restrictive permission value.",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "os.chmod(filename, 0o644)"
+    },
+    "instructions": "Replace the `0o755` permission with `0o644` which provides read and write access to the owner only, and read-only access to group and others. This follows the principle of least privilege and reduces potential attack surface. Use os.chmod() with the more restrictive permission value.",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: python.lang.security.audit.insecure-file-permissions.insecure-file-permissions\nThis is a medium quality issue detected by semgrep.\nThe issue is: \"These permissions `0o755` are widely permissive and grant access to more people than may be necessary. A good default is `0o644` which gives read and write access to yourself and read access to everyone else.\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: python.lang.security.audit.insecure-file-permissions.insecure-file-permissions (semgrep)\nSEVERITY: medium\nMESSAGE: These permissions `0o755` are widely permissive and grant access to more people than may be necessary. A good default is `0o644` which gives read and write access to yourself and read access to everyone else.\n\nFILE: packages/core/scripts/deepwiki_integration/complete_openrouter_fix.py\nLINE: 529\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 500,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "packages/core/scripts/deepwiki_integration/complete_openrouter_fix.py",
+      "line": 529,
+      "snippet": "   526 |         f.write(test_script_content)\n   527 |     \n   528 |     # Make it executable\n>  529 |     os.chmod(test_script_path, 0o755)\n   530 |     \n   531 |     logger.info(f\"Created test script at {test_script_path}\")\n   532 |     return True",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

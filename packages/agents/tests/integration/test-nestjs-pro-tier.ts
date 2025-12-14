@@ -17,7 +17,11 @@ process.env.DEBUG_MODE = process.env.DEBUG_MODE || 'true';
 
 import { TypeScriptToolOrchestrator } from '../../src/two-branch/tools/typescript/typescript-tool-orchestrator';
 import { createFrameworkDetector } from '../../src/two-branch/utils/framework-detector';
+import { createMonorepoDetector } from '../../src/two-branch/utils/monorepo-detector';
 import { groupIssues } from '../../src/two-branch/utils/issue-grouping';
+import { classifyIssuesForFramework } from '../../src/fix-agent/services/framework-issue-classifier';
+import { analyzeAndPromptForSetup, type UserTierChoice } from '../../src/fix-agent/services/pro-tier-setup-prompt';
+import type { Framework } from '../../src/fix-agent/types/framework-issue-types';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
@@ -72,6 +76,67 @@ async function runNestJSTest(): Promise<void> {
     fs.mkdirSync(testDir, { recursive: true });
     cloneRepository(TEST_CONFIG.repoUrl, repoPath);
 
+    // 1b. Detect project type and run appropriate setup commands
+    console.log('');
+    console.log('🔍 Step 1b: Detecting project type with MonorepoDetector...');
+    const monorepoDetector = createMonorepoDetector();
+    const monorepoInfo = await monorepoDetector.detect(repoPath);
+    const setupInstructions = await monorepoDetector.getSetupInstructions(repoPath);
+
+    console.log(`   Project type: ${monorepoInfo.displayName}`);
+    console.log(`   Is monorepo: ${monorepoInfo.isMonorepo}`);
+    console.log(`   Package manager: ${monorepoInfo.packageManager}`);
+    console.log(`   Confidence: ${monorepoInfo.confidence}%`);
+
+    // Run all required setup commands
+    console.log('');
+    console.log('📦 Step 1c: Running setup commands (this may take several minutes)...');
+    for (const cmd of setupInstructions.setupCommands.filter(c => c.required)) {
+      console.log(`   Running: ${cmd.description}`);
+      console.log(`   Command: ${cmd.command} (${cmd.estimatedTime})`);
+      if (cmd.notes) {
+        console.log(`   Note: ${cmd.notes}`);
+      }
+      try {
+        execSync(`cd ${repoPath} && ${cmd.command}`, {
+          stdio: 'pipe',
+          encoding: 'utf-8',
+          timeout: 600000 // 10 minute timeout for setup commands
+        });
+        console.log(`   ✅ ${cmd.description} completed`);
+      } catch (setupError) {
+        const errorMsg = setupError instanceof Error ? setupError.message : String(setupError);
+        console.log(`   ⚠️ ${cmd.description} had issues: ${errorMsg.substring(0, 100)}`);
+
+        // For npm install, try with fallback options
+        if (cmd.command.includes('npm install')) {
+          console.log('   Trying with --legacy-peer-deps...');
+          try {
+            execSync(`cd ${repoPath} && npm install --legacy-peer-deps`, {
+              stdio: 'pipe',
+              encoding: 'utf-8',
+              timeout: 600000
+            });
+            console.log('   ✅ npm install completed with --legacy-peer-deps');
+          } catch {
+            console.log('   ⚠️ npm install with fallbacks failed');
+          }
+        }
+      }
+    }
+
+    // Validate the setup
+    console.log('');
+    console.log('✔️ Step 1d: Validating setup...');
+    const validation = await monorepoDetector.validateSetup(repoPath);
+    console.log(`   Setup valid: ${validation.isValid}`);
+    if (validation.issues.length > 0) {
+      console.log(`   Issues: ${validation.issues.join(', ')}`);
+    }
+    if (validation.suggestions.length > 0) {
+      console.log(`   Suggestions: ${validation.suggestions.join(', ')}`);
+    }
+
     // 2. Fetch and checkout PR branch
     console.log('');
     console.log(`🔀 Step 2: Fetching PR #${TEST_CONFIG.prNumber}...`);
@@ -103,16 +168,54 @@ async function runNestJSTest(): Promise<void> {
       console.log(`   ⚠️ Expected framework: ${TEST_CONFIG.expectedFramework}, got: ${frameworkInfo.primaryFramework}`);
     }
 
+    // 3b. Generate User Setup Prompt (this is what the user would see)
+    console.log('');
+    console.log('📋 Step 3b: Generating setup prompt for user...');
+    const setupPrompt = await analyzeAndPromptForSetup(repoPath);
+
+    console.log('');
+    console.log('╔' + '═'.repeat(68) + '╗');
+    console.log('║  USER SETUP PROMPT (This is what the user would see)            ║');
+    console.log('╠' + '═'.repeat(68) + '╣');
+    console.log(`║  ${setupPrompt.title.padEnd(64)}║`);
+    console.log('╠' + '─'.repeat(68) + '╣');
+    console.log(`║  ${setupPrompt.summary.substring(0, 64).padEnd(64)}║`);
+    console.log('╠' + '─'.repeat(68) + '╣');
+    console.log('║  Setup Commands:                                                 ║');
+    for (const cmd of setupPrompt.commands) {
+      console.log(`║    $ ${cmd.command.substring(0, 58).padEnd(58)}║`);
+    }
+    console.log('╠' + '─'.repeat(68) + '╣');
+    console.log('║  User Options:                                                   ║');
+    for (const opt of setupPrompt.options) {
+      const rec = opt.recommended ? ' ★' : '  ';
+      console.log(`║  ${rec} ${opt.label.substring(0, 60).padEnd(60)}║`);
+    }
+    console.log('╚' + '═'.repeat(68) + '╝');
+    console.log('');
+
+    // Simulate user choice based on validation state
+    const userChoice: UserTierChoice = validation.isValid
+      ? 'PRO_ALREADY_SETUP'
+      : 'PRO_WITH_SETUP'; // In test, we always try PRO
+
+    console.log(`   🎯 Simulated user choice: ${userChoice}`);
+    if (!validation.isValid) {
+      console.log('   ⚠️ Note: In production, user would need to run setup commands first');
+    }
+
     // 4. Initialize TypeScript orchestrator
     console.log('');
     console.log('🛠️ Step 4: Initializing TypeScript tool orchestrator...');
 
     // TypeScriptToolOrchestrator takes Partial<TypeScriptToolConfig> directly
+    // Enable ALL tools for comprehensive PRO tier testing - builds pattern library over time
     const orchestrator = new TypeScriptToolOrchestrator({
-      eslint: { enabled: true, fix: false },
-      typescript: { enabled: true, strict: false },
-      semgrep: { enabled: true, config: 'auto' },
-      npmAudit: { enabled: true, level: 'moderate', production: false },
+      eslint: { enabled: true, fix: false }, // Code quality
+      typescript: { enabled: true, strict: false }, // Type checking - builds TS patterns!
+      semgrep: { enabled: true, config: 'auto' }, // Security scanning
+      npmAudit: { enabled: true, level: 'low', production: false }, // Dependency vulnerabilities
+      dependencyCheck: { enabled: true, failOnCVSS: 0, formats: ['JSON'], caching: { enabled: true, location: '/tmp/dc-cache' } },
     });
 
     // 5. Run analysis
@@ -148,13 +251,16 @@ async function runNestJSTest(): Promise<void> {
     // 6. Categorize issues
     console.log('');
     console.log('📊 Step 6: Categorizing issues (NEW vs EXISTING)...');
+    // Note: RawIssue has 'rule' property, not 'ruleId'
     const mainIssueHashes = new Set(
-      mainIssues.map(i => `${i.file}:${i.line}:${i.ruleId}`)
+      mainIssues.map(i => `${i.file}:${i.line}:${i.rule}`)
     );
 
+    // Add ruleId alias for compatibility with ScanFixExecutor
     const categorizedIssues = prIssues.map(issue => ({
       ...issue,
-      category: mainIssueHashes.has(`${issue.file}:${issue.line}:${issue.ruleId}`)
+      ruleId: issue.rule, // ScanFixExecutor expects ruleId
+      category: mainIssueHashes.has(`${issue.file}:${issue.line}:${issue.rule}`)
         ? 'EXISTING'
         : 'NEW'
     }));
@@ -168,14 +274,15 @@ async function runNestJSTest(): Promise<void> {
     // 7. Group issues
     console.log('');
     console.log('📁 Step 7: Grouping issues by rule...');
-    const groupedIssues = groupIssues(categorizedIssues);
-    console.log(`   Issue groups: ${groupedIssues.length}`);
+    // groupIssues returns GroupingResult, not an array
+    const groupingResult = groupIssues(categorizedIssues);
+    console.log(`   Issue groups: ${groupingResult.uniqueGroups}`);
+    console.log(`   Cost savings: ${groupingResult.savingsPercent.toFixed(1)}%`);
 
-    // Show top rules
+    // Show top rules from groups
     const ruleCounts: Record<string, number> = {};
-    for (const issue of categorizedIssues) {
-      const rule = issue.ruleId || 'unknown';
-      ruleCounts[rule] = (ruleCounts[rule] || 0) + 1;
+    for (const group of groupingResult.groups) {
+      ruleCounts[group.rule] = group.count;
     }
     const topRules = Object.entries(ruleCounts)
       .sort((a, b) => b[1] - a[1])
@@ -185,37 +292,89 @@ async function runNestJSTest(): Promise<void> {
       console.log(`     - ${rule}: ${count} issues`);
     }
 
+    // 7b. Framework-specific classification
+    console.log('');
+    console.log('🏗️ Step 7b: Framework-specific issue classification...');
+    const detectedFramework = (frameworkInfo.primaryFramework || 'unknown') as Framework;
+    const classificationResult = classifyIssuesForFramework(
+      categorizedIssues,
+      detectedFramework,
+      repoPath,
+      validation.isValid // dependenciesInstalled
+    );
+
+    console.log(`   Framework: ${detectedFramework}`);
+    console.log(`   Total issues: ${classificationResult.total}`);
+    console.log(`   Disposition breakdown:`);
+    for (const [disposition, count] of Object.entries(classificationResult.byDisposition)) {
+      if (count > 0) {
+        console.log(`     - ${disposition}: ${count}`);
+      }
+    }
+    console.log(`   Fixable issues: ${classificationResult.fixableIssues.length}`);
+    console.log(`   Filtered out: ${classificationResult.filteredIssues.length}`);
+    console.log(`   Pattern cost savings: ${classificationResult.costAnalysis.savingsPercent.toFixed(1)}%`);
+
+    // Use only fixable issues for fix execution
+    const issuesToFix = classificationResult.fixableIssues;
+
     // 8. PRO tier: Execute fixes
-    let fixResults: { totalProcessed: number; fixed: number; manualReview: number } | null = null;
-    if (TEST_CONFIG.userTier === 'pro' && categorizedIssues.length > 0) {
+    let fixResults: { totalProcessed: number; fixed: number; manualReview: number; filtered: number } | null = null;
+    if (TEST_CONFIG.userTier === 'pro' && issuesToFix.length > 0) {
       console.log('');
-      console.log('🔧 Step 8: PRO Tier - Executing AI Fixes...');
+      console.log(`🔧 Step 8: PRO Tier - Executing AI Fixes on ${issuesToFix.length} fixable issues...`);
+      console.log(`   (${classificationResult.filteredIssues.length} issues filtered out by framework rules)`);
 
       // Import ScanFixExecutor
       const { ScanFixExecutor } = await import('../../src/fix-agent/scan-fix-executor');
 
+      // SESSION 44 FIX: Changed dryRun to false to enable pattern saving to Supabase
+      // With dryRun: true, AI fixes were verified but NEVER saved to patterns table
       const fixExecutor = new ScanFixExecutor({
         workingDir: repoPath,
         language: 'typescript',
         outputMode: 'patch',
-        dryRun: true, // Don't actually modify files in test
+        dryRun: false, // CRITICAL: Must be false to save patterns to Supabase!
+        userTier: 'pro',
+        // Enable AI fixes for Tier 3 issues (most TypeScript issues)
+        fixWithReview: true,
+        // Alternatively, enable auto-apply for all tiers:
+        // autoApplyTiers: { tier1: true, tier2: true, tier3: true },
       });
 
-      const scanFixResults = await fixExecutor.executeFixes(categorizedIssues);
+      // Convert ClassifiedFrameworkIssue to DetectedIssue format
+      const detectedIssues = issuesToFix.map(i => ({
+        file: i.file,
+        line: i.line,
+        column: i.column,
+        rule: i.rule,
+        tool: i.tool,
+        message: i.message,
+        severity: i.severity,
+        category: i.category,
+      }));
+
+      const scanFixResults = await fixExecutor.executeFixes(detectedIssues);
 
       fixResults = {
         totalProcessed: scanFixResults.summary.totalIssues,
         fixed: scanFixResults.summary.fixedIssues,
-        manualReview: scanFixResults.summary.skippedIssues + scanFixResults.summary.failedIssues
+        manualReview: scanFixResults.summary.skippedIssues + scanFixResults.summary.failedIssues,
+        filtered: classificationResult.filteredIssues.length
       };
 
       console.log(`   Issues processed: ${fixResults.totalProcessed}`);
       console.log(`   Auto-fixed: ${fixResults.fixed}`);
       console.log(`   Manual review: ${fixResults.manualReview}`);
+      console.log(`   Filtered (env/framework): ${fixResults.filtered}`);
       const fixRate = fixResults.totalProcessed > 0
         ? ((fixResults.fixed / fixResults.totalProcessed) * 100).toFixed(1)
         : '0.0';
       console.log(`   Fix rate: ${fixRate}%`);
+    } else if (issuesToFix.length === 0 && categorizedIssues.length > 0) {
+      console.log('');
+      console.log(`ℹ️ Step 8: All ${categorizedIssues.length} issues filtered out by framework rules`);
+      console.log('   Common reasons: missing dependencies, intentional use patterns, environment issues');
     } else if (categorizedIssues.length === 0) {
       console.log('');
       console.log('ℹ️ Step 8: No issues found - skipping fix execution');
@@ -246,12 +405,21 @@ async function runNestJSTest(): Promise<void> {
             total: categorizedIssues.length,
             new: newIssues.length,
             existing: existingIssues.length,
-            groups: groupedIssues?.length || 0,
-            fixResults: fixResults
+            groups: groupingResult.uniqueGroups,
+            costSavings: `${groupingResult.savingsPercent.toFixed(1)}%`,
+            fixResults: fixResults,
+            classification: {
+              fixable: classificationResult.fixableIssues.length,
+              filtered: classificationResult.filteredIssues.length,
+              byDisposition: classificationResult.byDisposition,
+              patternSavings: `${classificationResult.costAnalysis.savingsPercent.toFixed(1)}%`
+            }
           }
         },
         issues: categorizedIssues,
-        groupedIssues: groupedIssues
+        classifiedIssues: classificationResult.issues,
+        filteredIssues: classificationResult.filteredIssues,
+        groupingResult: groupingResult
       }, null, 2)
     );
 

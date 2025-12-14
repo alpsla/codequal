@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "group_id": "ghsa-wqch-xfxh-vrr4-medium-dependency-check",
+  "rule": "GHSA-wqch-xfxh-vrr4",
+  "tool": "dependency-check",
+  "severity": "medium",
+  "description": "{\n  \"severity\": \"medium\",\n  \"issueDescription\": {\n    \"what\": \"The dependency-check tool identified a medium severity vulnerability (GHSA-wqch-xfxh-vrr4) in the body-parser package version 2.2.0, which is a known denial of service vulnerability due to inefficient handling of URL-encoded bodies with very large numbers of parameters.\",\n    \"why\": \"This vulnerability can allow an attacker to cause a denial of service by sending payloads with thousands of URL-encoded parameters, leading to high CPU ...",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "1: // ⚠️ AI-generated fix not available - Manual review required\n2: // Issue: GHSA-wqch-xfxh-vrr4: ### Impact\n\nbody-parser 2.2.0 is vulnerable to denial of service due to inefficient handling of URL-encoded bodies with very large numbers of parameters. An attacker can send payloads containing thous\n3: // See Dependencies documentation for fix patterns\n4: // Context: package-lock.json?body-parser line 1"
+    },
+    "instructions": "{\n  \"severity\": \"medium\",\n  \"issueDescription\": {\n    \"what\": \"The dependency-check tool identified a medium severity vulnerability (GHSA-wqch-xfxh-vrr4) in the body-parser package version 2.2.0, which is a known denial of service vulnerability due to inefficient handling of URL-encoded bodies with very large numbers of parameters.\",\n    \"why\": \"This vulnerability can allow an attacker to cause a denial of service by sending payloads with thousands of URL-encoded parameters, leading to high CPU consumption and potential service unavailability. It impacts application stability and can be exploited in production environments.\",\n    \"causes\": [\n      \"Use of vulnerable body-parser version 2.2.0\",\n      \"Inefficient parsing of URL-encoded request bodies\",\n      \"Lack of input validation for parameter count in URL-encoded data\"\n    ],\n    \"impact\": \"This introduces security risk and operational instability. Teams must update dependencies to mitigate potential DoS attacks, and technical debt accumulates from using outdated vulnerable libraries. Long-term maintenance becomes harder as more vulnerabilities may be discovered in older versions.\"\n  },\n  \"fix\": \"1. Update the body-parser dependency to a secure version (e.g., 1.20.2 or later) in package.json\\n2. Run npm install or yarn install to update package-lock.json\\n3. Verify the vulnerability is resolved using dependency-check or similar tools\\n4. Test application functionality to ensure no regressions\",\n  \"correctedCode\": \"\",\n  \"bestPractices\": [\n    \"Regularly audit and update dependencies to avoid known vulnerabilities\",\n    \"Use automated tools like Snyk, npm audit, or OWASP Dependency-Check for vulnerability scanning\",\n    \"Implement input validation and rate limiting for HTTP request bodies\"\n  ]\n}",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: GHSA-wqch-xfxh-vrr4\nThis is a medium quality issue detected by dependency-check.\nThe issue is: \"GHSA-wqch-xfxh-vrr4: ### Impact\n\nbody-parser 2.2.0 is vulnerable to denial of service due to inefficient handling of URL-encoded bodies with very large numbers of parameters. An attacker can send payloads containing thous\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: GHSA-wqch-xfxh-vrr4 (dependency-check)\nSEVERITY: medium\nMESSAGE: GHSA-wqch-xfxh-vrr4: ### Impact\n\nbody-parser 2.2.0 is vulnerable to denial of service due to inefficient handling of URL-encoded bodies with very large numbers of parameters. An attacker can send payloads containing thous\n\nFILE: packages/agents/mcp-tools/k6-mcp/package-lock.json?body-parser\nLINE: 1\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 500,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "packages/agents/mcp-tools/k6-mcp/package-lock.json?body-parser",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 1,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

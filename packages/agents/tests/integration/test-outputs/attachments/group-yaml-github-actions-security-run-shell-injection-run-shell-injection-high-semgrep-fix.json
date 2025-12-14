@@ -4,27 +4,55 @@
   "rule": "yaml.github-actions.security.run-shell-injection.run-shell-injection",
   "tool": "semgrep",
   "severity": "high",
-  "description": "1. Store untrusted data in an environment variable using `env:`\n2. Reference the environment variable with double-quotes in the command\n3. Use GitHub's built-in security scanning for workflow vulnerabilities",
+  "description": "Use an intermediate environment variable to store the `github` context data and then reference the environment variable within the `run:` step, ensuring it's properly quoted. This prevents direct execution of injected code. Define the environment variable using the `env:` key and access it in the `run:` step using double quotes, like \"$ENVVAR\".",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "env:\n  GITHUB_DATA: ${{ github.context }}\nrun: echo \"$GITHUB_DATA\" | jq ."
+      "after": "env:\n  ISSUE_TITLE: ${{ github.event.issue.title }}\nrun: echo \"$ISSUE_TITLE\""
     },
-    "instructions": "1. Store untrusted data in an environment variable using `env:`\n2. Reference the environment variable with double-quotes in the command\n3. Use GitHub's built-in security scanning for workflow vulnerabilities"
+    "instructions": "Use an intermediate environment variable to store the `github` context data and then reference the environment variable within the `run:` step, ensuring it's properly quoted. This prevents direct execution of injected code. Define the environment variable using the `env:` key and access it in the `run:` step using double quotes, like \"$ENVVAR\"."
   },
   "locations": [
     {
-      "file": ".github/workflows/e2e-base.yml",
-      "line": 35,
-      "snippet": "    32 |           git config --global user.name \"Create React App\"\n    33 |           git config --global user.email \"cra@email.com\"\n    34 |       - name: Run tests\n>   35 |         run: ${{ inputs.testScript }}\n    36 | ",
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 33,
+      "snippet": "    30 |         echo \"${{ secrets.KUBE_CONFIG }}\" | base64 -d > ${HOME}/.kube/config\n    31 |     \n    32 |     - name: Create namespace if not exists\n>   33 |       run: |\n    34 |         kubectl create namespace codequal-${{ github.event.inputs.environment }} --dry-run=client -o yaml | kubectl apply -f -\n    35 |     \n    36 |     - name: Create DeepWiki secrets",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 37,
+      "snippet": "    34 |         kubectl create namespace codequal-${{ github.event.inputs.environment }} --dry-run=client -o yaml | kubectl apply -f -\n    35 |     \n    36 |     - name: Create DeepWiki secrets\n>   37 |       run: |\n    38 |         kubectl create secret generic deepwiki-secrets \\\n    39 |           --namespace=codequal-${{ github.event.inputs.environment }} \\\n    40 |           --from-literal=openai-api-key=\"${{ secrets.OPENAI_API_KEY }}\" \\",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 48,
+      "snippet": "    45 |           --dry-run=client -o yaml | kubectl apply -f -\n    46 |     \n    47 |     - name: Update deployment file with secrets\n>   48 |       run: |\n    49 |         # Create a temporary deployment file that uses secrets\n    50 |         cat > /tmp/deepwiki-deployment.yaml << 'EOF'\n    51 |         apiVersion: apps/v1",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 139,
+      "snippet": "   136 |         kubectl apply -f /tmp/deepwiki-deployment.yaml\n   137 |     \n   138 |     - name: Wait for deployment\n>  139 |       run: |\n   140 |         kubectl rollout status deployment/deepwiki \\\n   141 |           --namespace=codequal-${{ github.event.inputs.environment }} \\\n   142 |           --timeout=300s",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 145,
+      "snippet": "   142 |           --timeout=300s\n   143 |     \n   144 |     - name: Check deployment status\n>  145 |       run: |\n   146 |         echo \"🚀 DeepWiki deployed to ${{ github.event.inputs.environment }} environment\"\n   147 |         kubectl get pods --namespace=codequal-${{ github.event.inputs.environment }} -l app=deepwiki\n   148 |         kubectl get svc --namespace=codequal-${{ github.event.inputs.environment }} -l app=deepwiki",
       "category": "EXISTING_REST"
     }
   ],
   "metadata": {
-    "total_occurrences": 1,
-    "confidence": "low",
+    "total_occurrences": 5,
+    "confidence": "medium",
     "safe_auto_apply": false,
-    "estimated_time_seconds": 1
+    "estimated_time_seconds": 3
   }
 }

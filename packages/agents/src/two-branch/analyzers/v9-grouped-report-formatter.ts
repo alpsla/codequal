@@ -1,4 +1,4 @@
-/**
+2/**
  * V9 Grouped Report Formatter
  * 
  * Generates compact reports by grouping similar issues and providing
@@ -555,11 +555,19 @@ export class V9GroupedReportFormatter {
   }
 
   /**
-   * BUG-76: Enrich issues with AI-generated fix suggestions
-   * Strategy: 1 AI call per group (cost-optimized)
-   * Cost: ~600 tokens per group = $0.0003 per group
+   * Enrich issues with fix suggestions
    *
-   * BUG #6 FIX: Now returns both enriched issues AND model tracking
+   * SESSION 53 ARCHITECTURE CHANGE:
+   * - Report generation uses rule-descriptions (0 AI calls, $0 cost)
+   * - AI is reserved for fixer tools (PRO tier) and pattern creation (admin)
+   *
+   * When modelConfigResolver is null (default):
+   * - Uses static rule-descriptions.ts + Supabase patterns
+   * - Cost: $0
+   *
+   * When modelConfigResolver is provided (legacy/testing):
+   * - Falls back to AI enrichment
+   * - Cost: ~$1.50 per report (61 groups × $0.02)
    */
   private async enrichIssuesWithAI(
     issues: EnrichedIssue[],
@@ -568,7 +576,7 @@ export class V9GroupedReportFormatter {
     return enrichIssuesWithAI(
       issues,
       groups,
-      this.modelConfigResolver,
+      this.modelConfigResolver,  // null = rule descriptions, non-null = AI
       this.detectedLanguage,
       this.detectedRepoSize
     );
@@ -690,6 +698,37 @@ export class V9GroupedReportFormatter {
 
     // Store repoPath for snippet extraction
     this.repoPath = metadata.repoPath || undefined;
+
+    // BUG-095 FIX: Calculate real repo stats if not provided or if values look hardcoded
+    // This ensures we show real file counts and LOC instead of placeholder values
+    if (this.repoPath) {
+      const needsStats = !metadata.totalFiles ||
+        metadata.totalFiles === 0 ||
+        metadata.totalFiles === 100 ||  // Common hardcoded default
+        metadata.totalFiles === 1000 ||
+        !metadata.totalLinesOfCode ||
+        metadata.totalLinesOfCode === 0 ||
+        metadata.totalLinesOfCode === 10000;  // Common hardcoded default
+
+      if (needsStats) {
+        console.log('[BUG-095] Calculating real repo stats (metadata values missing or look hardcoded)...');
+        const repoStats = this.calculateRepoStats(this.repoPath, this.detectedLanguage, metadata.baseBranch);
+
+        // Only override if we got real values
+        if (repoStats.totalFiles > 0) {
+          metadata.totalFiles = repoStats.totalFiles;
+        }
+        if (repoStats.totalLinesOfCode > 0) {
+          metadata.totalLinesOfCode = repoStats.totalLinesOfCode;
+        }
+        // Only override diff stats if we calculated them AND caller didn't provide values
+        if (repoStats.filesModified > 0 && (!metadata.filesModified || metadata.filesModified === 0)) {
+          metadata.filesModified = repoStats.filesModified;
+          metadata.linesAdded = repoStats.linesAdded;
+          metadata.linesDeleted = repoStats.linesDeleted;
+        }
+      }
+    }
 
     // OPTIMIZATION: Severity classification now integrated into specialized agents (saves ~150 tokens per group)
     // Each agent classifies severity AS PART of generating fix suggestions (1 AI call instead of 2)
@@ -917,7 +956,8 @@ export class V9GroupedReportFormatter {
           ? (uploadedFile as any).publicUrl
           : `attachments/${f.filename}`; // Fallback to relative path
 
-        const issueDesc = this.getIssueDescription(f.content.rule, f.content.tool, f.content.severity);
+        // BUG-099 FIX: Pass description for specific vulnerability details
+        const issueDesc = this.getIssueDescription(f.content.rule, f.content.tool, f.content.severity, f.content.description);
         return {
           filename: f.filename,
           url: publicUrl, // Use public URL if available
@@ -927,7 +967,7 @@ export class V9GroupedReportFormatter {
           rule: f.content.rule,
           title: this.formatRuleTitle(f.content.rule),
           description: issueDesc.what.substring(0, 150) + (issueDesc.what.length > 150 ? '...' : ''),
-          impact: this.getImpactSummary(f.content.rule, f.content.tool, f.content.severity),
+          impact: this.getImpactSummary(f.content.rule, f.content.tool, f.content.severity, f.content.description),
           priority: this.getPriority(f.content.severity),
           occurrences: f.content.metadata?.total_occurrences || f.content.locations?.length || 0,
           autoFixable: this.canAutoFix({ rule: f.content.rule, tool: f.content.tool, severity: f.content.severity } as IssueGroup)
@@ -1928,36 +1968,25 @@ ${byDetectedCategory['Security'] > 0 ? `- 🔒 Security: ${qualityResult.categor
 > Scores saved to Supabase for tracking trends over time
 
 ${(() => {
-          // Enhancement #1: Calculate all three tiers of fixes
-          const safeAutoApplyGroups = groups.filter(g => this.isSafeToAutoApply(g));
-          const safeAutoApplyCount = safeAutoApplyGroups.reduce((sum, g) => sum + g.count, 0);
-          const safeAutoApplyPercent = issues.length > 0 ? Math.round((safeAutoApplyCount / issues.length) * 100) : 0;
+          // SESSION 51: Updated to BASIC/PRO tier system
+          // Pattern-based fixes (from Supabase pattern library)
+          const patternFixableGroups = groups.filter(g => this.canAutoFix(g));
+          const patternFixableCount = patternFixableGroups.reduce((sum, g) => sum + g.count, 0);
+          const patternFixablePercent = issues.length > 0 ? Math.round((patternFixableCount / issues.length) * 100) : 0;
 
-          const advancedAutoFixGroups = groups.filter(g => this.canAutoFix(g));
-          const advancedAutoFixCount = advancedAutoFixGroups.reduce((sum, g) => sum + g.count, 0);
-          const advancedAutoFixPercent = issues.length > 0 ? Math.round((advancedAutoFixCount / issues.length) * 100) : 0;
+          // AI-fixable (PRO tier only - requires AI generation)
+          const aiFixableGroups = groups.filter(g => !this.isSafeToAutoApply(g) && this.canAutoFix(g));
+          const aiFixableCount = aiFixableGroups.reduce((sum, g) => sum + g.count, 0);
+          const aiFixablePercent = issues.length > 0 ? Math.round((aiFixableCount / issues.length) * 100) : 0;
 
-          // Calculate manual review count (issues not auto-fixable)
-          const manualReviewCount = issues.length - advancedAutoFixCount;
-          const manualReviewPercent = issues.length > 0 ? Math.round((manualReviewCount / issues.length) * 100) : 0;
+          // Needs guidance (both tiers provide recommendations)
+          const guidanceNeededCount = issues.length - patternFixableCount;
+          const guidanceNeededPercent = issues.length > 0 ? Math.round((guidanceNeededCount / issues.length) * 100) : 0;
 
-          // Always show all three tiers to account for 100% of issues
-          const tier1Text = safeAutoApplyCount > 0
-            ? `${safeAutoApplyCount.toLocaleString()} issues (${safeAutoApplyPercent}%) - Apply immediately, no testing needed`
-            : `0 issues - No simple fixes available`;
-
-          const tier2Text = advancedAutoFixCount > 0
-            ? `${advancedAutoFixCount.toLocaleString()} issues (${advancedAutoFixPercent}%) - Requires testing before applying`
-            : `0 issues - No advanced fixes available`;
-
-          const tier3Text = manualReviewCount > 0
-            ? `${manualReviewCount.toLocaleString()} issues (${manualReviewPercent}%) - AI provides fix guidance`
-            : `0 issues - All issues are auto-fixable!`;
-
-          return `\n> 🚀 **Fix Recommendations** (100% Coverage):
-> - 🟢 **Safe Auto-Fix (Tier 1)**: ${tier1Text}
-> - 🟡 **Advanced Auto-Fix (Tier 2)**: ${tier2Text}
-> - 🔴 **Manual Review (Tier 3)**: ${tier3Text}\n`;
+          // SESSION 52: Simplified - detailed tier info is in "AI Fix Recommendations" section below
+          return `\n> 🚀 **Fix Coverage**: ${patternFixableCount.toLocaleString()} issues (${patternFixablePercent}%) have pattern-based fixes available
+> See **AI Fix Recommendations** section below for BASIC vs PRO tier details.
+\n`;
         })()}
 ` : `
 - Base Score: 100.0
@@ -2001,40 +2030,9 @@ ${(() => {
         const autoFixPercent = issues.length > 0 ? ((autoFixCount / issues.length) * 100).toFixed(1) : '0.0';
         const manualPercent = issues.length > 0 ? ((manualCount / issues.length) * 100).toFixed(1) : '0.0';
 
-        return `**Action Required**:
-- 🔴 **Manual Review**: ${manualCount.toLocaleString()} issues (${manualPercent}%) - Requires developer attention
-- 🚀 **Auto-Fixable**: ${autoFixCount.toLocaleString()} issues (${autoFixPercent}%) - Can be fixed automatically via IDE
-${(() => {
-            // BUG FIX: List specific manual review items so user knows what to focus on
-            if (manualCount === 0) return '';
-
-            const manualIssues = issues.filter(i =>
-              !autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
-            );
-
-            // Group by file for cleaner reading
-            const byFile: Record<string, typeof manualIssues> = {};
-            manualIssues.forEach(i => {
-              if (!byFile[i.file]) byFile[i.file] = [];
-              byFile[i.file].push(i);
-            });
-
-            let checklist = `\n### 📋 Manual Review Checklist\n\nThese ${manualCount} issues cannot be auto-fixed and require your expertise:\n\n`;
-
-            Object.entries(byFile).slice(0, 10).forEach(([file, fileIssues]) => {
-              checklist += `**${file}**\n`;
-              fileIssues.forEach(i => {
-                checklist += `- [ ] Line ${i.line}: **${i.rule}** (${i.severity}) - ${i.message}\n`;
-              });
-              checklist += `\n`;
-            });
-
-            if (Object.keys(byFile).length > 10) {
-              checklist += `*(...and ${Object.keys(byFile).length - 10} more files)*\n`;
-            }
-
-            return checklist;
-          })()}`;
+        // SESSION 51: Removed overwhelming "Issues Requiring Attention" section
+        // The grouped issue details below provide better actionable information
+        return '';
       })()}
 
 **By Severity**:
@@ -2127,44 +2125,32 @@ ${this.SHOW_FIX_COVERAGE ? `**Fix Coverage**:
 
 ### 🤖 AI Fix Recommendations & Auto-Fix Capability
 
-**Two-Tier Fix System**:
+**BASIC vs PRO Tier Fix System**:
 
-1. **Fix Recommendations (100% Coverage)** ✅
-   - AI generates code fixes for ALL ${issues.length.toLocaleString()} issues
-   - Shows WHAT to change, WHY it matters, and HOW to fix it
-   - Educational guidance for developers
-
-2. **Safe Auto-Apply (${((autoFixableIssues.length / issues.length) * 100).toFixed(1)}% Coverage)** 🚀
-   - ${autoFixableIssues.length.toLocaleString()} issues marked \`safe_auto_apply: true\`
-   - High-confidence fixes that can be applied without review
-   - Remaining ${(issues.length - autoFixableIssues.length).toLocaleString()} issues have fixes but need developer review
-
-**Three-Tier Fix System** (see "Fix Recommendations" above):
-
-CodeQual uses a deterministic fix routing system to maximize automation while maintaining safety:
+CodeQual offers two subscription tiers with different fix capabilities:
 
 ${(() => {
         const breakdown = this.calculateTierBreakdown(groups);
-        return `**Fix Tier Breakdown**:
-- 🟢 **Tier 1 (Native Tools)**: ${breakdown.tier1.issues.toLocaleString()} issues (${breakdown.tier1.percent.toFixed(1)}%) - \`eslint --fix\`, \`ruff --fix\`, etc. (95% confidence)
-- 🟡 **Tier 2 (Dedicated Fixers)**: ${breakdown.tier2.issues.toLocaleString()} issues (${breakdown.tier2.percent.toFixed(1)}%) - Sorald, autoflake, OpenRewrite (85% confidence)
-- 🟠 **Tier 3 (AI Fallback)**: ${breakdown.tier3.issues.toLocaleString()} issues (${breakdown.tier3.percent.toFixed(1)}%) - AI-generated fixes requiring review (60% confidence)
+        const patternFixable = breakdown.tier1.issues + breakdown.tier2.issues;
+        const patternPercent = issues.length > 0 ? (patternFixable / issues.length * 100).toFixed(1) : '0.0';
+        const guidanceNeeded = issues.length - patternFixable;
+        const guidancePercent = issues.length > 0 ? (guidanceNeeded / issues.length * 100).toFixed(1) : '0.0';
 
-**Auto-Fix Coverage**: ${breakdown.autoFixable.toLocaleString()} issues (${breakdown.autoFixPercent.toFixed(1)}%) can be automatically fixed (Tier 1 + Tier 2)`;
-      })()}
+        return `**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
+- 📚 **Pattern Fixes**: ${patternFixable.toLocaleString()} issues (${patternPercent}%) - Pre-learned fixes from 500+ patterns in Supabase
+- 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
+- 📖 **Actionable Guidance**: Clear instructions for ${guidanceNeeded.toLocaleString()} issues needing manual attention
 
-**Confidence Breakdown**:
-${(() => {
-        const byConfidence: Record<string, number> = { high: 0, medium: 0, low: 0 };
-        // Count issues by their group's confidence level
-        groups.forEach(group => {
-          const conf = this.determineConfidence(group);
-          byConfidence[conf] = (byConfidence[conf] || 0) + group.count;
-        });
-        const total = issues.length || 1;
-        return `- 🟢 **High Confidence**: ${byConfidence.high} issues (${((byConfidence.high / total) * 100).toFixed(1)}%) - Safe to auto-apply
-- 🟡 **Medium Confidence**: ${byConfidence.medium} issues (${((byConfidence.medium / total) * 100).toFixed(1)}%) - Review recommended
-- 🟠 **Low Confidence**: ${byConfidence.low} issues (${((byConfidence.low / total) * 100).toFixed(1)}%) - Requires careful review`;
+**⭐ PRO Tier** (Full AI-Powered Analysis):
+- 🤖 **AI Auto-Fix**: All ${issues.length.toLocaleString()} issues analyzed with contextual AI fixes
+- 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
+- ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
+- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
+
+**Pattern Reuse Efficiency** (Cost Savings):
+- Pattern library contains ${breakdown.autoFixable.toLocaleString()}+ learned fixes
+- Each pattern reuse = FREE (no AI API call needed)
+- Estimated savings: 60-80% reduction in AI calls for recurring issues`;
       })()}
 
 > 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
@@ -2533,8 +2519,9 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   /**
    * Generate comprehensive issue description
    * Phase D: What/Why/Causes/Impact
+   * BUG-099 FIX: Added optional message parameter to include actual CVE/vulnerability details
    */
-  private getIssueDescription(rule: string, tool: string, severity: string): {
+  private getIssueDescription(rule: string, tool: string, severity: string, message?: string): {
     what: string;
     why: string;
     causes: string[];
@@ -2840,6 +2827,834 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           'Copy-pasted old-style resource management'
         ],
         impact: 'Higher risk of resource leaks, more verbose code, potential for forgotten close() calls, and missing exception suppression.'
+      },
+
+      // ===== PYTHON TOOLS (BUG-098 FIX) =====
+      // Bandit Security Rules (B1xx-B7xx)
+      'B101': {
+        what: 'Use of assert statement detected. Assert statements are removed when Python is run with optimization (-O flag).',
+        why: 'Assert statements should not be used for security checks because they can be disabled, leaving security logic bypassed.',
+        causes: [
+          'Using assert for input validation',
+          'Security checks implemented with assert',
+          'Misunderstanding assert purpose (debugging vs. runtime checks)',
+          'Copy-pasted code with assert-based validation'
+        ],
+        impact: 'Security bypasses in production when running with -O flag. Use proper if/raise patterns for security validations.'
+      },
+      'B102': {
+        what: 'Use of exec() detected. This allows execution of arbitrary Python code.',
+        why: 'exec() can execute any Python code, making it extremely dangerous if user input reaches it.',
+        causes: [
+          'Dynamic code execution requirements',
+          'Processing untrusted code strings',
+          'Template systems with code execution',
+          'Configuration files with executable Python'
+        ],
+        impact: 'Remote code execution (RCE), complete system compromise. OWASP Top 10 A03:2021 (Injection).'
+      },
+      'B103': {
+        what: 'Setting file permissions with unsafe mask allowing world-writable or world-readable access.',
+        why: 'Overly permissive file permissions can expose sensitive data or allow unauthorized modifications.',
+        causes: [
+          'Using chmod with 0o777 or similar',
+          'Not restricting permissions properly',
+          'Copy-pasted file handling code',
+          'Misunderstanding Unix permissions'
+        ],
+        impact: 'Information disclosure, unauthorized file modification, privilege escalation.'
+      },
+      'B104': {
+        what: 'Binding to all network interfaces (0.0.0.0) detected.',
+        why: 'Binding to all interfaces exposes the service to all network traffic, including potentially untrusted networks.',
+        causes: [
+          'Default server configuration',
+          'Development settings in production',
+          'Lack of network security awareness',
+          'Convenience over security'
+        ],
+        impact: 'Unintended network exposure, increased attack surface, potential unauthorized access.'
+      },
+      'B105': {
+        what: 'Hardcoded password or secret detected in source code.',
+        why: 'Hardcoded credentials are exposed in version control and can be extracted from compiled code.',
+        causes: [
+          'Development shortcuts',
+          'Lack of secrets management',
+          'Not using environment variables',
+          'Legacy code with embedded credentials'
+        ],
+        impact: 'Credential theft, unauthorized access, data breaches. Violates all security compliance standards.'
+      },
+      'B106': {
+        what: 'Hardcoded password in function argument default value.',
+        why: 'Default passwords in function signatures are exposed and often used in production.',
+        causes: [
+          'Convenience during development',
+          'Template code with placeholder passwords',
+          'Forgetting to remove defaults',
+          'Lack of configuration management'
+        ],
+        impact: 'Credential exposure, unauthorized access, security audit failures.'
+      },
+      'B107': {
+        what: 'Hardcoded password in function call detected.',
+        why: 'Passwords passed as string literals in function calls are exposed in source code.',
+        causes: [
+          'Quick testing with hardcoded values',
+          'Not using secure credential retrieval',
+          'Development code in production',
+          'Copy-pasted authentication code'
+        ],
+        impact: 'Credential theft, unauthorized access, compliance violations.'
+      },
+      'B108': {
+        what: 'Probable insecure use of temp file/directory detected.',
+        why: 'Insecure temporary file creation can lead to symlink attacks or information disclosure.',
+        causes: [
+          'Using mktemp() instead of mkstemp()',
+          'Predictable temporary file names',
+          'Not using tempfile module properly',
+          'Race conditions in temp file creation'
+        ],
+        impact: 'Information disclosure, symlink attacks, privilege escalation.'
+      },
+      'B110': {
+        what: 'Try-except-pass detected, silently ignoring exceptions.',
+        why: 'Catching exceptions and doing nothing hides errors and makes debugging impossible.',
+        causes: [
+          'Quick error suppression',
+          'Not understanding exception handling',
+          'Lazy error handling',
+          '"Make it work" mentality'
+        ],
+        impact: 'Hidden bugs, security issues masked, impossible to debug failures.'
+      },
+      'B112': {
+        what: 'Try-except-continue in loop, silently skipping failed iterations.',
+        why: 'Ignoring exceptions in loops can cause data loss or incomplete processing.',
+        causes: [
+          'Batch processing without error logging',
+          'Ignoring problematic items',
+          'Not implementing proper error handling',
+          'Quick fixes for failing loops'
+        ],
+        impact: 'Data loss, incomplete operations, hidden failures.'
+      },
+      'B201': {
+        what: 'Flask app running with debug=True in production.',
+        why: 'Debug mode exposes sensitive information and allows code execution via the debugger.',
+        causes: [
+          'Development settings in production',
+          'Forgetting to disable debug mode',
+          'Environment variable not set',
+          'Hardcoded debug=True'
+        ],
+        impact: 'Information disclosure, remote code execution via debug console, complete compromise.'
+      },
+      'B301': {
+        what: 'Use of pickle module for deserialization detected.',
+        why: 'Pickle can execute arbitrary code during deserialization, making it extremely dangerous with untrusted data.',
+        causes: [
+          'Serializing Python objects',
+          'Caching with pickle',
+          'Inter-process communication',
+          'Not understanding pickle security risks'
+        ],
+        impact: 'Remote code execution when loading untrusted pickle data. Use JSON or other safe formats.'
+      },
+      'B302': {
+        what: 'Use of marshal module detected.',
+        why: 'Marshal is not designed for untrusted data and can be exploited.',
+        causes: [
+          'Low-level serialization needs',
+          'Performance optimization attempts',
+          'Copy-pasted code',
+          'Misunderstanding marshal purpose'
+        ],
+        impact: 'Potential code execution, data corruption.'
+      },
+      'B303': {
+        what: 'Use of insecure MD2, MD4, MD5, or SHA1 hash function detected.',
+        why: 'These hash functions are cryptographically broken and can be attacked in minutes.',
+        causes: [
+          'Legacy code requirements',
+          'Not following OWASP guidelines',
+          'Copy-pasted crypto code',
+          'Misunderstanding hash security'
+        ],
+        impact: 'Password compromise, signature forgery, data integrity loss. Use SHA-256+ or bcrypt/argon2.'
+      },
+      'B304': {
+        what: 'Use of insecure cipher or cipher mode (DES, RC4, ECB) detected.',
+        why: 'These ciphers/modes are cryptographically broken and provide no real security.',
+        causes: [
+          'Legacy system compatibility',
+          'Outdated crypto libraries',
+          'Copy-pasted encryption code',
+          'Not following security standards'
+        ],
+        impact: 'Data confidentiality breach, encryption bypass. Use AES-256-GCM.'
+      },
+      'B305': {
+        what: 'Use of insecure cipher mode detected.',
+        why: 'ECB mode and other weak modes leak information about plaintext patterns.',
+        causes: [
+          'Default cipher mode usage',
+          'Misunderstanding cipher modes',
+          'Legacy code patterns',
+          'Not specifying mode explicitly'
+        ],
+        impact: 'Pattern leakage, potential decryption. Use GCM or CBC with proper IV.'
+      },
+      'B306': {
+        what: 'Use of mktemp() detected, which is insecure.',
+        why: 'mktemp() creates predictable file names vulnerable to symlink attacks.',
+        causes: [
+          'Not using mkstemp()',
+          'Legacy code patterns',
+          'Copy-pasted temp file code',
+          'Not understanding temp file security'
+        ],
+        impact: 'Race conditions, symlink attacks, information disclosure.'
+      },
+      'B307': {
+        what: 'Use of eval() detected.',
+        why: 'eval() executes arbitrary Python code, leading to code injection if user input reaches it.',
+        causes: [
+          'Dynamic code execution needs',
+          'Processing mathematical expressions',
+          'Configuration parsing',
+          'Not using ast.literal_eval()'
+        ],
+        impact: 'Remote code execution, complete system compromise. Use ast.literal_eval() for safe alternatives.'
+      },
+      'B308': {
+        what: 'Use of mark_safe() detected in Django template.',
+        why: 'mark_safe() disables HTML escaping, potentially enabling XSS attacks.',
+        causes: [
+          'Rendering HTML content',
+          'Not sanitizing before marking safe',
+          'Template customization',
+          'Misunderstanding template security'
+        ],
+        impact: 'Cross-site scripting (XSS), session hijacking, phishing.'
+      },
+      'B311': {
+        what: 'Use of random module for security/cryptographic purposes detected.',
+        why: 'The random module is not cryptographically secure and can be predicted.',
+        causes: [
+          'Generating tokens/passwords with random',
+          'Not using secrets module',
+          'Legacy code patterns',
+          'Misunderstanding randomness'
+        ],
+        impact: 'Predictable tokens, session hijacking, authentication bypass. Use secrets module.'
+      },
+      'B312': {
+        what: 'Use of telnetlib detected.',
+        why: 'Telnet transmits data in cleartext, exposing credentials and data.',
+        causes: [
+          'Legacy system integration',
+          'Not using SSH',
+          'Quick automation scripts',
+          'Infrastructure without encryption'
+        ],
+        impact: 'Credential theft, man-in-the-middle attacks, data interception.'
+      },
+      'B313': {
+        what: 'Use of xml.etree.ElementTree detected, which is vulnerable to XML attacks.',
+        why: 'ElementTree is vulnerable to billion laughs and external entity attacks.',
+        causes: [
+          'XML parsing requirements',
+          'Not using defusedxml',
+          'Legacy XML code',
+          'Not understanding XML security'
+        ],
+        impact: 'Denial of service, information disclosure, SSRF via XXE.'
+      },
+      'B314': {
+        what: 'Use of xml.dom.minidom detected, which is vulnerable to XML attacks.',
+        why: 'minidom is vulnerable to various XML-based attacks.',
+        causes: [
+          'XML parsing requirements',
+          'DOM-style XML needs',
+          'Not using defusedxml',
+          'Legacy code'
+        ],
+        impact: 'Denial of service, XXE attacks, information disclosure.'
+      },
+      'B320': {
+        what: 'Use of lxml without defusing detected.',
+        why: 'lxml is vulnerable to XXE attacks without proper configuration.',
+        causes: [
+          'XML parsing with lxml',
+          'Not disabling external entities',
+          'Default lxml configuration',
+          'Not understanding XXE risks'
+        ],
+        impact: 'XXE attacks, SSRF, information disclosure.'
+      },
+      'B324': {
+        what: 'Use of insecure hash function hashlib.md5() or hashlib.sha1() detected.',
+        why: 'MD5 and SHA1 are cryptographically broken for security purposes.',
+        causes: [
+          'Password hashing with MD5/SHA1',
+          'Checksum generation',
+          'Legacy compatibility',
+          'Copy-pasted code'
+        ],
+        impact: 'Password compromise, collision attacks. Use SHA-256+ or bcrypt/argon2.'
+      },
+      'B501': {
+        what: 'SSL/TLS certificate verification disabled (verify=False).',
+        why: 'Disabling certificate verification allows man-in-the-middle attacks.',
+        causes: [
+          'Self-signed certificates',
+          'Development shortcuts',
+          'Certificate issues ignored',
+          'Testing without proper certs'
+        ],
+        impact: 'Man-in-the-middle attacks, credential theft, data interception.'
+      },
+      'B502': {
+        what: 'SSL/TLS with insecure version (SSLv2, SSLv3, TLSv1.0).',
+        why: 'These SSL/TLS versions have known vulnerabilities (POODLE, BEAST, etc.).',
+        causes: [
+          'Legacy server compatibility',
+          'Not specifying minimum TLS version',
+          'Outdated SSL configuration',
+          'Default settings'
+        ],
+        impact: 'Encryption downgrade attacks, data interception. Use TLS 1.2+.'
+      },
+      'B503': {
+        what: 'SSL/TLS context with insecure defaults.',
+        why: 'Default SSL context may allow insecure protocols or ciphers.',
+        causes: [
+          'Using default SSLContext',
+          'Not configuring minimum version',
+          'Legacy compatibility mode',
+          'Copy-pasted SSL code'
+        ],
+        impact: 'Potential encryption weaknesses, man-in-the-middle vulnerabilities.'
+      },
+      'B506': {
+        what: 'Use of yaml.load() without safe_load detected.',
+        why: 'yaml.load() can execute arbitrary Python code during parsing.',
+        causes: [
+          'YAML configuration parsing',
+          'Not using safe_load()',
+          'Legacy code patterns',
+          'Misunderstanding YAML security'
+        ],
+        impact: 'Remote code execution when loading untrusted YAML. Use yaml.safe_load().'
+      },
+      'B507': {
+        what: 'SSH host key verification disabled.',
+        why: 'Disabling host key verification allows man-in-the-middle attacks.',
+        causes: [
+          'SSH automation without key management',
+          'Development shortcuts',
+          'AutoAddPolicy misuse',
+          'Ignoring security for convenience'
+        ],
+        impact: 'Man-in-the-middle attacks, credential theft, unauthorized access.'
+      },
+      'B601': {
+        what: 'Use of paramiko with shell command execution detected.',
+        why: 'Shell commands via SSH can be exploited if user input is included.',
+        causes: [
+          'SSH automation',
+          'Remote command execution',
+          'Not sanitizing input',
+          'Building commands dynamically'
+        ],
+        impact: 'Remote code execution on SSH targets, system compromise.'
+      },
+      'B602': {
+        what: 'Use of subprocess with shell=True detected.',
+        why: 'shell=True allows shell injection if user input reaches the command.',
+        causes: [
+          'Convenience of shell features',
+          'Piping/redirection needs',
+          'Not using argument lists',
+          'Legacy shell script integration'
+        ],
+        impact: 'Command injection, system compromise. Use shell=False with argument list.'
+      },
+      'B603': {
+        what: 'subprocess call without shell but with potential command injection.',
+        why: 'Even without shell=True, improper argument handling can be dangerous.',
+        causes: [
+          'Dynamic command building',
+          'User input in arguments',
+          'Not validating input',
+          'Complex subprocess usage'
+        ],
+        impact: 'Command argument injection, unintended command execution.'
+      },
+      'B604': {
+        what: 'Function call with shell=True parameter detected.',
+        why: 'Any function accepting shell=True is vulnerable to shell injection.',
+        causes: [
+          'Helper functions with shell execution',
+          'Convenience wrappers',
+          'Not understanding risk propagation',
+          'Copy-pasted utility code'
+        ],
+        impact: 'Shell injection via the function, system compromise.'
+      },
+      'B605': {
+        what: 'Starting a process with shell=True detected.',
+        why: 'Process creation with shell access is vulnerable to injection.',
+        causes: [
+          'os.system() usage',
+          'Popen with shell=True',
+          'Legacy shell integration',
+          'Quick command execution'
+        ],
+        impact: 'Command injection, system compromise. Use subprocess with shell=False.'
+      },
+      'B607': {
+        what: 'Starting a process with partial executable path.',
+        why: 'Partial paths can be exploited via PATH manipulation attacks.',
+        causes: [
+          'Not using absolute paths',
+          'Relying on PATH environment',
+          'Convenience over security',
+          'Copy-pasted command execution'
+        ],
+        impact: 'Path hijacking, execution of malicious programs.'
+      },
+      'B608': {
+        what: 'SQL injection via string formatting detected.',
+        why: 'String formatting in SQL queries allows injection attacks.',
+        causes: [
+          'f-strings or .format() in SQL',
+          'Not using parameterized queries',
+          'Quick database code',
+          'Legacy SQL patterns'
+        ],
+        impact: 'SQL injection, data breach, unauthorized access. Use parameterized queries.'
+      },
+      'B609': {
+        what: 'Wildcard injection in subprocess call detected.',
+        why: 'Shell wildcards can be exploited to execute unintended files.',
+        causes: [
+          'Using * in shell commands',
+          'Glob patterns in subprocess',
+          'Not expanding wildcards safely',
+          'Shell command building'
+        ],
+        impact: 'Unintended file processing, potential code execution.'
+      },
+      'B610': {
+        what: 'Django extra() with raw SQL detected.',
+        why: 'extra() allows raw SQL that can be vulnerable to injection.',
+        causes: [
+          'Complex queries not expressible in ORM',
+          'Performance optimization',
+          'Legacy Django code',
+          'Quick database access'
+        ],
+        impact: 'SQL injection if user input reaches extra(). Use ORM methods.'
+      },
+      'B611': {
+        what: 'Django RawSQL with potential injection.',
+        why: 'RawSQL in Django bypasses ORM protection.',
+        causes: [
+          'Complex query requirements',
+          'Performance needs',
+          'Not using parameterization',
+          'Direct SQL preference'
+        ],
+        impact: 'SQL injection, data breach. Use parameterized RawSQL.'
+      },
+      'B701': {
+        what: 'Use of jinja2 with autoescape disabled.',
+        why: 'Disabling autoescape enables XSS attacks in templates.',
+        causes: [
+          'Rendering HTML content',
+          'Legacy template settings',
+          'Not understanding template security',
+          'Convenience over security'
+        ],
+        impact: 'Cross-site scripting (XSS), session hijacking. Enable autoescape.'
+      },
+      'B702': {
+        what: 'Use of mako templates without proper escaping.',
+        why: 'Mako without escaping is vulnerable to XSS.',
+        causes: [
+          'Default mako settings',
+          'Not enabling escaping',
+          'Template migration',
+          'Copy-pasted template code'
+        ],
+        impact: 'Cross-site scripting (XSS). Enable default_filters in Mako.'
+      },
+
+      // ===== Ruff S-rules (mirror Bandit) =====
+      // Note: Ruff S-codes map to Bandit B-codes (S101 = B101, etc.)
+
+      // ===== Pylint Common Rules =====
+      'C0103': {
+        what: 'Invalid name not conforming to naming convention.',
+        why: 'Consistent naming improves code readability and maintainability.',
+        causes: [
+          'Not following PEP 8 naming',
+          'Mixed naming conventions',
+          'Quick variable naming',
+          'Legacy code patterns'
+        ],
+        impact: 'Reduced code readability, maintenance difficulty. Follow PEP 8.'
+      },
+      'C0114': {
+        what: 'Missing module docstring.',
+        why: 'Module docstrings explain the purpose and usage of the module.',
+        causes: [
+          'Quick module creation',
+          'Not prioritizing documentation',
+          'Template without docstrings',
+          'Incremental development'
+        ],
+        impact: 'Poor code documentation, harder onboarding. Add module docstring.'
+      },
+      'C0115': {
+        what: 'Missing class docstring.',
+        why: 'Class docstrings explain the class purpose and public interface.',
+        causes: [
+          'Quick class creation',
+          'Not documenting classes',
+          'Assuming obvious purpose',
+          'Time pressure'
+        ],
+        impact: 'Poor API documentation, harder maintenance. Add class docstring.'
+      },
+      'C0116': {
+        what: 'Missing function or method docstring.',
+        why: 'Function docstrings explain parameters, return values, and exceptions.',
+        causes: [
+          'Quick function writing',
+          'Obvious functions skipped',
+          'Not using documentation tools',
+          'Time constraints'
+        ],
+        impact: 'Poor API documentation, maintenance difficulty. Add docstring.'
+      },
+      'W0611': {
+        what: 'Unused import detected.',
+        why: 'Unused imports slow startup and clutter the namespace.',
+        causes: [
+          'Refactoring without cleanup',
+          'Copy-pasted code',
+          'IDE auto-import leftovers',
+          'Commented code removal'
+        ],
+        impact: 'Slower module loading, namespace pollution. Remove unused imports.'
+      },
+      'W0612': {
+        what: 'Unused variable detected.',
+        why: 'Unused variables indicate incomplete code or dead code.',
+        causes: [
+          'Incomplete implementation',
+          'Refactoring leftovers',
+          'Copy-pasted code',
+          'Debug code not removed'
+        ],
+        impact: 'Code confusion, potential bugs. Remove or use the variable.'
+      },
+      'W0613': {
+        what: 'Unused argument in function.',
+        why: 'Unused arguments may indicate incomplete implementation or API issues.',
+        causes: [
+          'Interface requirements',
+          'Callback signatures',
+          'Incomplete implementation',
+          'Copy-pasted function signatures'
+        ],
+        impact: 'API confusion, potential bugs. Use _ prefix for intentionally unused args.'
+      },
+      'W0621': {
+        what: 'Redefining name from outer scope.',
+        why: 'Shadowing variables from outer scope causes confusion and bugs.',
+        causes: [
+          'Common variable names',
+          'Not considering scope',
+          'Quick variable naming',
+          'Nested function issues'
+        ],
+        impact: 'Unexpected behavior, hard-to-find bugs. Use unique names.'
+      },
+      'W0622': {
+        what: 'Redefining built-in name.',
+        why: 'Shadowing built-ins like list, dict, id breaks Python functionality.',
+        causes: [
+          'Using built-in names as variables',
+          'Not knowing all built-ins',
+          'Quick naming choices',
+          'Copy-pasted code'
+        ],
+        impact: 'Built-in functionality broken, confusing errors. Rename variable.'
+      },
+      'E0401': {
+        what: 'Unable to import module.',
+        why: 'Import errors indicate missing dependencies or incorrect paths.',
+        causes: [
+          'Missing package installation',
+          'Wrong import path',
+          'Circular imports',
+          'Environment issues'
+        ],
+        impact: 'Runtime ImportError. Install package or fix import path.'
+      },
+      'E1101': {
+        what: 'Module or class has no member.',
+        why: 'Accessing non-existent attributes causes AttributeError at runtime.',
+        causes: [
+          'Typo in attribute name',
+          'Wrong API version',
+          'Dynamic attributes not recognized',
+          'Incomplete type stubs'
+        ],
+        impact: 'Runtime AttributeError. Fix typo or check API.'
+      },
+      'E1120': {
+        what: 'No value for required argument in function call.',
+        why: 'Missing required arguments cause TypeError at runtime.',
+        causes: [
+          'API signature change',
+          'Missing argument',
+          'Copy-pasted incomplete call',
+          'Wrong function signature understanding'
+        ],
+        impact: 'Runtime TypeError. Add missing argument.'
+      },
+      'R0902': {
+        what: 'Too many instance attributes in class.',
+        why: 'Classes with many attributes are hard to understand and maintain.',
+        causes: [
+          'God class anti-pattern',
+          'Not splitting responsibilities',
+          'Configuration objects growing',
+          'Legacy code accumulation'
+        ],
+        impact: 'Maintenance difficulty, testing complexity. Split into smaller classes.'
+      },
+      'R0903': {
+        what: 'Too few public methods in class.',
+        why: 'Classes with few methods might be better as data classes or functions.',
+        causes: [
+          'Premature class creation',
+          'Data container without behavior',
+          'Incomplete implementation',
+          'Over-engineering'
+        ],
+        impact: 'Unnecessary complexity. Consider dataclass or named tuple.'
+      },
+      'R0913': {
+        what: 'Too many arguments in function.',
+        why: 'Functions with many arguments are hard to use correctly.',
+        causes: [
+          'Not using configuration objects',
+          'Accumulating parameters',
+          'Not refactoring',
+          'Legacy API design'
+        ],
+        impact: 'Hard to call correctly, error-prone. Group into config object.'
+      },
+
+      // ===== Mypy Error Codes =====
+      'error': {
+        what: 'Type checking error detected by mypy.',
+        why: 'Type errors can cause runtime exceptions or unexpected behavior.',
+        causes: [
+          'Incorrect type annotations',
+          'Type inference issues',
+          'API type mismatches',
+          'Missing type stubs'
+        ],
+        impact: 'Potential runtime TypeError. Fix type annotations or add type: ignore.'
+      },
+      'arg-type': {
+        what: 'Argument has incompatible type.',
+        why: 'Passing wrong types can cause runtime errors or unexpected behavior.',
+        causes: [
+          'Wrong value passed',
+          'Type conversion needed',
+          'API misunderstanding',
+          'Refactoring oversight'
+        ],
+        impact: 'Runtime TypeError or incorrect behavior. Fix argument type.'
+      },
+      'return-value': {
+        what: 'Return type incompatible with declared return type.',
+        why: 'Wrong return types break caller expectations.',
+        causes: [
+          'Incomplete return paths',
+          'Wrong value returned',
+          'Type annotation mismatch',
+          'Conditional return issues'
+        ],
+        impact: 'Caller may fail with TypeError. Fix return statement or annotation.'
+      },
+      'assignment': {
+        what: 'Incompatible type in assignment.',
+        why: 'Assigning wrong type to typed variable causes type inconsistency.',
+        causes: [
+          'Wrong value assigned',
+          'Type narrowing needed',
+          'API return type mismatch',
+          'Copy-pasted code'
+        ],
+        impact: 'Type inconsistency, potential runtime errors. Fix assignment.'
+      },
+
+      // ===== Ruff/Pycodestyle E-codes (BUG-099 FIX) =====
+      'E722': {
+        what: 'Using bare `except:` without specifying exception type.',
+        why: 'Bare except catches all exceptions including KeyboardInterrupt and SystemExit, making it impossible to cleanly exit the program and hiding real errors.',
+        causes: [
+          'Quick error handling without thinking about exception types',
+          'Copy-pasted error handling code',
+          'Not understanding Python exception hierarchy',
+          'Defensive programming gone wrong'
+        ],
+        impact: 'Catches unintended exceptions, hides bugs, prevents clean program exit. Use `except Exception:` at minimum, or catch specific exceptions.'
+      },
+      'E402': {
+        what: 'Module level import not at top of file.',
+        why: 'PEP 8 requires all imports at the top of the file for readability and to catch missing dependencies early.',
+        causes: [
+          'Conditional imports',
+          'Circular import workarounds',
+          'Late additions to file',
+          'Dynamic import patterns'
+        ],
+        impact: 'Reduced code readability, potential circular import issues. Move imports to top or use lazy imports properly.'
+      },
+      'E703': {
+        what: 'Statement ends with semicolon.',
+        why: 'Semicolons are not needed in Python and indicate code copied from other languages.',
+        causes: [
+          'Code copied from JavaScript/Java/C',
+          'Habit from other languages',
+          'Multiple statements on one line',
+          'Code generation artifacts'
+        ],
+        impact: 'Unpythonic code, reduced readability. Remove unnecessary semicolons.'
+      },
+      'E711': {
+        what: 'Comparison to None using == instead of is.',
+        why: 'None is a singleton in Python, so identity comparison (is) is faster and more correct than equality (==).',
+        causes: [
+          'Habit from other languages',
+          'Not understanding Python identity vs equality',
+          'Auto-formatter not configured',
+          'Copy-pasted code'
+        ],
+        impact: 'Potential bugs with objects that override __eq__, slower comparison. Use `is None` or `is not None`.'
+      },
+      'E712': {
+        what: 'Comparison to True/False using == instead of if/if not.',
+        why: 'Boolean comparisons should use truthiness testing, not explicit comparison to True/False.',
+        causes: [
+          'Explicit boolean comparison habit',
+          'Not understanding Python truthiness',
+          'Defensive coding gone wrong',
+          'Code from other languages'
+        ],
+        impact: 'Unpythonic code, potential bugs with truthy values. Use `if value:` or `if not value:`.'
+      },
+      'E713': {
+        what: 'Test for membership should be `not in`.',
+        why: 'Using `not x in y` is less readable than `x not in y`.',
+        causes: [
+          'Quick coding without review',
+          'Not knowing Python operators',
+          'Logic order preference',
+          'Auto-generated code'
+        ],
+        impact: 'Reduced readability. Use `x not in y` instead of `not x in y`.'
+      },
+      'E741': {
+        what: 'Ambiguous variable name (l, O, I).',
+        why: 'Single letters l, O, I look like numbers 1 and 0 in many fonts, causing confusion.',
+        causes: [
+          'Quick variable naming',
+          'Mathematical notation habits',
+          'Loop counter conventions',
+          'Legacy code'
+        ],
+        impact: 'Code confusion, potential bugs. Use descriptive names like `length`, `output`, `index`.'
+      },
+
+      // ===== Ruff/Pyflakes F-codes (BUG-099 FIX) =====
+      'F401': {
+        what: 'Module imported but unused.',
+        why: 'Unused imports slow down module loading, clutter the namespace, and indicate dead code.',
+        causes: [
+          'Removed code that used the import',
+          'Copy-pasted imports from elsewhere',
+          'IDE auto-import not cleaned up',
+          'Planning to use but forgot'
+        ],
+        impact: 'Slower startup, namespace pollution, code confusion. Remove unused import or add `# noqa: F401` if intentional re-export.'
+      },
+      'F403': {
+        what: 'Using `from module import *` which imports undefined names.',
+        why: 'Star imports pollute the namespace and make it impossible to know where names come from.',
+        causes: [
+          'Quick import shortcut',
+          'Copy-pasted code',
+          'Not knowing explicit import practice',
+          'Legacy code patterns'
+        ],
+        impact: 'Namespace pollution, name conflicts, unclear code origin. Use explicit imports: `from module import name1, name2`.'
+      },
+      'F405': {
+        what: 'Name may be undefined or defined from star imports.',
+        why: 'Star imports make it impossible to statically determine where a name comes from.',
+        causes: [
+          'Using names from star import',
+          'Dynamic module loading',
+          'Typo in name',
+          'Missing explicit import'
+        ],
+        impact: 'Potential NameError at runtime, unclear code. Use explicit imports.'
+      },
+      'F811': {
+        what: 'Redefinition of unused name from line N.',
+        why: 'Redefining a name that was never used indicates dead code or a bug.',
+        causes: [
+          'Duplicate import statements',
+          'Variable assigned twice',
+          'Copy-pasted code blocks',
+          'Refactoring leftovers'
+        ],
+        impact: 'Dead code, potential bugs. Remove the unused first definition.'
+      },
+      'F841': {
+        what: 'Local variable assigned but never used.',
+        why: 'Unused variables indicate incomplete code, dead code, or a bug.',
+        causes: [
+          'Variable intended for later use',
+          'Debug code not removed',
+          'Refactoring leftovers',
+          'Copy-pasted code not adapted'
+        ],
+        impact: 'Dead code, potential bugs. Remove variable or use `_` prefix for intentionally unused.'
+      },
+      'F601': {
+        what: 'Dictionary key repeated in literal.',
+        why: 'Duplicate keys in dict literals silently overwrite earlier values, causing data loss.',
+        causes: [
+          'Copy-paste error',
+          'Merge conflict not resolved',
+          'Large dict literal maintenance',
+          'Auto-generated code'
+        ],
+        impact: 'Silent data loss, bugs. Remove duplicate key or fix key name.'
       }
     };
 
@@ -2868,6 +3683,35 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       return descriptions[matchingKey];
     }
 
+    // BUG-098 FIX: Map Ruff S-codes to Bandit B-codes (S101 → B101, etc.)
+    // Ruff's S-rules are direct equivalents of Bandit's B-rules
+    const ruffToBanditMatch = rule.match(/^S(\d{3})$/);
+    if (ruffToBanditMatch) {
+      const banditCode = `B${ruffToBanditMatch[1]}`;
+      if (descriptions[banditCode]) {
+        console.log(`[BUG-098] Mapped Ruff ${rule} to Bandit ${banditCode}`);
+        return descriptions[banditCode];
+      }
+    }
+
+    // BUG-098 FIX: Extract rule code from tool-prefixed rules
+    // E.g., "ruff:S101" → "S101" → "B101", "bandit:B602" → "B602"
+    const toolPrefixMatch = rule.match(/^(?:ruff|bandit|pylint|mypy):(.+)$/i);
+    if (toolPrefixMatch) {
+      const bareRule = toolPrefixMatch[1];
+      if (descriptions[bareRule]) {
+        return descriptions[bareRule];
+      }
+      // Try S-code to B-code mapping for ruff
+      const sCodeMatch = bareRule.match(/^S(\d{3})$/);
+      if (sCodeMatch) {
+        const banditCode = `B${sCodeMatch[1]}`;
+        if (descriptions[banditCode]) {
+          return descriptions[banditCode];
+        }
+      }
+    }
+
     // BUG FIX #55 & #56: Smart fallback logic for common patterns
     const ruleText = rule.toLowerCase();
 
@@ -2886,20 +3730,48 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       };
     }
 
-    // CVE (Dependency vulnerabilities)
-    if (ruleText.startsWith('cve-') || tool.toLowerCase() === 'dependency-check') {
+    // CVE (Dependency vulnerabilities) - BUG-092 FIX: Added pip-audit, safety, npm-audit, yarn-audit
+    // BUG-099 FIX: Use actual vulnerability message for specific details
+    // BUG-100 FIX: Detect vulnerability TYPE and generate accurate impact descriptions
+    const toolLowerForDeps = tool.toLowerCase();
+    const isDependencyTool = ['dependency-check', 'pip-audit', 'safety', 'npm-audit', 'yarn-audit', 'bundler-audit'].includes(toolLowerForDeps);
+    if (ruleText.startsWith('cve-') || ruleText.includes('vulnerability') || isDependencyTool) {
       const cveMatch = rule.match(/CVE-(\d{4})-(\d+)/i);
       const year = cveMatch ? cveMatch[1] : 'unknown';
+      const toolDescription = toolLowerForDeps === 'pip-audit' ? 'Python package'
+        : toolLowerForDeps === 'safety' ? 'Python dependency'
+        : toolLowerForDeps === 'npm-audit' ? 'Node.js package'
+        : toolLowerForDeps === 'yarn-audit' ? 'Yarn package'
+        : toolLowerForDeps === 'bundler-audit' ? 'Ruby gem'
+        : 'dependency';
+
+      // BUG-099 FIX: Extract specific vulnerability details from message
+      let whatText: string;
+      if (message && message.length > 20) {
+        const cleanMessage = message.replace(/\n/g, ' ').trim();
+        whatText = `**Vulnerability Details**: ${cleanMessage}`;
+      } else if (cveMatch) {
+        whatText = `Known security vulnerability ${rule} in ${toolDescription}. This vulnerability was publicly disclosed in ${year} and has known exploits.`;
+      } else {
+        whatText = `Security vulnerability detected in ${toolDescription} by ${tool}. Rule: ${rule}`;
+      }
+
+      // BUG-100 FIX: Detect vulnerability type from message and generate accurate descriptions
+      const msgLower = (message || '').toLowerCase();
+      const vulnType = this.detectVulnerabilityType(msgLower);
+      const typeSpecificInfo = this.getVulnerabilityTypeInfo(vulnType, severity);
+
       return {
-        what: `Known security vulnerability ${rule} in dependency. This vulnerability was publicly disclosed in ${year} and has a known exploit.`,
-        why: `Attackers actively scan for known CVEs in web applications. Public exploits exist, making this vulnerability easy to exploit at scale.`,
+        what: whatText,
+        why: typeSpecificInfo.why,
         causes: [
-          'Using outdated dependency versions',
-          'Not regularly updating dependencies',
-          'Lack of automated dependency scanning in CI/CD',
-          'Delayed security patch application'
+          'Using outdated dependency versions with known vulnerabilities',
+          'Not regularly updating dependencies (should be weekly/monthly)',
+          'Lack of automated dependency scanning in CI/CD pipeline',
+          'Delayed security patch application',
+          'Using abandoned or unmaintained packages'
         ],
-        impact: `${severity === 'critical' ? 'Critical' : 'High'} security risk with publicly available exploits. Could lead to remote code execution, data theft, or system compromise. Compliance frameworks (SOC2, ISO 27001) require timely patching of known vulnerabilities.`
+        impact: typeSpecificInfo.impact
       };
     }
 
@@ -2978,6 +3850,160 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       };
     }
 
+    // BUG-098 FIX: Python-specific pattern matching (before generic fallback)
+    const toolLower = tool.toLowerCase();
+    const isPythonTool = ['bandit', 'ruff', 'pylint', 'mypy', 'flake8', 'pip-audit', 'safety'].includes(toolLower);
+
+    // Pickle/deserialization patterns
+    if (ruleText.includes('pickle') || ruleText.includes('marshal') || ruleText.includes('deserialize')) {
+      return {
+        what: `Unsafe deserialization detected (Rule: ${rule}). Pickle and similar serializers can execute arbitrary code.`,
+        why: 'Deserializing untrusted data can lead to remote code execution. Pickle is particularly dangerous as it can execute arbitrary Python code during unpickling.',
+        causes: [
+          'Using pickle/marshal for data exchange',
+          'Loading serialized data from untrusted sources',
+          'Caching with pickle without validation',
+          'Inter-process communication using pickle'
+        ],
+        impact: 'Remote code execution, complete system compromise. Use JSON, MessagePack, or other safe serialization formats.'
+      };
+    }
+
+    // YAML unsafe load patterns
+    if (ruleText.includes('yaml') && (ruleText.includes('load') || ruleText.includes('unsafe'))) {
+      return {
+        what: `Unsafe YAML loading detected (Rule: ${rule}). yaml.load() can execute arbitrary Python code.`,
+        why: 'YAML\'s default loader can instantiate arbitrary Python objects, leading to code execution when loading untrusted YAML.',
+        causes: [
+          'Using yaml.load() instead of yaml.safe_load()',
+          'Processing YAML from user input or external sources',
+          'Configuration files from untrusted sources',
+          'Legacy code patterns'
+        ],
+        impact: 'Remote code execution when loading malicious YAML. Always use yaml.safe_load() or yaml.SafeLoader.'
+      };
+    }
+
+    // Eval/exec patterns (Python specific)
+    if (isPythonTool && (ruleText.includes('eval') || ruleText.includes('exec'))) {
+      return {
+        what: `Use of eval() or exec() detected (Rule: ${rule}). These functions execute arbitrary Python code.`,
+        why: 'eval() and exec() can execute any Python code, making them extremely dangerous if user input reaches them.',
+        causes: [
+          'Dynamic code execution requirements',
+          'Processing mathematical expressions unsafely',
+          'Configuration evaluation',
+          'Template rendering with code execution'
+        ],
+        impact: 'Remote code execution, complete system compromise. Use ast.literal_eval() for safe evaluation of literals.'
+      };
+    }
+
+    // Subprocess/shell patterns (Python specific)
+    if (isPythonTool && (ruleText.includes('subprocess') || ruleText.includes('shell') || ruleText.includes('popen'))) {
+      return {
+        what: `Potentially unsafe subprocess execution detected (Rule: ${rule}). Shell commands can be vulnerable to injection.`,
+        why: 'Using shell=True or building commands from user input allows command injection attacks.',
+        causes: [
+          'Using shell=True for convenience',
+          'Building commands with string concatenation',
+          'Not using argument lists',
+          'Processing user input in commands'
+        ],
+        impact: 'Command injection, system compromise. Use shell=False and pass arguments as a list.'
+      };
+    }
+
+    // SSL/TLS patterns
+    if (ruleText.includes('ssl') || ruleText.includes('tls') || ruleText.includes('certificate') || ruleText.includes('verify')) {
+      return {
+        what: `SSL/TLS security issue detected (Rule: ${rule}). Certificate verification may be disabled or insecure protocols used.`,
+        why: 'Disabling certificate verification or using outdated TLS versions allows man-in-the-middle attacks.',
+        causes: [
+          'Disabling verify for self-signed certs',
+          'Using outdated SSL/TLS versions',
+          'Development shortcuts in production',
+          'Legacy system compatibility'
+        ],
+        impact: 'Man-in-the-middle attacks, credential theft, data interception. Use TLS 1.2+ and proper certificate validation.'
+      };
+    }
+
+    // Assert pattern (Python specific)
+    if (isPythonTool && ruleText.includes('assert')) {
+      return {
+        what: `Use of assert statement detected (Rule: ${rule}). Assert statements are removed with Python optimization.`,
+        why: 'Assert statements are compiled out when running Python with -O flag, potentially bypassing security checks.',
+        causes: [
+          'Using assert for input validation',
+          'Security checks with assert',
+          'Misunderstanding assert purpose',
+          'Quick validation shortcuts'
+        ],
+        impact: 'Security checks bypassed in optimized Python. Use if/raise for production validation.'
+      };
+    }
+
+    // Hardcoded credentials (general)
+    if (ruleText.includes('hardcoded') || ruleText.includes('password') || ruleText.includes('secret') || ruleText.includes('credential')) {
+      return {
+        what: `Hardcoded credentials or secrets detected (Rule: ${rule}). Secrets should not be in source code.`,
+        why: 'Hardcoded credentials are exposed in version control, code reviews, and can be extracted from binaries.',
+        causes: [
+          'Development shortcuts',
+          'Quick testing with real credentials',
+          'Not using environment variables',
+          'Lack of secrets management'
+        ],
+        impact: 'Credential theft, unauthorized access, data breaches. Use environment variables or secret managers.'
+      };
+    }
+
+    // Random/crypto patterns
+    if (ruleText.includes('random') && !ruleText.includes('secure')) {
+      return {
+        what: `Use of non-cryptographic random detected (Rule: ${rule}). The random module is predictable.`,
+        why: 'The random module uses a predictable PRNG and should never be used for security purposes.',
+        causes: [
+          'Generating tokens with random',
+          'Creating passwords or secrets',
+          'Session ID generation',
+          'Not knowing about secrets module'
+        ],
+        impact: 'Predictable tokens, session hijacking, authentication bypass. Use secrets module for cryptographic randomness.'
+      };
+    }
+
+    // Unused imports/variables (code quality)
+    if (ruleText.includes('unused') || ruleText.includes('import') && ruleText.includes('not used')) {
+      return {
+        what: `Unused code detected (Rule: ${rule}). Unused imports or variables clutter the codebase.`,
+        why: 'Unused code increases maintenance burden, slows module loading, and can indicate incomplete refactoring.',
+        causes: [
+          'Refactoring without cleanup',
+          'Copy-pasted code',
+          'IDE auto-import leftovers',
+          'Abandoned code paths'
+        ],
+        impact: 'Code clutter, slower imports, maintenance confusion. Remove unused code.'
+      };
+    }
+
+    // Type error patterns
+    if (ruleText.includes('type') && (ruleText.includes('error') || ruleText.includes('incompatible') || ruleText.includes('mismatch'))) {
+      return {
+        what: `Type error detected (Rule: ${rule}). The code has type inconsistencies that may cause runtime errors.`,
+        why: 'Type errors indicate potential runtime failures when wrong types are passed or returned.',
+        causes: [
+          'Incorrect type annotations',
+          'API misuse',
+          'Refactoring without updating types',
+          'Missing type conversions'
+        ],
+        impact: 'Potential runtime TypeError or unexpected behavior. Fix type annotations or add proper type handling.'
+      };
+    }
+
     // Generic description based on tool and severity (last resort)
     const genericWhat = `This issue was detected by ${tool} as a ${severity} severity problem. Rule: ${rule}`;
     const genericWhy = severity === 'critical' || severity === 'high'
@@ -3022,16 +4048,48 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 4. Never trust external data sources`;
     }
 
-    // CVE/Dependency issues
-    if (ruleLower.startsWith('cve-') || toolLower === 'dependency-check') {
+    // CVE/Dependency issues - BUG-092 FIX: Added pip-audit, safety, npm-audit, yarn-audit
+    const depTools = ['dependency-check', 'pip-audit', 'safety', 'npm-audit', 'yarn-audit', 'bundler-audit'];
+    if (ruleLower.startsWith('cve-') || ruleLower.includes('vulnerability') || depTools.includes(toolLower)) {
       const cveMatch = rule.match(/CVE-(\d{4})-(\d+)/i);
       const cveId = cveMatch ? `${cveMatch[0]}` : rule;
+
+      // Language-specific update commands
+      let updateCommands = '';
+      if (toolLower === 'pip-audit' || toolLower === 'safety') {
+        updateCommands = `
+3. **Python**: Update in requirements.txt and run:
+   \`\`\`bash
+   pip install --upgrade <package-name>
+   pip-audit --fix  # Auto-fix with pip-audit
+   \`\`\``;
+      } else if (toolLower === 'npm-audit' || toolLower === 'yarn-audit') {
+        updateCommands = `
+3. **Node.js**: Update in package.json and run:
+   \`\`\`bash
+   npm audit fix
+   npm update <package-name>
+   \`\`\``;
+      } else if (toolLower === 'bundler-audit') {
+        updateCommands = `
+3. **Ruby**: Update in Gemfile and run:
+   \`\`\`bash
+   bundle update <gem-name>
+   \`\`\``;
+      } else {
+        updateCommands = `
+3. **Java**: Run:
+   \`\`\`bash
+   mvn versions:display-dependency-updates
+   gradle dependencyUpdates
+   \`\`\``;
+      }
+
       return `**Fix Strategy**:
 1. Update the vulnerable dependency to the latest patched version
-2. Check [NVD database](https://nvd.nist.gov/vuln/detail/${cveId}) for official patch information
-3. Run \`mvn versions:display-dependency-updates\` or \`gradle dependencyUpdates\`
+2. Check [NVD database](https://nvd.nist.gov/vuln/detail/${cveId}) for official patch information${updateCommands}
 4. Test thoroughly after updating to ensure compatibility
-5. Consider using automated dependency scanning in CI/CD`;
+5. Add automated dependency scanning to CI/CD pipeline`;
     }
 
     // Logging/Performance
@@ -3241,11 +4299,20 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
     if (representativeWithAI?.fixSuggestion?.issueDescription) {
       // Use AI-generated structured description
-      issueDesc = representativeWithAI.fixSuggestion.issueDescription;
+      // BUG-102 FIX: Ensure all fields exist with defaults to prevent forEach crash
+      const aiDesc = representativeWithAI.fixSuggestion.issueDescription;
+      issueDesc = {
+        what: aiDesc.what || 'Issue detected by automated analysis.',
+        why: aiDesc.why || 'This issue may impact code quality, security, or maintainability.',
+        causes: Array.isArray(aiDesc.causes) ? aiDesc.causes : ['Automated analysis detected a potential issue'],
+        impact: aiDesc.impact || 'May affect code quality or application behavior.'
+      };
       console.log(`[BUG #89] Using AI-enriched description for ${group.rule}`);
     } else {
       // Fallback to hardcoded database
-      issueDesc = this.getIssueDescription(group.rule, group.tool, group.severity);
+      // BUG-099 FIX: Pass actual message for specific vulnerability details
+      const representativeMessage = representative?.message || group.description;
+      issueDesc = this.getIssueDescription(group.rule, group.tool, group.severity, representativeMessage);
       console.log(`[BUG #89] Using fallback description for ${group.rule}`);
     }
 
@@ -3631,24 +4698,31 @@ mvn spotless:check  # Verify (use in CI)
   ): Promise<{ lspUrl?: string; sarifUrl?: string; gitlabUrl?: string }> {
     try {
       const converter = new LSPSARIFConverter();
+      const gitlabConverter = new GitLabCodeQualityConverter();
       const workspaceRoot = this.repoPath || process.cwd();
 
-      // Generate LSP Code Actions
-      console.log('[LSP/SARIF] Generating LSP Code Actions...');
-      const lspCodeActions = converter.generateLSPCodeActions(enrichedIssues, workspaceRoot);
+      // PERF-OPT: Generate all three formats in parallel (CPU work)
+      console.log('[LSP/SARIF/GitLab] Generating all formats in parallel...');
+      const generationStart = Date.now();
 
-      // Generate SARIF Report
-      console.log('[LSP/SARIF] Generating SARIF 2.1.0 report...');
-      const sarifReport = converter.generateSARIFReport(enrichedIssues, groups, {
-        repository: metadata.repository || 'unknown',
-        version: metadata.analyzerVersion || '9.0.0',
-        analyzedAt: metadata.analyzedAt || new Date().toISOString()
-      });
+      const [lspCodeActions, sarifReport, gitlabReport] = await Promise.all([
+        // Generate LSP Code Actions
+        Promise.resolve(converter.generateLSPCodeActions(enrichedIssues, workspaceRoot)),
+        // Generate SARIF Report
+        Promise.resolve(converter.generateSARIFReport(enrichedIssues, groups, {
+          repository: metadata.repository || 'unknown',
+          version: metadata.analyzerVersion || '9.0.0',
+          analyzedAt: metadata.analyzedAt || new Date().toISOString()
+        })),
+        // Generate GitLab Code Quality Report
+        Promise.resolve(gitlabConverter.generateGitLabCodeQualityReport(enrichedIssues, this.repoPath))
+      ]);
 
-      // Note: LSP and SARIF files are uploaded to Supabase only
-      // They are not saved locally to avoid clutter
-      console.log(`[LSP/SARIF] Generated ${lspCodeActions.length} LSP Code Actions`);
-      console.log(`[LSP/SARIF] Generated SARIF report with ${sarifReport.runs[0].results.length} results`);
+      const generationTime = Date.now() - generationStart;
+      console.log(`[LSP/SARIF/GitLab] ✅ All formats generated in ${generationTime}ms (parallel)`);
+      console.log(`[LSP/SARIF/GitLab]   - LSP: ${lspCodeActions.length} Code Actions`);
+      console.log(`[LSP/SARIF/GitLab]   - SARIF: ${sarifReport.runs[0].results.length} results`);
+      console.log(`[LSP/SARIF/GitLab]   - GitLab: ${gitlabReport.length} issues`);
 
       // Initialize URLs
       let lspUrl: string | undefined;
@@ -3661,245 +4735,141 @@ mvn spotless:check  # Verify (use in CI)
         const repoName = metadata.repository?.split('/').pop() || 'unknown';
         const analysisId = `${repoName}-pr${metadata.prNumber || 0}-${analysisTimestamp}`;
 
+        // Ensure service health tracker is initialized before parallel uploads
+        await this.initializeServiceHealthTracker();
+
         // Define filenames
         const lspFilename = 'codequal-lsp-actions.json';
         const sarifFilename = 'codequal-sarif-report.json';
+        const gitlabFilename = 'codequal-gitlab-codequality.json';
 
-        // Upload LSP file
+        // Prepare content for uploads
         const lspContent = JSON.stringify(lspCodeActions, null, 2);
-        console.log(`[LSP/SARIF] Uploading LSP to: ${analysisId}/${lspFilename}`);
-        console.log(`[LSP/SARIF] LSP content size: ${lspContent.length} bytes`);
+        const sarifContent = JSON.stringify(sarifReport, null, 2);
+        const gitlabContent = JSON.stringify(gitlabReport, null, 2);
 
-        // Upload LSP file with retry logic
-        const { data: lspData, error: lspError } = await this.uploadWithRetry(
-          `${analysisId}/${lspFilename}`,
-          lspContent,
-          {
-            contentType: 'application/json',
-            cacheControl: '3600',
-            upsert: true
-          }
-        );
+        console.log(`[LSP/SARIF/GitLab] Starting parallel uploads to Supabase...`);
+        const uploadStart = Date.now();
 
-        // Ensure service health tracker is initialized
-        await this.initializeServiceHealthTracker();
+        // PERF-OPT: Upload all three files in parallel (I/O work)
+        const uploadResults = await Promise.allSettled([
+          // Upload LSP
+          this.uploadSingleFile(analysisId, lspFilename, lspContent, 'lsp', metadata),
+          // Upload SARIF (may need special handling for large files)
+          this.uploadSingleFile(analysisId, sarifFilename, sarifContent, 'sarif', metadata),
+          // Upload GitLab
+          this.uploadSingleFile(analysisId, gitlabFilename, gitlabContent, 'gitlab', metadata)
+        ]);
 
-        if (lspError) {
-          console.error(`[LSP/SARIF] ❌ LSP upload failed:`, lspError);
-          // Track upload failure
-          if (this.serviceHealthTracker) {
-            await this.serviceHealthTracker.trackUploadFailure({
-              service: 'lsp',
-              filename: lspFilename,
-              error: lspError,
-              repositoryUrl: metadata.repository,
-              prNumber: metadata.prNumber,
-              analysisId,
-              errorDetails: {
-                statusCode: (lspError as any).statusCode,
-                error: (lspError as any).error
-              }
-            });
-          }
-        } else if (lspData) {
-          console.log(`[LSP/SARIF] ✅ LSP upload successful, path: ${lspData.path}`);
-          const { data: lspUrlData } = this.supabase.storage
-            .from('v9-attachments')
-            .getPublicUrl(`${analysisId}/${lspFilename}`);
-          lspUrl = lspUrlData.publicUrl;
-          console.log(`[LSP/SARIF] ✅ LSP uploaded: ${lspUrl}`);
-          // Track upload success
-          if (this.serviceHealthTracker) {
-            await this.serviceHealthTracker.trackUploadSuccess({
-              service: 'lsp',
-              filename: lspFilename,
-              url: lspUrl,
-              fileSize: lspContent.length,
-              repositoryUrl: metadata.repository,
-              prNumber: metadata.prNumber,
-              analysisId
-            });
-          }
-        } else {
-          console.error(`[LSP/SARIF] ❌ LSP upload: No data and no error (unexpected state)`);
-          // Track unexpected state
-          if (this.serviceHealthTracker) {
-            await this.serviceHealthTracker.trackServiceError({
-              service: 'lsp',
-              error: 'LSP upload: No data and no error (unexpected state)',
-              repositoryUrl: metadata.repository,
-              prNumber: metadata.prNumber,
-              analysisId
-            });
-          }
+        const uploadTime = Date.now() - uploadStart;
+        console.log(`[LSP/SARIF/GitLab] ✅ All uploads completed in ${uploadTime}ms (parallel)`);
+
+        // Extract results
+        if (uploadResults[0].status === 'fulfilled' && uploadResults[0].value) {
+          lspUrl = uploadResults[0].value;
+        }
+        if (uploadResults[1].status === 'fulfilled' && uploadResults[1].value) {
+          sarifUrl = uploadResults[1].value;
+        }
+        if (uploadResults[2].status === 'fulfilled' && uploadResults[2].value) {
+          gitlabUrl = uploadResults[2].value;
         }
 
-        // Upload SARIF file
-        try {
-          console.log(`[LSP/SARIF] Starting SARIF upload for: ${analysisId}/${sarifFilename}`);
-          const sarifContent = JSON.stringify(sarifReport, null, 2);
-          const sarifSizeMB = (sarifContent.length / (1024 * 1024)).toFixed(2);
-          console.log(`[LSP/SARIF] ✅ SARIF JSON.stringify successful, size: ${sarifContent.length} bytes (${sarifSizeMB} MB)`);
-
-          // Supabase limits: Standard uploads work up to 6MB, use resumable for larger files
-          // Free tier absolute max is 50MB per file
-          const sarifBlob = new Blob([sarifContent], { type: 'application/json' });
-
-          // Check if file exceeds free tier limit (50MB)
-          if (sarifContent.length > 50 * 1024 * 1024) {
-            console.warn(`[LSP/SARIF] ⚠️  SARIF file (${sarifSizeMB}MB) exceeds 50MB free tier limit`);
-            console.warn(`[LSP/SARIF] Skipping SARIF upload - consider upgrading to Pro tier or reducing report size`);
-          } else {
-            let uploadResult;
-
-            // Use resumable upload for files > 6MB (Supabase recommendation)
-            if (sarifContent.length > 6 * 1024 * 1024) {
-              console.log(`[LSP/SARIF] Using resumable upload (file > 6MB)`);
-              uploadResult = await this.uploadWithRetry(
-                `${analysisId}/${sarifFilename}`,
-                sarifBlob,
-                {
-                  contentType: 'application/json',
-                  cacheControl: '3600',
-                  upsert: true
-                }
-              );
-            } else {
-              console.log(`[LSP/SARIF] Using standard upload (file ≤ 6MB)`);
-              uploadResult = await this.uploadWithRetry(
-                `${analysisId}/${sarifFilename}`,
-                sarifContent,
-                {
-                  contentType: 'application/json',
-                  cacheControl: '3600',
-                  upsert: true
-                }
-              );
-            }
-
-            const { data: sarifData, error: sarifError } = uploadResult;
-
-            if (sarifError) {
-              console.error(`[LSP/SARIF] ❌ SARIF upload failed:`, sarifError);
-              console.error(`[LSP/SARIF] Error details:`, {
-                message: sarifError.message,
-                statusCode: (sarifError as any).statusCode,
-                error: (sarifError as any).error
-              });
-              // Track upload failure
-              if (this.serviceHealthTracker) {
-                await this.serviceHealthTracker.trackUploadFailure({
-                  service: 'sarif',
-                  filename: sarifFilename,
-                  error: sarifError,
-                  repositoryUrl: metadata.repository,
-                  prNumber: metadata.prNumber,
-                  analysisId,
-                  errorDetails: {
-                    statusCode: (sarifError as any).statusCode,
-                    error: (sarifError as any).error
-                  }
-                });
-              }
-            } else if (sarifData) {
-              console.log(`[LSP/SARIF] ✅ SARIF upload successful, path: ${sarifData.path}`);
-              const { data: sarifUrlData } = this.supabase.storage
-                .from('v9-attachments')
-                .getPublicUrl(`${analysisId}/${sarifFilename}`);
-              sarifUrl = sarifUrlData.publicUrl;
-              console.log(`[LSP/SARIF] ✅ SARIF uploaded: ${sarifUrl}`);
-              // Track upload success
-              if (this.serviceHealthTracker) {
-                await this.serviceHealthTracker.trackUploadSuccess({
-                  service: 'sarif',
-                  filename: sarifFilename,
-                  url: sarifUrl,
-                  fileSize: sarifContent.length,
-                  repositoryUrl: metadata.repository,
-                  prNumber: metadata.prNumber,
-                  analysisId
-                });
-              }
-            } else {
-              console.error(`[LSP/SARIF] ❌ SARIF upload: No data and no error (unexpected state)`);
-              // Track unexpected state
-              if (this.serviceHealthTracker) {
-                await this.serviceHealthTracker.trackServiceError({
-                  service: 'sarif',
-                  error: 'SARIF upload: No data and no error (unexpected state)',
-                  repositoryUrl: metadata.repository,
-                  prNumber: metadata.prNumber,
-                  analysisId
-                });
-              }
-            }
+        // Log any failures
+        uploadResults.forEach((result, index) => {
+          const names = ['LSP', 'SARIF', 'GitLab'];
+          if (result.status === 'rejected') {
+            console.error(`[${names[index]}] ❌ Upload failed:`, result.reason);
           }
-        } catch (sarifUploadError) {
-          console.error(`[LSP/SARIF] ❌ SARIF processing failed:`, sarifUploadError);
-          console.error(`[LSP/SARIF] Error type:`, (sarifUploadError as any)?.constructor?.name);
-          console.error(`[LSP/SARIF] Error message:`, (sarifUploadError as Error)?.message);
-        }
-
-        // Upload GitLab Code Quality file (SESSION 27)
-        try {
-          const gitlabConverter = new GitLabCodeQualityConverter();
-
-          // Generate GitLab Code Quality report
-          console.log('[GitLab] Generating Code Quality report...');
-          const gitlabReport = gitlabConverter.generateGitLabCodeQualityReport(
-            enrichedIssues,
-            this.repoPath
-          );
-
-          // Validate report
-          gitlabConverter.validateReport(gitlabReport);
-
-          // Log statistics
-          const stats = gitlabConverter.getReportStatistics(gitlabReport);
-          console.log(`[GitLab] Generated report with ${stats.totalIssues} issues`);
-          console.log(`[GitLab] By severity:`, stats.bySeverity);
-
-          // Upload GitLab file
-          const gitlabFilename = 'codequal-gitlab-codequality.json';
-          const gitlabContent = JSON.stringify(gitlabReport, null, 2);
-          console.log(`[GitLab] Uploading to: ${analysisId}/${gitlabFilename}`);
-          console.log(`[GitLab] Content size: ${gitlabContent.length} bytes`);
-
-          // Upload GitLab file with retry logic
-          const { data: gitlabData, error: gitlabError } = await this.uploadWithRetry(
-            `${analysisId}/${gitlabFilename}`,
-            gitlabContent,
-            {
-              contentType: 'application/json',
-              cacheControl: '3600',
-              upsert: true
-            }
-          );
-
-          if (gitlabError) {
-            console.error(`[GitLab] ❌ Upload failed:`, gitlabError);
-          } else if (gitlabData) {
-            console.log(`[GitLab] ✅ Upload successful, path: ${gitlabData.path}`);
-            const { data: gitlabUrlData } = this.supabase.storage
-              .from('v9-attachments')
-              .getPublicUrl(`${analysisId}/${gitlabFilename}`);
-            gitlabUrl = gitlabUrlData.publicUrl;
-            console.log(`[GitLab] ✅ GitLab Code Quality uploaded: ${gitlabUrl}`);
-          } else {
-            console.error(`[GitLab] ❌ Upload: No data and no error (unexpected state)`);
-          }
-        } catch (gitlabError) {
-          console.error(`[GitLab] ❌ Processing failed:`, gitlabError);
-          console.error(`[GitLab] Error message:`, (gitlabError as Error)?.message);
-        }
+        });
       }
 
       return { lspUrl, sarifUrl, gitlabUrl };
 
     } catch (error) {
       console.error('[LSP/SARIF] Error generating formats:', error);
-      // Don't fail the entire report generation if LSP/SARIF fails
       return {};
+    }
+  }
+
+  /**
+   * PERF-OPT: Helper method to upload a single file to Supabase
+   * Extracted to enable parallel uploads
+   */
+  private async uploadSingleFile(
+    analysisId: string,
+    filename: string,
+    content: string,
+    service: 'lsp' | 'sarif' | 'gitlab',
+    metadata: any
+  ): Promise<string | undefined> {
+    if (!this.supabase) return undefined;
+
+    try {
+      // Check for large SARIF files (> 50MB free tier limit)
+      if (service === 'sarif' && content.length > 50 * 1024 * 1024) {
+        console.warn(`[${service.toUpperCase()}] ⚠️  File exceeds 50MB free tier limit, skipping`);
+        return undefined;
+      }
+
+      // Use resumable upload for files > 6MB
+      const useResumable = content.length > 6 * 1024 * 1024;
+      const uploadContent = useResumable ? new Blob([content], { type: 'application/json' }) : content;
+
+      const { data, error } = await this.uploadWithRetry(
+        `${analysisId}/${filename}`,
+        uploadContent,
+        {
+          contentType: 'application/json',
+          cacheControl: '3600',
+          upsert: true
+        }
+      );
+
+      if (error) {
+        console.error(`[${service.toUpperCase()}] ❌ Upload failed:`, error);
+        if (this.serviceHealthTracker) {
+          await this.serviceHealthTracker.trackUploadFailure({
+            service,
+            filename,
+            error,
+            repositoryUrl: metadata.repository,
+            prNumber: metadata.prNumber,
+            analysisId,
+            errorDetails: {
+              statusCode: (error as any).statusCode,
+              error: (error as any).error
+            }
+          });
+        }
+        return undefined;
+      }
+
+      if (data) {
+        const { data: urlData } = this.supabase.storage
+          .from('v9-attachments')
+          .getPublicUrl(`${analysisId}/${filename}`);
+        const url = urlData.publicUrl;
+        console.log(`[${service.toUpperCase()}] ✅ Uploaded: ${url}`);
+
+        if (this.serviceHealthTracker) {
+          await this.serviceHealthTracker.trackUploadSuccess({
+            service,
+            filename,
+            url,
+            fileSize: content.length,
+            repositoryUrl: metadata.repository,
+            prNumber: metadata.prNumber,
+            analysisId
+          });
+        }
+        return url;
+      }
+
+      return undefined;
+    } catch (uploadError) {
+      console.error(`[${service.toUpperCase()}] ❌ Upload error:`, uploadError);
+      return undefined;
     }
   }
 
@@ -4076,29 +5046,36 @@ mvn spotless:check  # Verify (use in CI)
       return true;
     }
 
-    // Fallback: Legacy tool-based checks for tools not in classifier
-    // CheckStyle: All rules auto-fixable with IDE formatters
-    if (group.tool === 'checkstyle') {
+    // BUG-094 FIX: Comprehensive fallback for tools not fully covered by classifier
+    const toolLower = group.tool?.toLowerCase() || '';
+
+    // Java tools
+    const javaTools = ['checkstyle', 'semgrep', 'dependency-check', 'spotbugs', 'pmd'];
+    if (javaTools.includes(toolLower)) {
       return true;
     }
 
-    // Semgrep: AI-generated security fixes are IDE-applicable
-    if (group.tool === 'semgrep') {
+    // Python tools
+    const pythonTools = ['ruff', 'pylint', 'mypy', 'flake8', 'bandit', 'pip-audit', 'safety'];
+    if (pythonTools.includes(toolLower)) {
       return true;
     }
 
-    // Dependency-Check: IDEs can update dependencies
-    if (group.tool === 'dependency-check') {
+    // JavaScript/TypeScript tools
+    const jsTools = ['npm-audit', 'yarn-audit', 'eslint', 'typescript-eslint'];
+    if (jsTools.includes(toolLower)) {
       return true;
     }
 
-    // npm-audit: IDEs can update npm dependencies
-    if (group.tool === 'npm-audit') {
+    // Go tools
+    const goTools = ['golangci-lint', 'go-vet', 'gosec'];
+    if (goTools.includes(toolLower)) {
       return true;
     }
 
-    // SpotBugs: Many rules have clear fixes
-    if (group.tool === 'spotbugs') {
+    // Ruby tools
+    const rubyTools = ['rubocop', 'brakeman', 'bundler-audit'];
+    if (rubyTools.includes(toolLower)) {
       return true;
     }
 
@@ -4195,6 +5172,190 @@ mvn spotless:check  # Verify (use in CI)
   }
 
   /**
+   * BUG-100 FIX: Detect vulnerability type from message content
+   * Returns: 'dos' | 'rce' | 'data_breach' | 'auth_bypass' | 'injection' | 'xss' | 'ssrf' | 'unknown'
+   */
+  private detectVulnerabilityType(message: string): string {
+    const msg = message.toLowerCase();
+
+    // ========= CVE-SPECIFIC DETECTION =========
+    // Known DoS CVEs (OpenSSL, cryptography package)
+    const knownDosCVEs = [
+      'cve-2023-2650',  // OpenSSL - quadratic time complexity
+      'cve-2023-0286',  // OpenSSL - X.400 address type confusion
+      'cve-2022-4450',  // OpenSSL - double free
+      'cve-2023-0215',  // OpenSSL - use-after-free
+      'cve-2022-4304',  // OpenSSL - timing oracle
+      'cve-2023-3817',  // OpenSSL - excessive time checking DH keys
+      'cve-2023-5678',  // OpenSSL - excessive time generating DSA keys
+      'cve-2024-0727',  // OpenSSL - NULL dereference crash
+    ];
+
+    // Check for known DoS CVEs
+    for (const cve of knownDosCVEs) {
+      if (msg.includes(cve)) {
+        return 'dos';
+      }
+    }
+
+    // OpenSSL advisory links often indicate DoS vulnerabilities
+    if (msg.includes('openssl') && (
+        msg.includes('secadv') ||  // OpenSSL security advisory
+        msg.includes('advisory') ||
+        msg.includes('security issue'))) {
+      // Most OpenSSL vulnerabilities are DoS (crashes, hangs, memory issues)
+      // Very few are RCE (would be explicitly stated)
+      return 'dos';
+    }
+
+    // Denial of Service patterns
+    if (msg.includes('denial of service') || msg.includes('dos') ||
+        msg.includes('resource exhaustion') || msg.includes('infinite loop') ||
+        msg.includes('memory exhaustion') || msg.includes('cpu exhaustion') ||
+        msg.includes('quadratic') || msg.includes('exponential') ||
+        msg.includes('performance degradation') || msg.includes('slow') ||
+        msg.includes('hang') || msg.includes('freeze') || msg.includes('unresponsive') ||
+        msg.includes('crash') || msg.includes('out of memory') ||
+        msg.includes('stack overflow') || msg.includes('recursion') ||
+        msg.includes('null pointer') || msg.includes('null dereference') ||
+        msg.includes('use after free') || msg.includes('use-after-free') ||
+        msg.includes('double free') || msg.includes('buffer overread') ||
+        msg.includes('assertion failure') || msg.includes('uncontrolled resource')) {
+      return 'dos';
+    }
+
+    // Remote Code Execution patterns
+    if (msg.includes('remote code execution') || msg.includes('rce') ||
+        msg.includes('arbitrary code') || msg.includes('code execution') ||
+        msg.includes('command execution') || msg.includes('shell injection') ||
+        msg.includes('code injection') || msg.includes('execute arbitrary')) {
+      return 'rce';
+    }
+
+    // Data Breach / Information Disclosure patterns
+    if (msg.includes('information disclosure') || msg.includes('data leak') ||
+        msg.includes('sensitive data') || msg.includes('data exposure') ||
+        msg.includes('credential') || msg.includes('password') ||
+        msg.includes('private key') || msg.includes('secret') ||
+        msg.includes('token leak') || msg.includes('session') ||
+        msg.includes('memory disclosure') || msg.includes('heap disclosure')) {
+      return 'data_breach';
+    }
+
+    // Authentication/Authorization Bypass patterns
+    if (msg.includes('authentication bypass') || msg.includes('auth bypass') ||
+        msg.includes('authorization bypass') || msg.includes('privilege escalation') ||
+        msg.includes('access control') || msg.includes('permission') ||
+        msg.includes('impersonation') || msg.includes('spoofing')) {
+      return 'auth_bypass';
+    }
+
+    // SQL/NoSQL Injection patterns
+    if (msg.includes('sql injection') || msg.includes('nosql injection') ||
+        msg.includes('ldap injection') || msg.includes('xpath injection') ||
+        msg.includes('query injection')) {
+      return 'injection';
+    }
+
+    // XSS patterns
+    if (msg.includes('cross-site scripting') || msg.includes('xss') ||
+        msg.includes('script injection') || msg.includes('html injection')) {
+      return 'xss';
+    }
+
+    // SSRF patterns
+    if (msg.includes('server-side request forgery') || msg.includes('ssrf') ||
+        msg.includes('url validation') || msg.includes('redirect')) {
+      return 'ssrf';
+    }
+
+    // Path Traversal patterns
+    if (msg.includes('path traversal') || msg.includes('directory traversal') ||
+        msg.includes('local file inclusion') || msg.includes('lfi') ||
+        msg.includes('arbitrary file')) {
+      return 'path_traversal';
+    }
+
+    // Deserialization patterns
+    if (msg.includes('deserialization') || msg.includes('pickle') ||
+        msg.includes('yaml.load') || msg.includes('unsafe load')) {
+      return 'deserialization';
+    }
+
+    return 'unknown';
+  }
+
+  /**
+   * BUG-100 FIX: Get vulnerability type-specific impact and "why it matters" descriptions
+   */
+  private getVulnerabilityTypeInfo(vulnType: string, severity: string): { why: string; impact: string } {
+    const severityLabel = severity === 'critical' ? 'Critical' : severity === 'high' ? 'High' : 'Medium';
+
+    switch (vulnType) {
+      case 'dos':
+        return {
+          why: 'Denial of Service vulnerabilities can make your application unavailable to legitimate users. Attackers may exploit performance issues to exhaust system resources.',
+          impact: `${severityLabel} availability risk. Application may become slow or unresponsive when processing malicious input. This affects user experience and SLA compliance but does NOT lead to data theft or code execution.`
+        };
+
+      case 'rce':
+        return {
+          why: 'Remote Code Execution is the most severe vulnerability type. Attackers can run arbitrary code on your server with the application\'s privileges.',
+          impact: `${severityLabel} security risk. Complete system compromise, data theft, malware installation, and lateral movement to other systems. Requires immediate patching. CVSS typically 9.0+.`
+        };
+
+      case 'data_breach':
+        return {
+          why: 'Information disclosure vulnerabilities can leak sensitive data including credentials, personal information, or system internals.',
+          impact: `${severityLabel} confidentiality risk. Sensitive data may be exposed to attackers. Could lead to credential theft, regulatory violations (GDPR, CCPA), and reputational damage.`
+        };
+
+      case 'auth_bypass':
+        return {
+          why: 'Authentication bypass allows attackers to access protected resources without valid credentials or elevate their privileges.',
+          impact: `${severityLabel} security risk. Unauthorized access to protected resources, potential data breach, and privilege escalation. Compliance violations (SOC2, ISO 27001).`
+        };
+
+      case 'injection':
+        return {
+          why: 'Injection vulnerabilities allow attackers to execute malicious queries or commands in your database or backend systems.',
+          impact: `${severityLabel} security risk. Database compromise, data theft, data manipulation, and potential system access. OWASP Top 10 A03:2021.`
+        };
+
+      case 'xss':
+        return {
+          why: 'Cross-site scripting allows attackers to inject malicious scripts that execute in victims\' browsers.',
+          impact: `${severityLabel} security risk. Session hijacking, credential theft, malware distribution, and phishing attacks. OWASP Top 10 A03:2021.`
+        };
+
+      case 'ssrf':
+        return {
+          why: 'Server-Side Request Forgery allows attackers to make requests from your server to internal or external resources.',
+          impact: `${severityLabel} security risk. Access to internal services, cloud metadata theft (AWS credentials), and potential remote code execution. OWASP Top 10 A10:2021.`
+        };
+
+      case 'path_traversal':
+        return {
+          why: 'Path traversal allows attackers to access files outside the intended directory, potentially exposing sensitive system files.',
+          impact: `${severityLabel} security risk. Exposure of sensitive files (config, credentials, source code), and potential for code execution when combined with file upload.`
+        };
+
+      case 'deserialization':
+        return {
+          why: 'Unsafe deserialization can allow attackers to execute arbitrary code by providing malicious serialized data.',
+          impact: `${severityLabel} security risk. Remote code execution, denial of service, and authentication bypass. Extremely dangerous in Python (pickle) and Java environments.`
+        };
+
+      default:
+        // Fallback for unknown types - use generic but honest description
+        return {
+          why: 'This dependency has a known security vulnerability that could affect your application\'s security posture.',
+          impact: `${severityLabel} security risk. Review the vulnerability details above to understand the specific impact. Update to a patched version as recommended.`
+        };
+    }
+  }
+
+  /**
    * ENHANCEMENT: Get short impact summary for manifest
    */
   private getPriority(severity: string): number {
@@ -4207,8 +5368,9 @@ mvn spotless:check  # Verify (use in CI)
     }
   }
 
-  private getImpactSummary(rule: string, tool: string, severity: string): string {
-    const fullDescription = this.getIssueDescription(rule, tool, severity);
+  // BUG-099 FIX: Added optional message parameter
+  private getImpactSummary(rule: string, tool: string, severity: string, message?: string): string {
+    const fullDescription = this.getIssueDescription(rule, tool, severity, message);
     const whatText = fullDescription.what;
     // Extract first sentence or first 120 chars
     const firstSentence = whatText.match(/^[^.!?]+[.!?]/)?.[0] || whatText.substring(0, 120);
@@ -4399,9 +5561,10 @@ mvn spotless:check  # Verify (use in CI)
 
   /**
    * Generate Business Impact Analysis with real financial calculations
+   * SESSION 50 FIX: Pass detected language for language-specific recommendations
    */
   private generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
-    return generateBusinessImpact(issues, groups);
+    return generateBusinessImpact(issues, groups, this.detectedLanguage);
   }
 
   private _REMOVED_legacyGenerateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
@@ -4710,11 +5873,13 @@ Continue following best practices and consider integrating static analysis into 
       });
     }
 
-    return generateEducationalResources(issues);
+    // BUG-090 FIX: Pass language parameter for language-specific resources
+    return generateEducationalResources(issues, this.detectedLanguage);
   }
 
   private async generateEducationalResourcesBrave(issues: EnrichedIssue[]): Promise<string> {
-    return generateEducationalResourcesBrave(issues);
+    // BUG-090 FIX: Pass language parameter for language-specific resources
+    return generateEducationalResourcesBrave(issues, this.detectedLanguage);
   }
 
   /**
@@ -4800,12 +5965,135 @@ Continue following best practices and consider integrating static analysis into 
   }
 
   /**
+   * BUG-095 FIX: Calculate real repository statistics from the repo path
+   * Replaces hardcoded values with actual file counts and lines of code
+   *
+   * @param repoPath - Path to the cloned repository
+   * @param language - Detected language for language-specific LOC counting
+   * @param baseBranch - Optional base branch for diff stats
+   * @returns Repository statistics object
+   */
+  private calculateRepoStats(repoPath: string, language: string, baseBranch?: string): {
+    totalFiles: number;
+    totalLinesOfCode: number;
+    filesModified: number;
+    linesAdded: number;
+    linesDeleted: number;
+  } {
+    const defaultStats = {
+      totalFiles: 0,
+      totalLinesOfCode: 0,
+      filesModified: 0,
+      linesAdded: 0,
+      linesDeleted: 0
+    };
+
+    if (!repoPath || !fs.existsSync(repoPath)) {
+      console.warn('[BUG-095] No repoPath provided, using default stats');
+      return defaultStats;
+    }
+
+    try {
+      // Count total files (excluding .git directory)
+      const totalFilesResult = execSync(
+        `find . -type f -not -path './.git/*' | wc -l`,
+        { cwd: repoPath, encoding: 'utf-8', timeout: 30000 }
+      );
+      const totalFiles = parseInt(totalFilesResult.trim(), 10) || 0;
+
+      // Get file extension for language-specific LOC counting
+      const langExtensions: Record<string, string[]> = {
+        'java': ['*.java'],
+        'python': ['*.py'],
+        'typescript': ['*.ts', '*.tsx'],
+        'javascript': ['*.js', '*.jsx'],
+        'go': ['*.go'],
+        'ruby': ['*.rb'],
+        'rust': ['*.rs'],
+        'csharp': ['*.cs'],
+        'php': ['*.php']
+      };
+
+      const extensions = langExtensions[language.toLowerCase()] || ['*'];
+
+      // Count lines of code for the detected language (limit to first 500 files for performance)
+      let totalLinesOfCode = 0;
+      for (const ext of extensions) {
+        try {
+          const filesResult = execSync(
+            `find . -type f -name "${ext}" -not -path './.git/*' | head -500`,
+            { cwd: repoPath, encoding: 'utf-8', timeout: 30000 }
+          );
+          const files = filesResult.trim().split('\n').filter(f => f);
+
+          for (const file of files) {
+            try {
+              const lines = parseInt(
+                execSync(`wc -l < "${file}"`, { cwd: repoPath, encoding: 'utf-8', timeout: 5000 }).trim(),
+                10
+              );
+              totalLinesOfCode += lines || 0;
+            } catch {
+              // Skip files that can't be read
+            }
+          }
+        } catch {
+          // Skip if extension search fails
+        }
+      }
+
+      // Get diff stats if base branch is available
+      let filesModified = 0;
+      let linesAdded = 0;
+      let linesDeleted = 0;
+
+      if (baseBranch) {
+        try {
+          const diffStats = execSync(
+            `git diff --shortstat ${baseBranch}...HEAD 2>/dev/null || git diff --shortstat HEAD~10...HEAD 2>/dev/null || echo ""`,
+            { cwd: repoPath, encoding: 'utf-8', timeout: 30000 }
+          );
+
+          const filesMatch = diffStats.match(/(\d+) files? changed/);
+          const addMatch = diffStats.match(/(\d+) insertions?\(/);
+          const delMatch = diffStats.match(/(\d+) deletions?\(/);
+
+          filesModified = filesMatch ? parseInt(filesMatch[1], 10) : 0;
+          linesAdded = addMatch ? parseInt(addMatch[1], 10) : 0;
+          linesDeleted = delMatch ? parseInt(delMatch[1], 10) : 0;
+        } catch {
+          // Fallback: use issue files as estimate
+        }
+      }
+
+      console.log(`[BUG-095] Calculated repo stats: ${totalFiles} files, ${totalLinesOfCode} LOC, ${filesModified} modified`);
+
+      return {
+        totalFiles,
+        totalLinesOfCode,
+        filesModified,
+        linesAdded,
+        linesDeleted
+      };
+    } catch (error) {
+      console.warn('[BUG-095] Failed to calculate repo stats:', error);
+      return defaultStats;
+    }
+  }
+
+  /**
    * Generate skills tracking section with ranking and trends
+   * BUG-096 FIX: Now shows Git-based data even without Supabase connection
    */
   private async generateSkillsTracking(issues: EnrichedIssue[], metadata: any): Promise<string> {
-    // Skip if no Supabase or no author info
-    if (!this.skillScoreManager || !metadata.prAuthor || !metadata.prAuthorEmail) {
+    // Skip if no author info available
+    if (!metadata.prAuthor || !metadata.prAuthorEmail) {
       return '';
+    }
+
+    // BUG-096 FIX: If no Supabase, use Git-only fallback
+    if (!this.skillScoreManager) {
+      return this.generateGitBasedSkillsTracking(issues, metadata);
     }
 
     try {
@@ -4847,13 +6135,28 @@ Continue following best practices and consider integrating static analysis into 
       );
       console.log(`[Skills] Using baseline ${developerBaseline} for ${metadata.prAuthorEmail} (Supabase saved score)`);
 
-      // Calculate category scores using developer's baseline (not hardcoded 50)
+      // BUG-101 FIX: Categories with NO issues should return BASELINE (from Supabase or 50 for new users)
+      // NOT 100. This ensures consistent scoring:
+      // - First-time users: baseline = 50
+      // - Returning users: baseline = their last saved score
+      // - Empty category = no NEW issues introduced = keep baseline score
+      // Previous BUG-093 was WRONG - returning 100 inflated scores artificially
+      const calculateSkillCategoryScore = (categoryIssues: EnrichedIssue[]): number => {
+        if (categoryIssues.length === 0) {
+          // No NEW issues in this category = keep baseline (not 100!)
+          return developerBaseline;
+        }
+        // Has issues - calculate from baseline with deductions
+        return this.calculateCategoryScore(categoryIssues, developerBaseline);
+      };
+
+      // Calculate category scores using developer's baseline (only for categories WITH issues)
       const categoryScores = {
-        security: this.calculateCategoryScore(security, developerBaseline),
-        performance: this.calculateCategoryScore(performance, developerBaseline),
-        architecture: this.calculateCategoryScore(architecture, developerBaseline),
-        dependencies: this.calculateCategoryScore(dependencies, developerBaseline),
-        codeQuality: this.calculateCategoryScore(codeQuality, developerBaseline)
+        security: calculateSkillCategoryScore(security),
+        performance: calculateSkillCategoryScore(performance),
+        architecture: calculateSkillCategoryScore(architecture),
+        dependencies: calculateSkillCategoryScore(dependencies),
+        codeQuality: calculateSkillCategoryScore(codeQuality)
       };
 
       // BUG #2 DEBUG (Session 30): Log individual category scores to verify calculation
@@ -5172,6 +6475,109 @@ Continue following best practices and consider integrating static analysis into 
     }
   }
 
+  /**
+   * BUG-096 FIX: Generate skills tracking section using only Git data (no Supabase)
+   * This allows the Top Performers section to show meaningful data even without database access.
+   */
+  private generateGitBasedSkillsTracking(issues: EnrichedIssue[], metadata: any): string {
+    try {
+      // Calculate score for current PR
+      const developerIssues = issues.filter(i =>
+        i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'
+      );
+
+      // Calculate category scores (using baseline of 50 for new developers)
+      const baseline = 50;
+      const security = developerIssues.filter(i => i.detectedCategory === 'Security');
+      const performance = developerIssues.filter(i => i.detectedCategory === 'Performance');
+      const architecture = developerIssues.filter(i => i.detectedCategory === 'Architecture');
+      const dependencies = developerIssues.filter(i => i.detectedCategory === 'Dependencies');
+      const codeQuality = developerIssues.filter(i => i.detectedCategory === 'Code Quality');
+
+      // BUG-093 FIX: Empty categories = 100 (perfect), not baseline
+      const categoryScores = {
+        security: security.length === 0 ? 100 : this.calculateCategoryScore(security, baseline),
+        performance: performance.length === 0 ? 100 : this.calculateCategoryScore(performance, baseline),
+        architecture: architecture.length === 0 ? 100 : this.calculateCategoryScore(architecture, baseline),
+        dependencies: dependencies.length === 0 ? 100 : this.calculateCategoryScore(dependencies, baseline),
+        codeQuality: codeQuality.length === 0 ? 100 : this.calculateCategoryScore(codeQuality, baseline)
+      };
+
+      const currentPRScore = Math.round(
+        (categoryScores.security + categoryScores.performance + categoryScores.architecture +
+          categoryScores.dependencies + categoryScores.codeQuality) / 5
+      );
+
+      // Get Git teammates for basic leaderboard
+      let gitTeammates: Array<{ name?: string; email: string; totalPRs?: number }> = [];
+      if (this.repoPath) {
+        gitTeammates = this.discoverTeamFromGit(this.repoPath);
+      }
+
+      // Build leaderboard: current author + Git teammates with baseline scores
+      const leaderboard: Array<{ name: string; email: string; score: number; totalPRs: number }> = [];
+
+      // Add current author with actual score
+      leaderboard.push({
+        name: metadata.prAuthor,
+        email: metadata.prAuthorEmail,
+        score: currentPRScore,
+        totalPRs: 1
+      });
+
+      // Add Git teammates with baseline (50) - they haven't been analyzed
+      const normalizeEmail = (email: string) => (email || '').toLowerCase().trim();
+      gitTeammates.forEach(teammate => {
+        if (normalizeEmail(teammate.email) !== normalizeEmail(metadata.prAuthorEmail)) {
+          leaderboard.push({
+            name: teammate.name || teammate.email.split('@')[0],
+            email: teammate.email,
+            score: 50, // Baseline - not yet analyzed
+            totalPRs: teammate.totalPRs || 0
+          });
+        }
+      });
+
+      // Sort by score
+      leaderboard.sort((a, b) => b.score - a.score);
+
+      // Generate content
+      let content = `## 🎯 Developer Skills & Ranking\n\n`;
+
+      // Your Score section
+      content += `### Your Score: ${currentPRScore}/100\n\n`;
+      content += `| Category | Score | Issues |\n`;
+      content += `|----------|-------|--------|\n`;
+      content += `| 🔒 Security | ${categoryScores.security}/100 | ${security.length} |\n`;
+      content += `| ⚡ Performance | ${categoryScores.performance}/100 | ${performance.length} |\n`;
+      content += `| 🏗️ Architecture | ${categoryScores.architecture}/100 | ${architecture.length} |\n`;
+      content += `| 📦 Dependencies | ${categoryScores.dependencies}/100 | ${dependencies.length} |\n`;
+      content += `| ✨ Code Quality | ${categoryScores.codeQuality}/100 | ${codeQuality.length} |\n\n`;
+
+      // Top Performers section
+      if (leaderboard.length > 0) {
+        content += `### 🏆 Top Performers\n\n`;
+        content += `| Rank | Developer | Score | PRs |\n`;
+        content += `|------|-----------|-------|-----|\n`;
+
+        leaderboard.slice(0, 5).forEach((dev, idx) => {
+          const isCurrent = normalizeEmail(dev.email) === normalizeEmail(metadata.prAuthorEmail);
+          const highlight = isCurrent ? '**' : '';
+          const prsText = dev.totalPRs === 0 ? '—' : String(dev.totalPRs);
+          content += `| ${idx + 1} | ${highlight}${dev.name}${highlight} | ${highlight}${dev.score}/100${highlight} | ${prsText} |\n`;
+        });
+        content += `\n`;
+      }
+
+      content += `> 💡 **Note:** Scores are based on code quality in your PRs. Git-based tracking (Supabase not connected).\n`;
+
+      return content;
+    } catch (error) {
+      console.error('[V9GroupedReportFormatter] Error generating Git-based skills tracking:', error);
+      return '';
+    }
+  }
+
   private getStatusEmoji(yourScore: number, teamAvg: number): string {
     if (yourScore >= teamAvg + 10) return '🌟 Excellent';
     if (yourScore >= teamAvg) return '✅ Above Average';
@@ -5214,12 +6620,20 @@ Continue following best practices and consider integrating static analysis into 
 
     // Add Agent Performance if available (optional)
     // MODEL NAME BUG FIX (2025-10-30): Added "Model" column to show which AI model was used
+    // FIX 3 (2025-12-07): Filter out agents with 0s duration (e.g., tools that were disabled or didn't run)
     if (this.SHOW_AGENT_PERFORMANCE && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
-      content += `\n### Agent Performance
+      // Filter to only show agents that actually ran (duration > 0)
+      const activeAgents = metadata.agentPerformance.filter((agent: any) => {
+        const duration = agent.duration || 0;
+        return duration > 0; // Only include agents that actually ran
+      });
+
+      if (activeAgents.length > 0) {
+        content += `\n### Agent Performance
 | Agent | Model | Files Analyzed | Issues Found | Time | Cost |
 |-------|-------|----------------|--------------|------|------|
 `;
-      metadata.agentPerformance.forEach((agent: any) => {
+        activeAgents.forEach((agent: any) => {
         const issues = agent.issuesFound || agent.issues || 0;
         const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
         const costValue = agent.cost || 0;
@@ -5249,19 +6663,29 @@ Continue following best practices and consider integrating static analysis into 
         }
 
         content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
-      });
+        });
+      } // End of activeAgents.length > 0 check
     }
 
     // Add Tool Performance if available (optional)
+    // FIX 3 (2025-12-07): Filter out tools with 0s duration (same as Agent Performance)
     if (this.SHOW_TOOL_PERFORMANCE && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-      content += `\n### Tool Performance
+      // Filter to only show tools that actually ran (duration > 0)
+      const activeTools = metadata.toolPerformance.filter((tool: any) => {
+        const duration = tool.duration || 0;
+        return duration > 0; // Only include tools that actually ran
+      });
+
+      if (activeTools.length > 0) {
+        content += `\n### Tool Performance
 | Tool | Files Scanned | Issues Found | Duration |
 |------|---------------|--------------|----------|
 `;
-      metadata.toolPerformance.forEach((tool: any) => {
-        const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
-        content += `| ${tool.tool || tool.name} | ${tool.filesScanned || tool.files || 'N/A'} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
-      });
+        activeTools.forEach((tool: any) => {
+          const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
+          content += `| ${tool.tool || tool.name} | ${tool.filesScanned || tool.files || 'N/A'} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
+        });
+      }
     }
 
     // Add Cost & Efficiency Analysis (optional)
@@ -5467,19 +6891,19 @@ ${(() => {
         const manualCount = issues.length - advancedCount;
         const manualPercent = Math.round(manualCount / issues.length * 100);
 
-        const tier1 = safeCount > 0
-          ? `${safeCount} issues (${safePercent}%) - Apply immediately`
-          : `0 issues - No simple fixes`;
-        const tier2 = advancedCount > 0
-          ? `${advancedCount} issues (${advancedPercent}%) - Requires testing`
-          : `0 issues - No advanced fixes`;
-        const tier3 = manualCount > 0
-          ? `${manualCount} issues (${manualPercent}%) - AI-guided manual review`
-          : `0 issues - All auto-fixable!`;
+        // SESSION 51: Updated to BASIC/PRO tier system
+        const patternFixes = safeCount > 0
+          ? `${safeCount} issues (${safePercent}%)`
+          : `0 issues`;
+        const aiAvailable = advancedCount > 0
+          ? `${advancedCount} issues (${advancedPercent}%)`
+          : `0 issues`;
+        const guidanceNeeded = manualCount > 0
+          ? `${manualCount} issues (${manualPercent}%)`
+          : `0 issues`;
 
-        return `- 🟢 **Safe Auto-Fix (Tier 1)**: ${tier1}
-- 🟡 **Advanced Auto-Fix (Tier 2)**: ${tier2}
-- 🔴 **Manual Review (Tier 3)**: ${tier3}`;
+        return `**🆓 BASIC Tier**: ${patternFixes} from pattern library, ${guidanceNeeded} with IDE guidance
+**⭐ PRO Tier**: ${aiAvailable} with AI auto-fix, 100% with AI analysis`;
       })()}
 
 **By Severity:**

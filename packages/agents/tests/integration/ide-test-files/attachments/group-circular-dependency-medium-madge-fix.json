@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "group_id": "circular-dependency-medium-madge",
+  "rule": "circular-dependency",
+  "tool": "madge",
+  "severity": "medium",
+  "description": "1. Identify shared functionality between the two modules that can be extracted into a third common module. 2. Move the shared logic into a new dedicated service or utility module. 3. Update both modules to import from the new common module instead of each other. 4. Remove direct circular imports and restructure dependencies to follow unidirectional flow.",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "import { getMonitoringData } from '../services/monitoring-common';\nimport { GrafanaBridgeService } from '../services/monitoring-grafana-bridge';\n\n// Route logic using common service\nexport const getMonitoringRoute = async (req, res) => {\n  const data = await getMonitoringData();\n  res.json(data);\n};"
+    },
+    "instructions": "1. Identify shared functionality between the two modules that can be extracted into a third common module. 2. Move the shared logic into a new dedicated service or utility module. 3. Update both modules to import from the new common module instead of each other. 4. Remove direct circular imports and restructure dependencies to follow unidirectional flow.",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: circular-dependency\nThis is a medium quality issue detected by madge.\nThe issue is: \"Circular dependency detected (2 files): routes/monitoring.ts → services/monitoring-grafana-bridge.ts\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: circular-dependency (madge)\nSEVERITY: medium\nMESSAGE: Circular dependency detected (2 files): routes/monitoring.ts → services/monitoring-grafana-bridge.ts\n\nFILE: routes/monitoring.ts\nLINE: 1\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 500,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "routes/monitoring.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "services/result-orchestrator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

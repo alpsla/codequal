@@ -79,6 +79,46 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
   private pgDatabase: string;
   private pgUser: string;
   private pgPassword: string;
+  private dependencyCheckPath: string = 'dependency-check.sh'; // Default to PATH lookup
+
+  /**
+   * Find dependency-check.sh in common installation locations
+   * USER FEEDBACK (2025-12-14): Tool should work without manual PATH configuration
+   */
+  private findDependencyCheckPath(): string {
+    const commonPaths = [
+      // Standard PATH (Docker, system install)
+      'dependency-check.sh',
+      // Homebrew on Mac
+      '/opt/homebrew/bin/dependency-check.sh',
+      '/usr/local/bin/dependency-check.sh',
+      // Manual install locations
+      '/opt/dependency-check/bin/dependency-check.sh',
+      // User-specific install (common dev setup)
+      `${process.env.HOME}/tools/dependency-check/bin/dependency-check.sh`,
+      `${process.env.HOME}/dependency-check/bin/dependency-check.sh`,
+      // Environment variable override
+      process.env.DEPENDENCY_CHECK_PATH || '',
+    ].filter(p => p); // Remove empty strings
+
+    for (const checkPath of commonPaths) {
+      try {
+        if (checkPath === 'dependency-check.sh') {
+          // For PATH lookup, just return it - will be validated later
+          continue;
+        }
+        if (fs.existsSync(checkPath)) {
+          console.log(`[Dependency-Check] Found at: ${checkPath}`);
+          return checkPath;
+        }
+      } catch {
+        // Ignore access errors
+      }
+    }
+
+    // Default to PATH lookup
+    return 'dependency-check.sh';
+  }
 
   constructor(workspacePath: string, language: string) {
     super({
@@ -105,6 +145,10 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
     console.log(`  DEPCHECK_DB_HOST from env: ${process.env.DEPCHECK_DB_HOST || 'NOT SET'}`);
     console.log(`  DEPCHECK_DB_USER from env: ${process.env.DEPCHECK_DB_USER || 'NOT SET'}`);
     console.log(`  Using config: ${this.pgHost}:${this.pgPort}/${this.pgDatabase} (user: ${this.pgUser})`);
+
+    // Find dependency-check.sh in common locations
+    this.dependencyCheckPath = this.findDependencyCheckPath();
+    console.log(`  dependency-check path: ${this.dependencyCheckPath}`);
   }
 
   /**
@@ -184,9 +228,13 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
     // --connectionString: PostgreSQL JDBC URL
     // --dbUser/--dbPassword: database credentials
     // --disableAssembly: skip .NET assembly analysis (faster)
-    // --enableExperimental: enable experimental analyzers
+    // --disableOssIndex: SESSION 42 FIX - Disable OSS Index API calls that cause 300s timeouts
+    //                    OSS Index requires authentication and fails with 401 Unauthorized
+    //                    We rely on our local PostgreSQL CVE database instead (210K+ CVEs)
+    // --exclude: SESSION 45 FIX - Exclude node_modules and build artifacts for massive performance gains
+    //            This is CRITICAL for large monorepos like nest-main which have 100K+ files in node_modules
 
-    return `dependency-check.sh \
+    return `${this.dependencyCheckPath} \
       --scan "${workspacePath}" \
       --format JSON \
       --out "${outputFile}" \
@@ -195,6 +243,13 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
       --dbUser ${this.pgUser} \
       --dbPassword ${this.pgPassword} \
       --disableAssembly \
+      --disableOssIndex \
+      --exclude "**/node_modules/**" \
+      --exclude "**/dist/**" \
+      --exclude "**/build/**" \
+      --exclude "**/.git/**" \
+      --exclude "**/.next/**" \
+      --exclude "**/coverage/**" \
       --project dependency-check-${this.config.language} \
       2>&1 || true`;
   }
@@ -300,13 +355,25 @@ export class UniversalDependencyCheckRunner extends UniversalToolBase {
    * Check if Dependency-Check is installed and PostgreSQL is accessible
    */
   private async checkPrerequisites(): Promise<void> {
-    // Check Dependency-Check installation
+    // Check Dependency-Check installation using the found path
+    // BUG FIX (2025-12-14): Use found path and properly validate installation
     try {
-      await this.runCommand('dependency-check.sh --version');
-      console.log(`[Universal Dependency-Check] ✅ Dependency-Check is installed`);
+      const result = await this.runCommand(`${this.dependencyCheckPath} --version`);
+      // Check if we got actual version output (not empty from command not found)
+      if (!result.stdout || result.stdout.trim() === '') {
+        // Also check stderr for "command not found" type messages
+        if (result.stderr && (result.stderr.includes('not found') || result.stderr.includes('No such file'))) {
+          throw new Error('Command not found');
+        }
+        throw new Error('No version output received');
+      }
+      const version = result.stdout.trim().split('\n')[0];
+      console.log(`[Universal Dependency-Check] ✅ ${version}`);
     } catch (error) {
+      console.warn(`[Universal Dependency-Check] ⚠️ Dependency-Check not found at: ${this.dependencyCheckPath}`);
       throw new Error(
-        'Dependency-Check not found. Ensure it is installed and in PATH.'
+        `Dependency-Check not found. Tried: ${this.dependencyCheckPath}. ` +
+        `Set DEPENDENCY_CHECK_PATH env var or install: https://owasp.org/www-project-dependency-check/`
       );
     }
 

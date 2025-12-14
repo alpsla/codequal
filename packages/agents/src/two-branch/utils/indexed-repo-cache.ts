@@ -6,7 +6,7 @@ import { execSync } from 'child_process';
 import Redis from 'ioredis';
 import crypto from 'crypto';
 
-interface RepoIndex {
+export interface RepoIndex {
   repository: string;
   branch: string;
   commit: string;
@@ -53,9 +53,42 @@ export class IndexedRepoCache {
   private readonly ANALYSIS_PREFIX = 'repo:analysis:';
   private readonly FILE_CACHE_PREFIX = 'repo:files:';
   private readonly TTL = 86400; // 24 hours
+  private connected = false;
 
   constructor(redisUrl?: string) {
-    this.redis = new Redis(redisUrl || process.env.REDIS_URL || 'redis://localhost:6379');
+    const url = redisUrl || process.env.REDIS_URL || 'redis://localhost:6379';
+    this.redis = new Redis(url, {
+      maxRetriesPerRequest: 1,  // Don't retry failed requests
+      connectTimeout: 5000,     // 5 second connection timeout
+      lazyConnect: true,        // Don't connect until needed
+      enableOfflineQueue: false, // Don't queue commands when offline
+    });
+
+    // Handle connection errors gracefully (don't spam logs)
+    this.redis.on('error', (error) => {
+      if (this.connected) {
+        console.warn('[IndexedRepoCache] Redis connection lost:', error.message);
+        this.connected = false;
+      }
+      // Silently ignore connection errors when not connected
+    });
+
+    this.redis.on('connect', () => {
+      this.connected = true;
+    });
+  }
+
+  /**
+   * Check if Redis is available
+   */
+  async isAvailable(): Promise<boolean> {
+    try {
+      await this.redis.connect();
+      await this.redis.ping();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async indexRepository(repoPath: string, repoUrl: string, branch = 'main'): Promise<RepoIndex> {

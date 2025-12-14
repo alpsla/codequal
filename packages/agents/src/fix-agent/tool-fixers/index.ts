@@ -78,3 +78,33 @@ export {
   type OrchestratorResult,
   type ProgressUpdate,
 } from './fix-orchestrator';
+
+// Dependency Vulnerability Fixer (npm/Node.js)
+export {
+  DependencyFixerExecutor,
+  createDependencyFixer,
+  getDependencyFixer,
+  isDependencyVulnerability,
+  getKnownFixablePackages,
+  hasKnownFix,
+  type DependencyVulnerability,
+  type DependencyFixResult,
+} from './dependency-fixer';
+
+// Python-Specific Fixers (SESSION 53)
+export {
+  // Executors
+  PipAuditFixerExecutor,
+  SemgrepAutoFixExecutor,
+  // Factory functions
+  createPipAuditFixer,
+  createSemgrepAutoFixer,
+  getPythonFixerToolNames,
+  // Utility functions
+  isPythonVulnerabilityAutoFixable,
+  parsePythonVulnerabilityFromMessage,
+  // Types
+  type PipAuditVulnerability,
+  type PipAuditFixResult,
+  type SemgrepAutoFixResult,
+} from './python-fixer';

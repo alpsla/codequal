@@ -74,9 +74,38 @@ export async function enrichIssuesWithAI(
   costByAgent?: Record<string, number>;  // SESSION 21 FIX
   tokensByAgent?: Record<string, number>;  // SESSION 21 FIX
 }> {
-  // Skip if no model config resolver
+  // Skip AI calls if no model config resolver - use rule descriptions instead (BASIC tier)
+  // SESSION 53 FIX: This saves $1.50+ per report by avoiding 61 AI API calls
   if (!modelConfigResolver) {
-    console.log('[AI Enrichment] Skipped - no model config resolver provided');
+    console.log('[AI Enrichment] Using rule descriptions only (no AI calls) - BASIC tier mode');
+    console.log('[AI Enrichment] To enable AI enrichment, pass a modelConfigResolver (PRO tier)');
+
+    // Use rule-descriptions as primary source instead of AI
+    const { getRuleDescription } = await import('../config/rule-descriptions');
+
+    for (const group of groups) {
+      const groupIssues = issues.filter(i =>
+        i.rule === group.rule && i.tool === group.tool && i.severity === group.severity
+      );
+
+      if (groupIssues.length === 0) continue;
+
+      const ruleDesc = getRuleDescription(group.rule, group.tool);
+
+      // Apply rule description to ALL issues in this group
+      // IMPORTANT: Preserve existing correctedCode from ScanFixExecutor (BASIC tier recommendations)
+      for (const issue of groupIssues) {
+        const existingCorrectedCode = issue.fixSuggestion?.correctedCode;
+        issue.fixSuggestion = {
+          fix: ruleDesc.fix || `Review and address this ${ruleDesc.category.toLowerCase()} issue. ${ruleDesc.why}`,
+          correctedCode: existingCorrectedCode || '',  // Preserve existing code from fix executor
+          explanation: ruleDesc.description,
+          bestPractices: []
+        };
+      }
+    }
+
+    console.log(`[AI Enrichment] ✅ Applied rule descriptions to ${groups.length} groups (0 AI calls, $0.00 cost)`);
     return { enrichedIssues: issues, modelsByAgent: {}, costByAgent: {}, tokensByAgent: {} };
   }
 

@@ -104,6 +104,7 @@ export {
   type FixSummaryStats,
   type FixSummaryReport,
   type ManualReviewGuidance,
+  type CodeQualFixOptions,
 } from './fix-summary-generator';
 
 // ============================================================================

@@ -1,0 +1,90 @@
+{
+  "version": "1.0",
+  "group_id": "no-unused-vars-medium-eslint",
+  "rule": "no-unused-vars",
+  "tool": "eslint",
+  "severity": "medium",
+  "description": "1. Locate the declaration of 'frames' in the codebase\n2. Remove the variable declaration and any associated assignments\n3. Verify that no other parts of the codebase reference this variable\n4. Commit the cleanup with a descriptive message",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "private static final Logger logger = LoggerFactory.getLogger(MyClass.class);\nlogger.info(\"User logged in: {}\", userId);"
+    },
+    "instructions": "1. Locate the declaration of 'frames' in the codebase\n2. Remove the variable declaration and any associated assignments\n3. Verify that no other parts of the codebase reference this variable\n4. Commit the cleanup with a descriptive message"
+  },
+  "locations": [
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 31,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/unhandledError.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/unhandledRejection.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/utils/getStackFrames.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/initDOM.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/App.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintError.js",
+      "line": 3,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintError.js",
+      "line": 4,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintWarning.js",
+      "line": 3,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppUnknownFile.js",
+      "line": 2,
+      "snippet": "",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 12,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 6
+  }
+}

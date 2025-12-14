@@ -376,6 +376,17 @@ export * from './types';
 export {
   FixReportService,
   fixReportService,
+  // PRO Tier Report Generation
+  PROReportGenerator,
+  createPROReportGenerator,
+  generatePROReport,
+  applyPROSelection,
+  type PROUserSelection,
+  type PROReportOutput,
+  type UnfixableExplanation,
+  type UnfixableReason,
+  type SelectionOption,
+  type CommitPreview,
 } from './services';
 
 // Unified Commit Generator - Multi-provider commit messages (GitHub, GitLab, etc.)

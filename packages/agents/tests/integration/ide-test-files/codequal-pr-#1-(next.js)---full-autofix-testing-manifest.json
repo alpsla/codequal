@@ -1,0 +1,45 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "repository": "alpsla/codequal",
+    "total_issues": 2,
+    "total_fix_files": 2,
+    "generated_at": "2025-11-13T12:53:42.572Z"
+  },
+  "files": {
+    "critical": [],
+    "high": [
+      {
+        "filename": "group-javascript-lang-security-detect-child-process-detect-child-process-high-semgrep-fix.json",
+        "url": "https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/codequal-pr1-1763038421613/group-javascript-lang-security-detect-child-process-detect-child-process-high-semgrep-fix.json",
+        "fallback_path": "attachments/group-javascript-lang-security-detect-child-process-detect-child-process-high-semgrep-fix.json",
+        "severity": "high",
+        "category": "Security",
+        "rule": "javascript.lang.security.detect-child-process.detect-child-process",
+        "title": "Detect Child Process",
+        "description": "User-controlled input is passed to system command execution (Rule: javascript.lang.security.detect-child-process.detect-child-process), enabling comma...",
+        "impact": "User-controlled input is passed to system command execution (Rule: javascript....",
+        "priority": 2,
+        "occurrences": 1,
+        "autoFixable": true
+      }
+    ],
+    "medium": [],
+    "low": [
+      {
+        "filename": "group-dependency-vulnerability-low-npm-audit-fix.json",
+        "url": "https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/codequal-pr1-1763038421613/group-dependency-vulnerability-low-npm-audit-fix.json",
+        "fallback_path": "attachments/group-dependency-vulnerability-low-npm-audit-fix.json",
+        "severity": "low",
+        "category": "Code Quality",
+        "rule": "dependency-vulnerability",
+        "title": "dependency-vulnerability",
+        "description": "This issue was detected by npm-audit as a low severity problem. Rule: dependency-vulnerability",
+        "impact": "This issue was detected by npm-audit as a low severity problem.",
+        "priority": 4,
+        "occurrences": 1,
+        "autoFixable": true
+      }
+    ]
+  }
+}

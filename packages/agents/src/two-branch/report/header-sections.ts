@@ -14,58 +14,38 @@ import * as path from 'path';
 
 /**
  * Check if a group can be auto-fixed
- * SESSION 19 FIX: Include all tools - AI generates IDE-applicable fixes
+ *
+ * SESSION 53 REFACTOR: Language-neutral approach
+ * CodeQual generates AI fixes for ALL issues, so most are auto-fixable.
+ * We only exclude specific patterns that require manual intervention.
  */
 function canAutoFix(group: IssueGroup): boolean {
-  // CheckStyle: All rules auto-fixable with IDE formatters
-  if (group.tool === 'checkstyle') {
-    return true;
+  const ruleLower = group.rule?.toLowerCase() || '';
+
+  // ===== NON-AUTO-FIXABLE PATTERNS =====
+  // These require architectural changes or manual decision-making
+
+  // Circular dependencies require architectural refactoring
+  if (ruleLower.includes('circular-dependency') || ruleLower.includes('cyclic')) {
+    return false;
   }
-  
-  // PMD: Common auto-fixable rules
-  const autoFixablePMDRules = [
-    'SystemPrintln',
-    'GuardLogStatement',
-    'AvoidStarImport',
-    'UnusedImports',
-    'RedundantImport',
-    'SimplifyBooleanReturns',
-    'SimplifyBooleanExpressions',
-    'ForLoopCanBeForeach',
-    'UseStringBufferForStringAppends',
-    'ConsecutiveLiteralAppends',
-    'AvoidUsingVolatile',
-    'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-    'ReturnEmptyCollectionRatherThanNull',
-    'MissingJavadocMethod',
-    'MissingJavadocType'
-  ];
-  
-  if (autoFixablePMDRules.includes(group.rule)) {
-    return true;
+
+  // Complex architectural issues
+  if (ruleLower.includes('god-class') || ruleLower.includes('god-object')) {
+    return false;
   }
-  
-  // Semgrep: AI-generated security fixes are IDE-applicable
-  if (group.tool === 'semgrep') {
-    return true;
+
+  // Issues requiring human judgment on business logic
+  if (ruleLower.includes('magic-number') && group.severity === 'low') {
+    // Magic numbers often need context to determine correct constant names
+    return false;
   }
-  
-  // Dependency-Check: IDEs can update dependencies
-  if (group.tool === 'dependency-check') {
-    return true;
-  }
-  
-  // npm-audit: IDEs can update npm dependencies
-  if (group.tool === 'npm-audit') {
-    return true;
-  }
-  
-  // SpotBugs: Many rules have clear fixes
-  if (group.tool === 'spotbugs') {
-    return true;
-  }
-  
-  return false;
+
+  // ===== DEFAULT: AUTO-FIXABLE =====
+  // CodeQual generates AI fix suggestions for 100% of issues
+  // LSP file contains ready-to-apply fixes for IDEs
+  // Even complex security issues have AI-generated fix code
+  return true;
 }
 
 /**

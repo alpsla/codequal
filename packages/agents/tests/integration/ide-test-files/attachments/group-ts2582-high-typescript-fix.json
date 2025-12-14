@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "group_id": "ts2582-high-typescript",
+  "rule": "TS2582",
+  "tool": "typescript",
+  "severity": "high",
+  "description": [
+    "Install appropriate test framework type definitions",
+    "Update tsconfig.json to include test framework types",
+    "Verify test runner configuration matches installed types"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "npm install --save-dev @types/jest"
+    },
+    "instructions": [
+      "Install appropriate test framework type definitions",
+      "Update tsconfig.json to include test framework types",
+      "Verify test runner configuration matches installed types"
+    ]
+  },
+  "locations": [
+    {
+      "file": "packages/cra-template-typescript/template/src/App.test.tsx",
+      "line": 5,
+      "snippet": "     2 | import { render, screen } from '@testing-library/react';\n     3 | import App from './App';\n     4 | \n>    5 | test('renders learn react link', () => {\n     6 |   render(<App />);\n     7 |   const linkElement = screen.getByText(/learn react/i);\n     8 |   expect(linkElement).toBeInTheDocument();",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.test.ts",
+      "line": 3,
+      "snippet": "     1 | import App from './App';\n     2 | \n>    3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App({});\n     5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 3,
+      "snippet": "     1 | import App from './App';\n     2 | \n>    3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App();\n     5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 10,
+      "snippet": "     7 |   expect(app.n).toBe(123);\n     8 | });\n     9 | \n>   10 | it('supports decorators', () => {\n    11 |   expect((App as any).annotated).toBe(true);\n    12 | \n    13 |   const app = new App();",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 17,
+      "snippet": "    14 |   expect(app.decorated).toBe(42);\n    15 | });\n    16 | \n>   17 | it('supports loading modules with baseUrl', () => {\n    18 |   const app = new App();\n    19 |   expect(app.users).toEqual([\n    20 |     { id: 1, name: '1' },",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 5,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 3
+  }
+}

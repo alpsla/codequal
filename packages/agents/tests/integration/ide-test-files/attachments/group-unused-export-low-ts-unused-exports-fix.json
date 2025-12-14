@@ -1,0 +1,291 @@
+{
+  "version": "1.0",
+  "group_id": "unused-export-low-ts-unused-exports",
+  "rule": "unused-export",
+  "tool": "ts-unused-exports",
+  "severity": "low",
+  "description": "{\n  \"severity\": \"low\",\n  \"issueDescription\": {\n    \"what\": \"The ts-unused-exports tool detected that the default export in the file is unused. This means that the default export is declared but never imported or referenced anywhere in the codebase.\",\n    \"why\": \"Unused exports contribute to code bloat and can mislead developers into thinking the exported functionality is in use. It also increases the bundle size and reduces code clarity.\",\n    \"causes\": [\n      \"The default export was likely dec...",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "1: // ⚠️ AI-generated fix not available - Manual review required\n2: // Issue: Unused exports (1): default\n3: // See Code Quality documentation for fix patterns\n4: // Context: index.ts line 1"
+    },
+    "instructions": "{\n  \"severity\": \"low\",\n  \"issueDescription\": {\n    \"what\": \"The ts-unused-exports tool detected that the default export in the file is unused. This means that the default export is declared but never imported or referenced anywhere in the codebase.\",\n    \"why\": \"Unused exports contribute to code bloat and can mislead developers into thinking the exported functionality is in use. It also increases the bundle size and reduces code clarity.\",\n    \"causes\": [\n      \"The default export was likely declared for future use but never actually used\",\n      \"The export may have been part of an older version of the code that was refactored\",\n      \"The export may be a remnant from a previous implementation that was removed\"\n    ],\n    \"impact\": \"While this does not impact runtime behavior, it introduces technical debt by maintaining unnecessary code. It can confuse developers during code reviews and maintenance, and may lead to accidental reliance on unused exports in the future.\"\n  },\n  \"fix\": \"Remove the unused default export from the file. Identify the export declaration and delete it along with any associated code that might be tied to it. Ensure no other files import or reference this export before deletion.\",\n  \"correctedCode\": \"\",\n  \"bestPractices\": [\n    \"Regularly run unused exports checks as part of CI/CD pipelines\",\n    \"Use automated tools like ts-unused-exports to detect and remove dead code\",\n    \"Maintain a clean codebase by removing exports that are not actively used\"\n  ]\n}",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: unused-export\nThis is a low quality issue detected by ts-unused-exports.\nThe issue is: \"Unused exports (1): default\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: unused-export (ts-unused-exports)\nSEVERITY: low\nMESSAGE: Unused exports (1): default\n\nFILE: /tmp/test-repo-1764805218536/apps/api/src/index.ts\nLINE: 1\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 400,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file",
+        "function",
+        "class"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/index.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/__tests__/setup.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/middleware/api-key-auth.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/middleware/auth-middleware-workaround.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/middleware/error-handler.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/middleware/rate-limiter.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/middleware/service-auth-middleware.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/middleware/swagger.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/routes/index.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/routes/result-orchestrator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/routes/schedules.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/routes/unified-progress.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/routes/v9-analyze.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/data-flow-monitor.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/educational-content-service.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/educational-link-validator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/educational-tool-orchestrator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/metrics-exporter.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/model-research-validator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/monitoring-enhancements.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/monitoring-grafana-bridge.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/pr-context-service.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/report-id-mapping-service.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/result-orchestrator-monitor-wrapper.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/result-orchestrator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/result-processor.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/stripe-integration.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/supabase-service-client.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/template-based-report-generator.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/token-metrics-provider.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/token-tracking-service.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/tracking-integration.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/unified-progress-tracer.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/vector-report-retrieval-service.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/vector-storage-adapter.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/intelligence/intelligent-result-merger.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/services/intelligence/pr-content-analyzer.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/utils/auth-workaround.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/utils/error-logger.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/utils/repository-utils.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/utils/supabase.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "/tmp/test-repo-1764805218536/apps/api/src/validators/request-validators.ts",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 42,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 21
+  }
+}

@@ -1,13 +1,415 @@
 /**
  * Educational Resources Service
- * 
+ *
  * Generates educational content and learning paths for developers.
  * Extracted from v9-grouped-report-formatter.ts for better modularity.
+ *
+ * BUG-090 FIX (2025-12-12): Made language-aware - no more hardcoded Java content
+ * ENHANCEMENT (2025-12-14): Added proper documentation links instead of Google searches
  */
 
 import { EnrichedIssue } from './types';
 import { getUserFriendlyTitle } from './formatter-utils';
 import { getCuratedResourcesForRule } from './ai-enrichment';
+import {
+  getDocumentationLinks,
+  getFallbackDocumentation,
+  formatDocumentationLinksAsMarkdown
+} from './documentation-links';
+
+/**
+ * Language-specific educational resources
+ * Maps language to curated resources for each category
+ */
+interface LanguageResources {
+  generalBooks: { title: string; url: string }[];
+  security: { phase1: string[]; phase2: string[] };
+  performance: { phase1: string[]; phase2: string[] };
+  architecture: { phase1: string[]; phase2: string[] };
+  dependencies: { phase1: string[]; phase2: string[] };
+  codeQuality: { phase1: string[]; phase2: string[] };
+  additionalResources: { title: string; url: string }[];
+  phase2Training: string[];
+}
+
+const LANGUAGE_RESOURCES: Record<string, LanguageResources> = {
+  python: {
+    generalBooks: [
+      { title: 'Clean Code Principles', url: 'https://www.oreilly.com/library/view/clean-code-a/9780136083238/' },
+      { title: 'Fluent Python', url: 'https://www.oreilly.com/library/view/fluent-python-2nd/9781492056348/' },
+      { title: 'Software Architecture Fundamentals', url: 'https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/' }
+    ],
+    security: {
+      phase1: [
+        '- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Top security risks and mitigations',
+        '- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference',
+        '- [🎯 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses',
+        '- [📖 Python Security Best Practices](https://snyk.io/blog/python-security-best-practices-cheat-sheet/) - Snyk guidelines'
+      ],
+      phase2: [
+        '- [🛡️ SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)',
+        '- [🔐 Command Injection Defense](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)',
+        '- [🔑 Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)',
+        '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive labs'
+      ]
+    },
+    performance: {
+      phase1: [
+        '- [⚡ High Performance Python](https://www.oreilly.com/library/view/high-performance-python/9781492055013/) - Official O\'Reilly guide',
+        '- [📖 Python Concurrency](https://realpython.com/python-concurrency/) - Real Python guide',
+        '- [🔧 cProfile Guide](https://docs.python.org/3/library/profile.html) - Built-in profiling',
+        '- [📊 Scalene Profiler](https://github.com/plasma-umass/scalene) - CPU/Memory profiling'
+      ],
+      phase2: [
+        '- [🎯 Asyncio Deep Dive](https://realpython.com/async-io-python/) - Asynchronous programming',
+        '- [📚 Effective Python](https://effectivepython.com/) - Brett Slatkin',
+        '- [🔬 Memory Optimization](https://realpython.com/python-memory-management/) - Memory management guide'
+      ]
+    },
+    architecture: {
+      phase1: [
+        '- [🏗️ Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin',
+        '- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals',
+        '- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns',
+        '- [🔧 Python Design Patterns](https://python-patterns.guide/) - Python-specific patterns'
+      ],
+      phase2: [
+        '- [🎨 Microservices Patterns](https://microservices.io/patterns/) - Chris Richardson',
+        '- [📖 Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans',
+        '- [🏛️ Architecture Patterns with Python](https://www.oreilly.com/library/view/architecture-patterns-with/9781492052197/)'
+      ]
+    },
+    dependencies: {
+      phase1: [
+        '- [📦 pip Documentation](https://pip.pypa.io/en/stable/) - Official pip guide',
+        '- [🛡️ Safety](https://pypi.org/project/safety/) - Vulnerability scanning for Python',
+        '- [🔄 Semantic Versioning](https://semver.org/) - Version numbering best practices',
+        '- [🔍 Snyk Learn](https://learn.snyk.io/) - Security vulnerability education'
+      ],
+      phase2: [
+        '- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities',
+        '- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details',
+        '- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels'
+      ]
+    },
+    codeQuality: {
+      phase1: [
+        '- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin',
+        '- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Martin Fowler techniques',
+        '- [🔧 Code Smells](https://refactoring.guru/refactoring/smells) - Common anti-patterns',
+        '- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices'
+      ],
+      phase2: [
+        '- [✅ Test-Driven Development](https://www.oreilly.com/library/view/test-driven-development/0321146530/) - Kent Beck',
+        '- [🎯 Python Testing with pytest](https://pragprog.com/titles/bopytest2/) - Brian Okken',
+        '- [📊 Pylint Documentation](https://pylint.pycqa.org/) - Static analysis'
+      ]
+    },
+    additionalResources: [
+      { title: 'Real Python', url: 'https://realpython.com/' },
+      { title: 'Python Documentation', url: 'https://docs.python.org/3/' },
+      { title: 'PyPI - Python Package Index', url: 'https://pypi.org/' },
+      { title: 'Python Weekly', url: 'https://www.pythonweekly.com/' }
+    ],
+    phase2Training: [
+      '**Security (Week 1-2):**',
+      '- [📚 Bandit Security Linter](https://bandit.readthedocs.io/en/latest/)',
+      '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)',
+      '',
+      '**Performance (Week 3-4):**',
+      '- [📚 Python Performance Tips](https://wiki.python.org/moin/PythonSpeed/PerformanceTips)',
+      '- [📖 High Performance Python](https://www.oreilly.com/library/view/high-performance-python/9781492055013/)',
+      '',
+      '**Code Quality (Month 2):**',
+      '- [📖 PEP 8 Style Guide](https://peps.python.org/pep-0008/)',
+      '- [📚 Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)'
+    ]
+  },
+  java: {
+    generalBooks: [
+      { title: 'Clean Code Principles', url: 'https://www.oreilly.com/library/view/clean-code-a/9780136083238/' },
+      { title: 'Effective Java', url: 'https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/' },
+      { title: 'Software Architecture Fundamentals', url: 'https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/' }
+    ],
+    security: {
+      phase1: [
+        '- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Top security risks and mitigations',
+        '- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference',
+        '- [🎯 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses',
+        '- [📖 Secure Coding in Java](https://www.oracle.com/java/technologies/javase/seccodeguide.html) - Oracle guidelines'
+      ],
+      phase2: [
+        '- [🛡️ SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)',
+        '- [🔐 Command Injection Defense](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)',
+        '- [🔑 Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)',
+        '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive labs'
+      ]
+    },
+    performance: {
+      phase1: [
+        '- [⚡ Java Performance Tuning Guide](https://www.oracle.com/technical-resources/articles/javase/perftuning.html) - Official Oracle guide',
+        '- [📖 Java Concurrency in Practice](https://jcip.net/) - Brian Goetz (essential reading)',
+        '- [🔧 JVM Performance Optimization](https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/) - GC tuning',
+        '- [📊 Profiling with JMH](https://openjdk.java.net/projects/code-tools/jmh/) - Microbenchmarking'
+      ],
+      phase2: [
+        '- [🎯 Lock-Free Programming](https://mechanical-sympathy.blogspot.com/) - Martin Thompson\'s blog',
+        '- [📚 High Performance Java Persistence](https://vladmihalcea.com/books/high-performance-java-persistence/) - Vlad Mihalcea',
+        '- [🔬 Memory Management Deep Dive](https://www.baeldung.com/java-memory-management-interview-questions)'
+      ]
+    },
+    architecture: {
+      phase1: [
+        '- [🏗️ Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin',
+        '- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals',
+        '- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns',
+        '- [🔧 Effective Java](https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/) - Joshua Bloch'
+      ],
+      phase2: [
+        '- [🎨 Microservices Patterns](https://microservices.io/patterns/) - Chris Richardson',
+        '- [📖 Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans',
+        '- [🏛️ Software Architecture Fundamentals](https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/)'
+      ]
+    },
+    dependencies: {
+      phase1: [
+        '- [📦 Maven Dependency Management](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) - Official guide',
+        '- [🛡️ OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) - Vulnerability scanning',
+        '- [🔄 Semantic Versioning](https://semver.org/) - Version numbering best practices',
+        '- [🔍 Snyk Learn](https://learn.snyk.io/) - Security vulnerability education'
+      ],
+      phase2: [
+        '- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities',
+        '- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details',
+        '- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels'
+      ]
+    },
+    codeQuality: {
+      phase1: [
+        '- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin',
+        '- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Martin Fowler techniques',
+        '- [🔧 Code Smells](https://refactoring.guru/refactoring/smells) - Common anti-patterns',
+        '- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices'
+      ],
+      phase2: [
+        '- [✅ Test-Driven Development](https://www.oreilly.com/library/view/test-driven-development/0321146530/) - Kent Beck',
+        '- [🎯 Working Effectively with Legacy Code](https://www.oreilly.com/library/view/working-effectively-with/0131177052/) - Michael Feathers',
+        '- [📊 Code Quality Metrics](https://www.baeldung.com/java-static-code-analysis-tutorial) - Static analysis'
+      ]
+    },
+    additionalResources: [
+      { title: 'Pluralsight', url: 'https://www.pluralsight.com/' },
+      { title: 'Baeldung', url: 'https://www.baeldung.com/' },
+      { title: 'Java Code Geeks', url: 'https://www.javacodegeeks.com/' },
+      { title: 'DZone Java Zone', url: 'https://dzone.com/java-jdk-development-tutorials-tools-news' }
+    ],
+    phase2Training: [
+      '**Security (Week 1-2):**',
+      '- [📚 SEI CERT Java Coding Standard](https://wiki.sei.cmu.edu/confluence/display/java/SEI+CERT+Oracle+Coding+Standard+for+Java)',
+      '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)',
+      '',
+      '**Performance (Week 3-4):**',
+      '- [📚 Java Concurrency - Oracle](https://docs.oracle.com/javase/tutorial/essential/concurrency/)',
+      '- [📖 Java Concurrency in Practice](https://jcip.net/)',
+      '',
+      '**Code Quality (Month 2):**',
+      '- [📖 Clean Code Principles](https://martinfowler.com/bliki/CleanCode.html)',
+      '- [📚 Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)'
+    ]
+  },
+  typescript: {
+    generalBooks: [
+      { title: 'Clean Code Principles', url: 'https://www.oreilly.com/library/view/clean-code-a/9780136083238/' },
+      { title: 'Effective TypeScript', url: 'https://effectivetypescript.com/' },
+      { title: 'Software Architecture Fundamentals', url: 'https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/' }
+    ],
+    security: {
+      phase1: [
+        '- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Top security risks and mitigations',
+        '- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference',
+        '- [🎯 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses',
+        '- [📖 Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/) - Official guidelines'
+      ],
+      phase2: [
+        '- [🛡️ SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)',
+        '- [🔐 XSS Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)',
+        '- [🔑 Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)',
+        '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive labs'
+      ]
+    },
+    performance: {
+      phase1: [
+        '- [⚡ Node.js Performance Guide](https://nodejs.org/en/docs/guides/dont-block-the-event-loop/) - Official guide',
+        '- [📖 JavaScript Performance](https://developer.chrome.com/docs/devtools/performance/) - Chrome DevTools',
+        '- [🔧 V8 Performance Tips](https://v8.dev/blog) - V8 engine blog',
+        '- [📊 Clinic.js](https://clinicjs.org/) - Node.js performance diagnostics'
+      ],
+      phase2: [
+        '- [🎯 Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) - Parallel processing',
+        '- [📚 High Performance JavaScript](https://www.oreilly.com/library/view/high-performance-javascript/9781449382308/) - Nicholas Zakas',
+        '- [🔬 Memory Leaks](https://developer.chrome.com/docs/devtools/memory-problems/) - Debugging guide'
+      ]
+    },
+    architecture: {
+      phase1: [
+        '- [🏗️ Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin',
+        '- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals',
+        '- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns',
+        '- [🔧 TypeScript Design Patterns](https://www.patterns.dev/vanilla/introduction) - Modern patterns'
+      ],
+      phase2: [
+        '- [🎨 Microservices Patterns](https://microservices.io/patterns/) - Chris Richardson',
+        '- [📖 Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans',
+        '- [🏛️ Node.js Architecture Best Practices](https://github.com/goldbergyoni/nodebestpractices)'
+      ]
+    },
+    dependencies: {
+      phase1: [
+        '- [📦 npm Documentation](https://docs.npmjs.com/) - Official guide',
+        '- [🛡️ npm audit](https://docs.npmjs.com/cli/v8/commands/npm-audit) - Vulnerability scanning',
+        '- [🔄 Semantic Versioning](https://semver.org/) - Version numbering best practices',
+        '- [🔍 Snyk Learn](https://learn.snyk.io/) - Security vulnerability education'
+      ],
+      phase2: [
+        '- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities',
+        '- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details',
+        '- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels'
+      ]
+    },
+    codeQuality: {
+      phase1: [
+        '- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin',
+        '- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Martin Fowler techniques',
+        '- [🔧 Code Smells](https://refactoring.guru/refactoring/smells) - Common anti-patterns',
+        '- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices'
+      ],
+      phase2: [
+        '- [✅ Test-Driven Development](https://www.oreilly.com/library/view/test-driven-development/0321146530/) - Kent Beck',
+        '- [🎯 Testing JavaScript](https://testingjavascript.com/) - Kent C. Dodds',
+        '- [📊 ESLint Documentation](https://eslint.org/docs/latest/) - Static analysis'
+      ]
+    },
+    additionalResources: [
+      { title: 'TypeScript Handbook', url: 'https://www.typescriptlang.org/docs/handbook/' },
+      { title: 'Node.js Best Practices', url: 'https://github.com/goldbergyoni/nodebestpractices' },
+      { title: 'JavaScript Weekly', url: 'https://javascriptweekly.com/' },
+      { title: 'TypeScript Weekly', url: 'https://typescript-weekly.com/' }
+    ],
+    phase2Training: [
+      '**Security (Week 1-2):**',
+      '- [📚 OWASP Node.js Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html)',
+      '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)',
+      '',
+      '**Performance (Week 3-4):**',
+      '- [📚 Node.js Performance Monitoring](https://nodejs.org/en/docs/guides/diagnostics/)',
+      '- [📖 JavaScript Performance](https://developer.chrome.com/docs/devtools/performance/)',
+      '',
+      '**Code Quality (Month 2):**',
+      '- [📖 TypeScript Deep Dive](https://basarat.gitbook.io/typescript/)',
+      '- [📚 Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html)'
+    ]
+  },
+  go: {
+    generalBooks: [
+      { title: 'Clean Code Principles', url: 'https://www.oreilly.com/library/view/clean-code-a/9780136083238/' },
+      { title: 'The Go Programming Language', url: 'https://www.gopl.io/' },
+      { title: 'Software Architecture Fundamentals', url: 'https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/' }
+    ],
+    security: {
+      phase1: [
+        '- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Top security risks and mitigations',
+        '- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference',
+        '- [🎯 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses',
+        '- [📖 Go Security Best Practices](https://go.dev/doc/security/best-practices) - Official guidelines'
+      ],
+      phase2: [
+        '- [🛡️ SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)',
+        '- [🔐 Command Injection Defense](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)',
+        '- [🔑 Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)',
+        '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive labs'
+      ]
+    },
+    performance: {
+      phase1: [
+        '- [⚡ Go Performance Guide](https://go.dev/doc/diagnostics) - Official diagnostics',
+        '- [📖 Go Concurrency Patterns](https://go.dev/blog/pipelines) - Official blog',
+        '- [🔧 pprof Profiling](https://go.dev/blog/pprof) - Built-in profiling',
+        '- [📊 Go Benchmarking](https://pkg.go.dev/testing#hdr-Benchmarks) - Testing package'
+      ],
+      phase2: [
+        '- [🎯 Concurrency in Go](https://www.oreilly.com/library/view/concurrency-in-go/9781491941294/) - Katherine Cox-Buday',
+        '- [📚 Go Performance Book](https://github.com/dgryski/go-perfbook) - Community guide',
+        '- [🔬 Memory Optimization](https://go.dev/doc/gc-guide) - GC tuning guide'
+      ]
+    },
+    architecture: {
+      phase1: [
+        '- [🏗️ Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin',
+        '- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals',
+        '- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns',
+        '- [🔧 Go Project Layout](https://github.com/golang-standards/project-layout) - Standard layout'
+      ],
+      phase2: [
+        '- [🎨 Microservices Patterns](https://microservices.io/patterns/) - Chris Richardson',
+        '- [📖 Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans',
+        '- [🏛️ Go Kit](https://gokit.io/) - Microservices toolkit'
+      ]
+    },
+    dependencies: {
+      phase1: [
+        '- [📦 Go Modules](https://go.dev/doc/modules/) - Official guide',
+        '- [🛡️ govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) - Vulnerability scanning',
+        '- [🔄 Semantic Versioning](https://semver.org/) - Version numbering best practices',
+        '- [🔍 Snyk Learn](https://learn.snyk.io/) - Security vulnerability education'
+      ],
+      phase2: [
+        '- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities',
+        '- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details',
+        '- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels'
+      ]
+    },
+    codeQuality: {
+      phase1: [
+        '- [🧹 Effective Go](https://go.dev/doc/effective_go) - Official style guide',
+        '- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Martin Fowler techniques',
+        '- [🔧 Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) - Go team guidelines',
+        '- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices'
+      ],
+      phase2: [
+        '- [✅ Test-Driven Development](https://www.oreilly.com/library/view/test-driven-development/0321146530/) - Kent Beck',
+        '- [🎯 Go Testing](https://go.dev/doc/tutorial/add-a-test) - Official tutorial',
+        '- [📊 staticcheck](https://staticcheck.io/) - Static analysis'
+      ]
+    },
+    additionalResources: [
+      { title: 'Go Documentation', url: 'https://go.dev/doc/' },
+      { title: 'Go by Example', url: 'https://gobyexample.com/' },
+      { title: 'Golang Weekly', url: 'https://golangweekly.com/' },
+      { title: 'Awesome Go', url: 'https://awesome-go.com/' }
+    ],
+    phase2Training: [
+      '**Security (Week 1-2):**',
+      '- [📚 Go Security](https://go.dev/doc/security/best-practices)',
+      '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)',
+      '',
+      '**Performance (Week 3-4):**',
+      '- [📚 Go Profiling](https://go.dev/blog/pprof)',
+      '- [📖 Concurrency in Go](https://www.oreilly.com/library/view/concurrency-in-go/9781491941294/)',
+      '',
+      '**Code Quality (Month 2):**',
+      '- [📖 Effective Go](https://go.dev/doc/effective_go)',
+      '- [📚 Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)'
+    ]
+  }
+};
+
+/**
+ * Get language resources with fallback to Java (most common)
+ */
+function getLanguageResources(language: string): LanguageResources {
+  const normalized = language.toLowerCase();
+  return LANGUAGE_RESOURCES[normalized] || LANGUAGE_RESOURCES['java'];
+}
 
 /**
  * Extract CVE ID from rule, title, or description
@@ -41,38 +443,46 @@ function extractCVEId(ruleId: string, title: string, description?: string): stri
 
 /**
  * Generate educational resources for detected issues
- * 
+ *
  * Provides priority-based learning paths with curated resources
  * for critical and high-severity issues.
+ *
+ * BUG-090 FIX: Now accepts language parameter for language-specific resources
+ *
+ * @param issues - Array of enriched issues
+ * @param language - Programming language (python, java, typescript, go)
  */
-export function generateEducationalResources(issues: EnrichedIssue[]): string {
+export function generateEducationalResources(issues: EnrichedIssue[], language = 'java'): string {
+  const resources = getLanguageResources(language);
   const critical = issues.filter(i => i.severity === 'critical');
   const high = issues.filter(i => i.severity === 'high');
   const priorityIssues = [...critical, ...high];
-  
-  // If no priority issues, show general message
+
+  // If no priority issues, show general message with language-specific books
   if (priorityIssues.length === 0) {
-    return `## 📚 Educational Resources
+    let generalContent = `## 📚 Educational Resources
 
 ✅ **No critical or high-priority issues found.**
 
 Continue following best practices and consider integrating static analysis into your CI/CD pipeline to maintain this standard.
 
 ### General Resources
-- [🧹 Clean Code Principles](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin
-- [📏 Effective Java](https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/) - Joshua Bloch
-- [🏗️  Software Architecture Fundamentals](https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/)`;
+`;
+    resources.generalBooks.forEach(book => {
+      generalContent += `- [📚 ${book.title}](${book.url})\n`;
+    });
+    return generalContent;
   }
-  
+
   let content = `## 📚 Educational Resources
 
 **Priority training for ${priorityIssues.length} critical/high-severity issues:**
 
 `;
-  
+
   // Group by detected category
   const categories = Array.from(new Set(priorityIssues.map(i => i.detectedCategory).filter(Boolean)));
-  
+
   if (categories.length === 0) {
     // Fallback if categories not detected - use tool-based categorization
     content += `### Immediate Focus Areas\n\n`;
@@ -81,114 +491,88 @@ Continue following best practices and consider integrating static analysis into 
     content += `- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Code quality principles\n`;
     content += `- [🔒 Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)\n\n`;
   } else {
-    // Generate category-specific resources
+    // Generate category-specific resources using language-aware data
     categories.forEach(category => {
       const categoryIssues = priorityIssues.filter(i => i.detectedCategory === category);
       const criticalCount = categoryIssues.filter(i => i.severity === 'critical').length;
       const highCount = categoryIssues.filter(i => i.severity === 'high').length;
-      
+
       content += `### ${category} (${criticalCount} critical, ${highCount} high)\n\n`;
       content += `**Priority:** ${criticalCount > 0 ? '🔴 Immediate' : '🟠 High'}\n\n`;
-    
+
+      // Get category-specific resources from language config
+      let categoryResources: { phase1: string[]; phase2: string[] } | undefined;
       switch (category) {
         case 'Security':
-          content += `**Phase 1: Security Fundamentals (Week 1-2)**\n`;
-          content += `- [📚 OWASP Top 10](https://owasp.org/www-project-top-ten/) - Top security risks and mitigations\n`;
-          content += `- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference\n`;
-          content += `- [🎯 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses\n`;
-          content += `- [📖 Secure Coding in Java](https://www.oracle.com/java/technologies/javase/seccodeguide.html) - Oracle guidelines\n\n`;
-          
-          content += `**Phase 2: Specific Vulnerabilities (Week 3-4)**\n`;
-          content += `- [🛡️ SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)\n`;
-          content += `- [🔐 Command Injection Defense](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)\n`;
-          content += `- [🔑 Cryptographic Storage](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)\n`;
-          content += `- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive labs\n\n`;
+          categoryResources = resources.security;
           break;
-          
         case 'Performance':
-          content += `**Phase 1: Performance Fundamentals (Week 1-2)**\n`;
-          content += `- [⚡ Java Performance Tuning Guide](https://www.oracle.com/technical-resources/articles/javase/perftuning.html) - Official Oracle guide\n`;
-          content += `- [📖 Java Concurrency in Practice](https://jcip.net/) - Brian Goetz (essential reading)\n`;
-          content += `- [🔧 JVM Performance Optimization](https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/) - GC tuning\n`;
-          content += `- [📊 Profiling with JMH](https://openjdk.java.net/projects/code-tools/jmh/) - Microbenchmarking\n\n`;
-          
-          content += `**Phase 2: Advanced Topics (Week 3-4)**\n`;
-          content += `- [🎯 Lock-Free Programming](https://mechanical-sympathy.blogspot.com/) - Martin Thompson's blog\n`;
-          content += `- [📚 High Performance Java Persistence](https://vladmihalcea.com/books/high-performance-java-persistence/) - Vlad Mihalcea\n`;
-          content += `- [🔬 Memory Management Deep Dive](https://www.baeldung.com/java-memory-management-interview-questions)\n\n`;
+          categoryResources = resources.performance;
           break;
-          
         case 'Architecture':
-          content += `**Phase 1: Design Principles (Week 1-2)**\n`;
-          content += `- [🏗️  Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Robert C. Martin\n`;
-          content += `- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals\n`;
-          content += `- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns\n`;
-          content += `- [🔧 Effective Java](https://www.oreilly.com/library/view/effective-java-3rd/9780134686097/) - Joshua Bloch\n\n`;
-          
-          content += `**Phase 2: Architecture Patterns (Week 3-4)**\n`;
-          content += `- [🎨 Microservices Patterns](https://microservices.io/patterns/) - Chris Richardson\n`;
-          content += `- [📖 Domain-Driven Design](https://www.domainlanguage.com/ddd/) - Eric Evans\n`;
-          content += `- [🏛️ Software Architecture Fundamentals](https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/)\n\n`;
+          categoryResources = resources.architecture;
           break;
-          
         case 'Dependencies':
-          content += `**Phase 1: Dependency Management (Week 1-2)**\n`;
-          content += `- [📦 Maven Dependency Management](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html) - Official guide\n`;
-          content += `- [🛡️ OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) - Vulnerability scanning\n`;
-          content += `- [🔄 Semantic Versioning](https://semver.org/) - Version numbering best practices\n`;
-          content += `- [🔍 Snyk Learn](https://learn.snyk.io/) - Security vulnerability education\n\n`;
-          
-          content += `**Phase 2: Security & Updates (Week 3-4)**\n`;
-          content += `- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities\n`;
-          content += `- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details\n`;
-          content += `- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels\n\n`;
+          categoryResources = resources.dependencies;
           break;
-          
         case 'Code Quality':
         default:
-          content += `**Phase 1: Clean Code Basics (Week 1-2)**\n`;
-          content += `- [🧹 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin\n`;
-          content += `- [📏 Refactoring Guide](https://refactoring.guru/refactoring) - Martin Fowler techniques\n`;
-          content += `- [🔧 Code Smells](https://refactoring.guru/refactoring/smells) - Common anti-patterns\n`;
-          content += `- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices\n\n`;
-          
-          content += `**Phase 2: Advanced Topics (Week 3-4)**\n`;
-          content += `- [✅ Test-Driven Development](https://www.oreilly.com/library/view/test-driven-development/0321146530/) - Kent Beck\n`;
-          content += `- [🎯 Working Effectively with Legacy Code](https://www.oreilly.com/library/view/working-effectively-with/0131177052/) - Michael Feathers\n`;
-          content += `- [📊 Code Quality Metrics](https://www.baeldung.com/java-static-code-analysis-tutorial) - Static analysis\n\n`;
+          categoryResources = resources.codeQuality;
           break;
+      }
+
+      if (categoryResources) {
+        content += `**Phase 1: ${category} Fundamentals (Week 1-2)**\n`;
+        categoryResources.phase1.forEach(line => {
+          content += `${line}\n`;
+        });
+        content += `\n`;
+
+        content += `**Phase 2: Advanced Topics (Week 3-4)**\n`;
+        categoryResources.phase2.forEach(line => {
+          content += `${line}\n`;
+        });
+        content += `\n`;
       }
     });
   }
-  
+
   // Add recommended learning path
   content += `### 📈 Recommended Learning Path\n\n`;
   content += `**Week 1-2:** Focus on immediate priority areas identified above\n`;
   content += `**Week 3-4:** Deep dive into specific patterns and advanced techniques\n`;
   content += `**Ongoing:** Integrate static analysis into CI/CD, establish code review standards\n\n`;
-  
+
+  // Add language-specific additional resources
   content += `### 🎓 Additional Resources\n\n`;
-  content += `- [📺 Pluralsight](https://www.pluralsight.com/) - Video courses on all topics\n`;
-  content += `- [📚 Baeldung](https://www.baeldung.com/) - Comprehensive Java tutorials\n`;
-  content += `- [🎯 Java Code Geeks](https://www.javacodegeeks.com/) - Java best practices\n`;
-  content += `- [🔬 DZone Java Zone](https://dzone.com/java-jdk-development-tutorials-tools-news) - Articles and guides\n\n`;
-  
+  resources.additionalResources.forEach(resource => {
+    content += `- [📚 ${resource.title}](${resource.url})\n`;
+  });
+  content += `\n`;
+
   content += `**💡 Tip:** Detailed issue-specific resources are linked in each section above.`;
-  
+
   return content;
 }
 
 /**
  * Generate educational resources with Brave Search integration
- * 
+ *
  * ENHANCEMENT #2: Training for ALL blockers + ALL critical/high issues
  * Falls back to standard educational resources if Brave Search is not available.
+ *
+ * BUG-090 FIX: Now accepts language parameter for language-specific resources
+ *
+ * @param issues - Array of enriched issues
+ * @param language - Programming language (python, java, typescript, go)
  */
-export async function generateEducationalResourcesBrave(issues: EnrichedIssue[]): Promise<string> {
+export async function generateEducationalResourcesBrave(issues: EnrichedIssue[], language = 'java'): Promise<string> {
+  const resources = getLanguageResources(language);
+
   // ENHANCEMENT #2: Training for ALL blockers + ALL critical/high issues (user feedback)
   // Blockers: NEW/EXISTING_MODIFIED + critical/high (must fix before merge)
   const blockerIssues = issues.filter(i =>
-    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
     (i.severity === 'critical' || i.severity === 'high')
   );
   // Rest critical/high: EXISTING_REST + critical/high (not blockers but still important)
@@ -207,7 +591,7 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
   if (blockerIssues.length > 0) {
     content += `### 📚 Phase 1: Blocker Issues Training (MUST FIX BEFORE MERGE)\n`;
     content += `**Quick Learning:** 30-60 min per issue type | **Deep Dive:** 1-2 weeks\n\n`;
-    
+
     // Get all unique rules from blockers (not just top 3)
     const blockerFreq = new Map<string, number>();
     for (const i of blockerIssues) blockerFreq.set(i.rule, (blockerFreq.get(i.rule) || 0) + 1);
@@ -218,7 +602,8 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
     for (const ruleId of blockerRules) {
       const sample = blockerIssues.find(i => i.rule === ruleId);
       const title = getUserFriendlyTitle(ruleId, sample ? sample.tool : '');
-      const language = (sample && (sample as any).language) ? (sample as any).language as string : 'Java';
+      // BUG-090 FIX: Use passed language parameter instead of hardcoded 'Java'
+      const issueLanguage = (sample && (sample as any).language) ? (sample as any).language as string : language;
       const count = blockerFreq.get(ruleId) || 0;
       const description = (sample && (sample as any).description) ? (sample as any).description : undefined;
 
@@ -233,27 +618,37 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
         content += `- [📋 MITRE CVE](https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cveId}) - Official CVE details\n`;
         content += `- [🛡️ CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) - Check if actively exploited\n`;
       } else {
-        // For non-CVE issues: Use Google search (aggregates YouTube, Stack Overflow, docs, blogs, etc.)
-        const searchQuery = `${language} ${title.toLowerCase()} tutorial fix`.replace(/[^\w\s]/g, ' ').trim();
-        content += `- [🔍 Google Search](https://www.google.com/search?q=${encodeURIComponent(searchQuery)})\n`;
-      }
+        // ENHANCEMENT (2025-12-14): Use proper documentation links instead of Google searches
+        const tool = sample ? sample.tool : '';
+        const docLinks = getDocumentationLinks(ruleId, tool);
 
-      // Add curated documentation
-      const curated = getCuratedResourcesForRule(ruleId);
-      if (curated.length > 0) {
-        for (const r of curated.slice(0, 2)) {
-          content += `- [📚 ${r.title}](${r.url})\n`;
+        if (docLinks.length > 0) {
+          // Use official documentation links
+          content += formatDocumentationLinksAsMarkdown(docLinks, 3) + '\n';
+        } else {
+          // Try curated resources first
+          const curated = getCuratedResourcesForRule(ruleId);
+          if (curated.length > 0) {
+            for (const r of curated.slice(0, 2)) {
+              content += `- [📚 ${r.title}](${r.url})\n`;
+            }
+          } else {
+            // Fall back to category-based documentation
+            const category = sample?.detectedCategory || 'Code Quality';
+            const fallbackLinks = getFallbackDocumentation(category, issueLanguage);
+            content += formatDocumentationLinksAsMarkdown(fallbackLinks, 2) + '\n';
+          }
         }
       }
       content += `\n`;
     }
   }
-  
+
   // Phase 1.5: Rest Critical/High Issues (Not blockers, but still important)
   if (restCriticalHighIssues.length > 0) {
     content += `### 📚 Phase 1.5: Additional Critical/High Issues Training (Not Blockers)\n`;
     content += `**These issues exist in unchanged files but should be addressed soon.**\n\n`;
-    
+
     // Get all unique rules from rest critical/high (limit to top 5 to avoid overwhelming)
     const restFreq = new Map<string, number>();
     for (const i of restCriticalHighIssues) restFreq.set(i.rule, (restFreq.get(i.rule) || 0) + 1);
@@ -265,7 +660,8 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
     for (const ruleId of restRules) {
       const sample = restCriticalHighIssues.find(i => i.rule === ruleId);
       const title = getUserFriendlyTitle(ruleId, sample ? sample.tool : '');
-      const language = (sample && (sample as any).language) ? (sample as any).language as string : 'Java';
+      // BUG-090 FIX: Use passed language parameter instead of hardcoded 'Java'
+      const issueLanguage = (sample && (sample as any).language) ? (sample as any).language as string : language;
       const count = restFreq.get(ruleId) || 0;
       const description = (sample && (sample as any).description) ? (sample as any).description : undefined;
 
@@ -280,38 +676,117 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[])
         content += `- [📋 MITRE CVE](https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cveId}) - Official CVE details\n`;
         content += `- [🛡️ CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) - Check if actively exploited\n`;
       } else {
-        // For non-CVE issues: Use Google search (aggregates YouTube, Stack Overflow, docs, blogs, etc.)
-        const searchQuery = `${language} ${title.toLowerCase()} tutorial fix`.replace(/[^\w\s]/g, ' ').trim();
-        content += `- [🔍 Google Search](https://www.google.com/search?q=${encodeURIComponent(searchQuery)})\n`;
-      }
+        // ENHANCEMENT (2025-12-14): Use proper documentation links instead of Google searches
+        const tool = sample ? sample.tool : '';
+        const docLinks = getDocumentationLinks(ruleId, tool);
 
-      // Add curated documentation
-      const curated = getCuratedResourcesForRule(ruleId);
-      if (curated.length > 0) {
-        for (const r of curated.slice(0, 2)) {
-          content += `- [📚 ${r.title}](${r.url})\n`;
+        if (docLinks.length > 0) {
+          // Use official documentation links
+          content += formatDocumentationLinksAsMarkdown(docLinks, 3) + '\n';
+        } else {
+          // Try curated resources first
+          const curated = getCuratedResourcesForRule(ruleId);
+          if (curated.length > 0) {
+            for (const r of curated.slice(0, 2)) {
+              content += `- [📚 ${r.title}](${r.url})\n`;
+            }
+          } else {
+            // Fall back to category-based documentation
+            const category = sample?.detectedCategory || 'Code Quality';
+            const fallbackLinks = getFallbackDocumentation(category, issueLanguage);
+            content += formatDocumentationLinksAsMarkdown(fallbackLinks, 2) + '\n';
+          }
         }
       }
       content += `\n`;
     }
   }
 
-  // BUG FIX #31: Phase 2 - Remove duplicate OWASP links (already in Phase 1)
-  content += `### 📚 Phase 2: Comprehensive Training (Long-term)\n\n`;
-  content += `**Security (Week 1-2):**\n`;
-  content += `- [📚 SEI CERT Java Coding Standard](https://wiki.sei.cmu.edu/confluence/display/java/SEI+CERT+Oracle+Coding+Standard+for+Java)\n`;
-  content += `- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security)\n\n`;
-  content += `**Performance (Week 3-4):**\n`;
-  content += `- [📚 Java Concurrency - Oracle](https://docs.oracle.com/javase/tutorial/essential/concurrency/)\n`;
-  content += `- [📖 Java Concurrency in Practice](https://jcip.net/)\n\n`;
-  content += `**Code Quality (Month 2):**\n`;
-  content += `- [📖 Clean Code Principles](https://martinfowler.com/bliki/CleanCode.html)\n`;
-  content += `- [📚 Google Java Style Guide](https://google.github.io/styleguide/javaguide.html)\n`;
-  content += `\n> 💡 **Note**: OWASP Top 10 and security-specific resources are covered in Phase 1 Security section above.\n`;
+  // USER FEEDBACK (2025-12-14): Phase 2 teaches KNOWLEDGE GAPS based on issue categories
+  // NOT tools - developers need to learn security/performance/architecture concepts
+  content += `### 📚 Phase 2: Dedicated Training (Extended Learning)\n\n`;
+  content += `**Required Time:** 2-4 weeks | **Format:** Self-paced courses and documentation\n\n`;
+  content += `**Goal:** Address knowledge gaps identified by this analysis to prevent future issues.\n\n`;
+
+  // Extract unique categories from ALL issues to determine what training is needed
+  const allPriorityIssues = [...blockerIssues, ...restCriticalHighIssues];
+  const categoriesFound = new Set<string>();
+  for (const issue of allPriorityIssues) {
+    if (issue.detectedCategory) {
+      categoriesFound.add(issue.detectedCategory);
+    }
+  }
+
+  // Category-based training - teach the KNOWLEDGE needed, not tools
+  const categoryTraining: Record<string, { title: string; resources: string[] }> = {
+    'Security': {
+      title: 'Security Fundamentals',
+      resources: [
+        '- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive hands-on labs',
+        '- [🛡️ OWASP Top 10](https://owasp.org/www-project-top-ten/) - Critical security risks',
+        '- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference',
+        '- [📖 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses'
+      ]
+    },
+    'Performance': {
+      title: 'Performance Optimization',
+      resources: [
+        '- [⚡ Web Performance Fundamentals](https://web.dev/performance/) - Google performance guide',
+        '- [📊 High Performance Browser Networking](https://hpbn.co/) - Free online book',
+        '- [🔧 Profiling and Optimization](https://developer.chrome.com/docs/devtools/performance/) - Chrome DevTools'
+      ]
+    },
+    'Code Quality': {
+      title: 'Clean Code Practices',
+      resources: [
+        '- [📚 Clean Code Principles](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Robert C. Martin',
+        '- [🔄 Refactoring Techniques](https://refactoring.guru/refactoring) - Martin Fowler patterns',
+        '- [📖 The Pragmatic Programmer](https://pragprog.com/titles/tpp20/) - Best practices'
+      ]
+    },
+    'Architecture': {
+      title: 'Software Architecture',
+      resources: [
+        '- [🏗️ Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Uncle Bob',
+        '- [🎯 SOLID Principles](https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design) - OOD fundamentals',
+        '- [📚 Design Patterns](https://refactoring.guru/design-patterns) - Gang of Four patterns'
+      ]
+    },
+    'Dependencies': {
+      title: 'Dependency Management & Supply Chain Security',
+      resources: [
+        '- [🔒 Supply Chain Security](https://slsa.dev/) - Software supply chain levels',
+        '- [🚨 CVE Database](https://cve.mitre.org/) - Known vulnerabilities reference',
+        '- [📊 National Vulnerability Database](https://nvd.nist.gov/) - NIST CVE details'
+      ]
+    }
+  };
+
+  // Show training for each category where issues were found
+  if (categoriesFound.size > 0) {
+    for (const category of categoriesFound) {
+      const training = categoryTraining[category];
+      if (training) {
+        content += `**${training.title}** (based on ${category} issues found):\n`;
+        for (const resource of training.resources) {
+          content += `${resource}\n`;
+        }
+        content += `\n`;
+      }
+    }
+  } else {
+    // Fallback to general resources
+    content += `**General Best Practices:**\n`;
+    content += `- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Security training\n`;
+    content += `- [📚 Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Code quality\n`;
+    content += `\n`;
+  }
+
+  content += `> 💡 **Note**: Focus on the knowledge areas above to write better code and avoid similar issues in future PRs.\n`;
 
   // ENHANCEMENT #2: Return fallback if no blockers or critical/high issues
   if (blockerIssues.length === 0 && restCriticalHighIssues.length === 0) {
-    return generateEducationalResources(issues);
+    return generateEducationalResources(issues, language);
   }
 
   return content.trim();

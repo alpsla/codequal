@@ -4,26 +4,30 @@
   "rule": "dockerfile.security.last-user-is-root.last-user-is-root",
   "tool": "semgrep",
   "severity": "high",
-  "description": "Add a non-root user and switch to it after running root commands. Use 'USER <non-root-user>' after executing necessary root operations. Ensure the user has appropriate permissions for the application to run.",
+  "description": "To mitigate this issue, modify the Dockerfile to create a non-root user and switch to that user before running the application. This can be achieved by adding the following lines to the Dockerfile:\n\n```dockerfile\nRUN groupadd -r myuser && useradd -r -g myuser myuser\nUSER myuser\n```\n\nThis approach follows the principle of least privilege, reducing the potential impact of a security breach. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "FROM node:16-alpine\nRUN addgroup -g 1001 -g 1001 nodejs\nRUN adduser -D -u 1001 nodejs\n# Install dependencies and build app as root\nRUN npm install\n# Switch to non-root user\nUSER nodejs\nEXPOSE 3000\nCMD [\"npm\", \"start\"]"
+      "after": "RUN groupadd -r myuser && useradd -r -g myuser myuser\nUSER myuser"
     },
-    "instructions": "Add a non-root user and switch to it after running root commands. Use 'USER <non-root-user>' after executing necessary root operations. Ensure the user has appropriate permissions for the application to run."
+    "instructions": "To mitigate this issue, modify the Dockerfile to create a non-root user and switch to that user before running the application. This can be achieved by adding the following lines to the Dockerfile:\n\n```dockerfile\nRUN groupadd -r myuser && useradd -r -g myuser myuser\nUSER myuser\n```\n\nThis approach follows the principle of least privilege, reducing the potential impact of a security breach. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))"
   },
   "locations": [
     {
       "file": "packages/core/src/services/deepwiki-tools/docker/Dockerfile",
       "line": 16,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "    13 | ENV PATH=\"/tools/node_modules/.bin:${PATH}\"\n    14 | \n    15 | # Switch to root for installation\n>   16 | USER root\n    17 | \n    18 | # Install system dependencies including jq\n    19 | RUN apt-get update && apt-get install -y \\",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 1,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

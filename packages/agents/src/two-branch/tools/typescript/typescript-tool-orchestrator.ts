@@ -40,8 +40,17 @@ import type { AnalysisMode } from '../../config/analysis-modes';
 import {
   UNIVERSAL_ANALYSIS_MODES,
   ToolCategory,
-  getToolsForMode
+  getToolsForMode,
+  DeepSecurityOptions,
+  validateCodeQLOptions
 } from '../../config/analysis-modes';
+
+// Import CodeQL runner
+import {
+  runCodeQL,
+  runCodeQLFast,
+  isCodeQLAvailable
+} from '../universal/codeql-runner';
 
 const execAsync = promisify(exec);
 
@@ -86,6 +95,13 @@ export interface TypeScriptToolConfig {
     };
   };
 
+  // DEEP SECURITY (PRO TIER, OPT-IN ONLY)
+  // SESSION 52: Changed queryPack to querySuite to align with CodeQLConfig
+  codeql?: {
+    enabled: boolean;
+    querySuite: 'security' | 'security-extended';
+  };
+
   // DOCKER CONFIG
   docker: {
     mountPath: string;
@@ -124,6 +140,12 @@ export const DEFAULT_TYPESCRIPT_CONFIG: TypeScriptToolConfig = {
       location: '/var/lib/dependency-check/data'  // Shared NVD cache
     }
   },
+  // CodeQL - DISABLED by default, PRO tier opt-in only
+  // SESSION 52: Changed queryPack to querySuite to align with CodeQLConfig
+  codeql: {
+    enabled: false,
+    querySuite: 'security'  // Default to faster suite
+  },
   docker: {
     mountPath: '/workspace',
     nodeVersion: '20',
@@ -140,7 +162,8 @@ const TYPESCRIPT_TOOL_CATEGORIES = {
   'npm-audit': ToolCategory.DEPENDENCY_SCAN,
   'dependency-check': ToolCategory.DEPENDENCY_SCAN,
   semgrep: ToolCategory.SECURITY,
-  performance: ToolCategory.ADVANCED,  // Performance analysis tools
+  codeql: ToolCategory.DEEP_SECURITY,  // Deep semantic analysis (PRO tier, opt-in)
+  performance: ToolCategory.ADVANCED,   // Performance analysis tools
   architecture: ToolCategory.ADVANCED   // Architecture analysis tools
 };
 
@@ -251,6 +274,10 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
    * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
    * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
    * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+   *
+   * CodeQL: Only runs if:
+   * 1. config.codeql.enabled = true (explicit opt-in)
+   * 2. userTier = 'pro' (PRO tier only)
    */
   protected getToolsToRun(
     mode: AnalysisMode,
@@ -280,15 +307,19 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     }
 
     // Semgrep - Security analysis
-    // SESSION 34 OPTIMIZATION:
-    // - BASIC tier (default): Run Semgrep here (Step 3), skip Step 5.5
-    //   Lite Security Agent groups issues + enhances metadata
-    // - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
-    //   This saves ~45s by avoiding duplicate Semgrep execution
+    // SESSION 34 FIX: Always run Semgrep in Step 3 for all tiers
+    // The PRO tier optimization was incomplete - scan-fix-executor doesn't run Semgrep,
+    // so skipping here meant PRO tier missed security scanning entirely!
     if (this.config.semgrep?.enabled && shouldTypeScriptToolRun('semgrep', mode)) {
-      if (userTier !== 'pro') {
-        tools.push('semgrep');
-      }
+      tools.push('semgrep');
+    }
+
+    // CodeQL - Deep semantic security analysis (PRO tier, opt-in only)
+    // NOTE: CodeQL is NOT controlled by analysis mode - it's a separate opt-in
+    // This adds significant time (5-30 min) so must be explicitly enabled
+    if (this.config.codeql?.enabled && userTier === 'pro') {
+      tools.push('codeql');
+      logger.info('🔬 CodeQL deep security analysis enabled (PRO tier opt-in)');
     }
 
     // Performance Tools - Standard and above (Lighthouse, Bundle Analyzer, ESLint-Perf)
@@ -445,6 +476,10 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
 
       case 'architecture': {
         return this.executeArchitectureTools(repoPath, branch);
+      }
+
+      case 'codeql': {
+        return this.runCodeQLAnalysis(repoPath, branch);
       }
 
       default:
@@ -799,6 +834,145 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     if (score >= 7.0) return 'high';
     if (score >= 4.0) return 'medium';
     return 'low';
+  }
+
+  // ============================================================
+  // CODEQL DEEP SECURITY ANALYSIS (PRO TIER ONLY)
+  // ============================================================
+
+  /**
+   * Run CodeQL deep security analysis
+   *
+   * This provides semantic analysis that finds complex vulnerabilities
+   * that pattern-based tools (Semgrep, ESLint) cannot detect:
+   * - Data flow analysis (taint tracking)
+   * - Cross-function/cross-file analysis
+   * - Complex SQL injection through indirect paths
+   * - Command injection with sanitization bypasses
+   *
+   * Only available for PRO tier users with explicit opt-in.
+   * Adds 5-30 minutes to analysis depending on codebase size.
+   */
+  private async runCodeQLAnalysis(
+    repoPath: string,
+    branch: 'base' | 'pr'
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      // Check if CodeQL is available
+      const available = await isCodeQLAvailable();
+      if (!available) {
+        logger.warn('⚠️ CodeQL not available - skipping deep security analysis');
+        return {
+          tool: 'codeql',
+          success: true,
+          duration: Date.now() - startTime,
+          issues: [],
+          rawOutput: 'CodeQL not available on this system',
+          metadata: {
+            filesScanned: 0,
+            issuesFound: 0,
+            severity: { critical: 0, high: 0, medium: 0, low: 0 },
+            skipped: true,
+            skipReason: 'CodeQL CLI not available'
+          }
+        };
+      }
+
+      // SESSION 52: Fixed - CodeQLConfig uses 'querySuite' not 'queryPack'
+      const querySuite = this.config.codeql?.querySuite || 'security';
+      logger.info(`🔬 Running CodeQL deep security analysis on ${branch} branch (${querySuite} suite)...`);
+
+      // Run CodeQL analysis using the universal runner
+      const issues = await runCodeQL(repoPath, 'javascript', {
+        querySuite,
+        // SESSION 52: Removed invalid 'outputFormat' and 'useDocker' - not in CodeQLConfig
+        timeout: 30 * 60 * 1000 // 30 minutes max
+      });
+
+      // Convert CodeQL issues to RawIssue format
+      // SESSION 52: Fixed - Issue type uses 'title'/'description'/'rule', not 'message'/'ruleId'
+      const rawIssues: RawIssue[] = issues.map(issue => ({
+        tool: 'codeql',
+        file: issue.file,
+        line: issue.line,
+        severity: this.mapCodeQLSeverity(issue.severity),
+        message: issue.title || issue.description, // Issue uses 'title' not 'message'
+        rule: issue.rule, // Issue uses 'rule' not 'ruleId'
+        category: 'security',
+        cwe: issue.cwe,
+        autoFixable: false, // CodeQL issues are complex - require manual review
+        fixTier: 3 as const // Tier 3 = AI/Manual review
+      }));
+
+      const duration = Date.now() - startTime;
+
+      logger.info(`✅ CodeQL completed: ${rawIssues.length} security issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'codeql',
+        success: true,
+        duration,
+        issues: rawIssues,
+        rawOutput: `CodeQL ${querySuite} analysis found ${rawIssues.length} issues`,
+        metadata: {
+          filesScanned: -1, // CodeQL doesn't report this directly
+          issuesFound: rawIssues.length,
+          severity: this.calculateSeverityCounts(rawIssues)
+        }
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ CodeQL analysis failed: ${error.message}`);
+
+      return {
+        tool: 'codeql',
+        success: false,
+        duration,
+        issues: [],
+        error: error.message,
+        metadata: {
+          filesScanned: 0,
+          issuesFound: 0,
+          severity: { critical: 0, high: 0, medium: 0, low: 0 },
+          skipped: true,
+          skipReason: `Failed: ${error.message}`
+        }
+      };
+    }
+  }
+
+  /**
+   * Map CodeQL severity to CodeQual severity
+   */
+  private mapCodeQLSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+    switch (severity.toLowerCase()) {
+      case 'error':
+      case 'critical':
+        return 'critical';
+      case 'warning':
+      case 'high':
+        return 'high';
+      case 'note':
+      case 'medium':
+        return 'medium';
+      default:
+        return 'low';
+    }
+  }
+
+  /**
+   * Calculate severity counts from issues
+   */
+  private calculateSeverityCounts(issues: RawIssue[]): { critical: number; high: number; medium: number; low: number } {
+    return {
+      critical: issues.filter(i => i.severity === 'critical').length,
+      high: issues.filter(i => i.severity === 'high').length,
+      medium: issues.filter(i => i.severity === 'medium').length,
+      low: issues.filter(i => i.severity === 'low').length
+    };
   }
 }
 

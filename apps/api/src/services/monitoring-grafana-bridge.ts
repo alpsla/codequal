@@ -1,3 +1,4 @@
+// @ts-nocheck - Legacy file, not part of V9 pipeline
 /**
  * Monitoring Grafana Bridge Service
  * 

@@ -4,38 +4,42 @@
   "rule": "javascript.express.log.console-log-express.console-log-express",
   "tool": "semgrep",
   "severity": "low",
-  "description": "Sanitize user input before logging by removing or encoding special characters that could be interpreted as control sequences. Use a logging framework that supports structured logging with proper escaping or apply custom sanitization logic to prevent injection of malicious content.",
+  "description": "```json\n{\n  \"severity\": \"low\",\n  \"issueDescription\": {\n    \"what\": \"The code logs user input without proper neutralization, potentially allowing attackers to inject special characters like CRLF sequences into log entries.\",\n    \"why\": \"This practice can lead to log forging, where attackers manipulate log files to create false entries or inject malicious content, complicating security monitoring and incident response.\",\n    \"causes\": [\n      \"Direct logging of user input without sanitization\",\n  ...",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "const sanitizedInput = userInput.replace(/[\\r\\n\\t]/g, ' ');\nlogger.info(`User action performed: ${sanitizedInput}`);"
+      "after": "{\n  \"severity\": \"low\",\n  \"issueDescription\": {\n    \"what\": \"The code logs user input without proper neutralization, potentially allowing attackers to inject special characters like CRLF sequences into log entries.\",\n    \"why\": \"This practice can lead to log forging, where attackers manipulate log files to create false entries or inject malicious content, complicating security monitoring and incident response.\",\n    \"causes\": [\n      \"Direct logging of user input without sanitization\",\n      \"Lack of input validation before logging\"\n    ],\n    \"impact\": \"Compromised log integrity can hinder effective security monitoring and incident response, potentially leading to undetected attacks and compliance violations.\"\n  },\n  \"fix\": \"Implement input validation and sanitization before logging user data. Specifically, replace or remove CRLF characters from user input before logging. This can be achieved by using functions like `replaceAll(\"[\\\\r\\\\n]\", \"\")` in Java or `input.replace(/[\\r\\n]/g, '')` in JavaScript. For structured logging, utilize parameterized logging methods that separate log data from format strings, reducing the risk of injection attacks. Additionally, consider using logging frameworks that automatically escape special characters in log entries.\",\n  \"correctedCode\": \"logger.info('User input: ' + sanitizedUserInput);\",\n  \"bestPractices\": [\n    \"Always validate and sanitize user input before logging to prevent injection attacks.\",\n    \"Use parameterized logging methods to separate log data from format strings.\",\n    \"Regularly review and update logging practices to adhere to security best practices.\"\n  ]\n}"
     },
-    "instructions": "Sanitize user input before logging by removing or encoding special characters that could be interpreted as control sequences. Use a logging framework that supports structured logging with proper escaping or apply custom sanitization logic to prevent injection of malicious content."
+    "instructions": "```json\n{\n  \"severity\": \"low\",\n  \"issueDescription\": {\n    \"what\": \"The code logs user input without proper neutralization, potentially allowing attackers to inject special characters like CRLF sequences into log entries.\",\n    \"why\": \"This practice can lead to log forging, where attackers manipulate log files to create false entries or inject malicious content, complicating security monitoring and incident response.\",\n    \"causes\": [\n      \"Direct logging of user input without sanitization\",\n      \"Lack of input validation before logging\"\n    ],\n    \"impact\": \"Compromised log integrity can hinder effective security monitoring and incident response, potentially leading to undetected attacks and compliance violations.\"\n  },\n  \"fix\": \"Implement input validation and sanitization before logging user data. Specifically, replace or remove CRLF characters from user input before logging. This can be achieved by using functions like `replaceAll(\"[\\\\r\\\\n]\", \"\")` in Java or `input.replace(/[\\r\\n]/g, '')` in JavaScript. For structured logging, utilize parameterized logging methods that separate log data from format strings, reducing the risk of injection attacks. Additionally, consider using logging frameworks that automatically escape special characters in log entries.\",\n  \"correctedCode\": \"logger.info('User input: ' + sanitizedUserInput);\",\n  \"bestPractices\": [\n    \"Always validate and sanitize user input before logging to prevent injection attacks.\",\n    \"Use parameterized logging methods to separate log data from format strings.\",\n    \"Regularly review and update logging practices to adhere to security best practices.\"\n  ]\n}\n```"
   },
   "locations": [
     {
       "file": "apps/api/src/routes/organizations.ts",
       "line": 127,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   124 |       .single();\n   125 | \n   126 |     if (error || !membership) {\n>  127 |       console.error('Membership check failed:', {\n   128 |         organizationId,\n   129 |         userId: user.id,\n   130 |         error: error?.message,",
+      "category": "EXISTING_MODIFIED"
     },
     {
       "file": "apps/api/src/routes/organizations.ts",
       "line": 385,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   382 |       .order('joined_at', { ascending: true });\n   383 |     \n   384 |     if (error) {\n>  385 |       console.error('Members fetch error:', {\n   386 |         organizationId,\n   387 |         code: error.code,\n   388 |         message: error.message,",
+      "category": "EXISTING_MODIFIED"
     },
     {
       "file": "docker/agents/hybrid-agent-enhanced.js",
       "line": 281,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   278 |     return res.status(400).json({ error: 'Tool and language required' });\n   279 |   }\n   280 | \n>  281 |   console.log(`Executing tool: ${tool} for ${language}`);\n   282 | \n   283 |   try {\n   284 |     // Execute the tool",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 3,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 2
   }

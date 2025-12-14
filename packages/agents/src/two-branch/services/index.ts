@@ -24,3 +24,20 @@ export { GitDiffService } from './git-diff-service';
 export type {
   GitHubPRInfo
 } from './git-diff-service';
+
+// V9 Analysis Pipeline - Unified analysis flow for all languages
+export {
+  V9AnalysisPipeline,
+  mergeFixResultsIntoIssues,
+  analyzeRepository,
+  analyzePR
+} from './v9-analysis-pipeline';
+export type {
+  SupportedLanguage,
+  UserTier,
+  RepoSize,
+  PipelineConfig,
+  PipelineProgress,
+  PipelineResult
+} from './v9-analysis-pipeline';
+export { EnrichedIssue } from './v9-analysis-pipeline';

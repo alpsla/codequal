@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-web-tainted-redirect-express-tainted-redirect-express-medium-semgrep",
+  "rule": "javascript.express.web.tainted-redirect-express.tainted-redirect-express",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Implement strict input validation by maintaining an allowlist of approved domains. Validate the redirect URL against this list before performing the redirect. Display a warning page to users informing them they are leaving the site and provide an option to proceed or cancel.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const allowedDomains = ['example.com', 'trusted-site.com'];\nfunction isValidRedirectUrl(url) {\n  try {\n    const parsedUrl = new URL(url);\n    return allowedDomains.includes(parsedUrl.hostname);\n  } catch (e) {\n    return false;\n  }\n}\n\n// Before redirect\nif (isValidRedirectUrl(redirectUrl)) {\n  res.redirect(redirectUrl);\n} else {\n  res.status(400).send('Invalid redirect URL');\n}"
+    },
+    "instructions": "Implement strict input validation by maintaining an allowlist of approved domains. Validate the redirect URL against this list before performing the redirect. Display a warning page to users informing them they are leaving the site and provide an option to proceed or cancel."
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 250,
+      "snippet": "",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "line": 453,
+      "snippet": "",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "group_id": "ts1219-high-typescript",
+  "rule": "TS1219",
+  "tool": "typescript",
+  "severity": "high",
+  "description": [
+    "Open tsconfig.json/jsconfig.json",
+    "Add or update the 'experimentalDecorators' option to true",
+    "Verify decorator usage aligns with current stable specifications",
+    "Monitor TypeScript release notes for decorator API changes"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "{\n  \"compilerOptions\": {\n    \"experimentalDecorators\": true\n  }\n}"
+    },
+    "instructions": [
+      "Open tsconfig.json/jsconfig.json",
+      "Add or update the 'experimentalDecorators' option to true",
+      "Verify decorator usage aligns with current stable specifications",
+      "Monitor TypeScript release notes for decorator API changes"
+    ]
+  },
+  "locations": [
+    {
+      "file": "test/fixtures/typescript/src/App.ts",
+      "line": 12,
+      "snippet": "     9 | type MyObject = Pick<MyType, 'bar' | 'baz'>;\n    10 | \n    11 | @annotation\n>   12 | class App {\n    13 |   static foo: MyObject = { bar: true, baz: { n: 123 } };\n    14 |   n = App.foo.baz!.n;\n    15 |   @propertyDecorator",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.ts",
+      "line": 16,
+      "snippet": "    13 |   static foo: MyObject = { bar: true, baz: { n: 123 } };\n    14 |   n = App.foo.baz!.n;\n    15 |   @propertyDecorator\n>   16 |   decorated = 5;\n    17 |   users = absoluteLoad();\n    18 | }\n    19 | ",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

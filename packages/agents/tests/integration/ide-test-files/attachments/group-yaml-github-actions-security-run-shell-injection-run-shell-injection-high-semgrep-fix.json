@@ -1,0 +1,67 @@
+{
+  "version": "1.0",
+  "group_id": "yaml-github-actions-security-run-shell-injection-run-shell-injection-high-semgrep",
+  "rule": "yaml.github-actions.security.run-shell-injection.run-shell-injection",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "{\n  \"severity\": \"high\",\n  \"issueDescription\": {\n    \"what\": \"The workflow uses variable interpolation `${{ github.event.inputs.branch }}` directly in a shell command within a `run:` step, which allows untrusted GitHub context data to be executed as shell commands. This is a code injection vulnerability because the `github` context can contain arbitrary user input from external sources like pull request comments or webhook payloads.\",\n    \"why\": \"An attacker who controls the `branch` input parame...",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "33: // ⚠️ AI-generated fix not available - Manual review required\n34: // Issue: Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code. `github` context data can have arbitrary user input and should be treated as untrusted. Instead, use an intermediate environment variable with `env:` to store the data and use the environment variable in the `run:` script. Be sure to use double-quotes the environment variable, like this: \"$ENVVAR\".\n35: // See Security documentation for fix patterns\n36: // Context: deploy-deepwiki.yml line 33"
+    },
+    "instructions": "{\n  \"severity\": \"high\",\n  \"issueDescription\": {\n    \"what\": \"The workflow uses variable interpolation `${{ github.event.inputs.branch }}` directly in a shell command within a `run:` step, which allows untrusted GitHub context data to be executed as shell commands. This is a code injection vulnerability because the `github` context can contain arbitrary user input from external sources like pull request comments or webhook payloads.\",\n    \"why\": \"An attacker who controls the `branch` input parameter can inject malicious shell commands that will be executed by the GitHub Actions runner. For example, if an attacker sets the branch input to `main; rm -rf /`, the runner will execute both the intended command and the malicious payload. This could lead to complete compromise of the runner environment and exposure of secrets.\",\n    \"causes\": [\n      \"Direct use of GitHub context variables in shell command interpolation without sanitization\",\n      \"Lack of environment variable encapsulation for untrusted input\",\n      \"Failure to properly quote or escape interpolated values in shell context\"\n    ],\n    \"impact\": \"This vulnerability can result in arbitrary code execution on the runner, leading to potential data breaches, secret theft, and complete compromise of the CI/CD pipeline. It violates security best practices for handling untrusted input and could lead to compliance violations under standards like SOC 2, ISO 27001, and GDPR.\"\n  },\n  \"fix\": \"1. Create an intermediate environment variable using the `env:` key to store the GitHub context data 2. Reference the environment variable in the shell command using double quotes to prevent shell interpretation 3. Ensure proper quoting of the environment variable in the shell script\",\n  \"correctedCode\": \"env:\\n  BRANCH: ${{ github.event.inputs.branch }}\\nrun: |\\n  echo \\\"Deploying branch: $BRANCH\\\"\"\n  \"bestPractices\": [\n    \"Never directly interpolate untrusted GitHub context data into shell commands\",\n    \"Always use environment variables to encapsulate external input before shell execution\",\n    \"Quote all environment variable references in shell commands to prevent interpretation\"\n  ]\n}",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: yaml.github-actions.security.run-shell-injection.run-shell-injection\nThis is a high quality issue detected by semgrep.\nThe issue is: \"Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code. `github` context data can have arbitrary user input and should be treated as untrusted. Instead, use an intermediate environment variable with `env:` to store the data and use the environment variable in the `run:` script. Be sure to use double-quotes the environment variable, like this: \"$ENVVAR\".\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: yaml.github-actions.security.run-shell-injection.run-shell-injection (semgrep)\nSEVERITY: high\nMESSAGE: Using variable interpolation `${{...}}` with `github` context data in a `run:` step could allow an attacker to inject their own code into the runner. This would allow them to steal secrets and code. `github` context data can have arbitrary user input and should be treated as untrusted. Instead, use an intermediate environment variable with `env:` to store the data and use the environment variable in the `run:` script. Be sure to use double-quotes the environment variable, like this: \"$ENVVAR\".\n\nFILE: .github/workflows/deploy-deepwiki.yml\nLINE: 33\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 600,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 33,
+      "snippet": "    30 |         echo \"${{ secrets.KUBE_CONFIG }}\" | base64 -d > ${HOME}/.kube/config\n    31 |     \n    32 |     - name: Create namespace if not exists\n>   33 |       run: |\n    34 |         kubectl create namespace codequal-${{ github.event.inputs.environment }} --dry-run=client -o yaml | kubectl apply -f -\n    35 |     \n    36 |     - name: Create DeepWiki secrets",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 37,
+      "snippet": "    34 |         kubectl create namespace codequal-${{ github.event.inputs.environment }} --dry-run=client -o yaml | kubectl apply -f -\n    35 |     \n    36 |     - name: Create DeepWiki secrets\n>   37 |       run: |\n    38 |         kubectl create secret generic deepwiki-secrets \\\n    39 |           --namespace=codequal-${{ github.event.inputs.environment }} \\\n    40 |           --from-literal=openai-api-key=\"${{ secrets.OPENAI_API_KEY }}\" \\",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 48,
+      "snippet": "    45 |           --dry-run=client -o yaml | kubectl apply -f -\n    46 |     \n    47 |     - name: Update deployment file with secrets\n>   48 |       run: |\n    49 |         # Create a temporary deployment file that uses secrets\n    50 |         cat > /tmp/deepwiki-deployment.yaml << 'EOF'\n    51 |         apiVersion: apps/v1",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 139,
+      "snippet": "   136 |         kubectl apply -f /tmp/deepwiki-deployment.yaml\n   137 |     \n   138 |     - name: Wait for deployment\n>  139 |       run: |\n   140 |         kubectl rollout status deployment/deepwiki \\\n   141 |           --namespace=codequal-${{ github.event.inputs.environment }} \\\n   142 |           --timeout=300s",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": ".github/workflows/deploy-deepwiki.yml",
+      "line": 145,
+      "snippet": "   142 |           --timeout=300s\n   143 |     \n   144 |     - name: Check deployment status\n>  145 |       run: |\n   146 |         echo \"🚀 DeepWiki deployed to ${{ github.event.inputs.environment }} environment\"\n   147 |         kubectl get pods --namespace=codequal-${{ github.event.inputs.environment }} -l app=deepwiki\n   148 |         kubectl get svc --namespace=codequal-${{ github.event.inputs.environment }} -l app=deepwiki",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 5,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 3
+  }
+}

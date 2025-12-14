@@ -29,9 +29,15 @@
  * - Source file filtering (excludes tests, docs, fixtures)
  * - Parallel execution support for multi-language projects
  *
+ * ARM64 Support (v2.1):
+ * - Automatic detection of ARM64 architecture (aarch64)
+ * - Uses Docker with QEMU emulation on ARM64 systems
+ * - Shared Docker image (codeql-runner:latest) for all analyses
+ * - Transparent fallback - same API, different execution path
+ *
  * Installation:
- * - GitHub CLI with CodeQL extension: gh extension install github/gh-codeql
- * - OR CodeQL CLI directly: https://github.com/github/codeql-cli-binaries
+ * - x86_64: GitHub CLI with CodeQL extension or CodeQL CLI directly
+ * - ARM64: Docker with codeql-runner:latest image (auto-detected)
  */
 
 import * as fs from 'fs';
@@ -41,6 +47,72 @@ import * as os from 'os';
 import { execSync } from 'child_process';
 import { UniversalToolBase } from './universal-tool-base';
 import { Issue } from '../../analyzers/v9-types';
+
+// =============================================================================
+// ARM64 / Docker Support
+// =============================================================================
+
+/**
+ * Docker image for CodeQL on ARM64 systems
+ * This image is shared across all analyses to minimize download overhead
+ */
+const CODEQL_DOCKER_IMAGE = 'codeql-runner:latest';
+
+/**
+ * Check if running on ARM64 architecture
+ * ARM64 systems need Docker emulation since CodeQL only provides x86_64 binaries
+ */
+function isARM64(): boolean {
+  const arch = os.arch();
+  return arch === 'arm64' || arch === 'aarch64';
+}
+
+/**
+ * Check if Docker is available and the CodeQL image exists
+ */
+function isDockerCodeQLAvailable(): boolean {
+  try {
+    // Check if Docker is available
+    execSync('docker --version', { stdio: 'pipe' });
+
+    // Check if our CodeQL image exists
+    const result = execSync(`docker images -q ${CODEQL_DOCKER_IMAGE}`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+
+    return result.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Build Docker command for running CodeQL on ARM64
+ * Maps the workspace directory into the container
+ */
+function buildDockerCommand(codeqlCmd: string, workspacePath: string, dbPath: string): string {
+  // Resolve absolute paths
+  const absWorkspace = path.resolve(workspacePath);
+  const absDbPath = path.resolve(dbPath);
+  const dbParent = path.dirname(absDbPath);
+
+  // Ensure db parent directory exists
+  if (!fs.existsSync(dbParent)) {
+    fs.mkdirSync(dbParent, { recursive: true });
+  }
+
+  // Build Docker run command with volume mounts
+  // --platform linux/amd64: Force x86_64 architecture (uses QEMU emulation)
+  // -v workspace: Mount source code read-only for security
+  // -v db directory: Mount database location read-write
+  // --rm: Auto-remove container after execution
+  return `docker run --rm --platform linux/amd64 \
+    -v "${absWorkspace}:/workspace:ro" \
+    -v "${dbParent}:/codeql-db" \
+    ${CODEQL_DOCKER_IMAGE} \
+    ${codeqlCmd.replace(absWorkspace, '/workspace').replace(absDbPath, `/codeql-db/${path.basename(absDbPath)}`)}`;
+}
 
 // =============================================================================
 // Configuration Types
@@ -200,6 +272,7 @@ export class CodeQLRunner extends UniversalToolBase {
   private sarifPath: string;
   private codeqlConfig: Required<CodeQLConfig>;
   private sourceHash: string | null = null;
+  private useDocker: boolean = false;  // ARM64 Docker execution mode
 
   constructor(workspacePath: string, language: string, config: CodeQLConfig = {}) {
     // Merge with defaults (user config overrides defaults)
@@ -219,6 +292,17 @@ export class CodeQLRunner extends UniversalToolBase {
     });
 
     this.codeqlConfig = effectiveConfig;
+
+    // Check if we need Docker mode (ARM64 architecture)
+    if (isARM64()) {
+      if (isDockerCodeQLAvailable()) {
+        this.useDocker = true;
+        console.log(`[CodeQL] 🐳 ARM64 detected - using Docker execution mode`);
+      } else {
+        console.warn(`[CodeQL] ⚠️ ARM64 detected but Docker image not found. Build with:`);
+        console.warn(`[CodeQL]    docker build -t ${CODEQL_DOCKER_IMAGE} /path/to/dockerfile`);
+      }
+    }
 
     // Determine database path based on caching strategy
     if (effectiveConfig.enableCaching) {
@@ -461,11 +545,25 @@ export class CodeQLRunner extends UniversalToolBase {
   }
 
   /**
-   * Check if CodeQL CLI is installed
+   * Check if CodeQL CLI is installed (or Docker image available on ARM64)
    */
   private async checkCodeQLInstalled(): Promise<void> {
+    // For Docker mode, verify the image exists
+    if (this.useDocker) {
+      if (isDockerCodeQLAvailable()) {
+        console.log(`[CodeQL] ✅ Docker CodeQL image available (${CODEQL_DOCKER_IMAGE})`);
+        return;
+      } else {
+        throw new Error(
+          'CodeQL Docker image not found on ARM64. Build it with:\n' +
+          '  1. Create Dockerfile with CodeQL CLI\n' +
+          `  2. docker build -t ${CODEQL_DOCKER_IMAGE} .`
+        );
+      }
+    }
+
+    // Native mode - try direct CLI
     try {
-      // Try codeql CLI directly
       await this.runCommand('codeql --version');
       console.log(`[CodeQL] ✅ CodeQL CLI is installed`);
     } catch {
@@ -493,6 +591,7 @@ export class CodeQLRunner extends UniversalToolBase {
 
   /**
    * Create CodeQL database with performance optimizations
+   * Supports both native CLI and Docker execution modes
    */
   private async createDatabase(pack: string): Promise<void> {
     // Ensure cache directory exists
@@ -505,26 +604,42 @@ export class CodeQLRunner extends UniversalToolBase {
       fs.rmSync(this.dbPath, { recursive: true, force: true });
     }
 
-    // Build exclusion arguments
-    const excludeArgs = this.codeqlConfig.excludePatterns
-      ?.map(pattern => `--command-spec=exclude:${pattern}`)
-      .join(' ') || '';
-
     // Use configurable thread count
     const threadArg = `--threads=${this.codeqlConfig.threads}`;
 
-    const command = `codeql database create "${this.dbPath}" \
-      --language=${pack} \
-      --source-root="${this.config.workspacePath}" \
-      ${threadArg} \
-      --overwrite \
-      2>&1`;
+    if (this.useDocker) {
+      // Docker execution mode for ARM64
+      // Note: Volume mounts handle path translation
+      const dbName = path.basename(this.dbPath);
+      const command = `docker run --rm --platform linux/amd64 \
+        -v "${path.resolve(this.config.workspacePath)}:/workspace:ro" \
+        -v "${path.dirname(path.resolve(this.dbPath))}:/codeql-db" \
+        ${CODEQL_DOCKER_IMAGE} \
+        codeql database create "/codeql-db/${dbName}" \
+        --language=${pack} \
+        --source-root="/workspace" \
+        ${threadArg} \
+        --overwrite \
+        2>&1`;
 
-    await this.runCommand(command);
+      console.log(`[CodeQL] 🐳 Creating database via Docker...`);
+      await this.runCommand(command);
+    } else {
+      // Native CLI execution
+      const command = `codeql database create "${this.dbPath}" \
+        --language=${pack} \
+        --source-root="${this.config.workspacePath}" \
+        ${threadArg} \
+        --overwrite \
+        2>&1`;
+
+      await this.runCommand(command);
+    }
   }
 
   /**
    * Run CodeQL analysis with performance optimizations
+   * Supports both native CLI and Docker execution modes
    */
   private async runAnalysis(pack: string): Promise<void> {
     // Select query suite based on configuration
@@ -541,15 +656,43 @@ export class CodeQLRunner extends UniversalToolBase {
     // Add RAM optimization for large codebases
     const ramArg = '--ram=4096';  // Limit to 4GB to avoid swapping
 
-    const command = `codeql database analyze "${this.dbPath}" \
-      ${queryPack} \
-      --format=sarif-latest \
-      --output="${this.sarifPath}" \
-      ${threadArg} \
-      ${ramArg} \
-      2>&1`;
+    if (this.useDocker) {
+      // Docker execution mode for ARM64
+      const dbName = path.basename(this.dbPath);
+      const sarifName = path.basename(this.sarifPath);
+      const sarifDir = path.dirname(path.resolve(this.sarifPath));
 
-    await this.runCommand(command);
+      // Ensure output directory exists
+      if (!fs.existsSync(sarifDir)) {
+        fs.mkdirSync(sarifDir, { recursive: true });
+      }
+
+      const command = `docker run --rm --platform linux/amd64 \
+        -v "${path.dirname(path.resolve(this.dbPath))}:/codeql-db" \
+        -v "${sarifDir}:/sarif-output" \
+        ${CODEQL_DOCKER_IMAGE} \
+        codeql database analyze "/codeql-db/${dbName}" \
+        ${queryPack} \
+        --format=sarif-latest \
+        --output="/sarif-output/${sarifName}" \
+        ${threadArg} \
+        ${ramArg} \
+        2>&1`;
+
+      console.log(`[CodeQL] 🐳 Running analysis via Docker...`);
+      await this.runCommand(command);
+    } else {
+      // Native CLI execution
+      const command = `codeql database analyze "${this.dbPath}" \
+        ${queryPack} \
+        --format=sarif-latest \
+        --output="${this.sarifPath}" \
+        ${threadArg} \
+        ${ramArg} \
+        2>&1`;
+
+      await this.runCommand(command);
+    }
   }
 
   /**
@@ -797,8 +940,15 @@ export async function runCodeQLExtended(
 
 /**
  * Check if CodeQL is available on the system
+ * On ARM64, checks for Docker image availability
  */
 export async function isCodeQLAvailable(): Promise<boolean> {
+  // On ARM64, check for Docker image
+  if (isARM64()) {
+    return isDockerCodeQLAvailable();
+  }
+
+  // On x86_64, check for native CLI
   try {
     execSync('codeql --version', { stdio: 'pipe' });
     return true;

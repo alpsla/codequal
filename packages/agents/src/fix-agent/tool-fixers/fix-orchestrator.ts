@@ -8,10 +8,12 @@
  * 4. Aggregates results across all executions
  */
 
-import { ToolExecutionResult, ToolExecutionOptions } from './tool-executor-base';
+import { ToolExecutorBase, ToolExecutionResult, ToolExecutionOptions } from './tool-executor-base';
 import { createTier1Executor, getTier1ToolNames } from './tier1-executor';
 import { createTier2Executor, getTier2ToolNames } from './tier2-executor';
 import { createTier3Executor, Tier3Issue } from './tier3-executor';
+import { createPipAuditFixer, createSemgrepAutoFixer } from './python-fixer';
+import { createDependencyFixer, isDependencyVulnerability } from './dependency-fixer';
 
 // ================================================================================
 // ORCHESTRATOR TYPES (Self-contained)
@@ -37,6 +39,27 @@ export interface OrchestratorConfig {
   onProgress?: (update: ProgressUpdate) => void;
   enableTier3Fallback?: boolean;
   tier3ApiKey?: string;
+  /** User tier - affects whether fixes are applied or just recommended */
+  userTier?: 'basic' | 'pro';
+  /** Pattern store for checking existing fix patterns */
+  patternStore?: PatternStore;
+  /** Language hint for tool selection */
+  language?: string;
+}
+
+/** Interface for pattern store (Supabase or mock) */
+export interface PatternStore {
+  getPattern(ruleId: string, tool: string): Promise<FixPattern | null>;
+  savePattern(pattern: FixPattern): Promise<void>;
+}
+
+/** Fix pattern from Supabase */
+export interface FixPattern {
+  ruleId: string;
+  tool: string;
+  fixTemplate: string;
+  confidence: number;
+  language: string;
 }
 
 export interface ProgressUpdate {
@@ -116,6 +139,11 @@ const TOOL_PERFORMANCE: Record<string, {
 
   // AI (rate limited)
   'ai': { category: 'medium', batchSize: 5, avgTimeMs: 30000 },
+
+  // Python dependency and security fixers (SESSION 53)
+  'pip-audit-fixer': { category: 'medium', batchSize: 10, avgTimeMs: 30000 },
+  'semgrep-autofix': { category: 'medium', batchSize: 20, avgTimeMs: 15000 },
+  'dependency-fixer': { category: 'medium', batchSize: 10, avgTimeMs: 30000 },
 };
 
 // Default performance for unknown tools
@@ -127,9 +155,24 @@ const DEFAULT_PERFORMANCE = {
 
 /**
  * Fix Orchestrator - Main coordinator for all fix operations
+ *
+ * SESSION 53: Added support for:
+ * - BASIC vs PRO tier (dryRun for basic, apply for pro)
+ * - Supabase pattern checking before tool execution
+ * - Python dependency fixers (pip-audit) and security fixers (semgrep --autofix)
  */
 export class FixOrchestrator {
-  private config: Required<OrchestratorConfig>;
+  private config: OrchestratorConfig & {
+    dryRun: boolean;
+    verbose: boolean;
+    maxParallel: number;
+    timeoutMs: number;
+    enableTier3Fallback: boolean;
+    tier3ApiKey: string;
+    userTier: 'basic' | 'pro';
+    language: string;
+    onProgress: (update: ProgressUpdate) => void;
+  };
   private installedTools: Set<string> = new Set();
 
   constructor(config: OrchestratorConfig) {
@@ -140,9 +183,16 @@ export class FixOrchestrator {
       timeoutMs: 300000, // 5 minutes
       enableTier3Fallback: false,
       tier3ApiKey: '',
+      userTier: 'basic', // Default to basic tier
+      language: 'unknown',
       onProgress: () => { /* no-op */ },
       ...config,
     };
+
+    // For BASIC tier, always run in dry-run mode (recommendations only)
+    if (this.config.userTier === 'basic') {
+      this.config.dryRun = true;
+    }
   }
 
   /**
@@ -329,7 +379,8 @@ export class FixOrchestrator {
 
     for (const issue of issues) {
       // Use the tool that reported the issue to route to appropriate fixer
-      const tool = this.mapToolToFixer(issue.tool);
+      // SESSION 53: Pass ruleId for dependency vulnerability detection
+      const tool = this.mapToolToFixer(issue.tool, issue.ruleId);
       if (!groups[tool]) {
         groups[tool] = [];
       }
@@ -341,8 +392,29 @@ export class FixOrchestrator {
 
   /**
    * Map detection tool to appropriate fixer tool
+   *
+   * SESSION 53: Updated to support Python dependency and security fixers
    */
-  private mapToolToFixer(detectionTool: string): string {
+  private mapToolToFixer(detectionTool: string, ruleId?: string): string {
+    const tool = detectionTool.toLowerCase();
+
+    // Special case: dependency vulnerability tools route to dedicated fixers
+    if (isDependencyVulnerability(tool, ruleId || '')) {
+      // Python dependencies
+      if (tool === 'pip-audit' || tool === 'safety') {
+        return 'pip-audit-fixer';
+      }
+      // JavaScript/Node.js dependencies
+      if (tool === 'npm-audit' || tool === 'snyk') {
+        return 'dependency-fixer';
+      }
+    }
+
+    // Special case: semgrep with autofix rules
+    if (tool === 'semgrep' && this.config.language === 'python') {
+      return 'semgrep-autofix';
+    }
+
     // Map detection tools to their fixers
     const toolMap: Record<string, string> = {
       // JS/TS
@@ -351,10 +423,10 @@ export class FixOrchestrator {
       'prettier': 'prettier',
       'tsc': 'eslint', // TypeScript errors often fixable by ESLint rules
 
-      // Python
+      // Python - route to appropriate fixer
       'ruff': 'ruff',
       'pylint': 'ruff',
-      'bandit': 'ruff',
+      'bandit': 'semgrep-autofix', // Bandit findings often fixable via semgrep
       'mypy': 'ruff',
       'flake8': 'ruff',
 
@@ -391,12 +463,12 @@ export class FixOrchestrator {
       // C#
       'roslyn-analyzers': 'dotnet-format',
 
-      // Cross-language (fallback to AI)
-      'semgrep': 'ai',
-      'gitleaks': 'ai',
+      // Cross-language security (try semgrep autofix first)
+      'semgrep': 'semgrep-autofix',
+      'gitleaks': 'ai', // Secrets - no autofix, needs manual review
     };
 
-    return toolMap[detectionTool.toLowerCase()] || 'ai';
+    return toolMap[tool] || 'ai';
   }
 
   /**
@@ -457,9 +529,12 @@ export class FixOrchestrator {
 
   /**
    * Execute a single batch of fixes
+   *
+   * SESSION 53: Updated to support Python dependency and security fixers
    */
   private async executeBatch(batch: OrchestratorBatch): Promise<ToolExecutionResult> {
-    const executor = createTier1Executor(batch.tool) || createTier2Executor(batch.tool);
+    // Get executor - check new Python fixers first, then standard tiers
+    const executor = this.getExecutorForTool(batch.tool);
 
     if (!executor) {
       return {
@@ -582,6 +657,31 @@ export class FixOrchestrator {
     }
 
     return primaryLanguage;
+  }
+
+  /**
+   * Get the appropriate executor for a tool
+   *
+   * SESSION 53: Added support for Python dependency and security fixers
+   */
+  private getExecutorForTool(toolName: string): ToolExecutorBase | null {
+    // Python dependency fixer
+    if (toolName === 'pip-audit-fixer') {
+      return createPipAuditFixer();
+    }
+
+    // Python security autofix
+    if (toolName === 'semgrep-autofix') {
+      return createSemgrepAutoFixer();
+    }
+
+    // npm/Node.js dependency fixer
+    if (toolName === 'dependency-fixer') {
+      return createDependencyFixer();
+    }
+
+    // Standard tier 1 and tier 2 executors
+    return createTier1Executor(toolName) || createTier2Executor(toolName);
   }
 }
 

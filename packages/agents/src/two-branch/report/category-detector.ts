@@ -10,6 +10,7 @@
  *
  * SESSION 13 FIX: Removed "Reliability" category (was causing scoring issues)
  * CRITICAL BUG FIX (2025-10-30): Added null/undefined handling for rule parameter
+ * BUG-091 FIX (2025-12-12): Added Python tool mappings for proper categorization
  *
  * Some tools (like Dependency-Check) may return issues with null/undefined rule fields.
  * This function now handles those cases gracefully by falling back to tool/message-based detection.
@@ -20,22 +21,92 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   // CRITICAL: Handle null/undefined rule to prevent crashes
   const ruleLower = rule?.toLowerCase() || '';
   const messageLower = message?.toLowerCase() || '';
-  
-  // Security patterns
+  const toolLower = tool?.toLowerCase() || '';
+
+  // ================================================================
+  // SECURITY PATTERNS
+  // ================================================================
+  // Java tools
+  if (toolLower === 'semgrep') {
+    return 'Security';
+  }
+  // Python security tools
+  if (toolLower === 'bandit') {
+    return 'Security';
+  }
+  // Ruff S* rules (flake8-bandit) are security-related
+  if (toolLower === 'ruff' && ruleLower.startsWith('s')) {
+    return 'Security';
+  }
+  // Go security tools
+  if (toolLower === 'gosec') {
+    return 'Security';
+  }
+  // Ruby security tools
+  if (toolLower === 'brakeman') {
+    return 'Security';
+  }
+  // General security patterns in rule/message
   if (
-    tool === 'semgrep' ||
     ruleLower.includes('security') ||
     ruleLower.includes('injection') ||
     ruleLower.includes('xss') ||
     ruleLower.includes('csrf') ||
     ruleLower.includes('auth') ||
+    ruleLower.includes('hardcoded') ||
+    ruleLower.includes('secret') ||
+    ruleLower.includes('password') ||
+    ruleLower.includes('deserialization') ||
     messageLower.includes('vulnerability') ||
-    messageLower.includes('exploit')
+    messageLower.includes('exploit') ||
+    messageLower.includes('insecure')
   ) {
     return 'Security';
   }
-  
-  // Performance patterns
+
+  // ================================================================
+  // DEPENDENCY PATTERNS
+  // ================================================================
+  // Java/General dependency tools
+  if (toolLower === 'dependency-check' || toolLower === 'owasp') {
+    return 'Dependencies';
+  }
+  // Python dependency tools
+  if (toolLower === 'safety' || toolLower === 'pip-audit') {
+    return 'Dependencies';
+  }
+  // JavaScript/TypeScript dependency tools
+  if (toolLower === 'npm-audit' || toolLower === 'yarn-audit') {
+    return 'Dependencies';
+  }
+  // Ruby dependency tools
+  if (toolLower === 'bundler-audit') {
+    return 'Dependencies';
+  }
+  // General dependency patterns
+  if (
+    ruleLower.includes('dependency') ||
+    ruleLower.includes('cve') ||
+    messageLower.includes('outdated') ||
+    messageLower.includes('vulnerable package')
+  ) {
+    return 'Dependencies';
+  }
+
+  // ================================================================
+  // PERFORMANCE PATTERNS
+  // ================================================================
+  // Python performance patterns (pylint, ruff rules)
+  if (
+    ruleLower.includes('perf') ||
+    ruleLower.includes('c416') ||  // Ruff: unnecessary list comprehension
+    ruleLower.includes('c417') ||  // Ruff: unnecessary map
+    ruleLower.includes('sim') ||   // Ruff: simplify patterns (often perf related)
+    ruleLower.includes('plt')      // Pylint: too-many-* (complexity/performance)
+  ) {
+    return 'Performance';
+  }
+  // General performance patterns
   if (
     ruleLower.includes('performance') ||
     ruleLower.includes('optimization') ||
@@ -43,13 +114,29 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
     ruleLower.includes('memory') ||
     ruleLower.includes('inefficient') ||
     ruleLower.includes('guard') ||
+    ruleLower.includes('complexity') ||
     messageLower.includes('performance') ||
-    messageLower.includes('slow')
+    messageLower.includes('slow') ||
+    messageLower.includes('inefficient') ||
+    messageLower.includes('loop')
   ) {
     return 'Performance';
   }
-  
-  // Architecture/Design patterns
+
+  // ================================================================
+  // ARCHITECTURE PATTERNS
+  // ================================================================
+  // Python architecture patterns
+  if (
+    ruleLower.includes('r0') ||     // Pylint: refactoring recommendations
+    ruleLower.includes('too-many') || // Pylint: too-many-arguments, etc.
+    ruleLower.includes('too-few') ||  // Pylint: too-few-public-methods
+    ruleLower.includes('import') ||   // Import-related issues affect architecture
+    ruleLower.includes('circular')    // Circular imports
+  ) {
+    return 'Architecture';
+  }
+  // General architecture patterns
   if (
     ruleLower.includes('architecture') ||
     ruleLower.includes('design') ||
@@ -57,44 +144,45 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
     ruleLower.includes('solid') ||
     ruleLower.includes('coupling') ||
     ruleLower.includes('cohesion') ||
-    messageLower.includes('design')
+    messageLower.includes('design') ||
+    messageLower.includes('god class') ||
+    messageLower.includes('refactor')
   ) {
     return 'Architecture';
   }
-  
-  // Code Quality/Best Practices
+
+  // ================================================================
+  // CODE QUALITY PATTERNS (DEFAULT)
+  // ================================================================
+  // Java code quality tools
+  if (toolLower === 'pmd' || toolLower === 'checkstyle' || toolLower === 'spotbugs') {
+    return 'Code Quality';
+  }
+  // Python code quality tools
+  if (toolLower === 'pylint' || toolLower === 'mypy' || toolLower === 'flake8' || toolLower === 'ruff') {
+    return 'Code Quality';
+  }
+  // JavaScript/TypeScript code quality
+  if (toolLower === 'eslint' || toolLower === 'tslint') {
+    return 'Code Quality';
+  }
+  // Go code quality
+  if (toolLower === 'golangci-lint' || toolLower === 'go-vet') {
+    return 'Code Quality';
+  }
+  // Ruby code quality
+  if (toolLower === 'rubocop') {
+    return 'Code Quality';
+  }
+  // General code quality patterns
   if (
-    tool === 'pmd' ||
-    tool === 'checkstyle' ||
     ruleLower.includes('naming') ||
     ruleLower.includes('style') ||
     ruleLower.includes('convention') ||
-    messageLower.includes('best practice')
-  ) {
-    return 'Code Quality';
-  }
-  
-  // Dependency/Vulnerability
-  if (
-    tool === 'dependency-check' ||
-    tool === 'owasp' ||
-    ruleLower.includes('dependency') ||
-    ruleLower.includes('cve') ||
-    messageLower.includes('outdated')
-  ) {
-    return 'Dependencies';
-  }
-  
-  // SpotBugs does bytecode analysis to find bugs and code quality issues
-  if (tool === 'spotbugs') {
-    return 'Code Quality';
-  }
-  
-  // Other bug patterns still map to Code Quality
-  if (
     ruleLower.includes('null') ||
     ruleLower.includes('exception') ||
     ruleLower.includes('bug') ||
+    messageLower.includes('best practice') ||
     messageLower.includes('potential bug')
   ) {
     return 'Code Quality';

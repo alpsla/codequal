@@ -163,11 +163,13 @@ async function runJavaTest(): Promise<void> {
       // Import ScanFixExecutor
       const { ScanFixExecutor } = await import('../../src/fix-agent/scan-fix-executor');
 
+      // SESSION 44 FIX: Changed dryRun to false to enable pattern saving to Supabase
+      // With dryRun: true, AI fixes were verified but NEVER saved to patterns table
       const fixExecutor = new ScanFixExecutor({
         workingDir: repoPath,
         language: 'java',
         outputMode: 'patch',
-        dryRun: true, // Don't actually modify files in test
+        dryRun: false, // CRITICAL: Must be false to save patterns to Supabase!
       });
 
       const scanFixResults = await fixExecutor.executeFixes(categorizedIssues);

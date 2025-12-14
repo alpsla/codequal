@@ -32,3 +32,21 @@ export {
   type FixBatch,
   type RoutingResult,
 } from './supabase-fix-router';
+
+// Framework Pattern Storage - For pattern flywheel and cost savings
+export {
+  FrameworkPatternStorage,
+  getFrameworkPatternStorage,
+  // Convenience functions
+  lookupFrameworkPattern,
+  storeFrameworkPattern,
+  recordFrameworkPatternApplication,
+  getFrameworkPatternStats,
+  // Types
+  type StoredFrameworkPattern,
+  type PatternDetection,
+  type PatternFixTemplate,
+  type PatternExample,
+  type PatternLookupResult,
+  type PatternStorageStats,
+} from './framework-pattern-storage';

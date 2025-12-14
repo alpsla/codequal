@@ -647,7 +647,128 @@ export function classifyIssue(ruleId: string | undefined | null, tool: string): 
     }
   }
 
-  // Priority 3: Rule not found - needs AI classification
+  // Priority 3: Tool-specific defaults for unknown rules
+  // These tools have AI-based or native fix capabilities even for unknown rules
+
+  // Semgrep: Security rules are AI-fixable (our AI fixer handles them well)
+  if (normalizedTool === 'semgrep') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'security',  // Semgrep primarily finds security issues
+      confidence: 70,         // Medium confidence - we know it's security-related
+      fixable: true,          // AI can generate fixes for semgrep findings
+      fixTier: 2,             // Tier 2: AI-based fixing (not manual review)
+    };
+  }
+
+  // npm-audit / dependency tools: Fixable with npm audit fix
+  if (normalizedTool === 'npm-audit' || normalizedTool === 'dependency-check' ||
+      normalizedTool === 'snyk' || normalizedTool === 'trivy') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'dependency',
+      confidence: 80,         // High confidence - these are dependency issues
+      fixable: true,          // Most dependency issues are fixable with package updates
+      fixTier: 1,             // Tier 1: Native tool can fix (npm audit fix, etc.)
+    };
+  }
+
+  // BUG-094 FIX: Python dependency tools (pip-audit, safety)
+  if (normalizedTool === 'pip-audit' || normalizedTool === 'safety') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'dependency',
+      confidence: 80,         // High confidence - these are Python dependency issues
+      fixable: true,          // Fixable with pip-audit --fix or pip install --upgrade
+      fixTier: 1,             // Tier 1: Native tool can fix
+    };
+  }
+
+  // BUG-094 FIX: Python security tools (bandit)
+  if (normalizedTool === 'bandit') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'security',
+      confidence: 80,         // High confidence - bandit finds security issues
+      fixable: true,          // AI can generate security fixes
+      fixTier: 2,             // Tier 2: AI-based fixing
+    };
+  }
+
+  // BUG-094 FIX: Python code quality tools (pylint, mypy, flake8)
+  if (normalizedTool === 'pylint' || normalizedTool === 'mypy' || normalizedTool === 'flake8') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'quality',
+      confidence: 70,         // Medium-high confidence
+      fixable: true,          // Many rules fixable with AI or IDE
+      fixTier: 2,             // Tier 2: AI-based or dedicated tool fixing
+    };
+  }
+
+  // BUG-094 FIX: Go tools (golangci-lint, gosec)
+  if (normalizedTool === 'golangci-lint' || normalizedTool === 'go-vet') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'quality',
+      confidence: 70,
+      fixable: true,          // golangci-lint --fix available
+      fixTier: 1,
+    };
+  }
+
+  if (normalizedTool === 'gosec') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'security',
+      confidence: 80,
+      fixable: true,          // AI can generate fixes
+      fixTier: 2,
+    };
+  }
+
+  // BUG-094 FIX: Ruby tools (rubocop, brakeman, bundler-audit)
+  if (normalizedTool === 'rubocop') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'quality',
+      confidence: 70,
+      fixable: true,          // rubocop -a available
+      fixTier: 1,
+    };
+  }
+
+  if (normalizedTool === 'brakeman') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'security',
+      confidence: 80,
+      fixable: true,          // AI can generate fixes
+      fixTier: 2,
+    };
+  }
+
+  if (normalizedTool === 'bundler-audit') {
+    return {
+      ruleId,
+      tool,
+      issueType: 'dependency',
+      confidence: 80,
+      fixable: true,          // bundle update can fix
+      fixTier: 1,
+    };
+  }
+
+  // Default: Unknown rule needs AI classification
   return {
     ruleId,
     tool,

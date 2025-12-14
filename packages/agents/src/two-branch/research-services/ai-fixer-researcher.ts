@@ -181,35 +181,59 @@ export class AIFixerResearcherService {
   private async aiCompileFixerModelResults(
     language: string,
     searchResults: BraveSearchResult[]
-  ): Promise<{ modelId: string; provider: string; reason: string; score: number } | null> {
+  ): Promise<{
+    modelId: string;
+    provider: string;
+    reason: string;
+    score: number;
+    fallbackModelId?: string;
+    fallbackProvider?: string;
+  } | null> {
     const searchContext = searchResults.length > 0
       ? searchResults.slice(0, 10).map(r => `- ${r.title}: ${r.description} (${r.url})`).join('\n')
       : '(No search results - use your training knowledge)';
 
     const prompt = `
-Analyze the following web search results to identify the BEST AI/LLM model for ${language} code fixing/refactoring as of 2025.
+Analyze the following web search results to identify the BEST AI/LLM models for ${language} code fixing/refactoring as of December 2025.
 
 Search Results:
 ${searchContext}
 
-Based on these results and your knowledge, recommend the SINGLE BEST model for ${language} code fixing.
+CRITICAL REQUIREMENTS:
+1. ONLY select models released within the last 6 months (2 versions back MAX)
+2. Use EXACT OpenRouter model IDs - no made-up or deprecated IDs
+3. Valid current models include:
+   - Anthropic: claude-sonnet-4, claude-sonnet-4.5, claude-opus-4, claude-3.7-sonnet, claude-3.5-haiku
+   - OpenAI: gpt-4o, gpt-4o-mini, o1, o1-mini
+   - Google: gemini-2.0-flash-exp, gemini-1.5-pro
+   - DeepSeek: deepseek-chat, deepseek-coder
+4. DO NOT use old models like claude-3-sonnet-20240229, gpt-4-turbo, etc.
+
+Based on these results and your knowledge, recommend:
+1. PRIMARY model - The BEST RECENT model for ${language} code fixing
+2. FALLBACK model - The 2nd BEST RECENT model from a DIFFERENT PROVIDER (for redundancy)
+
 Consider factors like:
-- Code understanding and generation quality
+- Code understanding and generation quality (MOST IMPORTANT - weight 0.7)
+- Fix accuracy and compilation success rate (weight 0.15)
 - Language-specific expertise (${language})
-- Fix accuracy and compilation success rate
-- Response speed
-- Cost efficiency
+- Response speed (weight 0.05)
+- Cost efficiency (weight 0.05)
 
 Provide:
-1. model_id - The OpenRouter API model identifier (e.g., "anthropic/claude-sonnet-4-20250514", "openai/gpt-4o", "google/gemini-2.0-flash-001", "deepseek/deepseek-coder")
-2. provider - The provider (anthropic, openai, google, deepseek, meta, etc.)
-3. reason - Why this model is best for ${language} code fixing
-4. score - Confidence score 0-100
+1. model_id - Primary model OpenRouter API identifier (e.g., "anthropic/claude-sonnet-4", "openai/gpt-4o", "deepseek/deepseek-chat")
+2. provider - Primary provider (anthropic, openai, google, deepseek, etc.)
+3. fallback_model_id - Fallback model from DIFFERENT provider
+4. fallback_provider - Fallback provider (must be different from primary)
+5. reason - Why these models are best for ${language} code fixing
+6. score - Confidence score 0-100
 
 Return JSON format only:
 {
-  "model_id": "...",
-  "provider": "...",
+  "model_id": "anthropic/claude-sonnet-4",
+  "provider": "anthropic",
+  "fallback_model_id": "openai/gpt-4o",
+  "fallback_provider": "openai",
   "reason": "...",
   "score": 95
 }
@@ -241,7 +265,15 @@ Return JSON format only:
         return null;
       }
 
-      return JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        modelId: parsed.model_id,
+        provider: parsed.provider,
+        reason: parsed.reason,
+        score: parsed.score,
+        fallbackModelId: parsed.fallback_model_id,
+        fallbackProvider: parsed.fallback_provider,
+      };
     } catch (error) {
       console.error('   ❌ AI compilation error:', error);
       return null;
@@ -250,12 +282,27 @@ Return JSON format only:
 
   /**
    * Research best AI fixer models for all supported languages using Brave Search
+   * Returns both primary and fallback model recommendations
    */
-  async researchFixerModels(): Promise<Map<string, { modelId: string; provider: string; reason: string; score: number }>> {
+  async researchFixerModels(): Promise<Map<string, {
+    modelId: string;
+    provider: string;
+    reason: string;
+    score: number;
+    fallbackModelId?: string;
+    fallbackProvider?: string;
+  }>> {
     console.log('\n🔍 Researching Best AI Fixer Models via Brave Search');
     console.log('='.repeat(60));
 
-    const results = new Map<string, { modelId: string; provider: string; reason: string; score: number }>();
+    const results = new Map<string, {
+      modelId: string;
+      provider: string;
+      reason: string;
+      score: number;
+      fallbackModelId?: string;
+      fallbackProvider?: string;
+    }>();
 
     for (const language of SUPPORTED_LANGUAGES) {
       console.log(`\n📊 Researching ${language.toUpperCase()}...`);
@@ -272,7 +319,8 @@ Return JSON format only:
 
       if (recommendation) {
         results.set(language, recommendation);
-        console.log(`      Best: ${recommendation.modelId} (${recommendation.provider})`);
+        console.log(`      Primary:  ${recommendation.modelId} (${recommendation.provider})`);
+        console.log(`      Fallback: ${recommendation.fallbackModelId || 'N/A'} (${recommendation.fallbackProvider || 'N/A'})`);
         console.log(`      Score: ${recommendation.score}`);
         console.log(`      Reason: ${recommendation.reason?.slice(0, 60)}...`);
       } else {
@@ -288,7 +336,10 @@ Return JSON format only:
     console.log('📋 AI FIXER MODEL RECOMMENDATIONS');
     console.log('='.repeat(60));
     for (const [lang, rec] of results) {
-      console.log(`\n   ${lang.toUpperCase()}: ${rec.modelId} (${rec.provider}) - Score: ${rec.score}`);
+      console.log(`\n   ${lang.toUpperCase()}:`);
+      console.log(`      Primary:  ${rec.modelId} (${rec.provider})`);
+      console.log(`      Fallback: ${rec.fallbackModelId || 'N/A'} (${rec.fallbackProvider || 'N/A'})`);
+      console.log(`      Score: ${rec.score}`);
     }
 
     return results;
@@ -296,33 +347,48 @@ Return JSON format only:
 
   /**
    * Update Supabase model_configurations with researched AI fixer models
+   * Updates both primary and fallback models based on research
    */
   async updateFixerModelConfigurations(
-    recommendations: Map<string, { modelId: string; provider: string; reason: string; score: number }>
+    recommendations: Map<string, {
+      modelId: string;
+      provider: string;
+      reason: string;
+      score: number;
+      fallbackModelId?: string;
+      fallbackProvider?: string;
+    }>
   ): Promise<void> {
     console.log('\n📝 Updating AI Fixer model configurations in Supabase...');
 
     for (const [language, rec] of recommendations) {
       try {
+        // Build update object with both primary and fallback
+        const updateData: Record<string, any> = {
+          primary_model: rec.modelId,
+          primary_provider: rec.provider,
+          updated_by: 'ai-fixer-researcher',
+          last_updated: new Date().toISOString(),
+        };
+
+        // Add fallback if provided by research
+        if (rec.fallbackModelId && rec.fallbackProvider) {
+          updateData.fallback_model = rec.fallbackModelId;
+          updateData.fallback_provider = rec.fallbackProvider;
+        }
+
         const { error } = await this.supabase
           .from('model_configurations')
-          .upsert({
-            role: 'ai_fixer',
-            language,
-            primary_model: rec.modelId,
-            primary_provider: rec.provider,
-            confidence_score: rec.score,
-            research_notes: rec.reason,
-            last_research_date: new Date().toISOString(),
-            next_research_date: new Date(Date.now() + this.RESEARCH_INTERVAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
-          }, {
-            onConflict: 'role,language',
-          });
+          .update(updateData)
+          .eq('role', 'ai_fixer')
+          .eq('language', language);
 
         if (error) {
           console.log(`   ⚠️ Error updating ${language}: ${error.message}`);
         } else {
-          console.log(`   ✅ ${language}: ${rec.modelId}`);
+          console.log(`   ✅ ${language}:`);
+          console.log(`      Primary:  ${rec.modelId}`);
+          console.log(`      Fallback: ${rec.fallbackModelId || 'unchanged'}`);
         }
       } catch (e) {
         console.log(`   ❌ Failed to update ${language}: ${e}`);

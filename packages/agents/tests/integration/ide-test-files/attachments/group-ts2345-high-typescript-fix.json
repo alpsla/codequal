@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "group_id": "ts2345-high-typescript",
+  "rule": "TS2345",
+  "tool": "typescript",
+  "severity": "high",
+  "description": [
+    "Identify the function parameter expecting a number",
+    "Convert the string value to a number using parseInt(), parseFloat(), or Number()",
+    "Verify the source of the string value and ensure proper type handling"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "const value: number = Number(inputString);"
+    },
+    "instructions": [
+      "Identify the function parameter expecting a number",
+      "Convert the string value to a number using parseInt(), parseFloat(), or Number()",
+      "Verify the source of the string value and ensure proper type handling"
+    ]
+  },
+  "locations": [
+    {
+      "file": "test-autofix-issues.ts",
+      "line": 23,
+      "snippet": "    20 | export function addNumbers(a: number, b: number): number {\n    21 |   return a + b;\n    22 | }\n>   23 | const result = addNumbers('1', '2');  // Type error: string instead of number\n    24 | \n    25 | // Issue 5: ESLint - no-unused-vars (should be fixed by ESLint)\n    26 | const anotherUnused = 'test2';",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-typecheck/src/App.tsx",
+      "line": 5,
+      "snippet": "     2 | \n     3 | class App extends React.Component {\n     4 |   render() {\n>    5 |     return <div>{format(123)}</div>;\n     6 |   }\n     7 | }\n     8 | ",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

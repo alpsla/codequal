@@ -1,0 +1,379 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-lang-security-detect-child-process-detect-child-process-high-semgrep",
+  "rule": "javascript.lang.security.detect-child-process.detect-child-process",
+  "tool": "semgrep",
+  "severity": "high",
+  "description": "Replace child_process.exec() with child_process.execSync() or child_process.spawn() and implement proper input validation and sanitization. Use a whitelist approach for allowed characters in basename or escape shell metacharacters properly. Consider using a dedicated command execution library with built-in sanitization.",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 90,
+    "example": {
+      "before": "",
+      "after": "const { execSync } = require('child_process');\nconst sanitizedBasename = basename.replace(/[^a-zA-Z0-9._-]/g, '');\nconst result = execSync(`some-command ${sanitizedBasename}`, { encoding: 'utf8' });"
+    },
+    "instructions": "Replace child_process.exec() with child_process.execSync() or child_process.spawn() and implement proper input validation and sanitization. Use a whitelist approach for allowed characters in basename or escape shell metacharacters properly. Consider using a dedicated command execution library with built-in sanitization.",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: javascript.lang.security.detect-child-process.detect-child-process\nThis is a high quality issue detected by semgrep.\nThe issue is: \"Detected calls to child_process from a function argument `basename`. This could lead to a command injection if the input is user controllable. Try to avoid calls to child_process, and if it is needed ensure user input is correctly sanitized or sandboxed. \"\n\nFix this specific problem. Output only the corrected code.\nSPECIFIC FIX PATTERN:\n- Remove shell=True when possible, use command as list\n- Python: subprocess.run(['cmd', arg], shell=False, check=True)\n- JavaScript: child_process.execFile() instead of exec()\n- If shell features needed, use shlex.quote() to escape",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: javascript.lang.security.detect-child-process.detect-child-process (semgrep)\nSEVERITY: high\nMESSAGE: Detected calls to child_process from a function argument `basename`. This could lead to a command injection if the input is user controllable. Try to avoid calls to child_process, and if it is needed ensure user input is correctly sanitized or sandboxed. \n\nFILE: packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts\nLINE: 1021\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.\n\nHINT: Determine if shell features are needed. Generate safe subprocess call.",
+      "outputFormat": "code-block",
+      "maxTokens": 600,
+      "temperature": 0.1,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 1021,
+      "snippet": "  1018 | \n  1019 |     try {\n  1020 |       const result = execSync(\n> 1021 |         `find \"${this.repoPath}\" -type f -name \"${basename}\" | grep -v \"/\\\\.git/\" | head -1`,\n  1022 |         { encoding: 'utf-8' }\n  1023 |       ).trim();\n  1024 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 4506,
+      "snippet": "  4503 |       // BUG #4 FIX: Get commits from last 6 months only (active developers)\n  4504 |       // This filters out historical developers who left the team\n  4505 |       // SECURITY FIX: Quote repoPath to prevent command injection\n> 4506 |       const out = execSync(`git -C \"${repoPath}\" log --format=%ae:::%an --since=\"6 months ago\" -n 200`, {\n  4507 |         stdio: ['ignore', 'pipe', 'ignore']\n  4508 |       }).toString();\n  4509 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/docs/testing/validation-issues.ts",
+      "line": 132,
+      "snippet": "   129 | // 2. Command Injection vulnerability\n   130 | import { exec } from 'child_process';\n   131 | function executeCommand(userInput: string) {\n>  132 |   exec(\"ls \" + userInput, (error, stdout) => {\n   133 |     console.log(stdout);\n   134 |   });\n   135 | }",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-codequal-v9-dogfooding.ts",
+      "line": 37,
+      "snippet": "    34 |   try {\n    35 |     // Count all source files (TypeScript, JavaScript, JSON, etc.)\n    36 |     const result = execSync(\n>   37 |       `find \"${repoPath}\" -type f \\\\( -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.json\" -o -name \"*.md\" \\\\) ! -path \"*/node_modules/*\" ! -path \"*/.git/*\" ! -path \"*/dist...\n    38 |       { encoding: 'utf-8' }\n    39 |     ).trim();\n    40 |     return parseInt(result) || 0;",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-codequal-v9-dogfooding.ts",
+      "line": 51,
+      "snippet": "    48 |   try {\n    49 |     // Count lines in TypeScript and JavaScript files\n    50 |     const result = execSync(\n>   51 |       `find \"${repoPath}\" -type f \\\\( -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" -o -name \"*.jsx\" \\\\) ! -path \"*/node_modules/*\" ! -path \"*/.git/*\" ! -path \"*/dist/*\" ! -path \"*/.next/*\" -exec cat ...\n    52 |       { encoding: 'utf-8' }\n    53 |     ).trim();\n    54 |     return parseInt(result) || 0;",
+      "category": "NEW"
+    },
+    {
+      "file": ".claude/test-mcp-servers.js",
+      "line": 9,
+      "snippet": "     6 |   console.log(`\\nTesting ${name} MCP server...`);\n     7 |   console.log(`Command: ${command} ${args.join(' ')}`);\n     8 |   \n>    9 |   const child = spawn(command, args, {\n    10 |     env: { ...process.env, ...env },\n    11 |     stdio: ['pipe', 'pipe', 'pipe']\n    12 |   });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/scripts/download-v9-reports.ts",
+      "line": 67,
+      "snippet": "    64 |     // Download V9 report\n    65 |     try {\n    66 |       const checkReportCmd = `ssh -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}\" \"ls ${remoteReportPath} 2>/dev/null || echo 'NOT_FOUND'\"`;\n>   67 |       const reportExists = execSync(checkReportCmd, { encoding: 'utf-8' }).trim();\n    68 |       \n    69 |       if (reportExists !== 'NOT_FOUND') {\n    70 |         const downloadReportCmd = `scp -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}:${remoteReportPath}\" \"${localReportPath}\"`;",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/scripts/download-v9-reports.ts",
+      "line": 71,
+      "snippet": "    68 |       \n    69 |       if (reportExists !== 'NOT_FOUND') {\n    70 |         const downloadReportCmd = `scp -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}:${remoteReportPath}\" \"${localReportPath}\"`;\n>   71 |         execSync(downloadReportCmd, { stdio: 'pipe' });\n    72 |         \n    73 |         if (fs.existsSync(localReportPath)) {\n    74 |           const stats = fs.statSync(localReportPath);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/scripts/download-v9-reports.ts",
+      "line": 88,
+      "snippet": "    85 |     // Download manifest file\n    86 |     try {\n    87 |       const checkManifestCmd = `ssh -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}\" \"ls ${remoteManifestPath} 2>/dev/null || echo 'NOT_FOUND'\"`;\n>   88 |       const manifestExists = execSync(checkManifestCmd, { encoding: 'utf-8' }).trim();\n    89 |       \n    90 |       if (manifestExists !== 'NOT_FOUND') {\n    91 |         const downloadManifestCmd = `scp -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}:${remoteManifestPath}\" \"${localManifestPath}\"`;",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/scripts/download-v9-reports.ts",
+      "line": 92,
+      "snippet": "    89 |       \n    90 |       if (manifestExists !== 'NOT_FOUND') {\n    91 |         const downloadManifestCmd = `scp -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}:${remoteManifestPath}\" \"${localManifestPath}\"`;\n>   92 |         execSync(downloadManifestCmd, { stdio: 'pipe' });\n    93 |         \n    94 |         if (fs.existsSync(localManifestPath)) {\n    95 |           const stats = fs.statSync(localManifestPath);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/scripts/download-v9-reports.ts",
+      "line": 112,
+      "snippet": "   109 |       const remoteAttachmentsPath = `~/codequal/packages/agents/test-outputs/${repository}-attachments/`;\n   110 |       \n   111 |       const checkAttachmentsCmd = `ssh -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}\" \"ls -d ${remoteAttachmentsPath} 2>/dev/null || echo 'NOT_FOUND'\"`;\n>  112 |       const attachmentsExist = execSync(checkAttachmentsCmd, { encoding: 'utf-8' }).trim();\n   113 |       \n   114 |       if (attachmentsExist !== 'NOT_FOUND') {\n   115 |         fs.mkdirSync(attachmentsDir, { recursive: true });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/scripts/download-v9-reports.ts",
+      "line": 117,
+      "snippet": "   114 |       if (attachmentsExist !== 'NOT_FOUND') {\n   115 |         fs.mkdirSync(attachmentsDir, { recursive: true });\n   116 |         const downloadAttachmentsCmd = `scp -r -i \"${SSH_KEY}\" -o StrictHostKeyChecking=no \"opc@${ORACLE_IP}:${remoteAttachmentsPath}*\" \"${attachmentsDir}/\"`;\n>  117 |         execSync(downloadAttachmentsCmd, { stdio: 'pipe' });\n   118 |         \n   119 |         const attachmentFiles = fs.readdirSync(attachmentsDir);\n   120 |         if (attachmentFiles.length > 0) {",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/scripts/codequal-session-starter.ts",
+      "line": 351,
+      "snippet": "   348 |    */\n   349 |   private async checkServicePort(port: number): Promise<boolean> {\n   350 |     try {\n>  351 |       execSync(`curl -s http://localhost:${port}/health`, { stdio: 'pipe' });\n   352 |       return true;\n   353 |     } catch {\n   354 |       return false;",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/archive/location-services-2025-11-06/location-enhancer.ts",
+      "line": 148,
+      "snippet": "   145 |       for (const localCachePath of possiblePaths) {\n   146 |         if (!localCachePath) continue;\n   147 |         try {\n>  148 |           execSync(`test -d \"${localCachePath}\"`, { stdio: 'ignore' });\n   149 |           console.log(`  ✓ Found repository at: ${localCachePath}`);\n   150 |           return localCachePath;\n   151 |         } catch {",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/archive/location-services-2025-11-06/location-enhancer.ts",
+      "line": 169,
+      "snippet": "   166 |       // Try to get from Redis if available\n   167 |       if (process.env.REDIS_URL) {\n   168 |         const result = execSync(\n>  169 |           `redis-cli -u \"${process.env.REDIS_URL}\" GET \"${key}\" 2>/dev/null`,\n   170 |           { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }\n   171 |         ).trim();\n   172 |         ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-bidirectional-locator.ts",
+      "line": 54,
+      "snippet": "    51 |       const escaped = this.escapeForGrep(snippet.substring(0, 100));\n    52 |       const grepCmd = `grep -rn -F \"${escaped}\" \"${repoPath}\" --include=\"*.ts\" --include=\"*.js\" --include=\"*.tsx\" --include=\"*.jsx\" 2>/dev/null | head -5`;\n    53 |       \n>   54 |       const result = execSync(grepCmd, { \n    55 |         encoding: 'utf8',\n    56 |         maxBuffer: 10 * 1024 * 1024\n    57 |       }).trim();",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-bidirectional-locator.ts",
+      "line": 255,
+      "snippet": "   252 |     try {\n   253 |       // Use ripgrep for fuzzy matching\n   254 |       const searchCmd = `rg -n \"${pattern}\" \"${repoPath}\" --type-add 'code:*.{js,ts,jsx,tsx}' -t code -m 5 2>/dev/null || true`;\n>  255 |       const result = execSync(searchCmd, { encoding: 'utf8' }).trim();\n   256 |       \n   257 |       if (result) {\n   258 |         const match = result.match(/^(.+?):(\\d+):(.*)$/);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-bidirectional-locator.ts",
+      "line": 292,
+      "snippet": "   289 |     \n   290 |     try {\n   291 |       const searchCmd = `grep -rn -w \"${keyword}\" \"${repoPath}\" --include=\"*.ts\" --include=\"*.js\" 2>/dev/null | head -1`;\n>  292 |       const result = execSync(searchCmd, { encoding: 'utf8' }).trim();\n   293 |       \n   294 |       if (result) {\n   295 |         const match = result.match(/^(.+?):(\\d+):(.*)$/);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-extractor.ts",
+      "line": 142,
+      "snippet": "   139 |       try {\n   140 |         const baseName = path.basename(location.file);\n   141 |         const findResult = execSync(\n>  142 |           `find \"${repoPath}\" -name \"${baseName}\" -type f | head -1`,\n   143 |           { encoding: 'utf-8' }\n   144 |         ).trim();\n   145 |         ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-extractor.ts",
+      "line": 218,
+      "snippet": "   215 |           execSync('which rg', { encoding: 'utf-8' });\n   216 |           // Search all common code file types\n   217 |           searchCmd = `rg -n --max-count 3 \"${pattern}\" \"${repoPath}\" --type-add 'code:*.{js,ts,jsx,tsx,py,rb,go,rs,java,kt,cs,php,cpp,c,h,swift,m,r,R,jl,lua,pl,scala,clj}' -t code 2>/dev/null | head ...\n>  218 |           searchResult = execSync(searchCmd, { encoding: 'utf-8', timeout: 2000 });\n   219 |         } catch {\n   220 |           // Fall back to grep with language-agnostic search\n   221 |           // Look in common source directories",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-extractor.ts",
+      "line": 238,
+      "snippet": "   235 |                 ].join(' ');\n   236 |                 \n   237 |                 const grepCmd = `grep -r -n \"${pattern}\" \"${dirPath}\" ${includes} 2>/dev/null | head -2`;\n>  238 |                 searchResult += execSync(grepCmd, { encoding: 'utf-8', timeout: 1000 });\n   239 |               } catch {\n   240 |         // Ignore error and continue\n   241 |       }",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-locator.ts",
+      "line": 88,
+      "snippet": "    85 |       // -r: recursive, -n: line numbers, -F: fixed string (literal)\n    86 |       const grepCommand = `grep -rn -F \"${escapedSnippet}\" \"${repoPath}\" --include=\"*.ts\" --include=\"*.js\" --include=\"*.tsx\" --include=\"*.jsx\" --include=\"*.mjs\" --include=\"*.cjs\" 2>/dev/null || true`;\n    87 |       \n>   88 |       const result = execSync(grepCommand, { \n    89 |         encoding: 'utf8',\n    90 |         maxBuffer: 10 * 1024 * 1024 // 10MB buffer\n    91 |       });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/code-snippet-locator.ts",
+      "line": 154,
+      "snippet": "   151 |       const keywordPattern = keywords.map(k => `-e \"${k}\"`).join(' ');\n   152 |       const searchCommand = `grep -rl ${keywordPattern} \"${repoPath}\" --include=\"*.ts\" --include=\"*.js\" --include=\"*.tsx\" --include=\"*.jsx\" 2>/dev/null || true`;\n   153 |       \n>  154 |       const files = execSync(searchCommand, { encoding: 'utf8' })\n   155 |         .split('\\n')\n   156 |         .filter(f => f.trim());\n   157 |       ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/enhanced-location-finder.ts",
+      "line": 133,
+      "snippet": "   130 |       for (const term of searchTerms) {\n   131 |         const cmd = `grep -n -i \"${term}\" \"${filePath}\" 2>/dev/null | head -5`;\n   132 |         try {\n>  133 |           const output = execSync(cmd, { encoding: 'utf-8' });\n   134 |           if (output) {\n   135 |             const lines = output.trim().split('\\n');\n   136 |             const firstMatch = lines[0];",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/enhanced-location-finder.ts",
+      "line": 183,
+      "snippet": "   180 |       \n   181 |       try {\n   182 |         const cmd = `rg -n --type-add 'code:*.{js,ts,jsx,tsx,json}' -t code \"${searchPattern}\" \"${repoPath}\" 2>/dev/null | head -5`;\n>  183 |         const output = execSync(cmd, { encoding: 'utf-8', maxBuffer: 1024 * 1024 });\n   184 |         \n   185 |         if (output) {\n   186 |           const matches = output.trim().split('\\n');",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/enhanced-location-finder.ts",
+      "line": 222,
+      "snippet": "   219 |       try {\n   220 |         // Use ripgrep for fast searching\n   221 |         const cmd = `rg -n --type-add 'code:*.{js,ts,jsx,tsx}' -t code -i \"${term}\" \"${repoPath}\" 2>/dev/null | head -10`;\n>  222 |         const output = execSync(cmd, { encoding: 'utf-8', maxBuffer: 1024 * 1024 });\n   223 |         \n   224 |         if (output) {\n   225 |           // Score each match based on relevance",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/enhanced-location-finder.ts",
+      "line": 285,
+      "snippet": "   282 |     for (const pattern of patterns) {\n   283 |       try {\n   284 |         const cmd = `find \"${repoPath}\" -type f -name \"*${pattern}*\" 2>/dev/null | grep -E \"\\\\.(js|ts|jsx|tsx)$\" | head -5`;\n>  285 |         const output = execSync(cmd, { encoding: 'utf-8' });\n   286 |         \n   287 |         if (output) {\n   288 |           const files = output.trim().split('\\n');",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/services/enhanced-location-finder.ts",
+      "line": 355,
+      "snippet": "   352 |     \n   353 |     try {\n   354 |       const cmd = `find \"${repoPath}\" -type f -name \"*${baseName}*\" 2>/dev/null | head -1`;\n>  355 |       const output = execSync(cmd, { encoding: 'utf-8' });\n   356 |       \n   357 |       if (output) {\n   358 |         return output.trim().replace(repoPath + '/', '');",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/standard/utils/bug-manager.ts",
+      "line": 266,
+      "snippet": "   263 |       \n   264 |       // Use GitHub CLI if available\n   265 |       const result = execSync(\n>  266 |         `gh issue create --title \"${title}\" --body \"${body}\" --label \"bug,${bug.severity}-severity\"`,\n   267 |         { encoding: 'utf-8' }\n   268 |       );\n   269 |       ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/two-branch-cache-manager.ts",
+      "line": 137,
+      "snippet": "   134 | \n   135 |     // Step 2: Checkout PR branch\n   136 |     console.log(`\\n📝 Switching to PR branch: ${prBranch}`);\n>  137 |     execSync(`cd ${repoPath} && git checkout ${prBranch}`, { stdio: 'pipe' });\n   138 | \n   139 |     // Step 3: Get PR commit\n   140 |     const prCommit = this.getCommit(repoPath, 'HEAD');",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/two-branch-cache-manager.ts",
+      "line": 271,
+      "snippet": "   268 |       -c \"pmd pmd --file-list /filelist.txt -R category/java/errorprone.xml -f text -t ${config.threads} --no-cache\"`;\n   269 | \n   270 |     try {\n>  271 |       const output = execSync(command, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });\n   272 |       return this.parseViolations(output);\n   273 |     } catch (error: any) {\n   274 |       if (error.stdout) {",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/two-branch-cache-manager.ts",
+      "line": 314,
+      "snippet": "   311 |    */\n   312 |   private getAllJavaFiles(repoPath: string): string[] {\n   313 |     const output = execSync(\n>  314 |       `find ${repoPath} -name \"*.java\" -type f | grep -v test`,\n   315 |       { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }\n   316 |     );\n   317 |     return output.trim().split('\\n').filter(f => f.length > 0);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/two-branch-cache-manager.ts",
+      "line": 322,
+      "snippet": "   319 | \n   320 |   private getCommit(repoPath: string, branch: string): string {\n   321 |     return execSync(\n>  322 |       `cd ${repoPath} && git rev-parse ${branch}`,\n   323 |       { encoding: 'utf8' }\n   324 |     ).trim();\n   325 |   }",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-base-analyzer.ts",
+      "line": 523,
+      "snippet": "   520 |         }\n   521 |         \n   522 |         // Analyze main branch\n>  523 |         const mainOutput = execSync(mainCommand, { \n   524 |           cwd: mainPath, \n   525 |           encoding: 'utf8',\n   526 |           maxBuffer: 10 * 1024 * 1024 // 10MB buffer",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-base-analyzer.ts",
+      "line": 540,
+      "snippet": "   537 |         mainIssues.push(...filteredMainIssues);\n   538 |         \n   539 |         // Analyze PR branch\n>  540 |         const prOutput = execSync(prCommand, { \n   541 |           cwd: prPath, \n   542 |           encoding: 'utf8',\n   543 |           maxBuffer: 10 * 1024 * 1024",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-repository-manager.ts",
+      "line": 70,
+      "snippet": "    67 |    */\n    68 |   async getModifiedFiles(mainPath: string, prPath: string): Promise<string[]> {\n    69 |     try {\n>   70 |       const diff = execSync(`diff -qr \"${mainPath}\" \"${prPath}\" | grep -E \"^Files.*differ$\" | awk '{print $2}' | sed \"s|^${mainPath}/||\"`, {\n    71 |         maxBuffer: 10 * 1024 * 1024\n    72 |       }).toString();\n    73 |       ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-repository-manager.ts",
+      "line": 143,
+      "snippet": "   140 |       }\n   141 |       \n   142 |       // Check repository size in MB\n>  143 |       const sizeOutput = execSync(`du -sm \"${repoPath}\" | cut -f1`).toString().trim();\n   144 |       const sizeInMB = parseInt(sizeOutput, 10);\n   145 |       \n   146 |       if (sizeInMB > 100) {",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-repository-manager.ts",
+      "line": 163,
+      "snippet": "   160 |    */\n   161 |   private async countFiles(dirPath: string): Promise<number> {\n   162 |     try {\n>  163 |       const output = execSync(`find \"${dirPath}\" -type f | wc -l`).toString().trim();\n   164 |       return parseInt(output, 10);\n   165 |     } catch (error) {\n   166 |       return 0;",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/report/snippet-extractor.ts",
+      "line": 27,
+      "snippet": "    24 |   \n    25 |   try {\n    26 |     const result = execSync(\n>   27 |       `find \"${repoPath}\" -type f -name \"${basename}\" | grep -v \"/\\\\.git/\" | head -1`,\n    28 |       { encoding: 'utf-8' }\n    29 |     ).trim();\n    30 |     ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 97,
+      "snippet": "    94 | \n    95 |     try {\n    96 |       const cloneCmd = `git clone --depth ${depth} \"${repoUrl}\" \"${localPath}\"`;\n>   97 |       execSync(cloneCmd, {\n    98 |         stdio: 'pipe',\n    99 |         timeout: timeout * 1000,\n   100 |         maxBuffer: 50 * 1024 * 1024 // 50 MB",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 138,
+      "snippet": "   135 |     for (const branch of branchesToCheck) {\n   136 |       try {\n   137 |         // Try to checkout the branch\n>  138 |         execSync(`git checkout ${branch}`, {\n   139 |           cwd: localPath,\n   140 |           stdio: 'pipe'\n   141 |         });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 146,
+      "snippet": "   143 |       } catch (error) {\n   144 |         // If checkout fails, try to fetch the branch\n   145 |         try {\n>  146 |           execSync(`git fetch origin ${branch}:${branch}`, {\n   147 |             cwd: localPath,\n   148 |             stdio: 'pipe'\n   149 |           });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 163,
+      "snippet": "   160 |    */\n   161 |   getModifiedFiles(localPath: string, baseBranch: string, prBranch: string): string[] {\n   162 |     try {\n>  163 |       const result = execSync(`git diff --name-only ${baseBranch}...${prBranch}`, {\n   164 |         cwd: localPath,\n   165 |         encoding: 'utf-8',\n   166 |         stdio: 'pipe'",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 179,
+      "snippet": "   176 |    */\n   177 |   checkoutBranch(localPath: string, branch: string): void {\n   178 |     try {\n>  179 |       execSync(`git checkout ${branch}`, {\n   180 |         cwd: localPath,\n   181 |         stdio: 'pipe'\n   182 |       });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 233,
+      "snippet": "   230 |     try {\n   231 |       // Method 2: Try with sudo (Linux/macOS only)\n   232 |       if (process.platform !== 'win32') {\n>  233 |         execSync(`sudo rm -rf \"${localPath}\"`, {\n   234 |           stdio: 'pipe',\n   235 |           timeout: 30000\n   236 |         });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 247,
+      "snippet": "   244 |     try {\n   245 |       // Method 3: Try Git removal (if it's a Git repo)\n   246 |       if (fs.existsSync(path.join(localPath, '.git'))) {\n>  247 |         execSync(`git clean -fdx && rm -rf \"${localPath}\"`, {\n   248 |           cwd: path.dirname(localPath),\n   249 |           stdio: 'pipe',\n   250 |           timeout: 30000",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/git-patch-generator.ts",
+      "line": 235,
+      "snippet": "   232 |     // Run git apply --check\n   233 | \n   234 |     try {\n>  235 |       execSync(`git apply --check ${tempPatchPath}`, {\n   236 |         cwd: repositoryPath,\n   237 |         stdio: 'pipe'\n   238 |       });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/git-utils.ts",
+      "line": 72,
+      "snippet": "    69 |   // Try three-dot diff first (merge base approach)\n    70 |   try {\n    71 |     const diffOutput = execSync(\n>   72 |       `git diff --name-only --find-renames ${baseBranch}...${compareBranch}`,\n    73 |       { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }\n    74 |     );\n    75 | ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/git-utils.ts",
+      "line": 92,
+      "snippet": "    89 |   // Fallback to two-dot diff if no merge base exists or three-dot returned nothing\n    90 |   try {\n    91 |     const diffOutput = execSync(\n>   92 |       `git diff --name-only --find-renames ${baseBranch}..${compareBranch}`,\n    93 |       { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }\n    94 |     );\n    95 | ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/git-utils.ts",
+      "line": 118,
+      "snippet": "   115 |  */\n   116 | export function branchExists(repoPath: string, branchName: string): boolean {\n   117 |   try {\n>  118 |     execSync(`git rev-parse --verify ${branchName}`, {\n   119 |       cwd: repoPath,\n   120 |       stdio: 'ignore'\n   121 |     });",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 66,
+      "snippet": "    63 |     const startTime = Date.now();\n    64 | \n    65 |     // Get current commit\n>   66 |     const commit = execSync(`cd ${repoPath} && git rev-parse HEAD`, { encoding: 'utf8' }).trim();\n    67 | \n    68 |     // Check if we already have this index\n    69 |     const cacheKey = this.getCacheKey(repoUrl, branch, commit);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 246,
+      "snippet": "   243 |     console.log('📝 Getting diff files for PR analysis...');\n   244 | \n   245 |     const command = `cd ${repoPath} && git diff --name-only ${baseBranch}...${prBranch} | grep -E \"\\\\.(java|kt|scala|groovy)$\" || true`;\n>  246 |     const output = execSync(command, { encoding: 'utf8' });\n   247 | \n   248 |     const files = output.trim().split('\\n').filter(f => f.length > 0);\n   249 |     console.log(`   Found ${files.length} changed files in PR`);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 397,
+      "snippet": "   394 |   private async findFiles(repoPath: string, pattern: string): Promise<string[]> {\n   395 |     try {\n   396 |       const output = execSync(\n>  397 |         `find ${repoPath} -name \"${pattern}\" -type f 2>/dev/null | head -10000`,\n   398 |         { encoding: 'utf8' }\n   399 |       );\n   400 |       return output.trim().split('\\n').filter(f => f.length > 0);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/core/src/services/deepwiki-tools/docker/deepwiki-tool-integration.js",
+      "line": 63,
+      "snippet": "    60 |         maxBuffer: 20 * 1024 * 1024 // 20MB buffer for output\n    61 |       };\n    62 | \n>   63 |       exec(command, execOptions, (error, stdout, stderr) => {\n    64 |         if (error) {\n    65 |           if (error.killed && error.signal === 'SIGTERM') {\n    66 |             console.error('Tool execution timed out');",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/mcp-hybrid/src/adapters/direct/base-adapter.ts",
+      "line": 57,
+      "snippet": "    54 |     }\n    55 |   ): Promise<{ stdout: string; stderr: string; code: number }> {\n    56 |     return new Promise((resolve, reject) => {\n>   57 |       const child = spawn(command, args, {\n    58 |         cwd: options?.cwd,\n    59 |         env: { ...process.env, ...options?.env },\n    60 |         timeout: options?.timeout",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 776,
+      "snippet": "   773 |       const severities = groupIssues.map(issue => issue.severity);\n   774 |       const hasCritical = severities.includes('critical');\n   775 |       const hasHigh = severities.includes('high');\n>  776 |       const hasMedium = severities.includes('medium');\n   777 | \n   778 |       // Update group severity to highest severity found (but preserve group separation)\n   779 |       const aiSeverity = hasCritical ? 'critical' :",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 3855,
+      "snippet": "  3852 |       return {};\n  3853 |     }\n  3854 |   }\n> 3855 | \n  3856 |   /**\n  3857 |    * Extract fix pattern for IDE automation\n  3858 |    */",
+      "category": "RESOLVED"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 95,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 48
+  }
+}

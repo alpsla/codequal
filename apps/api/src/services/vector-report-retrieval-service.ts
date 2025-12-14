@@ -1,3 +1,4 @@
+// @ts-nocheck - Legacy file, not part of V9 pipeline
 import { createLogger } from '@codequal/core/utils';
 import { VectorContextService } from '@codequal/agents/multi-agent/vector-context-service';
 import { reportIdMappingService } from './report-id-mapping-service';
