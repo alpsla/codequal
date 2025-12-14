@@ -221,12 +221,27 @@ export class SupabasePatternStore {
   /**
    * Save a pattern to Supabase
    * DUPLICATE PREVENTION: Check if pattern for same rule_id+tool already exists
+   * EMPTY TEMPLATE VALIDATION: Reject patterns with empty fix templates
    */
   async savePattern(pattern: FixPattern): Promise<boolean> {
     const available = await this.initialize();
     if (!available || !this.client) {
       console.log('[SupabasePatternStore] Cannot save: persistence not available');
       return false;
+    }
+
+    // SESSION 48 FIX: Validate that pattern has usable fix content
+    // A pattern must have EITHER a non-empty fixTemplate.template OR a non-empty examples[].after
+    // Without this, pattern reuse will fail silently and fall back to AI unnecessarily
+    const hasTemplate = pattern.fixTemplate?.template && pattern.fixTemplate.template.trim().length > 0;
+    const hasExampleAfter = pattern.examples?.some(ex => ex.after && ex.after.trim().length > 0);
+
+    if (!hasTemplate && !hasExampleAfter) {
+      console.warn(
+        `[SupabasePatternStore] REJECTED pattern ${pattern.id?.substring(0, 8) || 'new'} for ${pattern.ruleId}: ` +
+        `empty fixTemplate.template AND no usable examples[].after - pattern would be unusable`
+      );
+      return false; // Reject empty patterns to prevent "poisoned" patterns in database
     }
 
     try {

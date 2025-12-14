@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "group_id": "javascript-express-security-audit-xss-direct-response-write-direct-response-write-medium-semgrep",
+  "rule": "javascript.express.security.audit.xss.direct-response-write.direct-response-write",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Replace direct response writing with a secure templating engine that automatically escapes HTML. Use the application's built-in safe rendering methods like 'resp.render()' or equivalent. Ensure all user-provided data is escaped before inclusion in HTML output. Reference OWASP ESAPI or similar libraries for proper encoding.",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "resp.render('template', { data: sanitizedData });"
+    },
+    "instructions": "Replace direct response writing with a secure templating engine that automatically escapes HTML. Use the application's built-in safe rendering methods like 'resp.render()' or equivalent. Ensure all user-provided data is escaped before inclusion in HTML output. Reference OWASP ESAPI or similar libraries for proper encoding.",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: javascript.express.security.audit.xss.direct-response-write.direct-response-write\nThis is a medium quality issue detected by semgrep.\nThe issue is: \"Detected directly writing to a Response object from user-defined input. This bypasses any HTML escaping and may expose your application to a Cross-Site-scripting (XSS) vulnerability. Instead, use 'resp.render()' to render safely escaped HTML.\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: javascript.express.security.audit.xss.direct-response-write.direct-response-write (semgrep)\nSEVERITY: medium\nMESSAGE: Detected directly writing to a Response object from user-defined input. This bypasses any HTML escaping and may expose your application to a Cross-Site-scripting (XSS) vulnerability. Instead, use 'resp.render()' to render safely escaped HTML.\n\nFILE: apps/api/src/routes/progress.ts\nLINE: 336\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 500,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "apps/api/src/routes/progress.ts",
+      "line": 336,
+      "snippet": "   333 |     });\n   334 |     \n   335 |     // Send initial progress\n>  336 |     res.write(`data: ${JSON.stringify({\n   337 |       type: 'initial',\n   338 |       progress\n   339 |     })}\\n\\n`);",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "apps/api/src/routes/unified-progress.ts",
+      "line": 148,
+      "snippet": "   145 |     });\n   146 |     \n   147 |     // Send initial state\n>  148 |     res.write(`data: ${JSON.stringify({\n   149 |       type: 'initial',\n   150 |       analysisId,\n   151 |       userProgress: progress.userProgress,",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

@@ -1,6 +1,337 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: November 30, 2025**
+**Last Updated: December 13, 2025**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
+
+---
+
+## 🏗️ Framework-Specific Issue Classification (Session 42)
+
+### Overview
+New system for handling issues based on framework context. Different frameworks have different "normal" patterns - what's a bug in one framework might be intentional in another.
+
+### Issue Disposition Types
+```typescript
+type IssueDisposition =
+  | 'FIX_NOW'              // Apply fix immediately
+  | 'ADD_TO_PATTERNS'      // Fix and save pattern for reuse
+  | 'PATTERN_REUSE'        // Apply existing pattern (FREE - no AI call)
+  | 'FILTER_OUT'           // Known false positive for framework
+  | 'INTENTIONAL_USE'      // Legitimate use, don't fix
+  | 'ENVIRONMENT_ISSUE'    // Missing deps/config, not code issue
+  | 'MANUAL_REVIEW';       // Requires human decision
+```
+
+### Framework Configs
+Each framework defines:
+- **Intentional Patterns**: Code that looks problematic but is correct for this framework
+- **Filter Rules**: Issues to skip based on context (test files, generated code, etc.)
+- **Environment Requirements**: What needs to be installed for proper analysis
+- **Fix Strategies**: Framework-specific fix approaches
+
+### NestJS Example
+```typescript
+// CLI tools using child_process - INTENTIONAL, don't fix
+{
+  ruleId: 'detect-child-process',
+  filePatterns: [/cli\//, /scripts\//],
+  reason: 'CLI tools intentionally spawn processes'
+}
+
+// Missing @nestjs/* modules - ENVIRONMENT issue, not code
+{
+  ruleId: 'TS2307',
+  condition: 'when_missing_deps',
+  fixCommand: 'npx lerna bootstrap'
+}
+```
+
+### Pattern Flywheel Economics
+| Phase | Issues | AI Calls | Cost |
+|-------|--------|----------|------|
+| Week 1 | 1,000 | ~200 | ~$0.60 |
+| Month 2 | 1,000 | ~10 | ~$0.03 |
+| Month 6+ | 1,000 | ~2 | ~$0.006 |
+
+### Key Files
+```
+packages/agents/src/fix-agent/
+├── types/framework-issue-types.ts       # Type definitions
+├── framework-configs/
+│   ├── index.ts                         # Config registry
+│   └── nestjs-config.ts                 # NestJS rules
+└── services/
+    └── framework-issue-classifier.ts    # Classification service
+```
+
+### Usage
+```typescript
+import { classifyIssuesForFramework } from './fix-agent/services';
+
+const result = classifyIssuesForFramework(
+  issues,
+  'nestjs',           // framework
+  '/path/to/repo',    // workingDir
+  false               // dependenciesInstalled
+);
+
+// Result includes:
+// - fixableIssues: Issues to actually fix
+// - filteredIssues: Issues filtered with reasons
+// - costAnalysis: Pattern reuse savings
+```
+
+---
+
+## ⚡ CodeQL Performance Optimizations (Session 41)
+
+### Overview
+CodeQL runner now features comprehensive performance optimizations with user-configurable settings:
+
+### Default Configuration (Fast Mode)
+```typescript
+import { CODEQL_DEFAULTS } from './two-branch/tools/universal';
+
+// Defaults optimized for typical PRO tier usage:
+{
+  threads: 2,                    // Good for shared environments
+  querySuite: 'security',        // Faster (~40% less time)
+  enableCaching: true,           // Significant speedup on repeat runs
+  cacheTTLDays: 7,              // One week cache
+  useRamDisk: auto,             // Enabled on Linux
+  timeout: 900000,              // 15 minutes
+}
+```
+
+### Convenience Functions
+| Function | Use Case | Performance |
+|----------|----------|-------------|
+| `runCodeQL()` | Default analysis | Fast + caching |
+| `runCodeQLFast()` | One-off runs | Fastest (no caching) |
+| `runCodeQLParallel()` | Dedicated environments | Max parallelism |
+| `runCodeQLExtended()` | Thorough analysis | ~40% slower, more issues |
+
+### Cache Management
+- **TTL**: 7 days (configurable via `cacheTTLDays`)
+- **Storage**: ~100-500MB per database
+- **Auto-cleanup**: Expired caches removed on startup
+- **Manual cleanup**: `clearCodeQLCache()`
+- **Stats**: `getCodeQLCacheStats()` for monitoring
+
+### Usage Examples
+```typescript
+// Fast (default) - ~40% faster
+await runCodeQL(workspacePath, 'java');
+
+// Extended (thorough) - more issues detected
+await runCodeQLExtended(workspacePath, 'java');
+
+// Custom configuration
+await runCodeQL(workspacePath, 'java', {
+  querySuite: 'security-extended',
+  threads: 4,
+  cacheTTLDays: 14,
+});
+```
+
+### Key Files
+```
+packages/agents/src/two-branch/tools/universal/
+├── codeql-runner.ts     # Main runner with all optimizations
+└── index.ts             # Exports (CODEQL_DEFAULTS, runCodeQLExtended, etc.)
+```
+
+---
+
+## 🚀 PARALLEL AI FIXER (Session 39 - HIGH-PERFORMANCE FIX EXECUTION)
+
+### Overview
+New **two-tier parallel fix system** that dramatically improves fix execution performance:
+
+1. **Template Fixes (Tier 1)**: Fast, deterministic pattern-based fixes from `fix_patterns` table
+2. **AI Fixes (Tier 2)**: Parallel AI execution for issues without patterns
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    PARALLEL AI FIXER SYSTEM                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────┐    ┌─────────────────┐    ┌──────────────────┐   │
+│  │ IssueIndex   │◀──▶│ TemplateFixEng  │◀──▶│ Pattern Registry │   │
+│  │ (O(1) lookup)│    │ (Tier 1 - FAST) │    │ (Supabase)       │   │
+│  └──────┬───────┘    └────────┬────────┘    └──────────────────┘   │
+│         │                     │                                     │
+│         ▼                     ▼                                     │
+│  ┌──────────────┐    ┌─────────────────────────────┐               │
+│  │  FileCache   │◀───│ PARTITION:                  │               │
+│  │ (In-memory)  │    │ templateFixable | needsAI   │               │
+│  └──────┬───────┘    └─────────────┬───────────────┘               │
+│         │                          │                               │
+│         ▼                          ▼                               │
+│  ┌──────────────┐    ┌─────────────────────────────┐               │
+│  │  Template    │    │  ParallelAIFixerExecutor    │               │
+│  │  Fixes       │    │  (N workers in parallel)    │               │
+│  │  (Instant)   │    │  with self-improvement loop │               │
+│  └──────┬───────┘    └─────────────┬───────────────┘               │
+│         │                          │                               │
+│         └──────────────┬───────────┘                               │
+│                        ▼                                           │
+│               ┌────────────────┐                                   │
+│               │  Batch Verify  │                                   │
+│               │   Per-File     │                                   │
+│               └────────────────┘                                   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| **IssueIndex** | O(1) issue lookup by file/rule/location | `parallel-ai-fixer/issue-index.ts` |
+| **FileCache** | In-memory file content caching | `parallel-ai-fixer/file-cache.ts` |
+| **TemplateFixEngine** | Pattern-based fixing (Tier 1) | `parallel-ai-fixer/template-fix-engine.ts` |
+| **ParallelAIFixerExecutor** | Parallel AI execution (Tier 2) | `parallel-ai-fixer/parallel-executor.ts` |
+
+### Performance Comparison
+
+| Mode | 280 Issues | API Calls | Time | Speedup |
+|------|------------|-----------|------|---------|
+| Sequential | 280 | 280+ | ~14 min | 1x |
+| Parallel Only | 280 | 280+ | ~2.3 min | 6x |
+| **Template + Parallel** | 280 | ~170 | ~1.5 min | **9x** |
+
+### Usage
+
+```typescript
+import { ParallelAIFixerExecutor, executeParallelAIFixes } from './fix-agent/parallel-ai-fixer';
+
+// Quick fix function
+const result = await executeParallelAIFixes({
+  workspaceRoot: '/path/to/repo',
+  issues: detectedIssues,
+  parallelism: 4,
+});
+
+// Result: { summary: { total, templateFixed, aiFixed, failed }, files: {...} }
+```
+
+---
+
+## 🎯 SELF-IMPROVING PATTERN SYSTEM (Session 38 - KEY DIFFERENTIATOR)
+
+### Overview
+CodeQual features a **self-improving fix pattern system** that learns from every successful AI-generated fix. This is our key competitive advantage:
+
+- **PRO tier** generates AI fixes → patterns saved to Supabase → **BASIC tier benefits**
+- Every successful fix becomes a reusable pattern
+- Pattern library grows with each analysis run
+- Cross-session, cross-user pattern sharing
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    SELF-IMPROVING PATTERN SYSTEM                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────┐    ┌─────────────────┐    ┌──────────────────┐   │
+│  │   PRO User   │───▶│  AI Fix Agent   │───▶│ Pattern Registry │   │
+│  │  (New Issue) │    │  (Generates Fix)│    │   (Saves Fix)    │   │
+│  └──────────────┘    └─────────────────┘    └────────┬─────────┘   │
+│                                                       │             │
+│                                                       ▼             │
+│                                              ┌────────────────┐     │
+│                                              │   Supabase DB  │     │
+│                                              │  fix_patterns  │     │
+│                                              └────────┬───────┘     │
+│                                                       │             │
+│         ┌─────────────────────────────────────────────┤             │
+│         ▼                                             ▼             │
+│  ┌──────────────┐                            ┌──────────────────┐   │
+│  │  BASIC User  │◀───────────────────────────│  Pattern Lookup  │   │
+│  │ (Same Issue) │   Instant fix, no AI cost  │  (Before AI Gen) │   │
+│  └──────────────┘                            └──────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### How It Works
+
+1. **Pattern Lookup First**: Before any AI generation, we check Supabase for existing patterns
+2. **AI Generation (PRO)**: If no pattern exists, AI generates fix with self-improvement loop
+3. **Pattern Storage**: Successful fixes saved to `fix_patterns` table with:
+   - Rule ID (e.g., `javascript.lang.security.detect-child-process`)
+   - Tool source (e.g., `semgrep`)
+   - Fix template (transformation code)
+   - Confidence score
+   - Apply/success/revert counts
+4. **Pattern Reuse**: Future requests for same rule → instant pattern application
+
+### Tier Differentiation
+
+| Feature | BASIC (Free) | PRO ($8-10/mo) |
+|---------|--------------|----------------|
+| **Pattern Fixes** | ✅ Reuses existing | ✅ Reuses existing |
+| **AI Generation** | ❌ No | ✅ Yes |
+| **Pattern Learning** | ❌ No | ✅ Contributes |
+| **Coverage** | 70-80% (depends on library) | 99%+ |
+| **API Cost** | $0 | ~$0.07/PR |
+
+### Key Files
+
+```
+packages/agents/src/fix-agent/fix-pattern-registry/
+├── fix-pattern-registry.ts     # Pattern lookup/save logic
+├── supabase-pattern-store.ts   # Supabase persistence
+├── ai-fixer-verifier.ts        # AI fix generation + verification
+├── types.ts                    # FixPattern interface
+└── index.ts                    # Exports
+```
+
+### Supabase Schema
+
+```sql
+CREATE TABLE fix_patterns (
+  id UUID PRIMARY KEY,
+  rule_id TEXT NOT NULL,           -- e.g., "detect-child-process"
+  tool TEXT NOT NULL,              -- e.g., "semgrep"
+  name TEXT NOT NULL,
+  transformation_type TEXT,        -- "replace", "wrap", "delete"
+  fix_template JSONB,              -- The actual fix transformation
+  confidence FLOAT,                -- 0.0-1.0
+  safe_for_auto_apply BOOLEAN,
+  status TEXT,                     -- "active", "pending", "deprecated"
+  apply_count INTEGER DEFAULT 0,
+  success_count INTEGER DEFAULT 0,
+  revert_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ
+);
+```
+
+### Calibration Strategy (CRITICAL for BASIC Tier)
+
+To maximize BASIC tier value, we must grow the pattern library:
+
+1. **TypeScript/JavaScript**: Run on popular repos (React, Vue, Express, NestJS)
+2. **Java**: Spring PetClinic, Spring Boot examples, enterprise patterns
+3. **Python**: FastAPI, Django, Flask examples
+4. **Go**: Popular microservices, Kubernetes tools
+5. **Rust**: Common crates, web frameworks
+
+**Target**: 500+ patterns per language before BASIC tier launch
+
+### V5 Test Results (Session 38, Part 4)
+
+```
+Total Issues: 282
+Auto-Fixed: 243 (99.2% of fixable)
+Intentional Uses: 37 (correctly skipped)
+True AI Failures: 0
+```
+
+**Intentional Use Detection**: Added smart detection for legitimate `child_process` usage (grep, git commands, shell adapters) - these are flagged for security review, not auto-fixed.
 
 ---
 
@@ -9,15 +340,17 @@
 ### Product Architecture (Session 32)
 | Decision | Choice | Notes |
 |----------|--------|-------|
-| **Two-Tier Model** | BASIC (free) vs PRO ($8-10/mo) | BASIC: report only, PRO: auto-fix |
+| **Two-Tier Model** | BASIC (free) vs PRO ($8-10/mo) | BASIC: pattern-only, PRO: pattern + AI |
 | **Tool Selection** | 70% overlap threshold | >=70% REPLACE if better, <70% ADD |
 | **AI Enrichment** | Two-stage pipeline | Cheap model prepares, expensive finalizes (40-60% savings) |
 | **Caching** | Commit-based | Same commit = instant cached response |
 | **Docker Images** | Pre-built only | No runtime npm install |
+| **Pattern System** | Self-improving | PRO learns → BASIC benefits |
 
-### Auto-Fix Architecture (Session 31)
+### Auto-Fix Architecture (Session 38 - UPDATED)
 | Tier | Source | Confidence | Coverage |
 |------|--------|------------|----------|
+| **Tier 0** | Pattern reuse | HIGHEST | Growing (target: 70-80%) |
 | **Tier 1** | Tool native (`--fix`) | HIGH | ~60-70% |
 | **Tier 2** | Dedicated fixers | HIGH | ~15-20% |
 | **Tier 3** | AI generation | MEDIUM | ~10-15% |
@@ -88,6 +421,17 @@ v9-grouped-report-formatter.ts  # Report generation (99.8% cost savings)
 smart-file-selector.ts      # File selection for large repos
 ```
 
+### Parallel AI Fixer (Session 39)
+```
+packages/agents/src/fix-agent/parallel-ai-fixer/
+├── index.ts               # Module exports
+├── issue-index.ts         # O(1) issue lookup (byFile, byRule, byLocation)
+├── file-cache.ts          # In-memory file content caching
+├── template-fix-engine.ts # Pattern-based fixes (Tier 1)
+├── parallel-executor.ts   # Parallel AI execution (Tier 2)
+└── execute.ts             # Convenience functions (executeParallelAIFixes, quickParallelFix)
+```
+
 ### Tool Categories (15)
 `code_quality`, `security`, `formatting`, `type_checking`, `dependency_vuln`, `dependency_update`, `architecture`, `dead_code`, `code_duplication`, `complexity`, `secrets`, `license`, `performance`, `documentation`, `test_coverage`
 
@@ -149,6 +493,108 @@ Every 3 months research both:
 
 ## RECENT FIXES
 
+### Session 53 (Dec 13, 2025) - PYTHON FIXER INTEGRATION & $0 BASIC TIER
+
+**Major Architecture Changes:**
+
+1. **$0 Report Generation (BASIC Tier)**
+   - AI enrichment now uses rule-descriptions when `modelConfigResolver=null`
+   - Saves $1.50+ per report by avoiding 61 AI API calls
+   - File: `src/two-branch/report/ai-enrichment.ts`
+
+2. **Language-Neutral Auto-Fix Detection**
+   - `canAutoFix()` returns `true` by default (no hardcoded tool lists)
+   - Only specific patterns like `circular-dependency`, `god-class` return `false`
+   - Files: `business-impact.ts`, `metadata-footer.ts`, `header-sections.ts`
+
+3. **Python Fixer Tools Integrated into FixOrchestrator**
+   - `PipAuditFixerExecutor` - Python dependency vulnerabilities (`pip-audit --fix`)
+   - `SemgrepAutoFixExecutor` - Security autofix (`semgrep scan --autofix`)
+   - New file: `src/fix-agent/tool-fixers/python-fixer.ts`
+
+4. **BASIC vs PRO Tier in FixOrchestrator**
+   - New config: `userTier: 'basic' | 'pro'`
+   - BASIC tier: Sets `dryRun: true` automatically (recommendations only)
+   - PRO tier: Actually applies fixes
+   - New config: `patternStore: PatternStore` for Supabase pattern lookup
+
+5. **Complete Fix Flow**
+   ```
+   SCAN → GROUP → CHECK PATTERNS → FIXER TOOLS → AI FALLBACK
+                       ↓
+            Pattern EXISTS? → BASIC: suggest / PRO: apply
+                       ↓ (no pattern)
+            Fixer Tools → BASIC: dry-run / PRO: apply
+                       ↓ (still not fixed)
+            AI Fixer → BASIC: recommend / PRO: apply+save
+   ```
+
+**Docker Update:**
+- `Dockerfile.python-quick` now includes `black` and `isort`
+
+**Python Fixer Tool Stack:**
+| Tool | Purpose | Command |
+|------|---------|---------|
+| ruff | Linting + Security | `ruff check --fix` |
+| pip-audit | Dependency vulns | `pip-audit --fix` |
+| semgrep | Security autofix | `semgrep --autofix` |
+| black | Formatting | `black .` |
+| isort | Import sorting | `isort .` |
+
+---
+
+### Session 41 (Dec 7, 2025) - CodeQL PERFORMANCE OPTIMIZATIONS
+- **CodeQL Runner v2.0** with comprehensive performance optimizations
+- **Fast default**: `querySuite: 'security'` (~40% faster than extended)
+- **7-day cache TTL**: Balances storage (~100-500MB) vs rebuild cost
+- **Auto-cleanup**: Expired caches removed on startup
+- **CODEQL_DEFAULTS** exported for transparency
+- **runCodeQLExtended()** for users wanting thorough analysis
+- **Convenience functions**: `runCodeQL`, `runCodeQLFast`, `runCodeQLParallel`, `runCodeQLExtended`
+- **ARM64 Docker support**: Added QEMU emulation for ARM64 servers
+
+### 🔴 FUTURE: Dedicated x86 Instance for CodeQL (PLANNED)
+**Problem**: CodeQL on ARM64 with QEMU emulation takes ~11 minutes for database creation (vs ~1-2 min on native x86).
+
+**Solution**: Create a dedicated x86_64 Oracle Cloud instance for CodeQL:
+- **Instance Type**: VM.Standard.E4.Flex (x86_64 AMD)
+- **Usage**: Run CodeQL database creation and analysis natively
+- **Expected Speedup**: 5-10x faster than QEMU emulation
+- **API**: REST endpoint for CodeQL analysis requests
+
+**Current Workaround** (ARM64):
+- Docker image: `codeql-runner:latest` (2.5GB with query packs)
+- QEMU emulation via `--platform linux/amd64`
+- Database creation: ~11 minutes (mostly emulation overhead)
+- Analysis: ~30 seconds
+
+**Optimization Strategies**:
+1. **Database Caching**: Cache databases by `hash(repo_url + commit_sha + language)` - reuse for same commit
+2. **Pre-warming**: Start Docker container during repo cloning
+3. **Parallel Database Creation**: Build CodeQL database while other tools run
+
+### Session 39 (Dec 5, 2025) - HIGH-PERFORMANCE ARCHITECTURE
+- **Parallel AI Fixer** module created for high-performance fix execution
+- **TemplateFixEngine** integrates with fix-pattern-registry
+- **Two-tier system**: Template fixes first (fast), then AI fixes (parallel)
+- **IssueIndex** for O(1) lookup by file/rule/location
+- **FileCache** for in-memory file content caching
+- Expected **9x speedup** and **40% reduction in API calls**
+
+### Session 38, Part 4 (Dec 5, 2025) - MAJOR MILESTONE
+- **Self-Improving Pattern System** documented and operational
+- **99.2% auto-fix success rate** achieved (243/245 fixable issues)
+- **Intentional Use Detector** added for child_process
+- **0 true AI failures** - all remaining issues are legitimate uses
+- **Brace-balancing recovery** in self-improvement loop
+- Pattern reuse optimization active
+
+### Session 36 (Dec 3, 2025)
+- AI Fixer integration with scan-fix-executor
+- Self-improvement loop (3 attempts with verification)
+- Pattern storage to Supabase `fix_patterns` table
+- Enhanced manifest schema for user actions
+
 ### Session 32 (Nov 30, 2025)
 - Two-Tier Product Architecture designed
 - Tool Registry system defined
@@ -183,16 +629,67 @@ Every 3 months research both:
 
 ## SESSION ARCHIVE
 
-For detailed session information (26-32), code examples, and historical context, see:
+For detailed session information (26-38), code examples, and historical context, see:
 **[V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
 
 Sessions documented:
+- **Session 38**: Self-Improving Pattern System (KEY MILESTONE)
+- Session 36: AI Fixer Integration, Pattern Storage
 - Session 32: Two-Tier Product Architecture
 - Session 31: Three-Tier Auto-Fix Architecture
 - Session 29: Monorepo Optimization
 - Session 28: TypeScript Compilation
 - Session 27: GitLab Integration, Fix Validation
 - Session 26: LSP/SARIF Auto-Fix
+
+---
+
+## 🧪 FUTURE: End-to-End UX Testing Plan
+
+### Overview (Session 46 Note)
+After completing pattern collection for all languages, comprehensive UX testing is required to validate the complete fix implementation flow before production deployment.
+
+### Testing Scope
+
+| Test Area | Description | Priority |
+|-----------|-------------|----------|
+| **PRO Tier Flow** | AI fix generation + pattern saving | P0 |
+| **BASIC Tier Flow** | Pattern-only fixes (no AI) | P0 |
+| **Multi-Language** | All P0/P1 languages (JS, TS, Python, Java, Go) | P0 |
+| **Provider Integration** | Core CodeQual framework integration | P1 |
+| **User Messaging** | Unfixed issue guidance (`getActionableGuidance()`) | P1 |
+
+### Key Test Scenarios
+
+1. **PRO Tier Complete Flow**
+   - PR submission → Tool scan → AI fix generation → Pattern storage
+   - Verify fix quality and success rates
+   - Validate cost tracking
+
+2. **BASIC Tier Pattern-Only**
+   - PR submission → Tool scan → Pattern lookup only
+   - Verify no AI calls made
+   - Validate pattern coverage metrics
+
+3. **Unfixed Issue UX**
+   - Environment issues: Clear "npm install" guidance
+   - Manual review: Actionable suggestions
+   - No pattern available (BASIC): PRO upgrade path
+
+4. **Cross-Language Consistency**
+   - Same issue types should have similar UX
+   - Error messages consistent across languages
+   - Fix confidence display uniform
+
+### Related Code
+- `scan-fix-executor.ts`: `getActionableGuidance()` function
+- `framework-issue-classifier.ts`: Issue disposition logic
+- User-facing messages for all issue types
+
+### When to Execute
+- After pattern collection target reached (500+ patterns/language)
+- Before BASIC tier public launch
+- As part of provider integration milestone
 
 ---
 

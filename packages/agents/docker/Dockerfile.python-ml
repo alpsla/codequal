@@ -1,14 +1,15 @@
 # CodeQual Python Analysis Image
 # Optimized for Python applications with ML/Data Science support
-# Size: ~2.5GB | Memory: 2.5GB | Tools: 17
+# Size: ~2.5GB | Memory: 2.5GB | Tools: 18
+# SESSION 51: Added Ruff (primary linter), pip-audit is primary dependency scanner
 
 FROM python:3.11-slim
 
 LABEL maintainer="CodeQual Team" \
-      version="1.0.0" \
-      description="Python analysis with Bandit, Pylint, MyPy, Safety and more" \
+      version="1.1.0" \
+      description="Python analysis with Ruff, Bandit, MyPy, pip-audit and more (SESSION 51 update)" \
       language="python" \
-      tools.count="17"
+      tools.count="18"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -31,7 +32,9 @@ RUN pip install --no-cache-dir \
     pip-audit
 
 # Code quality and linting
+# SESSION 51: Added ruff (10-100x faster than pylint, includes security rules)
 RUN pip install --no-cache-dir \
+    ruff \
     pylint \
     flake8 \
     pycodestyle \
@@ -229,7 +232,7 @@ EOF
 # VERIFICATION & HEALTH CHECK
 # ============================================
 
-# Verification script
+# Verification script (SESSION 51: Added ruff)
 RUN cat > /tools/verify.sh <<'EOF'
 #!/bin/bash
 echo "Python Analysis Tools Status:"
@@ -241,7 +244,8 @@ bandit --version
 safety --version
 pip-audit --version
 echo ""
-echo "Linting tools:"
+echo "Linting tools (SESSION 51: Ruff is now primary):"
+ruff --version
 pylint --version
 flake8 --version
 mypy --version
@@ -255,7 +259,7 @@ radon --version
 echo "Vulture: $(vulture --version 2>&1 | head -n1)"
 echo "Prospector: $(prospector --version 2>&1)"
 echo ""
-echo "✅ All 17 Python tools verified"
+echo "✅ All 18 Python tools verified (SESSION 51: Added Ruff)"
 EOF
 RUN chmod +x /tools/verify.sh
 
@@ -266,7 +270,7 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
 # ANALYSIS SCRIPTS
 # ============================================
 
-# Comprehensive Python analysis script
+# Comprehensive Python analysis script (SESSION 51: Ruff is now primary linter)
 RUN cat > /usr/local/bin/analyze-python <<'EOF'
 #!/bin/bash
 PROJECT_PATH=${1:-.}
@@ -274,65 +278,68 @@ OUTPUT_DIR=${2:-./analysis-results}
 
 mkdir -p $OUTPUT_DIR
 
-echo "🔍 Running Python Analysis Suite (17 tools)..."
+echo "🔍 Running Python Analysis Suite (18 tools - SESSION 51: Ruff is primary)..."
 
 # Security analysis
-echo "1/17: Running Bandit security scan..."
+echo "1/18: Running Bandit security scan..."
 bandit -r $PROJECT_PATH -f json -o $OUTPUT_DIR/bandit-report.json --configfile /tools/.bandit || true
 
-echo "2/17: Running Safety vulnerability scan..."
-safety check --json --output $OUTPUT_DIR/safety-report.json || true
-
-echo "3/17: Running pip-audit..."
+echo "2/18: Running pip-audit (SESSION 51: Primary dependency scanner)..."
 pip-audit --desc --format json --output $OUTPUT_DIR/pip-audit-report.json || true
 
-# Code quality
-echo "4/17: Running Pylint..."
+echo "3/18: Running Safety vulnerability scan (legacy)..."
+safety check --json --output $OUTPUT_DIR/safety-report.json || true
+
+# Code quality (SESSION 51: Ruff is primary, 10-100x faster than Pylint)
+echo "4/18: Running Ruff (SESSION 51: Primary linter - 10-100x faster)..."
+ruff check $PROJECT_PATH --output-format json > $OUTPUT_DIR/ruff-report.json || true
+
+echo "5/18: Running Pylint (legacy)..."
 pylint $PROJECT_PATH --output-format=json --rcfile=/tools/.pylintrc > $OUTPUT_DIR/pylint-report.json || true
 
-echo "5/17: Running Flake8..."
+echo "6/18: Running Flake8..."
 flake8 $PROJECT_PATH --format=json --output-file=$OUTPUT_DIR/flake8-report.json --config=/tools/.flake8 || true
 
-echo "6/17: Running pycodestyle..."
+echo "7/18: Running pycodestyle..."
 pycodestyle $PROJECT_PATH --format='%(path)s:%(row)d:%(col)d: %(code)s %(text)s' > $OUTPUT_DIR/pycodestyle-report.txt || true
 
-echo "7/17: Running pydocstyle..."
+echo "8/18: Running pydocstyle..."
 pydocstyle $PROJECT_PATH --count --explain > $OUTPUT_DIR/pydocstyle-report.txt || true
 
 # Type checking
-echo "8/17: Running MyPy type checking..."
+echo "9/18: Running MyPy type checking..."
 mypy $PROJECT_PATH --json-report $OUTPUT_DIR --config-file /tools/pyproject.toml || true
 
 # Formatting checks
-echo "9/17: Checking with Black..."
+echo "10/18: Checking with Black..."
 black $PROJECT_PATH --check --diff > $OUTPUT_DIR/black-report.txt 2>&1 || true
 
-echo "10/17: Checking with isort..."
+echo "11/18: Checking with isort..."
 isort $PROJECT_PATH --check --diff > $OUTPUT_DIR/isort-report.txt 2>&1 || true
 
 # Complexity analysis
-echo "11/17: Running Radon complexity analysis..."
+echo "12/18: Running Radon complexity analysis..."
 radon cc $PROJECT_PATH --json > $OUTPUT_DIR/radon-cc-report.json || true
 radon mi $PROJECT_PATH --json > $OUTPUT_DIR/radon-mi-report.json || true
 radon hal $PROJECT_PATH --json > $OUTPUT_DIR/radon-hal-report.json || true
 
-echo "12/17: Running Xenon complexity check..."
+echo "13/18: Running Xenon complexity check..."
 xenon $PROJECT_PATH --max-absolute B --max-modules B --max-average A > $OUTPUT_DIR/xenon-report.txt || true
 
-echo "13/17: Running Vulture dead code detection..."
+echo "14/18: Running Vulture dead code detection..."
 vulture $PROJECT_PATH > $OUTPUT_DIR/vulture-report.txt || true
 
-echo "14/17: Running Prospector comprehensive analysis..."
+echo "15/18: Running Prospector comprehensive analysis..."
 prospector $PROJECT_PATH --profile=/tools/.prospector.yaml --output-format json > $OUTPUT_DIR/prospector-report.json || true
 
-echo "15/17: Checking for upgrade opportunities with pyupgrade..."
+echo "16/18: Checking for upgrade opportunities with pyupgrade..."
 find $PROJECT_PATH -name "*.py" -exec pyupgrade --py311-plus {} \; --dry-run > $OUTPUT_DIR/pyupgrade-report.txt 2>&1 || true
 
-echo "16/17: Running darglint docstring analysis..."
+echo "17/18: Running darglint docstring analysis..."
 darglint $PROJECT_PATH > $OUTPUT_DIR/darglint-report.txt || true
 
 # Package management
-echo "17/17: Checking dependencies..."
+echo "18/18: Checking dependencies..."
 if [ -f "$PROJECT_PATH/requirements.txt" ]; then
     echo "Found requirements.txt"
     pip-compile --dry-run $PROJECT_PATH/requirements.txt > $OUTPUT_DIR/pip-compile-report.txt 2>&1 || true
@@ -347,19 +354,22 @@ if [ -f "$PROJECT_PATH/Pipfile" ]; then
 fi
 
 echo ""
-echo "✅ Python analysis complete. All 17 tools executed."
+echo "✅ Python analysis complete. All 18 tools executed (SESSION 51: Added Ruff)."
 echo "📊 Results saved to: $OUTPUT_DIR"
 EOF
 RUN chmod +x /usr/local/bin/analyze-python
 
-# Quick security scan script
+# Quick security scan script (SESSION 51: pip-audit is primary dependency scanner)
 RUN cat > /usr/local/bin/python-security-scan <<'EOF'
 #!/bin/bash
 PROJECT_PATH=${1:-.}
-echo "🔒 Quick Python Security Scan..."
+echo "🔒 Quick Python Security Scan (SESSION 51: pip-audit is primary)..."
+echo "Running Bandit..."
 bandit -r $PROJECT_PATH -ll -i
-safety check
+echo "Running pip-audit (primary dependency scanner)..."
 pip-audit
+echo "Running Ruff security rules..."
+ruff check $PROJECT_PATH --select S
 echo "✅ Security scan complete"
 EOF
 RUN chmod +x /usr/local/bin/python-security-scan

@@ -1,0 +1,112 @@
+{
+  "version": "1.0",
+  "group_id": "ts17004-high-typescript",
+  "rule": "TS17004",
+  "tool": "typescript",
+  "severity": "high",
+  "description": [
+    "Update tsconfig.json to include \"jsx\": \"react\" in the compilerOptions",
+    "Ensure \"module\": \"ESNext\" or \"CommonJS\" matches project requirements",
+    "Verify TypeScript version meets React project requirements (>=4.1)",
+    "Add \"react\" as a devDependency if not already installed"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "{\n  \"compilerOptions\": {\n    \"jsx\": \"react\",\n    \"module\": \"ESNext\",\n    \"target\": \"ES6\",\n    \"strict\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"outDir\": \"./dist\"\n  },\n  \"include\": [\"src/**/*\"]\n}"
+    },
+    "instructions": [
+      "Update tsconfig.json to include \"jsx\": \"react\" in the compilerOptions",
+      "Ensure \"module\": \"ESNext\" or \"CommonJS\" matches project requirements",
+      "Verify TypeScript version meets React project requirements (>=4.1)",
+      "Add \"react\" as a devDependency if not already installed"
+    ]
+  },
+  "locations": [
+    {
+      "file": "packages/cra-template-typescript/template/src/App.test.tsx",
+      "line": 6,
+      "snippet": "     3 | import App from './App';\n     4 | \n     5 | test('renders learn react link', () => {\n>    6 |   render(<App />);\n     7 |   const linkElement = screen.getByText(/learn react/i);\n     8 |   expect(linkElement).toBeInTheDocument();\n     9 | });",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/App.tsx",
+      "line": 7,
+      "snippet": "     4 | \n     5 | function App() {\n     6 |   return (\n>    7 |     <div className=\"App\">\n     8 |       <header className=\"App-header\">\n     9 |         <img src={logo} className=\"App-logo\" alt=\"logo\" />\n    10 |         <p>",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/App.tsx",
+      "line": 8,
+      "snippet": "     5 | function App() {\n     6 |   return (\n     7 |     <div className=\"App\">\n>    8 |       <header className=\"App-header\">\n     9 |         <img src={logo} className=\"App-logo\" alt=\"logo\" />\n    10 |         <p>\n    11 |           Edit <code>src/App.tsx</code> and save to reload.",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/App.tsx",
+      "line": 9,
+      "snippet": "     6 |   return (\n     7 |     <div className=\"App\">\n     8 |       <header className=\"App-header\">\n>    9 |         <img src={logo} className=\"App-logo\" alt=\"logo\" />\n    10 |         <p>\n    11 |           Edit <code>src/App.tsx</code> and save to reload.\n    12 |         </p>",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/App.tsx",
+      "line": 10,
+      "snippet": "     7 |     <div className=\"App\">\n     8 |       <header className=\"App-header\">\n     9 |         <img src={logo} className=\"App-logo\" alt=\"logo\" />\n>   10 |         <p>\n    11 |           Edit <code>src/App.tsx</code> and save to reload.\n    12 |         </p>\n    13 |         <a",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/App.tsx",
+      "line": 11,
+      "snippet": "     8 |       <header className=\"App-header\">\n     9 |         <img src={logo} className=\"App-logo\" alt=\"logo\" />\n    10 |         <p>\n>   11 |           Edit <code>src/App.tsx</code> and save to reload.\n    12 |         </p>\n    13 |         <a\n    14 |           className=\"App-link\"",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/App.tsx",
+      "line": 13,
+      "snippet": "    10 |         <p>\n    11 |           Edit <code>src/App.tsx</code> and save to reload.\n    12 |         </p>\n>   13 |         <a\n    14 |           className=\"App-link\"\n    15 |           href=\"https://reactjs.org\"\n    16 |           target=\"_blank\"",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/index.tsx",
+      "line": 11,
+      "snippet": "     8 |   document.getElementById('root') as HTMLElement\n     9 | );\n    10 | root.render(\n>   11 |   <React.StrictMode>\n    12 |     <App />\n    13 |   </React.StrictMode>\n    14 | );",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/index.tsx",
+      "line": 12,
+      "snippet": "     9 | );\n    10 | root.render(\n    11 |   <React.StrictMode>\n>   12 |     <App />\n    13 |   </React.StrictMode>\n    14 | );\n    15 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.tsx",
+      "line": 25,
+      "snippet": "    22 |   n = App.foo?.baz!.n ?? 'foo';\n    23 | \n    24 |   render() {\n>   25 |     return <div />;\n    26 |   }\n    27 | }\n    28 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/index.tsx",
+      "line": 5,
+      "snippet": "     2 | import * as ReactDOM from 'react-dom';\n     3 | import App from './App';\n     4 | \n>    5 | ReactDOM.render(<App />, document.getElementById('root'));\n     6 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-typecheck/src/App.tsx",
+      "line": 5,
+      "snippet": "     2 | \n     3 | class App extends React.Component {\n     4 |   render() {\n>    5 |     return <div>{format(123)}</div>;\n     6 |   }\n     7 | }\n     8 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-typecheck/src/index.tsx",
+      "line": 5,
+      "snippet": "     2 | import * as ReactDOM from 'react-dom';\n     3 | import App from './App';\n     4 | \n>    5 | ReactDOM.render(<App />, document.getElementById('root'));\n     6 | ",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 13,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 7
+  }
+}

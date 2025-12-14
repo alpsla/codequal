@@ -2,18 +2,22 @@
  * Python Tool Orchestrator for V9
  *
  * Extends BaseToolOrchestrator for parallel tool execution!
- * 
+ *
  * This orchestrator contains Python-specific logic:
- * - Pylint code quality checking
- * - Bandit security vulnerability scanning  
+ * - Ruff code quality checking (SESSION 51: Replaced Pylint - 10-100x faster)
+ * - Bandit security vulnerability scanning
  * - mypy type checking
- * - Safety dependency vulnerability scanning
+ * - pip-audit dependency vulnerability scanning (SESSION 51: Replaced Safety - more reliable)
  * - Semgrep security analysis
  *
  * All universal orchestration logic (branch management, parallel execution,
  * result aggregation) is inherited from BaseToolOrchestrator.
- * 
+ *
  * Performance: 50-65% faster than sequential execution via parallel tool runs
+ *
+ * SESSION 51 CHANGES:
+ * - Replaced Pylint with Ruff (10-100x faster, includes security rules)
+ * - Replaced Safety with pip-audit (PyPA maintained, no auth required)
  */
 
 import { exec } from 'child_process';
@@ -48,9 +52,10 @@ const execAsync = promisify(exec);
 // ============================================================
 
 export interface PythonToolConfig {
-  pylint: {
+  // SESSION 51: Ruff replaces Pylint (10-100x faster, includes security rules)
+  ruff: {
     enabled: boolean;
-    rcfile?: string;
+    configFile?: string;
   };
   bandit: {
     enabled: boolean;
@@ -60,9 +65,9 @@ export interface PythonToolConfig {
     enabled: boolean;
     strict: boolean;
   };
-  safety: {
+  // SESSION 51: pip-audit replaces Safety (PyPA maintained, no auth required)
+  pipAudit: {
     enabled: boolean;
-    level: string;
   };
   semgrep: {
     enabled: boolean;
@@ -73,27 +78,45 @@ export interface PythonToolConfig {
     pythonVersion: string;
     memory: string;
   };
+  // Legacy tools (kept for backward compatibility, disabled by default)
+  pylint?: {
+    enabled: boolean;
+    rcfile?: string;
+  };
+  safety?: {
+    enabled: boolean;
+    level: string;
+  };
 }
 
 export const DEFAULT_PYTHON_CONFIG: PythonToolConfig = {
-  pylint: { enabled: true },
+  // SESSION 51: New default tools
+  ruff: { enabled: true },
   bandit: { enabled: true },
   mypy: { enabled: true, strict: true },
-  safety: { enabled: true, level: 'moderate' },
+  pipAudit: { enabled: true },
   semgrep: { enabled: true, config: 'auto' },
   docker: {
     mountPath: '/workspace',
     pythonVersion: '3.12',
     memory: '2g'
-  }
+  },
+  // Legacy tools disabled by default
+  pylint: { enabled: false },
+  safety: { enabled: false, level: 'moderate' }
 };
 
+// SESSION 51: Updated tool categories with new tools
 const PYTHON_TOOL_CATEGORIES = {
-  pylint: ToolCategory.CODE_QUALITY,
+  // New default tools (SESSION 51)
+  ruff: ToolCategory.CODE_QUALITY,
   bandit: ToolCategory.SECURITY,
   mypy: ToolCategory.CODE_QUALITY,
-  safety: ToolCategory.DEPENDENCY_SCAN,
-  semgrep: ToolCategory.SECURITY
+  'pip-audit': ToolCategory.DEPENDENCY_SCAN,
+  semgrep: ToolCategory.SECURITY,
+  // Legacy tools (for backward compatibility)
+  pylint: ToolCategory.CODE_QUALITY,
+  safety: ToolCategory.DEPENDENCY_SCAN
 };
 
 function shouldPythonToolRun(toolName: string, mode: AnalysisMode): boolean {
@@ -141,6 +164,10 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
    * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
    * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
    * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+   *
+   * SESSION 51: Updated to use Ruff and pip-audit by default
+   * - Ruff replaces Pylint (10-100x faster)
+   * - pip-audit replaces Safety (PyPA maintained, no auth required)
    */
   protected getToolsToRun(
     mode: AnalysisMode,
@@ -149,7 +176,12 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
   ): string[] {
     const tools: string[] = [];
 
-    if (this.config.pylint.enabled && shouldPythonToolRun('pylint', mode)) {
+    // SESSION 51: Ruff replaces Pylint (10-100x faster, includes security rules)
+    if (this.config.ruff.enabled && shouldPythonToolRun('ruff', mode)) {
+      tools.push('ruff');
+    }
+    // Legacy Pylint support (disabled by default)
+    if (this.config.pylint?.enabled && shouldPythonToolRun('pylint', mode)) {
       tools.push('pylint');
     }
 
@@ -161,7 +193,12 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
       tools.push('mypy');
     }
 
-    if (this.config.safety.enabled && shouldPythonToolRun('safety', mode)) {
+    // SESSION 51: pip-audit replaces Safety (PyPA maintained, no auth required)
+    if (this.config.pipAudit.enabled && shouldPythonToolRun('pip-audit', mode)) {
+      tools.push('pip-audit');
+    }
+    // Legacy Safety support (disabled by default)
+    if (this.config.safety?.enabled && shouldPythonToolRun('safety', mode)) {
       tools.push('safety');
     }
 
@@ -180,9 +217,10 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
 
   protected getAgentToolCategories(): Record<string, string[]> {
     return {
-      'Security': ['bandit', 'semgrep', 'safety'],
-      'Code Quality': ['pylint', 'mypy'],
-      'Dependencies': ['safety']
+      // SESSION 51: Updated to include new tools
+      'Security': ['bandit', 'semgrep', 'pip-audit', 'ruff'],  // Ruff has S* security rules
+      'Code Quality': ['ruff', 'mypy', 'pylint'],  // Ruff is primary, pylint for legacy
+      'Dependencies': ['pip-audit', 'safety']  // pip-audit is primary, safety for legacy
     };
   }
 
@@ -193,22 +231,27 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
     options: OrchestrationOptions
   ): Promise<ToolResult> {
     logger.info(`📦 Executing Python tool: ${toolName}`);
-    
+
     // UNIVERSAL TOOLS: Route to shared runners
     // This ensures same Semgrep behavior across Java, TypeScript, Python, etc.
     if (this.isUniversalTool(toolName)) {
       logger.info(`🌐 Routing ${toolName} to universal runner`);
       return this.executeUniversalTool(toolName, repoPath, branch, options);
     }
-    
+
     // LANGUAGE-SPECIFIC TOOLS: Use Python-specific implementations
+    // SESSION 51: Added ruff and pip-audit
     switch (toolName) {
+      case 'ruff':
+        return this.runRuff(repoPath, branch, options.changedFiles);
       case 'pylint':
         return this.runPylint(repoPath, branch, options.changedFiles);
       case 'bandit':
         return this.runBandit(repoPath, branch);
       case 'mypy':
         return this.runMypy(repoPath, branch);
+      case 'pip-audit':
+        return this.runPipAudit(repoPath, branch);
       case 'safety':
         return this.runSafety(repoPath, branch);
       default:
@@ -329,6 +372,76 @@ export class PythonToolOrchestrator extends BaseToolOrchestrator {
       const duration = Date.now() - startTime;
       logger.error(`❌ Safety failed: ${error.message}`);
       return this.createFailedResult('safety', error.message);
+    }
+  }
+
+  // ============================================================
+  // SESSION 51: NEW TOOLS - Ruff and pip-audit
+  // ============================================================
+
+  /**
+   * Run Ruff linter (SESSION 51: Replaces Pylint)
+   * 10-100x faster than Pylint, includes security rules (flake8-bandit)
+   */
+  private async runRuff(
+    repoPath: string,
+    branch: 'base' | 'pr',
+    changedFiles?: string[]
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info(`🔍 Running Ruff on ${branch} branch...`);
+      const result = await this.parser.runRuff(repoPath, changedFiles);
+      const rawIssues: RawIssue[] = result.issues.map(this.convertPythonIssueToRaw.bind(this));
+      const duration = Date.now() - startTime;
+
+      logger.info(`✅ Ruff completed: ${rawIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'ruff',
+        success: true,
+        duration,
+        issues: rawIssues,
+        rawOutput: result.rawOutput,
+        metadata: this.calculateMetadata(rawIssues)
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Ruff failed: ${error.message}`);
+      return this.createFailedResult('ruff', error.message);
+    }
+  }
+
+  /**
+   * Run pip-audit dependency scanner (SESSION 51: Replaces Safety)
+   * PyPA maintained, uses official PyPI vulnerability database
+   */
+  private async runPipAudit(repoPath: string, branch: 'base' | 'pr'): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info(`🔍 Running pip-audit on ${branch} branch...`);
+      const result = await this.parser.runPipAudit(repoPath);
+      const rawIssues: RawIssue[] = result.issues.map(this.convertPythonIssueToRaw.bind(this));
+      const duration = Date.now() - startTime;
+
+      logger.info(`✅ pip-audit completed: ${rawIssues.length} vulnerabilities in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'pip-audit',
+        success: true,
+        duration,
+        issues: rawIssues,
+        rawOutput: result.rawOutput,
+        metadata: this.calculateMetadata(rawIssues)
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ pip-audit failed: ${error.message}`);
+      return this.createFailedResult('pip-audit', error.message);
     }
   }
 

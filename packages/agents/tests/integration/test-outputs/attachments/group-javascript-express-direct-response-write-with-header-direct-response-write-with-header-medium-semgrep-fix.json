@@ -4,38 +4,42 @@
   "rule": "javascript.express.direct-response-write-with-header.direct-response-write-with-header",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "1. Implement input validation to ensure user data conforms to expected formats. 2. Use a secure rendering library that automatically escapes output (e.g., Express.js with EJS or Handlebars). 3. Apply contextual output encoding based on the rendering context (HTML, JavaScript, CSS, URL). 4. Consider using DOMPurify for additional sanitization of HTML content before rendering.",
+  "description": "To mitigate this vulnerability, implement input validation and output encoding: 1. Validate user input to ensure it conforms to expected formats and reject any input that doesn't meet these criteria. 2. Use output encoding functions to safely render user input in the response, preventing the execution of malicious scripts. For Express.js applications, consider using libraries like 'express-validator' for input validation and 'xss-filters' for output encoding. These practices are recommended by Semgrep's 'javascript.express.security.audit.xss.direct-response-write.direct-response-write' rule to prevent XSS vulnerabilities.",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "Before: res.render('report', { data: userInput });\n\nAfter: const sanitizedData = DOMPurify.sanitize(userInput, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });\nres.render('report', { data: sanitizedData });"
+      "after": "const xssFilters = require('xss-filters');\n\napp.get('/some-route', (req, res) => {\n  const userInput = req.query.userInput;\n  const sanitizedInput = xssFilters.inHTMLData(userInput);\n  res.send(sanitizedInput);\n});"
     },
-    "instructions": "1. Implement input validation to ensure user data conforms to expected formats. 2. Use a secure rendering library that automatically escapes output (e.g., Express.js with EJS or Handlebars). 3. Apply contextual output encoding based on the rendering context (HTML, JavaScript, CSS, URL). 4. Consider using DOMPurify for additional sanitization of HTML content before rendering."
+    "instructions": "To mitigate this vulnerability, implement input validation and output encoding: 1. Validate user input to ensure it conforms to expected formats and reject any input that doesn't meet these criteria. 2. Use output encoding functions to safely render user input in the response, preventing the execution of malicious scripts. For Express.js applications, consider using libraries like 'express-validator' for input validation and 'xss-filters' for output encoding. These practices are recommended by Semgrep's 'javascript.express.security.audit.xss.direct-response-write.direct-response-write' rule to prevent XSS vulnerabilities."
   },
   "locations": [
     {
       "file": "apps/api/src/routes/analysis-reports.ts",
       "line": 452,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   449 |             });\n   450 |           } else if (format === 'markdown') {\n   451 |             res.setHeader('Content-Type', 'text/markdown');\n>  452 |             return res.send(report.exports?.markdownReport || generateMarkdownReport({\n   453 |               ...report,\n   454 |               prNumber: report.prNumber?.toString()\n   455 |             } as unknown as ReportStructure));",
+      "category": "EXISTING_REST"
     },
     {
       "file": "apps/api/src/routes/analysis-reports.ts",
       "line": 516,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   513 |         case 'html': {\n   514 |           const htmlContent = generateHTMLReport(report);\n   515 |           res.setHeader('Content-Type', 'text/html');\n>  516 |           res.send(htmlContent);\n   517 |           break;\n   518 |         }\n   519 |           ",
+      "category": "EXISTING_REST"
     },
     {
       "file": "apps/api/src/routes/analysis-reports.ts",
       "line": 522,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   519 |           \n   520 |         case 'markdown':\n   521 |           res.setHeader('Content-Type', 'text/markdown');\n>  522 |           res.send(report.exports?.markdownReport || report.exports?.prComment || generateMarkdownReport(report));\n   523 |           break;\n   524 |           \n   525 |         case 'json':",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 3,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 2
   }

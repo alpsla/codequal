@@ -4,38 +4,42 @@
   "rule": "dockerfile.security.missing-user.missing-user",
   "tool": "semgrep",
   "severity": "high",
-  "description": "Add a dedicated non-root user and switch to it using the USER instruction in the Dockerfile. Create the user with appropriate permissions and ensure the application runs under that user context.",
+  "description": "To mitigate this issue, implement the following steps in your Dockerfile:\n\n1. **Create a Non-Root User**: Add a non-root user to the Docker image using the 'RUN' instruction. For example:\n\n   ```dockerfile\n   RUN addgroup --system appuser && adduser --system --ingroup appuser appuser\n   ```\n\n   This command creates a system group and user named 'appuser'.\n\n2. **Set Appropriate Permissions**: Ensure that the application files and directories are owned by the newly created user. You can use the 'COPY' instruction with the '--chown' flag to set ownership:\n\n   ```dockerfile\n   COPY --chown=appuser:appuser . /app\n   ```\n\n   This command copies the application files to the '/app' directory and sets the ownership to 'appuser'.\n\n3. **Switch to the Non-Root User**: Use the 'USER' instruction to switch to the non-root user before running the application:\n\n   ```dockerfile\n   USER appuser\n   ```\n\n   This instruction sets 'appuser' as the user for subsequent instructions, including the 'CMD' or 'ENTRYPOINT' that runs the application.\n\nBy following these steps, you ensure that the container runs with limited privileges, enhancing security by adhering to the principle of least privilege. For more detailed guidance, refer to Docker's official documentation on best practices for building Docker images. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "FROM openjdk:11-jre-slim\n# Create a non-root user\nRUN addgroup --system --gid 1001 appgroup && \\\n    adduser --system --uid 1001 --gid 1001 appuser\n# Switch to the non-root user\nUSER appuser:appgroup\n# Rest of the Dockerfile..."
+      "after": ""
     },
-    "instructions": "Add a dedicated non-root user and switch to it using the USER instruction in the Dockerfile. Create the user with appropriate permissions and ensure the application runs under that user context."
+    "instructions": "To mitigate this issue, implement the following steps in your Dockerfile:\n\n1. **Create a Non-Root User**: Add a non-root user to the Docker image using the 'RUN' instruction. For example:\n\n   ```dockerfile\n   RUN addgroup --system appuser && adduser --system --ingroup appuser appuser\n   ```\n\n   This command creates a system group and user named 'appuser'.\n\n2. **Set Appropriate Permissions**: Ensure that the application files and directories are owned by the newly created user. You can use the 'COPY' instruction with the '--chown' flag to set ownership:\n\n   ```dockerfile\n   COPY --chown=appuser:appuser . /app\n   ```\n\n   This command copies the application files to the '/app' directory and sets the ownership to 'appuser'.\n\n3. **Switch to the Non-Root User**: Use the 'USER' instruction to switch to the non-root user before running the application:\n\n   ```dockerfile\n   USER appuser\n   ```\n\n   This instruction sets 'appuser' as the user for subsequent instructions, including the 'CMD' or 'ENTRYPOINT' that runs the application.\n\nBy following these steps, you ensure that the container runs with limited privileges, enhancing security by adhering to the principle of least privilege. For more detailed guidance, refer to Docker's official documentation on best practices for building Docker images. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))"
   },
   "locations": [
     {
       "file": "packages/agents/docker/analyzer-java-v5.3/Dockerfile",
       "line": 189,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   186 | ENTRYPOINT [\"/bin/bash\"]\n   187 | \n   188 | # Default command shows usage\n>  189 | CMD [\"/usr/local/bin/usage.sh\"]\n   190 | \n   191 | # Health check to verify tools are working\n   192 | HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \\",
+      "category": "EXISTING_REST"
     },
     {
       "file": "packages/agents/docker/analyzer-java-v6.0/Dockerfile",
       "line": 205,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   202 | ENTRYPOINT [\"/bin/bash\"]\n   203 | \n   204 | # Default command shows usage\n>  205 | CMD [\"/usr/local/bin/usage.sh\"]\n   206 | \n   207 | # Health check to verify tools are working\n   208 | HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \\",
+      "category": "EXISTING_REST"
     },
     {
       "file": "services/api/Dockerfile",
       "line": 16,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "    13 | EXPOSE 3000\n    14 | \n    15 | # Start the application\n>   16 | CMD [\"npm\", \"start\"]\n    17 | ",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 3,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 2
   }

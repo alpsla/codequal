@@ -1,8 +1,24 @@
 # Quick Python test container for AMD64
+# SESSION 51: Updated to use Ruff (replaces Pylint) and pip-audit (replaces Safety)
+# SESSION 53: Added black, isort for auto-fix capabilities
 FROM python:3.11-slim
 
-# Install just essential tools for testing
-RUN pip install --no-cache-dir bandit pylint
+# Install essential tools for testing
+# SESSION 51 CHANGES:
+# - Added ruff (10-100x faster than pylint, includes security rules)
+# - Added pip-audit (PyPA maintained, replaces safety)
+# - Kept bandit and pylint for backward compatibility
+# SESSION 53 CHANGES:
+# - Added black (code formatter, --check and auto-fix)
+# - Added isort (import sorter, --check and auto-fix)
+RUN pip install --no-cache-dir \
+    bandit \
+    ruff \
+    pip-audit \
+    pylint \
+    mypy \
+    black \
+    isort
 
 WORKDIR /workspace
 

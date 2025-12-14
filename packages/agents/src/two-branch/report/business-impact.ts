@@ -10,46 +10,38 @@ import { IssueGroup } from '../utils/issue-grouping';
 
 /**
  * Check if a group can be auto-fixed by IDE tools
- * SESSION 19 FIX: Include Semgrep and Dependency-Check
+ *
+ * SESSION 53 REFACTOR: Language-neutral approach
+ * CodeQual generates AI fixes for ALL issues, so most are auto-fixable.
+ * We only exclude specific patterns that require manual intervention.
  */
 function canAutoFix(group: IssueGroup): boolean {
-  // CheckStyle: All rules auto-fixable with IDE formatters
-  if (group.tool === 'checkstyle') {
-    return true;
+  const ruleLower = group.rule?.toLowerCase() || '';
+
+  // ===== NON-AUTO-FIXABLE PATTERNS =====
+  // These require architectural changes or manual decision-making
+
+  // Circular dependencies require architectural refactoring
+  if (ruleLower.includes('circular-dependency') || ruleLower.includes('cyclic')) {
+    return false;
   }
 
-  // PMD: Common auto-fixable rules
-  const autoFixablePMDRules = [
-    'SystemPrintln',
-    'GuardLogStatement',
-    'AvoidStarImport',
-    'UnusedImports',
-    'RedundantImport',
-    'SimplifyBooleanReturns',
-    'SimplifyBooleanExpressions',
-    'ForLoopCanBeForeach',
-    'UseStringBufferForStringAppends',
-    'ConsecutiveLiteralAppends',
-    'AvoidUsingVolatile',
-    'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-    'ReturnEmptyCollectionRatherThanNull'
-  ];
-
-  if (autoFixablePMDRules.includes(group.rule)) {
-    return true;
+  // Complex architectural issues
+  if (ruleLower.includes('god-class') || ruleLower.includes('god-object')) {
+    return false;
   }
 
-  // Semgrep: AI-generated fixes are IDE-applicable
-  if (group.tool === 'semgrep') {
-    return true;
+  // Issues requiring human judgment on business logic
+  if (ruleLower.includes('magic-number') && group.severity === 'low') {
+    // Magic numbers often need context to determine correct constant names
+    return false;
   }
 
-  // Dependency-Check: IDEs have dependency management tools
-  if (group.tool === 'dependency-check') {
-    return true;
-  }
-
-  return false;
+  // ===== DEFAULT: AUTO-FIXABLE =====
+  // CodeQual generates AI fix suggestions for 100% of issues
+  // LSP file contains ready-to-apply fixes for IDEs
+  // Even complex security issues have AI-generated fix code
+  return true;
 }
 
 /**
@@ -138,10 +130,38 @@ export function calculateIssueWeightedSkillScore(
 }
 
 /**
+ * Get language-specific pre-commit hook recommendations
+ * SESSION 50 FIX: Provide relevant tool recommendations based on detected language
+ */
+function getPreCommitHookRecommendation(language: string): string {
+  const langLower = language.toLowerCase();
+
+  if (langLower === 'python') {
+    return 'pre-commit hooks (Black, Ruff, Flake8)';
+  } else if (langLower === 'typescript' || langLower === 'javascript') {
+    return 'pre-commit hooks (ESLint, Prettier)';
+  } else if (langLower === 'java') {
+    return 'pre-commit hooks (CheckStyle, Spotless)';
+  } else if (langLower === 'go') {
+    return 'pre-commit hooks (gofmt, golangci-lint)';
+  } else if (langLower === 'rust') {
+    return 'pre-commit hooks (rustfmt, clippy)';
+  } else if (langLower === 'ruby') {
+    return 'pre-commit hooks (RuboCop)';
+  } else if (langLower === 'php') {
+    return 'pre-commit hooks (PHP-CS-Fixer, PHPStan)';
+  } else if (langLower === 'c#' || langLower === 'csharp') {
+    return 'pre-commit hooks (dotnet format, StyleCop)';
+  }
+  return 'pre-commit hooks';
+}
+
+/**
  * Generate comprehensive business impact analysis
  * Includes financial impact, risk assessment, and recommendations
+ * SESSION 50 FIX: Added language parameter for language-specific recommendations
  */
-export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
+export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[], language = 'java'): string {
   // BLOCKERS ONLY: NEW/EXISTING_MODIFIED + critical/high
   const blocking = issues.filter(i =>
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
@@ -283,21 +303,33 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 - **Financial Impact**: Fixing these issues now costs ~${fixDays} days vs $${minExploitCost.toLocaleString()}+ if they cause production incidents
 
 **💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For issues not auto-fixable by linters, use the AI-generated code suggestions.`
-        : `| Metric | Value |
-|--------|-------|
-| **Total Fix Cost** | **$${totalFixCost.toLocaleString()}** (${baseFixHours.toFixed(1)} hours, ~${fixDays} developer-days at $${developerRate}/hour) |
-${autoFixableBlockingCount > 0 ? `| **Cost Breakdown** | ${autoFixableBlockingCount} auto-fixable (${autoFixPercentage.toFixed(0)}%, ~${(autoFixableBlockingCount * 0.1).toFixed(1)}h) + ${blocking.length - autoFixableBlockingCount} manual (~${((blocking.length - autoFixableBlockingCount) * 1.75).toFixed(1)}h) |` : ''}
-${autoFixableTotalCount > 0 ? `| **Linter Auto-Fix (All)** | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) - Run with \`--fix\` flag 🎁 |\n| **AI Code Suggestions** | **100%** (${issues.length}/${issues.length} issues) - Every issue has AI-generated fix code |` : ''}
-| **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
-| **Security Risk** | ${exploitDesc} |
-| **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
-| **Risk-Adjusted Savings** | $${(minExploitCost - totalFixCost).toLocaleString()} minimum (prevention vs. remediation) |${autoFixableBlockingCount > 0 ? `\n\n**💡 Tip:** ${autoFixableBlockingCount} blocking issue${autoFixableBlockingCount > 1 ? 's' : ''} can be auto-fixed with linter \`--fix\` flag.` : ''}${autoFixableTotalCount > autoFixableBlockingCount ? `\n\n**🎁 Bonus:** Apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For non-linter-fixable issues, use AI suggestions.` : ''}`
+        : `**🚀 CodeQual Value Proposition**
+
+| Metric | Without CodeQual | With CodeQual |
+|--------|------------------|---------------|
+| **Fix Time** | ${baseFixHours.toFixed(1)} hours (~${fixDays} days) | **${Math.max(1, Math.ceil(blocking.length * 0.05))} hours** (AI-assisted) |
+| **Developer Cost** | $${totalFixCost.toLocaleString()} | **$${Math.round(Math.max(1, blocking.length * 0.05) * developerRate).toLocaleString()}** |
+| **Time Saved** | - | **${Math.round((baseFixHours - Math.max(1, blocking.length * 0.05)) / baseFixHours * 100)}%** |
+| **Auto-Fix Coverage** | 0% | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) |
+
+**How CodeQual Reduces Fix Time:**
+- **PRO Tier**: 1-click auto-fix for ${autoFixableTotalCount} issues (~3 min review + apply)
+- **BASIC Tier**: AI recommendations ready for IDE agents (Cursor, Copilot) to apply
+- **All Tiers**: 100% of issues have AI-generated fix code suggestions
+
+| Risk Metric | Value |
+|-------------|-------|
+| **Potential Exploit Cost** | $${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()} |
+| **Risk Description** | ${exploitDesc} |
+| **ROI** | **${Math.round(minExploitCost / Math.max(Math.round(Math.max(1, blocking.length * 0.05) * developerRate), 1))}x** (prevention cost vs exploit cost) |
+
+> 💡 **Bottom Line**: CodeQual turns ${fixDays} days of manual work into ~${Math.max(1, Math.ceil(blocking.length * 0.05))} hours of review + apply, saving **$${(totalFixCost - Math.round(Math.max(1, blocking.length * 0.05) * developerRate)).toLocaleString()}** per analysis.`
       : `**💚 Low Financial Risk**
 No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
 
 **Cost to fix:** Minimal - most issues are auto-fixable via IDE tools or linters.
 **Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
-**Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (CheckStyle, Spotless).
+**Recommendation:** Address during regular refactoring cycles or enable ${getPreCommitHookRecommendation(language)}.
 
 ${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${issues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with linter \`--fix\` commands.` : ''}`
     }

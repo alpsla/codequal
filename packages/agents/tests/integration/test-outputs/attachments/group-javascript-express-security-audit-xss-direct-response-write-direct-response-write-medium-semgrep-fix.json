@@ -4,32 +4,36 @@
   "rule": "javascript.express.security.audit.xss.direct-response-write.direct-response-write",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "1. Use a templating engine that automatically escapes HTML content (e.g., Handlebars, EJS with escaping enabled)\n2. Manually escape user input before writing to response using HTML encoding functions\n3. Implement Content Security Policy (CSP) headers as defense-in-depth\n4. Validate and sanitize all user inputs server-side before rendering",
+  "description": "To mitigate this vulnerability, follow these steps:\n\n1. **Use Templating Engines:**\n   - Implement a templating engine (e.g., EJS, Pug, Handlebars) that automatically escapes user input when rendering HTML. This ensures that any user-provided data is safely encoded before being included in the response.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n2. **Avoid Direct Response Writes:**\n   - Refrain from using 'res.send()' or 'res.write()' to output user data directly. Instead, use the templating engine's rendering methods to handle user input securely.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n3. **Sanitize User Input:**\n   - If direct output is necessary, sanitize user input using libraries like DOMPurify to remove potentially harmful content before rendering.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n4. **Implement Content Security Policy (CSP):**\n   - Configure a CSP header to restrict the execution of inline scripts and reduce the risk of XSS attacks.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\nBy following these steps, you can effectively mitigate XSS vulnerabilities and enhance the security of your Express.js application.",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "const escapedInput = escapeHtml(userInput);\nresponse.write(`<div>${escapedInput}</div>`);\n\n// Or using a templating engine:\n// res.render('template', { data: userInput }); // where template engine escapes by default"
+      "after": ""
     },
-    "instructions": "1. Use a templating engine that automatically escapes HTML content (e.g., Handlebars, EJS with escaping enabled)\n2. Manually escape user input before writing to response using HTML encoding functions\n3. Implement Content Security Policy (CSP) headers as defense-in-depth\n4. Validate and sanitize all user inputs server-side before rendering"
+    "instructions": "To mitigate this vulnerability, follow these steps:\n\n1. **Use Templating Engines:**\n   - Implement a templating engine (e.g., EJS, Pug, Handlebars) that automatically escapes user input when rendering HTML. This ensures that any user-provided data is safely encoded before being included in the response.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n2. **Avoid Direct Response Writes:**\n   - Refrain from using 'res.send()' or 'res.write()' to output user data directly. Instead, use the templating engine's rendering methods to handle user input securely.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n3. **Sanitize User Input:**\n   - If direct output is necessary, sanitize user input using libraries like DOMPurify to remove potentially harmful content before rendering.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n4. **Implement Content Security Policy (CSP):**\n   - Configure a CSP header to restrict the execution of inline scripts and reduce the risk of XSS attacks.\n   - Reference: [Semgrep XSS Prevention for ExpressJS](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\nBy following these steps, you can effectively mitigate XSS vulnerabilities and enhance the security of your Express.js application."
   },
   "locations": [
     {
       "file": "apps/api/src/routes/progress.ts",
       "line": 336,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   333 |     });\n   334 |     \n   335 |     // Send initial progress\n>  336 |     res.write(`data: ${JSON.stringify({\n   337 |       type: 'initial',\n   338 |       progress\n   339 |     })}\\n\\n`);",
+      "category": "EXISTING_REST"
     },
     {
       "file": "apps/api/src/routes/unified-progress.ts",
       "line": 148,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   145 |     });\n   146 |     \n   147 |     // Send initial state\n>  148 |     res.write(`data: ${JSON.stringify({\n   149 |       type: 'initial',\n   150 |       analysisId,\n   151 |       userProgress: progress.userProgress,",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 2,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

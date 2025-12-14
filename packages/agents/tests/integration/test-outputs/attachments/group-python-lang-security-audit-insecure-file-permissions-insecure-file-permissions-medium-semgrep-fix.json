@@ -4,26 +4,30 @@
   "rule": "python.lang.security.audit.insecure-file-permissions.insecure-file-permissions",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Replace `0o755` with `0o644` to grant read and write access only to the owner, and read-only access to group and others. Use `os.chmod()` with proper error handling and validate that the permission change is applied correctly.",
+  "description": "To mitigate this issue, adjust the file permissions to restrict write and execute access for users other than the owner. This can be achieved by using the `os.chmod()` function in Python to set the permissions to `0o644`, which grants read and write permissions to the owner, and read-only permissions to group members and others. This configuration ensures that only the owner can modify or execute the file, enhancing security. For more details, refer to the Datadog security documentation on file write permissions. ([docs.datadoghq.com](https://docs.datadoghq.com/security/code_security/static_analysis/static_analysis_rules/python-security/file-write-others/?utm_source=openai))",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "import os\n\n# Before\nos.chmod('filename.txt', 0o755)\n\n# After\nos.chmod('filename.txt', 0o644)"
+      "after": "import os\n\n# Set file permissions to 0o644\nos.chmod('path_to_file', 0o644)"
     },
-    "instructions": "Replace `0o755` with `0o644` to grant read and write access only to the owner, and read-only access to group and others. Use `os.chmod()` with proper error handling and validate that the permission change is applied correctly."
+    "instructions": "To mitigate this issue, adjust the file permissions to restrict write and execute access for users other than the owner. This can be achieved by using the `os.chmod()` function in Python to set the permissions to `0o644`, which grants read and write permissions to the owner, and read-only permissions to group members and others. This configuration ensures that only the owner can modify or execute the file, enhancing security. For more details, refer to the Datadog security documentation on file write permissions. ([docs.datadoghq.com](https://docs.datadoghq.com/security/code_security/static_analysis/static_analysis_rules/python-security/file-write-others/?utm_source=openai))"
   },
   "locations": [
     {
       "file": "packages/core/scripts/deepwiki_integration/complete_openrouter_fix.py",
       "line": 529,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   526 |         f.write(test_script_content)\n   527 |     \n   528 |     # Make it executable\n>  529 |     os.chmod(test_script_path, 0o755)\n   530 |     \n   531 |     logger.info(f\"Created test script at {test_script_path}\")\n   532 |     return True",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 1,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

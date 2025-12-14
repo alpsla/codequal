@@ -28,6 +28,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/lru-cache": "^7.10.9",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",

@@ -26,6 +26,7 @@ import { UNIVERSAL_ANALYSIS_MODES } from '../config/analysis-modes';
 import { isUniversalTool } from './universal';
 import { UniversalSemgrepRunner } from './universal/semgrep-runner';
 import { UniversalDependencyCheckRunner } from './universal/dependency-check-runner';
+import { runCodeQL, CodeQLConfig } from './universal/codeql-runner';
 import { Issue } from '../analyzers/v9-types';
 
 const execAsync = promisify(exec);
@@ -447,15 +448,38 @@ export abstract class BaseToolOrchestrator {
   }
 
   /**
-   * Execute a universal tool (Semgrep or Dependency-Check)
-   * 
+   * Map our internal language names to CodeQL language identifiers
+   * CodeQL uses specific language names that may differ from ours
+   */
+  protected mapToCodeQLLanguage(language: string): string {
+    const mapping: Record<string, string> = {
+      'typescript': 'javascript',  // CodeQL uses 'javascript' for both TS and JS
+      'javascript': 'javascript',
+      'java': 'java',
+      'python': 'python',
+      'go': 'go',
+      'csharp': 'csharp',
+      'cpp': 'cpp',
+      'c': 'cpp',
+      'ruby': 'ruby',
+      'swift': 'swift'
+    };
+    return mapping[language.toLowerCase()] || language.toLowerCase();
+  }
+
+  /**
+   * Execute a universal tool (Semgrep, Dependency-Check, or CodeQL)
+   *
    * These tools use shared runners that work across all languages.
    * Language-specific orchestrators should call this method for universal tools.
-   * 
-   * @param toolName - 'semgrep' or 'dependency-check'
+   *
+   * @param toolName - 'semgrep', 'dependency-check', or 'codeql'
    * @param repoPath - Path to repository
    * @param branch - 'base' or 'pr'
    * @param options - Orchestration options
+   *
+   * Note: CodeQL is PRO tier only and requires explicit opt-in.
+   * It adds significant time (5-30 min) but provides deep semantic analysis.
    */
   protected async executeUniversalTool(
     toolName: string,
@@ -483,6 +507,24 @@ export abstract class BaseToolOrchestrator {
         case 'dependency-check': {
           const depCheckRunner = new UniversalDependencyCheckRunner(repoPath, language);
           issues = await depCheckRunner.execute();
+          break;
+        }
+
+        case 'codeql': {
+          // CodeQL deep semantic analysis (PRO tier, opt-in only)
+          // Uses Docker on ARM64 with x86_64 emulation via QEMU
+          logger.info('🔬 Running CodeQL deep security analysis (this may take 5-30 minutes)...');
+
+          // Get CodeQL-compatible language name
+          const codeqlLanguage = this.mapToCodeQLLanguage(language);
+
+          // Run CodeQL with default config (security query suite)
+          // runCodeQL returns Issue[] directly from v9-types
+          issues = await runCodeQL(repoPath, codeqlLanguage, {
+            querySuite: 'security'  // Default to faster suite
+          });
+
+          logger.info(`🔬 CodeQL completed: ${issues.length} deep security issues found`);
           break;
         }
 
@@ -680,31 +722,42 @@ export abstract class BaseToolOrchestrator {
     const semgrepIndex = tools.indexOf('semgrep');
     const hasSemgrep = semgrepIndex !== -1;
 
-    // Strategy: Run Semgrep first with all 4 CPUs if it's the bottleneck
+    // PERF-OPT: Identify I/O-bound tools (network/disk, not CPU)
+    // These can run alongside CPU-intensive tools without contention
+    const IO_BOUND_TOOLS = ['pip-audit', 'safety', 'npm-audit', 'yarn-audit', 'bundler-audit', 'dependency-check'];
+    const ioTools = tools.filter(t => IO_BOUND_TOOLS.includes(t));
+    const cpuTools = tools.filter(t => !IO_BOUND_TOOLS.includes(t) && t !== 'semgrep');
+
+    // Strategy: Run Semgrep (CPU-heavy) + I/O tools in parallel, then CPU tools
     if (hasSemgrep && tools.length > 1) {
-      logger.info(`\n🚀 CPU-Aware Strategy: Running Semgrep first with all 4 CPUs, then other tools in parallel...`);
+      logger.info(`\n🚀 CPU-Aware Strategy: Optimized 3-phase execution...`);
+      logger.info(`   📊 I/O-bound tools (can run with Semgrep): ${ioTools.length > 0 ? ioTools.join(', ') : 'none'}`);
+      logger.info(`   📊 CPU-bound tools (run after Semgrep): ${cpuTools.length > 0 ? cpuTools.join(', ') : 'none'}`);
 
-      // Step 1: Run Semgrep with all 4 CPUs (temporarily set jobs=4)
-      const semgrepTool = tools[semgrepIndex];
-      const otherTools = tools.filter(t => t !== semgrepTool);
+      const allResults: ToolResult[] = [];
 
-      logger.info(`   📊 Step 1: Running Semgrep with --jobs=4 (all 4 CPUs)...`);
-      const semgrepResult = await this.executeTool(semgrepTool, repoPath, branch, {
-        ...options,
-        semgrepJobs: 4  // Use all 4 CPUs for Semgrep
-      });
+      // Phase 1: Run Semgrep (4 CPUs) + I/O-bound tools in parallel
+      // I/O tools don't compete for CPU, so they can run alongside Semgrep
+      logger.info(`   📊 Phase 1: Running Semgrep (--jobs=4) ${ioTools.length > 0 ? `+ ${ioTools.length} I/O tools` : ''} in parallel...`);
 
-      // Step 2: Run other tools in parallel (max 4 concurrent)
-      logger.info(`   📊 Step 2: Running ${otherTools.length} other tools in parallel...`);
-      const otherResults = await this.executeToolsInParallel(
-        otherTools,
-        repoPath,
-        branch,
-        options
-      );
+      const phase1Promises: Promise<ToolResult>[] = [
+        this.executeTool('semgrep', repoPath, branch, { ...options, semgrepJobs: 4 })
+      ];
 
-      // Combine results (Semgrep first, then others)
-      const allResults = [semgrepResult, ...otherResults];
+      // Add I/O-bound tools to run alongside Semgrep
+      for (const ioTool of ioTools) {
+        phase1Promises.push(this.executeTool(ioTool, repoPath, branch, options));
+      }
+
+      const phase1Results = await Promise.all(phase1Promises);
+      allResults.push(...phase1Results);
+
+      // Phase 2: Run remaining CPU-bound tools in parallel (after Semgrep releases CPUs)
+      if (cpuTools.length > 0) {
+        logger.info(`   📊 Phase 2: Running ${cpuTools.length} CPU-bound tools in parallel...`);
+        const phase2Results = await this.executeToolsInParallel(cpuTools, repoPath, branch, options);
+        allResults.push(...phase2Results);
+      }
 
       // Ensure results are in original tool order
       const orderedResults = tools.map(toolName =>

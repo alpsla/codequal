@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck - Legacy file, not part of V9 pipeline
 /**
  * Unified Progress Tracer Service
  * Bridges DataFlowMonitor (comprehensive internal monitoring) with ProgressTracker (user-facing progress)

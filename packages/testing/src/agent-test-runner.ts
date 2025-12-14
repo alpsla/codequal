@@ -399,8 +399,8 @@ export class AgentTestRunner {
       // 2. Create orchestrator to fetch PR data
       const orchestratorStartTime = Date.now();
       const orchestrator = AgentFactory.createAgent(
-        AgentRole.ORCHESTRATOR,
-        selection[AgentRole.ORCHESTRATOR],
+        AgentRole.ORCHESTRATOR as any,
+        selection[AgentRole.ORCHESTRATOR] as any,
         {}
       );
       
@@ -432,7 +432,7 @@ export class AgentTestRunner {
           console.warn(`No provider configured for role ${role}, skipping`);
           continue;
         }
-        const agent = AgentFactory.createAgent(role, provider, {});
+        const agent = AgentFactory.createAgent(role as any, provider as any, {});
         
         // Analyze PR
         const analysisResult = await agent.analyze(prData as unknown as Record<string, unknown>);

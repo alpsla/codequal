@@ -4,32 +4,36 @@
   "rule": "javascript.express.open-redirect-deepsemgrep.open-redirect-deepsemgrep",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Implement strict input validation by maintaining an allowlist of approved domains, validate the redirect URL against this list before redirection, and display a warning page to users before redirecting to external domains. Use security libraries like OWASP ESAPI or similar for URL validation.",
+  "description": "Implement strict input validation by allowing redirects only to a predefined list of trusted domains. Notify users when they are being redirected to an external site, and provide them with the option to accept or decline the redirect. This approach mitigates the risk of open redirects and enhances user trust.",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "const allowedDomains = ['example.com', 'trusted-site.com'];\nfunction isValidRedirectUrl(url) {\n  try {\n    const parsedUrl = new URL(url);\n    return allowedDomains.includes(parsedUrl.hostname);\n  } catch (e) {\n    return false;\n  }\n}\n// Before redirecting\nif (isValidRedirectUrl(redirectUrl)) {\n  res.redirect(redirectUrl);\n} else {\n  res.status(400).send('Invalid redirect URL');\n}"
+      "after": "const allowedDomains = ['trusted.com', 'secure.org'];\nconst redirectTo = req.query.redirectTo;\nif (allowedDomains.includes(new URL(redirectTo).hostname)) {\n  res.redirect(redirectTo);\n} else {\n  res.status(400).send('Invalid redirect destination');\n}"
     },
-    "instructions": "Implement strict input validation by maintaining an allowlist of approved domains, validate the redirect URL against this list before redirection, and display a warning page to users before redirecting to external domains. Use security libraries like OWASP ESAPI or similar for URL validation."
+    "instructions": "Implement strict input validation by allowing redirects only to a predefined list of trusted domains. Notify users when they are being redirected to an external site, and provide them with the option to accept or decline the redirect. This approach mitigates the risk of open redirects and enhances user trust."
   },
   "locations": [
     {
       "file": "apps/api/src/routes/auth.ts",
       "line": 250,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   247 |     }\n   248 | \n   249 |     // Redirect the user to the OAuth provider\n>  250 |     res.redirect(data.url);\n   251 |   } catch (error) {\n   252 |     logger.error('OAuth error:', { error });\n   253 |     const errorMessage = error instanceof Error ? error.message : '';",
+      "category": "EXISTING_REST"
     },
     {
       "file": "apps/api/src/routes/auth.ts",
       "line": 453,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   450 |     const redirectUrl = new URL(redirectTo);\n   451 |     redirectUrl.searchParams.append('token', data.session.access_token);\n   452 |     \n>  453 |     res.redirect(redirectUrl.toString());\n   454 |   } catch (error) {\n   455 |     if (error instanceof z.ZodError) {\n   456 |       return res.status(400).json({ error: 'Invalid callback parameters' });",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 2,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

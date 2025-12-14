@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "group_id": "java-spring-security-audit-spring-actuator-non-health-enabled-spring-actuator-dangerous-endpoints-enabled-medium-semgrep",
+  "rule": "java.spring.security.audit.spring-actuator-non-health-enabled.spring-actuator-dangerous-endpoints-enabled",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "{\n  \"severity\": \"medium\",\n  \"issueDescription\": {\n    \"what\": \"Spring Boot Actuators for health and info endpoints are enabled without proper security controls. These endpoints expose sensitive system information and health status that could be exploited by attackers.\",\n    \"why\": \"Attackers can gather information about the application's internal state, dependencies, and configuration through these endpoints. This information can be used to plan targeted attacks, identify vulnerabilities, or map...",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "1116: // ⚠️ AI-generated fix not available - Manual review required\n1117: // Issue: Spring Boot Actuators \"health,info\" are enabled. Depending on the actuators, this can pose a significant security risk. Please double-check if the actuators are needed and properly secured.\n1118: // See Security documentation for fix patterns\n1119: // Context: v9-codequal-pr69-1763524619189.md line 1116"
+    },
+    "instructions": "{\n  \"severity\": \"medium\",\n  \"issueDescription\": {\n    \"what\": \"Spring Boot Actuators for health and info endpoints are enabled without proper security controls. These endpoints expose sensitive system information and health status that could be exploited by attackers.\",\n    \"why\": \"Attackers can gather information about the application's internal state, dependencies, and configuration through these endpoints. This information can be used to plan targeted attacks, identify vulnerabilities, or map the application architecture for further exploitation.\",\n    \"causes\": [\n      \"Actuator endpoints are enabled by default in Spring Boot applications\",\n      \"Lack of proper authentication and authorization for actuator endpoints\",\n      \"Exposure of sensitive system information through unsecured endpoints\"\n    ],\n    \"impact\": \"Potential information disclosure leading to reconnaissance attacks. This can violate compliance requirements such as PCI DSS, HIPAA, and SOX that mandate protection of system information and access controls.\"\n  },\n  \"fix\": \"1. Disable unnecessary actuators by setting management.endpoints.enabled-by-default=false in application.properties\\n2. Explicitly enable only required endpoints with management.endpoints.web.exposure.include=health,info\\n3. Implement proper security measures including authentication and authorization for actuator endpoints\\n4. Consider using Spring Security to protect actuator endpoints with role-based access control\",\n  \"correctedCode\": \"\",\n  \"bestPractices\": [\n    \"Disable all actuators by default and enable only those that are absolutely necessary\",\n    \"Implement authentication and authorization for actuator endpoints\",\n    \"Regularly audit and review which actuators are enabled in production environments\"\n  ]\n}",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: java.spring.security.audit.spring-actuator-non-health-enabled.spring-actuator-dangerous-endpoints-enabled\nThis is a medium quality issue detected by semgrep.\nThe issue is: \"Spring Boot Actuators \"health,info\" are enabled. Depending on the actuators, this can pose a significant security risk. Please double-check if the actuators are needed and properly secured.\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: java.spring.security.audit.spring-actuator-non-health-enabled.spring-actuator-dangerous-endpoints-enabled (semgrep)\nSEVERITY: medium\nMESSAGE: Spring Boot Actuators \"health,info\" are enabled. Depending on the actuators, this can pose a significant security risk. Please double-check if the actuators are needed and properly secured.\n\nFILE: packages/agents/test-outputs/v9-codequal-pr69-1763524619189.md\nLINE: 1116\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 500,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-1763524619189.md",
+      "line": 1116,
+      "snippet": "  1113 |    220 | management.endpoints.web.exposure.include=*\n  1114 |    221 | \n  1115 |    222 | After (application.properties):\n> 1116 | >  223 | management.endpoints.web.exposure.include=health,info\n  1117 |    224 | management.endpoint.health.show-details=when_authorized\n  1118 |    225 | \n  1119 |    226 | SecurityConfig.java:",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-1763524619189.md",
+      "line": 1131,
+      "snippet": "  1128 | ```text\n  1129 | spring.security.user.name=admin\n  1130 | spring.security.user.password=securePassword\n> 1131 | management.endpoints.web.exposure.include=health,info\n  1132 | management.endpoints.web.exposure.exclude=env,beans\n  1133 | security.require-ssl=true\n  1134 | ```",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-1763555988963.md",
+      "line": 1112,
+      "snippet": "  1109 |    220 | management.endpoints.web.exposure.include=*\n  1110 |    221 | \n  1111 |    222 | After (application.properties):\n> 1112 | >  223 | management.endpoints.web.exposure.include=health,info\n  1113 |    224 | management.endpoint.health.show-details=when_authorized\n  1114 |    225 | \n  1115 |    226 | SecurityConfig.java:",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-FINAL.md",
+      "line": 871,
+      "snippet": "   868 |    220 | management.endpoints.web.exposure.include=*\n   869 |    221 | \n   870 |    222 | After (application.properties):\n>  871 | >  223 | management.endpoints.web.exposure.include=health,info\n   872 |    224 | management.endpoint.health.show-details=when_authorized\n   873 |    225 | \n   874 |    226 | SecurityConfig.java:",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-FINAL.md",
+      "line": 879,
+      "snippet": "   876 | \n   877 | #### 🔧 How to Fix\n   878 | \n>  879 | 1. Disable unnecessary actuators by setting management.endpoints.enabled-by-default=false in application.properties. 2. Explicitly enable only required endpoints using management.endpoints.web.exposur...\n   880 | \n   881 | **Recommended Code**:\n   882 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-FINAL.md",
+      "line": 885,
+      "snippet": "   882 | \n   883 | ```text\n   884 | management.endpoints.enabled-by-default=false\n>  885 | management.endpoints.web.exposure.include=health,info\n   886 | management.endpoint.health.show-details=never\n   887 | ```\n   888 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-cloud.md",
+      "line": 856,
+      "snippet": "   853 |    220 | management.endpoints.web.exposure.include=*\n   854 |    221 | \n   855 |    222 | After (application.properties):\n>  856 | >  223 | management.endpoints.web.exposure.include=health,info\n   857 |    224 | management.endpoint.health.show-details=when_authorized\n   858 |    225 | \n   859 |    226 | SecurityConfig.java:",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-cloud.md",
+      "line": 865,
+      "snippet": "   862 | #### 🔧 How to Fix\n   863 | \n   864 | 1. Disable unnecessary actuators by setting management.endpoints.enabled-by-default=false in application.properties\n>  865 | 2. Explicitly enable only required endpoints using management.endpoints.web.exposure.include=health,info\n   866 | 3. Add authentication to actuator endpoints using management.endpoints.web.exposure.exclude=health,info\n   867 | 4. Configure proper security rules for actuator access in Spring Security configuration\n   868 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-codequal-pr69-cloud.md",
+      "line": 873,
+      "snippet": "   870 | \n   871 | ```text\n   872 | management.endpoints.enabled-by-default=false\n>  873 | management.endpoints.web.exposure.include=health,info\n   874 | management.endpoints.web.exposure.exclude=\n   875 | management.endpoint.health.enabled=true\n   876 | management.endpoint.info.enabled=true",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-lite-spring-boot---petclinic-1761791293932.md",
+      "line": 223,
+      "snippet": "   220 | management.endpoints.web.exposure.include=*\n   221 | \n   222 | After (application.properties):\n>  223 | management.endpoints.web.exposure.include=health,info\n   224 | management.endpoint.health.show-details=when_authorized\n   225 | \n   226 | SecurityConfig.java:",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/test-outputs/v9-lite-spring-boot---petclinic-1761826239759.md",
+      "line": 309,
+      "snippet": "   306 | # management.endpoint.health.show-details=always\n   307 | \n   308 | # AFTER (secure)\n>  309 | management.endpoints.web.exposure.include=health,info,metrics\n   310 | management.endpoint.health.show-details=when-authorized\n   311 | management.endpoint.env.show-values=when-authorized\n   312 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "docs/logs.txt",
+      "line": 223,
+      "snippet": "   220 | management.endpoints.web.exposure.include=*\n   221 | \n   222 | After (application.properties):\n>  223 | management.endpoints.web.exposure.include=health,info\n   224 | management.endpoint.health.show-details=when_authorized\n   225 | \n   226 | SecurityConfig.java:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 31,
+      "snippet": "    28 | @@ -17,7 +17,7 @@\n    29 | -management.endpoints.web.exposure.include=*\n    30 | +management.endpoints.web.exposure.exclude=env,logfile,heapdump\n>   31 | +management.endpoints.web.exposure.include=health,info\n    32 | +spring.security.user.name=admin\n    33 | +spring.security.user.password=securePassword123\n    34 | ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 77,
+      "snippet": "    74 | \n    75 | ### 4. Changes\n    76 | ```diff\n>   77 | -management.endpoints.web.exposure.include=*     ← REMOVE this line (starts with -)\n    78 | +management.endpoints.web.exposure.exclude=...    ← ADD this line (starts with +)\n    79 | +management.endpoints.web.exposure.include=...    ← ADD this line (starts with +)\n    80 | +spring.security.user.name=admin                  ← ADD this line (starts with +)",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 79,
+      "snippet": "    76 | ```diff\n    77 | -management.endpoints.web.exposure.include=*     ← REMOVE this line (starts with -)\n    78 | +management.endpoints.web.exposure.exclude=...    ← ADD this line (starts with +)\n>   79 | +management.endpoints.web.exposure.include=...    ← ADD this line (starts with +)\n    80 | +spring.security.user.name=admin                  ← ADD this line (starts with +)\n    81 | ```\n    82 | ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 181,
+      "snippet": "   178 | **application.properties**:\n   179 | ```properties\n   180 | # Actuator\n>  181 | management.endpoints.web.exposure.include=*  ← INSECURE! Exposes all endpoints\n   182 | ```\n   183 | \n   184 | ### After Running `git apply fixes.patch`:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/GIT_PATCH_EXPLAINED.md",
+      "line": 189,
+      "snippet": "   186 | ```properties\n   187 | # Actuator\n   188 | management.endpoints.web.exposure.exclude=env,logfile,heapdump\n>  189 | management.endpoints.web.exposure.include=health,info\n   190 | spring.security.user.name=admin\n   191 | spring.security.user.password=securePassword123\n   192 | ```",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/spring-petclinic-tsx-test.md",
+      "line": 210,
+      "snippet": "   207 | \n   208 | # After (secure)\n   209 | management.endpoints.web.exposure.exclude=env,logfile,heapdump\n>  210 | management.endpoints.web.exposure.include=health,info\n   211 | management.endpoint.health.show-details=never\n   212 | ```\n   213 | ",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 18,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 9
+  }
+}

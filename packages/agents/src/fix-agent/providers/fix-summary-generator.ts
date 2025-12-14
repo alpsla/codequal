@@ -55,6 +55,29 @@ export interface ManualReviewGuidance {
   priority: 'high' | 'medium' | 'low';
 }
 
+export interface CodeQualFixOptions {
+  selectionModes: {
+    mode: string;
+    command: string;
+    description: string;
+  }[];
+  commitStyles: {
+    style: string;
+    command: string;
+    description: string;
+  }[];
+  approvalOptions: {
+    option: string;
+    command: string;
+    description: string;
+  }[];
+  quickStart: {
+    step: number;
+    action: string;
+    command: string;
+  }[];
+}
+
 export interface FixSummaryReport {
   metadata: {
     repository?: string;
@@ -68,6 +91,7 @@ export interface FixSummaryReport {
   manualReviewIssues: FixReportIssue[];
   intentionalUseIssues: FixReportIssue[];
   guidance: ManualReviewGuidance[];
+  fixOptions?: CodeQualFixOptions;
 }
 
 // ============================================================================
@@ -117,6 +141,9 @@ export class FixSummaryGenerator {
     const stats = this.calculateStats(issues, autoFixed, manualReview, intentional);
     const guidance = this.generateGuidance(manualReview);
 
+    // Generate fix options only when there are auto-fixable issues
+    const fixOptions = autoFixed.length > 0 ? this.generateFixOptions(stats.autoFixed) : undefined;
+
     return {
       metadata: {
         repository: metadata?.repository,
@@ -130,6 +157,39 @@ export class FixSummaryGenerator {
       manualReviewIssues: manualReview,
       intentionalUseIssues: intentional,
       guidance,
+      fixOptions,
+    };
+  }
+
+  /**
+   * Generate CodeQual fix options for programmatic access
+   */
+  private generateFixOptions(autoFixedCount: number): CodeQualFixOptions {
+    return {
+      selectionModes: [
+        { mode: 'all', command: 'codequal fix --all', description: 'Apply all auto-fixes in one operation' },
+        { mode: 'by_severity', command: 'codequal fix --severity high,critical', description: 'Fix only high/critical issues' },
+        { mode: 'by_category', command: 'codequal fix --category security', description: 'Fix specific category (security, code_quality, etc.)' },
+        { mode: 'by_file', command: 'codequal fix --file src/auth.ts', description: 'Fix issues in a specific file' },
+        { mode: 'individual', command: 'codequal fix --issue <id>', description: 'Fix a single issue by ID' },
+        { mode: 'interactive', command: 'codequal fix --review', description: 'Review and approve each fix individually' },
+      ],
+      commitStyles: [
+        { style: 'single', command: 'codequal fix --all --commit single', description: 'Single commit with all fixes' },
+        { style: 'grouped', command: 'codequal fix --all --commit grouped', description: 'Group commits by category (security, code_quality, etc.)' },
+        { style: 'per-file', command: 'codequal fix --all --commit per-file', description: 'Separate commit per file' },
+        { style: 'per-issue', command: 'codequal fix --all --commit per-issue', description: 'Separate commit per issue' },
+      ],
+      approvalOptions: [
+        { option: 'dry-run', command: 'codequal fix --all --dry-run', description: 'Preview fixes without applying' },
+        { option: 'no-commit', command: 'codequal fix --all --no-commit', description: 'Apply fixes to working directory without commit' },
+        { option: 'approve', command: 'codequal fix --all --approve', description: 'Interactive approval for each fix' },
+        { option: 'custom-message', command: `codequal fix --all --commit single --message "fix: apply ${autoFixedCount} fixes"`, description: 'Auto-approve with custom commit message' },
+      ],
+      quickStart: [
+        { step: 1, action: 'Preview', command: 'codequal fix --severity high,critical --dry-run' },
+        { step: 2, action: 'Apply', command: 'codequal fix --severity high,critical --approve' },
+      ],
     };
   }
 
@@ -257,9 +317,72 @@ export class FixSummaryGenerator {
     }
     lines.push('');
 
+    // CodeQual PRO Auto-Fix Section (only for PRO tier with auto-fixable issues)
+    if (stats.autoFixed > 0) {
+      lines.push('## 🚀 CodeQual PRO Auto-Fix Options');
+      lines.push('');
+      lines.push(`You have **${stats.autoFixed} auto-fixable issues**. CodeQual can apply these fixes automatically:`);
+      lines.push('');
+      lines.push('### Fix Selection Options');
+      lines.push('');
+      lines.push('| Option | Command | Description |');
+      lines.push('|--------|---------|-------------|');
+      lines.push('| **Fix All** | `codequal fix --all` | Apply all auto-fixes in one operation |');
+      lines.push('| **By Severity** | `codequal fix --severity high,critical` | Fix only high/critical issues |');
+      lines.push('| **By Category** | `codequal fix --category security` | Fix specific category (security, code_quality, etc.) |');
+      lines.push('| **By File** | `codequal fix --file src/auth.ts` | Fix issues in a specific file |');
+      lines.push('| **Individual** | `codequal fix --issue <id>` | Fix a single issue by ID |');
+      lines.push('| **Interactive** | `codequal fix --review` | Review and approve each fix individually |');
+      lines.push('');
+      lines.push('### Commit Options');
+      lines.push('');
+      lines.push('After selecting fixes, choose how to commit changes:');
+      lines.push('');
+      lines.push('```bash');
+      lines.push('# Single commit with all fixes');
+      lines.push('codequal fix --all --commit single');
+      lines.push('');
+      lines.push('# Group commits by category (security, code_quality, etc.)');
+      lines.push('codequal fix --all --commit grouped');
+      lines.push('');
+      lines.push('# Separate commit per file');
+      lines.push('codequal fix --all --commit per-file');
+      lines.push('');
+      lines.push('# Separate commit per issue');
+      lines.push('codequal fix --all --commit per-issue');
+      lines.push('```');
+      lines.push('');
+      lines.push('### Approval Workflow');
+      lines.push('');
+      lines.push('CodeQual supports approval before committing:');
+      lines.push('');
+      lines.push('```bash');
+      lines.push('# Preview fixes without applying (dry run)');
+      lines.push('codequal fix --all --dry-run');
+      lines.push('');
+      lines.push('# Apply fixes to working directory (no commit)');
+      lines.push('codequal fix --all --no-commit');
+      lines.push('');
+      lines.push('# Interactive approval for each fix');
+      lines.push('codequal fix --all --approve');
+      lines.push('');
+      lines.push('# Auto-approve and commit with custom message');
+      lines.push(`codequal fix --all --commit single --message "fix: apply ${stats.autoFixed} security fixes"`);
+      lines.push('```');
+      lines.push('');
+      lines.push('### Quick Start');
+      lines.push('');
+      lines.push('```bash');
+      lines.push('# Recommended: Preview first, then apply');
+      lines.push('codequal fix --severity high,critical --dry-run   # Preview');
+      lines.push('codequal fix --severity high,critical --approve   # Apply with approval');
+      lines.push('```');
+      lines.push('');
+    }
+
     // Footer
     lines.push('---');
-    lines.push(`*Generated by ${brandName} at ${report.metadata.generatedAt}*`);
+    lines.push(`*Generated by ${brandName} PRO at ${report.metadata.generatedAt}*`);
 
     return lines.join('\n');
   }
@@ -496,8 +619,481 @@ export class FixSummaryGenerator {
     </table>
   </div>
 
+  ${stats.autoFixed > 0 ? `
+  <div class="section">
+    <h2>🚀 CodeQual PRO Auto-Fix</h2>
+    <p>You have <strong>${stats.autoFixed} auto-fixable issues</strong>. Choose how to apply fixes:</p>
+
+    <style>
+      .fix-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+      }
+      .fix-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      .fix-card:hover {
+        border-color: var(--brand-color);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        transform: translateY(-2px);
+      }
+      .fix-card.primary {
+        background: linear-gradient(135deg, var(--brand-color) 0%, #6366f1 100%);
+        border-color: var(--brand-color);
+        color: white;
+      }
+      .fix-card.primary:hover {
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+      }
+      .fix-card h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .fix-card p {
+        margin: 0 0 1rem 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+      .fix-card .count {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+      }
+      .fix-card.primary .count { color: white; }
+      .fix-btn {
+        display: inline-block;
+        background: var(--brand-color);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+      }
+      .fix-btn:hover {
+        background: #4338ca;
+        transform: scale(1.02);
+      }
+      .fix-card.primary .fix-btn {
+        background: white;
+        color: var(--brand-color);
+      }
+      .fix-card.primary .fix-btn:hover {
+        background: #f8fafc;
+      }
+      .commit-options {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+      }
+      .commit-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1rem;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .commit-chip:hover {
+        background: #e2e8f0;
+        border-color: var(--brand-color);
+      }
+      .commit-chip.selected {
+        background: var(--brand-color);
+        color: white;
+        border-color: var(--brand-color);
+      }
+      .advanced-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6b7280;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-top: 1.5rem;
+        padding: 0.5rem 0;
+      }
+      .advanced-toggle:hover { color: var(--brand-color); }
+      .advanced-content {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        font-size: 0.85rem;
+      }
+      .advanced-content.show { display: block; }
+      /* Modal styles */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-overlay.show { display: flex; }
+      .modal {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      }
+      .modal h3 { margin: 0 0 1rem 0; }
+      .modal-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+      .modal-btn {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+      .modal-btn.primary {
+        background: var(--brand-color);
+        color: white;
+      }
+      .modal-btn.primary:hover { background: #4338ca; }
+      .modal-btn.secondary {
+        background: #f1f5f9;
+        color: #374151;
+      }
+      .modal-btn.secondary:hover { background: #e2e8f0; }
+      .progress-bar-modal {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        margin: 1rem 0;
+        overflow: hidden;
+      }
+      .progress-bar-modal .fill {
+        height: 100%;
+        background: var(--brand-color);
+        width: 0%;
+        transition: width 0.3s;
+      }
+      .status-message {
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+      .status-message.success { background: #d1fae5; color: #065f46; }
+      .status-message.error { background: #fee2e2; color: #991b1b; }
+      .status-message.info { background: #dbeafe; color: #1e40af; }
+      .copy-command {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin: 1rem 0;
+      }
+      .copy-command code { flex: 1; }
+      .copy-command button {
+        background: #374151;
+        color: white;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75rem;
+      }
+      .copy-command button:hover { background: #4b5563; }
+    </style>
+
+    <div class="fix-actions">
+      <div class="fix-card primary" onclick="codequalFix({mode:'all',commit:getCommitStyle()})">
+        <h4>✨ Fix All Issues</h4>
+        <div class="count">${stats.autoFixed}</div>
+        <p>Apply all ${stats.autoFixed} auto-fixes and commit grouped by category</p>
+        <button class="fix-btn">Fix All & Commit</button>
+      </div>
+
+      <div class="fix-card" onclick="codequalFix({mode:'severity',filter:'high,critical',commit:getCommitStyle()})">
+        <h4>🔴 Critical & High Only</h4>
+        <div class="count">${(stats.bySeverity.critical?.fixed || 0) + (stats.bySeverity.high?.fixed || 0)}</div>
+        <p>Fix only critical and high severity issues first</p>
+        <button class="fix-btn">Fix Critical & High</button>
+      </div>
+
+      <div class="fix-card" onclick="codequalFix({mode:'category',filter:'security',commit:getCommitStyle()})">
+        <h4>🔒 Security Issues</h4>
+        <div class="count">${stats.byCategory.security?.fixed || 0}</div>
+        <p>Fix all security vulnerabilities</p>
+        <button class="fix-btn">Fix Security</button>
+      </div>
+
+      <div class="fix-card" onclick="codequalFix({mode:'review'})">
+        <h4>🔍 Review Each Fix</h4>
+        <div class="count">${stats.autoFixed}</div>
+        <p>Review and approve each fix individually before applying</p>
+        <button class="fix-btn">Start Review</button>
+      </div>
+    </div>
+
+    <div class="commit-options">
+      <span style="font-weight:600;color:#374151;">Commit style:</span>
+      <label class="commit-chip selected" onclick="selectCommitStyle(this, 'grouped')">
+        📦 Grouped by category
+      </label>
+      <label class="commit-chip" onclick="selectCommitStyle(this, 'single')">
+        📝 Single commit
+      </label>
+      <label class="commit-chip" onclick="selectCommitStyle(this, 'per-file')">
+        📁 Per file
+      </label>
+    </div>
+
+    <div class="advanced-toggle" onclick="this.nextElementSibling.classList.toggle('show')">
+      <span>⚙️</span>
+      <span>Show CLI Commands</span>
+      <span style="font-size:0.7rem;">▼</span>
+    </div>
+    <div class="advanced-content">
+      <p style="margin-top:0;color:#6b7280;">For advanced users who prefer command line:</p>
+      <code style="font-size:0.8rem;">
+# Fix all issues with grouped commits<br>
+codequal fix --all --commit grouped<br><br>
+# Fix only critical and high severity<br>
+codequal fix --severity critical,high --commit single<br><br>
+# Fix security issues only<br>
+codequal fix --category security --commit single<br><br>
+# Preview without applying (dry run)<br>
+codequal fix --all --dry-run<br><br>
+# Interactive review mode<br>
+codequal fix --all --review
+      </code>
+      <p style="margin-bottom:0;margin-top:1rem;"><a href="https://docs.codequal.io/pro/auto-fix" style="color:var(--brand-color);">📚 Full CLI Documentation</a></p>
+    </div>
+  </div>
+
+  <!-- Fix Modal -->
+  <div id="fixModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3 id="modalTitle">Applying Fixes...</h3>
+      <div id="modalContent">
+        <div class="progress-bar-modal"><div class="fill" id="modalProgress"></div></div>
+        <p id="modalStatus">Preparing to apply fixes...</p>
+      </div>
+      <div id="modalActions" class="modal-actions" style="display:none;">
+        <button class="modal-btn secondary" onclick="closeModal()">Close</button>
+        <button class="modal-btn primary" id="modalConfirm" onclick="confirmFix()">Apply Fixes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentCommitStyle = 'grouped';
+    let pendingFix = null;
+    const manifestPath = '${metadata?.repository ? `codequal-pr-${metadata.prNumber || ''}-manifest.json` : 'manifest.json'}';
+    const apiBase = window.CODEQUAL_API_URL || '/api/v1';
+
+    // Commit style selection
+    function selectCommitStyle(el, style) {
+      document.querySelectorAll('.commit-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      currentCommitStyle = style;
+    }
+
+    function getCommitStyle() {
+      return currentCommitStyle;
+    }
+
+    // Modal functions
+    function showModal(title, content, showActions = false) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('modalActions').style.display = showActions ? 'flex' : 'none';
+      document.getElementById('fixModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('fixModal').classList.remove('show');
+      pendingFix = null;
+    }
+
+    function updateProgress(percent, status) {
+      document.getElementById('modalProgress').style.width = percent + '%';
+      document.getElementById('modalStatus').textContent = status;
+    }
+
+    // Build CLI command
+    function buildCommand(options) {
+      let cmd = 'codequal fix';
+      if (options.mode === 'all') {
+        cmd += ' --all';
+      } else if (options.mode === 'severity') {
+        cmd += ' --severity ' + options.filter;
+      } else if (options.mode === 'category') {
+        cmd += ' --category ' + options.filter;
+      } else if (options.mode === 'review') {
+        cmd += ' --all --review';
+      }
+      if (options.commit && options.mode !== 'review') {
+        cmd += ' --commit ' + options.commit;
+      }
+      return cmd;
+    }
+
+    // Copy to clipboard
+    async function copyCommand(cmd) {
+      try {
+        await navigator.clipboard.writeText(cmd);
+        event.target.textContent = 'Copied!';
+        setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
+      } catch (err) {
+        console.error('Copy failed:', err);
+      }
+    }
+
+    // Main fix function
+    async function codequalFix(options) {
+      pendingFix = options;
+      const cmd = buildCommand(options);
+
+      // Check if we're in a web app context with API
+      if (window.CODEQUAL_API_URL) {
+        // Show confirmation modal
+        showModal(
+          'Apply Fixes?',
+          \`<p>This will apply \${options.mode === 'all' ? '${stats.autoFixed}' : 'selected'} fixes to your codebase.</p>
+          <p><strong>Mode:</strong> \${options.mode}</p>
+          <p><strong>Commit style:</strong> \${options.commit || 'review each'}</p>
+          <div class="status-message info">⚠️ Make sure you have committed or stashed any uncommitted changes before proceeding.</div>\`,
+          true
+        );
+      } else {
+        // Show CLI command modal for local use
+        showModal(
+          'Run This Command',
+          \`<p>Copy and run this command in your terminal:</p>
+          <div class="copy-command">
+            <code>\${cmd}</code>
+            <button onclick="copyCommand('\${cmd}')">Copy</button>
+          </div>
+          <p style="color:#6b7280;font-size:0.85rem;">Make sure you're in the repository root directory.</p>
+          <div class="status-message info">
+            <strong>💡 Tip:</strong> Add <code>--dry-run</code> to preview changes without applying them.
+          </div>\`,
+          false
+        );
+        document.getElementById('modalActions').innerHTML = \`
+          <button class="modal-btn secondary" onclick="closeModal()">Close</button>
+          <button class="modal-btn primary" onclick="copyCommand('\${cmd}');closeModal()">Copy & Close</button>
+        \`;
+        document.getElementById('modalActions').style.display = 'flex';
+      }
+    }
+
+    // Confirm and execute fix via API
+    async function confirmFix() {
+      if (!pendingFix) return;
+
+      const options = pendingFix;
+      document.getElementById('modalActions').style.display = 'none';
+
+      showModal(
+        'Applying Fixes...',
+        \`<div class="progress-bar-modal"><div class="fill" id="modalProgress" style="width:10%"></div></div>
+        <p id="modalStatus">Connecting to CodeQual API...</p>\`
+      );
+
+      try {
+        // Call the CodeQual API
+        const response = await fetch(apiBase + '/fix/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            manifest: manifestPath,
+            mode: options.mode,
+            filter: options.filter,
+            commitStyle: options.commit,
+            repository: '${metadata?.repository || ''}',
+            prNumber: ${metadata?.prNumber || 'null'}
+          })
+        });
+
+        updateProgress(50, 'Processing fixes...');
+
+        if (!response.ok) {
+          throw new Error('API request failed: ' + response.statusText);
+        }
+
+        const result = await response.json();
+        updateProgress(100, 'Complete!');
+
+        setTimeout(() => {
+          showModal(
+            '✅ Fixes Applied!',
+            \`<div class="status-message success">
+              <strong>Success!</strong> Applied \${result.fixedCount || 'all'} fixes.
+            </div>
+            <p style="margin-top:1rem;"><strong>Commit:</strong> \${result.commitHash || 'N/A'}</p>
+            <p><strong>Files modified:</strong> \${result.filesModified || 0}</p>
+            \${result.prUrl ? \`<p><a href="\${result.prUrl}" target="_blank" style="color:var(--brand-color);">View Pull Request →</a></p>\` : ''}\`,
+            false
+          );
+          document.getElementById('modalActions').innerHTML = '<button class="modal-btn primary" onclick="closeModal()">Done</button>';
+          document.getElementById('modalActions').style.display = 'flex';
+        }, 500);
+
+      } catch (error) {
+        showModal(
+          '❌ Error',
+          \`<div class="status-message error">
+            <strong>Failed to apply fixes:</strong> \${error.message}
+          </div>
+          <p style="margin-top:1rem;">Try running the command manually:</p>
+          <div class="copy-command">
+            <code>\${buildCommand(options)}</code>
+            <button onclick="copyCommand('\${buildCommand(options)}')">Copy</button>
+          </div>\`,
+          false
+        );
+        document.getElementById('modalActions').innerHTML = '<button class="modal-btn secondary" onclick="closeModal()">Close</button>';
+        document.getElementById('modalActions').style.display = 'flex';
+      }
+    }
+
+    // Expose for external use
+    window.codequal = { fix: codequalFix };
+  </script>
+  ` : ''}
+
   <div class="footer">
-    Generated by ${brandName} v${report.metadata.toolVersion}
+    Generated by ${brandName} PRO v${report.metadata.toolVersion}
   </div>
 </body>
 </html>`;

@@ -1,0 +1,667 @@
+{
+  "version": "1.0",
+  "group_id": "yaml-kubernetes-security-allow-privilege-escalation-no-securitycontext-allow-privilege-escalation-no-securitycontext-medium-semgrep",
+  "rule": "yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext",
+  "tool": "semgrep",
+  "severity": "medium",
+  "description": "Add a securityContext to the container specification with allowPrivilegeEscalation set to false. Reference Kubernetes security context documentation and CIS benchmarks for proper configuration.",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "securityContext:\n  allowPrivilegeEscalation: false"
+    },
+    "instructions": "Add a securityContext to the container specification with allowPrivilegeEscalation set to false. Reference Kubernetes security context documentation and CIS benchmarks for proper configuration.",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext\nThis is a medium quality issue detected by semgrep.\nThe issue is: \"In Kubernetes, each pod runs in its own isolated environment with its own set of security policies. However, certain container images may contain `setuid` or `setgid` binaries that could allow an attacker to perform privilege escalation and gain access to sensitive resources. To mitigate this risk, it's recommended to add a `securityContext` to the container in the pod, with the parameter `allowPrivilegeEscalation` set to `false`. This will prevent the container from running any privileged processes and limit the impact of any potential attacks. By adding a `securityContext` to your Kubernetes pod, you can help to ensure that your containerized applications are more secure and less vulnerable to privilege escalation attacks.\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext (semgrep)\nSEVERITY: medium\nMESSAGE: In Kubernetes, each pod runs in its own isolated environment with its own set of security policies. However, certain container images may contain `setuid` or `setgid` binaries that could allow an attacker to perform privilege escalation and gain access to sensitive resources. To mitigate this risk, it's recommended to add a `securityContext` to the container in the pod, with the parameter `allowPrivilegeEscalation` set to `false`. This will prevent the container from running any privileged processes and limit the impact of any potential attacks. By adding a `securityContext` to your Kubernetes pod, you can help to ensure that your containerized applications are more secure and less vulnerable to privilege escalation attacks.\n\nFILE: docker/agents/k8s-deployment.yaml\nLINE: 19\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 500,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "docker/agents/k8s-deployment.yaml",
+      "line": 19,
+      "snippet": "    16 |         app: redis-cache\n    17 |     spec:\n    18 |       containers:\n>   19 |       - name: redis\n    20 |         image: redis:7-alpine\n    21 |         ports:\n    22 |         - containerPort: 6379",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "docker/agents/k8s-deployment.yaml",
+      "line": 71,
+      "snippet": "    68 |         app: hybrid-agent\n    69 |     spec:\n    70 |       containers:\n>   71 |       - name: hybrid-agent\n    72 |         image: registry.digitalocean.com/codequal-registry/hybrid-agent:latest\n    73 |         ports:\n    74 |         - containerPort: 3000",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "docker/agents/k8s-full-hybrid.yaml",
+      "line": 378,
+      "snippet": "   375 |         app: hybrid-agent-full\n   376 |     spec:\n   377 |       containers:\n>  378 |       - name: agent\n   379 |         image: node:20-alpine\n   380 |         workingDir: /home/node\n   381 |         command: [\"sh\", \"-c\"]",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "docker/agents/k8s-hybrid-simple.yaml",
+      "line": 54,
+      "snippet": "    51 |         app: hybrid-agent-simple\n    52 |     spec:\n    53 |       containers:\n>   54 |       - name: agent\n    55 |         image: node:20-alpine\n    56 |         command: [\"sh\", \"-c\"]\n    57 |         args:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "docker/agents/kaniko-build.yaml",
+      "line": 272,
+      "snippet": "   269 |   template:\n   270 |     spec:\n   271 |       containers:\n>  272 |       - name: kaniko\n   273 |         image: gcr.io/kaniko-project/executor:latest\n   274 |         args:\n   275 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/analyzer-deployment.yaml",
+      "line": 17,
+      "snippet": "    14 |         app: codequal-analyzer\n    15 |     spec:\n    16 |       containers:\n>   17 |       - name: analyzer\n    18 |         image: registry.digitalocean.com/codequal/analyzer:working-v1\n    19 |         imagePullPolicy: Always\n    20 |         ports:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-all-10-fresh.yaml",
+      "line": 109,
+      "snippet": "   106 |   template:\n   107 |     spec:\n   108 |       containers:\n>  109 |       - name: kaniko\n   110 |         image: gcr.io/kaniko-project/executor:latest\n   111 |         args:\n   112 |         - \"--dockerfile=Dockerfile.python\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-all-10-fresh.yaml",
+      "line": 142,
+      "snippet": "   139 |   template:\n   140 |     spec:\n   141 |       containers:\n>  142 |       - name: kaniko\n   143 |         image: gcr.io/kaniko-project/executor:latest\n   144 |         args:\n   145 |         - \"--dockerfile=Dockerfile.javascript\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-all-10-fresh.yaml",
+      "line": 176,
+      "snippet": "   173 |   template:\n   174 |     spec:\n   175 |       containers:\n>  176 |       - name: kaniko\n   177 |         image: gcr.io/kaniko-project/executor:latest\n   178 |         args:\n   179 |         - \"--dockerfile=Dockerfile.java\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-rust-prebuilt.yaml",
+      "line": 10,
+      "snippet": "     7 |   template:\n     8 |     spec:\n     9 |       containers:\n>   10 |       - name: kaniko\n    11 |         image: gcr.io/kaniko-project/executor:latest\n    12 |         args:\n    13 |           - \"--dockerfile=/workspace/Dockerfile.rust.prebuilt\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-rust-v5-do.yaml",
+      "line": 13,
+      "snippet": "    10 |     spec:\n    11 |       restartPolicy: Never\n    12 |       containers:\n>   13 |       - name: kaniko\n    14 |         image: gcr.io/kaniko-project/executor:latest\n    15 |         args:\n    16 |         - \"--context=dir:///workspace\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-rust-v5-fixed.yaml",
+      "line": 172,
+      "snippet": "   169 |     spec:\n   170 |       restartPolicy: Never\n   171 |       containers:\n>  172 |       - name: kaniko\n   173 |         image: gcr.io/kaniko-project/executor:v1.23.0\n   174 |         args:\n   175 |         - \"--dockerfile=/workspace/Dockerfile.rust\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/build-rust-v5-lightweight.yaml",
+      "line": 13,
+      "snippet": "    10 |     spec:\n    11 |       restartPolicy: Never\n    12 |       containers:\n>   13 |       - name: kaniko\n    14 |         image: gcr.io/kaniko-project/executor:v1.23.0\n    15 |         args:\n    16 |         - \"--dockerfile=/workspace/Dockerfile.rust\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 34,
+      "snippet": "    31 |   template:\n    32 |     spec:\n    33 |       containers:\n>   34 |       - name: kaniko\n    35 |         image: gcr.io/kaniko-project/executor:latest\n    36 |         resources:\n    37 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 112,
+      "snippet": "   109 |   template:\n   110 |     spec:\n   111 |       containers:\n>  112 |       - name: kaniko\n   113 |         image: gcr.io/kaniko-project/executor:latest\n   114 |         resources:\n   115 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 191,
+      "snippet": "   188 |   template:\n   189 |     spec:\n   190 |       containers:\n>  191 |       - name: kaniko\n   192 |         image: gcr.io/kaniko-project/executor:latest\n   193 |         resources:\n   194 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/distributed-rust-build.yaml",
+      "line": 292,
+      "snippet": "   289 |   template:\n   290 |     spec:\n   291 |       containers:\n>  292 |       - name: kaniko\n   293 |         image: gcr.io/kaniko-project/executor:latest\n   294 |         resources:\n   295 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/emergency-rebuild-go-fixed.yaml",
+      "line": 30,
+      "snippet": "    27 |   template:\n    28 |     spec:\n    29 |       containers:\n>   30 |       - name: kaniko\n    31 |         image: gcr.io/kaniko-project/executor:latest\n    32 |         args:\n    33 |           - \"--dockerfile=/workspace/Dockerfile.go\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/emergency-rebuild.yaml",
+      "line": 47,
+      "snippet": "    44 |   template:\n    45 |     spec:\n    46 |       containers:\n>   47 |       - name: kaniko\n    48 |         image: gcr.io/kaniko-project/executor:latest\n    49 |         args:\n    50 |           - \"--dockerfile=/workspace/Dockerfile.python\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/emergency-rebuild.yaml",
+      "line": 80,
+      "snippet": "    77 |   template:\n    78 |     spec:\n    79 |       containers:\n>   80 |       - name: kaniko\n    81 |         image: gcr.io/kaniko-project/executor:latest\n    82 |         args:\n    83 |           - \"--dockerfile=/workspace/Dockerfile.go\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed-containers.yaml",
+      "line": 10,
+      "snippet": "     7 |   template:\n     8 |     spec:\n     9 |       containers:\n>   10 |       - name: kaniko\n    11 |         image: gcr.io/kaniko-project/executor:latest\n    12 |         args:\n    13 |           - \"--dockerfile=/workspace/Dockerfile.python.fixed\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed-containers.yaml",
+      "line": 52,
+      "snippet": "    49 |   template:\n    50 |     spec:\n    51 |       containers:\n>   52 |       - name: kaniko\n    53 |         image: gcr.io/kaniko-project/executor:latest\n    54 |         args:\n    55 |           - \"--dockerfile=/workspace/Dockerfile.javascript.fixed\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed-containers.yaml",
+      "line": 94,
+      "snippet": "    91 |   template:\n    92 |     spec:\n    93 |       containers:\n>   94 |       - name: kaniko\n    95 |         image: gcr.io/kaniko-project/executor:latest\n    96 |         args:\n    97 |           - \"--dockerfile=/workspace/Dockerfile.java.fixed\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 194,
+      "snippet": "   191 |   template:\n   192 |     spec:\n   193 |       containers:\n>  194 |       - name: kaniko\n   195 |         image: gcr.io/kaniko-project/executor:latest\n   196 |         args:\n   197 |           - \"--dockerfile=/workspace/Dockerfile.javascript\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 228,
+      "snippet": "   225 |   template:\n   226 |     spec:\n   227 |       containers:\n>  228 |       - name: kaniko\n   229 |         image: gcr.io/kaniko-project/executor:latest\n   230 |         args:\n   231 |           - \"--dockerfile=/workspace/Dockerfile.java\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 262,
+      "snippet": "   259 |   template:\n   260 |     spec:\n   261 |       containers:\n>  262 |       - name: kaniko\n   263 |         image: gcr.io/kaniko-project/executor:latest\n   264 |         args:\n   265 |           - \"--dockerfile=/workspace/Dockerfile.ruby\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 296,
+      "snippet": "   293 |   template:\n   294 |     spec:\n   295 |       containers:\n>  296 |       - name: kaniko\n   297 |         image: gcr.io/kaniko-project/executor:latest\n   298 |         args:\n   299 |           - \"--dockerfile=/workspace/Dockerfile.php\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 330,
+      "snippet": "   327 |   template:\n   328 |     spec:\n   329 |       containers:\n>  330 |       - name: kaniko\n   331 |         image: gcr.io/kaniko-project/executor:latest\n   332 |         args:\n   333 |           - \"--dockerfile=/workspace/Dockerfile.cpp\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-fixed.yaml",
+      "line": 364,
+      "snippet": "   361 |   template:\n   362 |     spec:\n   363 |       containers:\n>  364 |       - name: kaniko\n   365 |         image: gcr.io/kaniko-project/executor:latest\n   366 |         args:\n   367 |           - \"--dockerfile=/workspace/Dockerfile.perl\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-go-v3.yaml",
+      "line": 12,
+      "snippet": "     9 |     spec:\n    10 |       restartPolicy: Never\n    11 |       containers:\n>   12 |       - name: kaniko\n    13 |         image: gcr.io/kaniko-project/executor:latest\n    14 |         args:\n    15 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-go-v4-fixed.yaml",
+      "line": 10,
+      "snippet": "     7 |   template:\n     8 |     spec:\n     9 |       containers:\n>   10 |       - name: kaniko\n    11 |         image: gcr.io/kaniko-project/executor:latest\n    12 |         args:\n    13 |         - \"--dockerfile=/workspace/Dockerfile.go.v4\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-java-rust-final.yaml",
+      "line": 293,
+      "snippet": "   290 |   template:\n   291 |     spec:\n   292 |       containers:\n>  293 |       - name: kaniko\n   294 |         image: gcr.io/kaniko-project/executor:latest\n   295 |         args:\n   296 |           - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-java-rust-final.yaml",
+      "line": 329,
+      "snippet": "   326 |   template:\n   327 |     spec:\n   328 |       containers:\n>  329 |       - name: kaniko\n   330 |         image: gcr.io/kaniko-project/executor:latest\n   331 |         args:\n   332 |           - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-job.yaml",
+      "line": 10,
+      "snippet": "     7 |   template:\n     8 |     spec:\n     9 |       containers:\n>   10 |       - name: kaniko\n    11 |         image: gcr.io/kaniko-project/executor:latest\n    12 |         args:\n    13 |         - \"--context=git://github.com/yourusername/codequal.git#main\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 49,
+      "snippet": "    46 |   template:\n    47 |     spec:\n    48 |       containers:\n>   49 |       - name: kaniko\n    50 |         image: gcr.io/kaniko-project/executor:latest\n    51 |         args:\n    52 |           - \"--dockerfile=/workspace/Dockerfile.javascript\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 86,
+      "snippet": "    83 |   template:\n    84 |     spec:\n    85 |       containers:\n>   86 |       - name: kaniko\n    87 |         image: gcr.io/kaniko-project/executor:latest\n    88 |         args:\n    89 |           - \"--dockerfile=/workspace/Dockerfile.go\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 123,
+      "snippet": "   120 |   template:\n   121 |     spec:\n   122 |       containers:\n>  123 |       - name: kaniko\n   124 |         image: gcr.io/kaniko-project/executor:latest\n   125 |         args:\n   126 |           - \"--dockerfile=/workspace/Dockerfile.rust\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 160,
+      "snippet": "   157 |   template:\n   158 |     spec:\n   159 |       containers:\n>  160 |       - name: kaniko\n   161 |         image: gcr.io/kaniko-project/executor:latest\n   162 |         args:\n   163 |           - \"--dockerfile=/workspace/Dockerfile.ruby\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-languages.yaml",
+      "line": 197,
+      "snippet": "   194 |   template:\n   195 |     spec:\n   196 |       containers:\n>  197 |       - name: kaniko\n   198 |         image: gcr.io/kaniko-project/executor:latest\n   199 |         args:\n   200 |           - \"--dockerfile=/workspace/Dockerfile.cpp\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-missing-cs-cpp.yaml",
+      "line": 52,
+      "snippet": "    49 |   template:\n    50 |     spec:\n    51 |       containers:\n>   52 |       - name: kaniko\n    53 |         image: gcr.io/kaniko-project/executor:latest\n    54 |         args:\n    55 |         - \"--dockerfile=Dockerfile.csharp\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-missing-cs-cpp.yaml",
+      "line": 86,
+      "snippet": "    83 |   template:\n    84 |     spec:\n    85 |       containers:\n>   86 |       - name: kaniko\n    87 |         image: gcr.io/kaniko-project/executor:latest\n    88 |         args:\n    89 |         - \"--dockerfile=Dockerfile.cpp\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-perl-simple.yaml",
+      "line": 23,
+      "snippet": "    20 |   template:\n    21 |     spec:\n    22 |       containers:\n>   23 |       - name: kaniko\n    24 |         image: gcr.io/kaniko-project/executor:latest\n    25 |         args:\n    26 |           - \"--dockerfile=/workspace/Dockerfile.perl\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 47,
+      "snippet": "    44 |   template:\n    45 |     spec:\n    46 |       containers:\n>   47 |       - name: kaniko\n    48 |         image: gcr.io/kaniko-project/executor:latest\n    49 |         args:\n    50 |           - \"--dockerfile=/workspace/Dockerfile.java\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 84,
+      "snippet": "    81 |   template:\n    82 |     spec:\n    83 |       containers:\n>   84 |       - name: kaniko\n    85 |         image: gcr.io/kaniko-project/executor:latest\n    86 |         args:\n    87 |           - \"--dockerfile=/workspace/Dockerfile.php\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 121,
+      "snippet": "   118 |   template:\n   119 |     spec:\n   120 |       containers:\n>  121 |       - name: kaniko\n   122 |         image: gcr.io/kaniko-project/executor:latest\n   123 |         args:\n   124 |           - \"--dockerfile=/workspace/Dockerfile.csharp\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-languages.yaml",
+      "line": 158,
+      "snippet": "   155 |   template:\n   156 |     spec:\n   157 |       containers:\n>  158 |       - name: kaniko\n   159 |         image: gcr.io/kaniko-project/executor:latest\n   160 |         args:\n   161 |           - \"--dockerfile=/workspace/Dockerfile.perl\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 12,
+      "snippet": "     9 |     spec:\n    10 |       restartPolicy: Never\n    11 |       containers:\n>   12 |       - name: kaniko\n    13 |         image: gcr.io/kaniko-project/executor:latest\n    14 |         args:\n    15 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 80,
+      "snippet": "    77 |     spec:\n    78 |       restartPolicy: Never\n    79 |       containers:\n>   80 |       - name: kaniko\n    81 |         image: gcr.io/kaniko-project/executor:latest\n    82 |         args:\n    83 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 140,
+      "snippet": "   137 |     spec:\n   138 |       restartPolicy: Never\n   139 |       containers:\n>  140 |       - name: kaniko\n   141 |         image: gcr.io/kaniko-project/executor:latest\n   142 |         args:\n   143 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 225,
+      "snippet": "   222 |     spec:\n   223 |       restartPolicy: Never\n   224 |       containers:\n>  225 |       - name: kaniko\n   226 |         image: gcr.io/kaniko-project/executor:latest\n   227 |         args:\n   228 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-remaining-v3.yaml",
+      "line": 281,
+      "snippet": "   278 |     spec:\n   279 |       restartPolicy: Never\n   280 |       containers:\n>  281 |       - name: kaniko\n   282 |         image: gcr.io/kaniko-project/executor:latest\n   283 |         args:\n   284 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-rust-fixed.yaml",
+      "line": 22,
+      "snippet": "    19 |   template:\n    20 |     spec:\n    21 |       containers:\n>   22 |       - name: kaniko\n    23 |         image: gcr.io/kaniko-project/executor:latest\n    24 |         args:\n    25 |           - \"--dockerfile=/workspace/Dockerfile.rust\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 11,
+      "snippet": "     8 |   template:\n     9 |     spec:\n    10 |       containers:\n>   11 |       - name: kaniko\n    12 |         image: gcr.io/kaniko-project/executor:latest\n    13 |         args:\n    14 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 54,
+      "snippet": "    51 |   template:\n    52 |     spec:\n    53 |       containers:\n>   54 |       - name: kaniko\n    55 |         image: gcr.io/kaniko-project/executor:latest\n    56 |         args:\n    57 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 97,
+      "snippet": "    94 |   template:\n    95 |     spec:\n    96 |       containers:\n>   97 |       - name: kaniko\n    98 |         image: gcr.io/kaniko-project/executor:latest\n    99 |         args:\n   100 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-build-v4-fixed.yaml",
+      "line": 140,
+      "snippet": "   137 |   template:\n   138 |     spec:\n   139 |       containers:\n>  140 |       - name: kaniko\n   141 |         image: gcr.io/kaniko-project/executor:latest\n   142 |         args:\n   143 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-builder-85-tools.yaml",
+      "line": 109,
+      "snippet": "   106 |   template:\n   107 |     spec:\n   108 |       containers:\n>  109 |       - name: kaniko\n   110 |         image: gcr.io/kaniko-project/executor:latest\n   111 |         args:\n   112 |         - \"--context=dir:///workspace\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-builder.yaml",
+      "line": 55,
+      "snippet": "    52 |   template:\n    53 |     spec:\n    54 |       containers:\n>   55 |       - name: kaniko\n    56 |         image: gcr.io/kaniko-project/executor:latest\n    57 |         args:\n    58 |         - \"--context=dir:///workspace\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-cpp-builder.yaml",
+      "line": 10,
+      "snippet": "     7 |   template:\n     8 |     spec:\n     9 |       containers:\n>   10 |       - name: kaniko\n    11 |         image: gcr.io/kaniko-project/executor:latest\n    12 |         args:\n    13 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-csharp-builder.yaml",
+      "line": 10,
+      "snippet": "     7 |   template:\n     8 |     spec:\n     9 |       containers:\n>   10 |       - name: kaniko\n    11 |         image: gcr.io/kaniko-project/executor:latest\n    12 |         args:\n    13 |         - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 11,
+      "snippet": "     8 |   template:\n     9 |     spec:\n    10 |       containers:\n>   11 |       - name: kaniko\n    12 |         image: gcr.io/kaniko-project/executor:latest\n    13 |         args:\n    14 |         - \"--dockerfile=Dockerfile.go\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 45,
+      "snippet": "    42 |   template:\n    43 |     spec:\n    44 |       containers:\n>   45 |       - name: kaniko\n    46 |         image: gcr.io/kaniko-project/executor:latest\n    47 |         args:\n    48 |         - \"--dockerfile=Dockerfile.rust\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 79,
+      "snippet": "    76 |   template:\n    77 |     spec:\n    78 |       containers:\n>   79 |       - name: kaniko\n    80 |         image: gcr.io/kaniko-project/executor:latest\n    81 |         args:\n    82 |         - \"--dockerfile=Dockerfile.ruby\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 113,
+      "snippet": "   110 |   template:\n   111 |     spec:\n   112 |       containers:\n>  113 |       - name: kaniko\n   114 |         image: gcr.io/kaniko-project/executor:latest\n   115 |         args:\n   116 |         - \"--dockerfile=Dockerfile.php\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/kaniko-rebuild-missing.yaml",
+      "line": 147,
+      "snippet": "   144 |   template:\n   145 |     spec:\n   146 |       containers:\n>  147 |       - name: kaniko\n   148 |         image: gcr.io/kaniko-project/executor:latest\n   149 |         args:\n   150 |         - \"--dockerfile=Dockerfile.java\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 20,
+      "snippet": "    17 |         language: python\n    18 |     spec:\n    19 |       containers:\n>   20 |       - name: analyzer\n    21 |         image: registry.digitalocean.com/codequal-registry/analyzer:lang-python-v4\n    22 |         resources:\n    23 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 48,
+      "snippet": "    45 |         language: javascript\n    46 |     spec:\n    47 |       containers:\n>   48 |       - name: analyzer\n    49 |         image: registry.digitalocean.com/codequal/analyzer:lang-javascript\n    50 |         resources:\n    51 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 76,
+      "snippet": "    73 |         language: java\n    74 |     spec:\n    75 |       containers:\n>   76 |       - name: analyzer\n    77 |         image: registry.digitalocean.com/codequal/analyzer:lang-java\n    78 |         resources:\n    79 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 104,
+      "snippet": "   101 |         language: go\n   102 |     spec:\n   103 |       containers:\n>  104 |       - name: analyzer\n   105 |         image: registry.digitalocean.com/codequal/analyzer:lang-go\n   106 |         resources:\n   107 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 132,
+      "snippet": "   129 |         language: rust\n   130 |     spec:\n   131 |       containers:\n>  132 |       - name: analyzer\n   133 |         image: registry.digitalocean.com/codequal/analyzer:lang-rust\n   134 |         resources:\n   135 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 160,
+      "snippet": "   157 |         language: ruby\n   158 |     spec:\n   159 |       containers:\n>  160 |       - name: analyzer\n   161 |         image: registry.digitalocean.com/codequal/analyzer:lang-ruby\n   162 |         resources:\n   163 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 188,
+      "snippet": "   185 |         language: php\n   186 |     spec:\n   187 |       containers:\n>  188 |       - name: analyzer\n   189 |         image: registry.digitalocean.com/codequal/analyzer:lang-php\n   190 |         resources:\n   191 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 216,
+      "snippet": "   213 |         language: perl\n   214 |     spec:\n   215 |       containers:\n>  216 |       - name: analyzer\n   217 |         image: registry.digitalocean.com/codequal/analyzer:lang-perl\n   218 |         resources:\n   219 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 244,
+      "snippet": "   241 |         language: cpp\n   242 |     spec:\n   243 |       containers:\n>  244 |       - name: analyzer\n   245 |         image: registry.digitalocean.com/codequal/analyzer:lang-cpp\n   246 |         resources:\n   247 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/language-deployments.yaml",
+      "line": 272,
+      "snippet": "   269 |         language: csharp\n   270 |     spec:\n   271 |       containers:\n>  272 |       - name: analyzer\n   273 |         image: registry.digitalocean.com/codequal/analyzer:lang-csharp\n   274 |         resources:\n   275 |           requests:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/production/api-deployment.yaml",
+      "line": 26,
+      "snippet": "    23 |         version: \"1.0\"\n    24 |     spec:\n    25 |       containers:\n>   26 |       - name: api\n    27 |         image: registry.digitalocean.com/codequal/api:latest\n    28 |         imagePullPolicy: Always\n    29 |         ports:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/python-deployment-v2.yaml",
+      "line": 20,
+      "snippet": "    17 |         language: python\n    18 |     spec:\n    19 |       containers:\n>   20 |       - name: analyzer\n    21 |         image: registry.digitalocean.com/codequal/analyzer:lang-python-v2\n    22 |         command: [\"sleep\", \"infinity\"]  # Keep container running for testing\n    23 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 104,
+      "snippet": "   101 |         component: cache\n   102 |     spec:\n   103 |       containers:\n>  104 |       - name: redis\n   105 |         image: redis:7-alpine\n   106 |         command:\n   107 |           - redis-server",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 181,
+      "snippet": "   178 |         version: all-85-tools\n   179 |     spec:\n   180 |       containers:\n>  181 |       - name: analyzer\n   182 |         image: registry.digitalocean.com/codequal/analyzer:all-tools-v1\n   183 |         imagePullPolicy: Always\n   184 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 290,
+      "snippet": "   287 |         app: api\n   288 |     spec:\n   289 |       containers:\n>  290 |       - name: api\n   291 |         image: registry.digitalocean.com/codequal/api:latest\n   292 |         imagePullPolicy: Always\n   293 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 385,
+      "snippet": "   382 |         app: worker\n   383 |     spec:\n   384 |       containers:\n>  385 |       - name: worker\n   386 |         image: registry.digitalocean.com/codequal/worker:latest\n   387 |         imagePullPolicy: Always\n   388 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/quality-first-deployment.yaml",
+      "line": 435,
+      "snippet": "   432 |         app: web\n   433 |     spec:\n   434 |       containers:\n>  435 |       - name: web\n   436 |         image: registry.digitalocean.com/codequal/web:latest\n   437 |         imagePullPolicy: Always\n   438 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/rebuild-all-10.yaml",
+      "line": 13,
+      "snippet": "    10 |   template:\n    11 |     spec:\n    12 |       containers:\n>   13 |       - name: kaniko\n    14 |         image: gcr.io/kaniko-project/executor:latest\n    15 |         args:\n    16 |         - \"--dockerfile=$(DOCKERFILE)\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/restore-from-k8s.yaml",
+      "line": 11,
+      "snippet": "     8 |   template:\n     9 |     spec:\n    10 |       containers:\n>   11 |       - name: crane\n    12 |         image: gcr.io/go-containerregistry/crane:latest\n    13 |         command: [\"/busybox/sh\", \"-c\"]\n    14 |         args:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "kubernetes/simple-test-pod.yaml",
+      "line": 8,
+      "snippet": "     5 |   namespace: codequal-dev\n     6 | spec:\n     7 |   containers:\n>    8 |   - name: analyzer\n     9 |     image: ubuntu:22.04\n    10 |     command: [\"/bin/bash\", \"-c\"]\n    11 |     args: ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/docker/kaniko-build-java-v5.2.yaml",
+      "line": 104,
+      "snippet": "   101 |       name: kaniko\n   102 |     spec:\n   103 |       containers:\n>  104 |       - name: kaniko\n   105 |         image: gcr.io/kaniko-project/executor:latest\n   106 |         args:\n   107 |           - \"--dockerfile=/workspace/Dockerfile\"",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-complete.yaml",
+      "line": 57,
+      "snippet": "    54 |     type: complete\n    55 | spec:\n    56 |   containers:\n>   57 |   - name: analyzer\n    58 |     image: codequal/analysis:complete\n    59 |     imagePullPolicy: Always\n    60 |     resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-complete.yaml",
+      "line": 154,
+      "snippet": "   151 |         version: \"1.0.0\"\n   152 |     spec:\n   153 |       containers:\n>  154 |       - name: analyzer\n   155 |         image: codequal/analysis:complete\n   156 |         imagePullPolicy: Always\n   157 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-minimal.yaml",
+      "line": 10,
+      "snippet": "     7 |     app: codequal-analyzer\n     8 | spec:\n     9 |   containers:\n>   10 |   - name: analyzer\n    11 |     image: ubuntu:22.04\n    12 |     command: [\"/bin/bash\"]\n    13 |     args: ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod-simple.yaml",
+      "line": 10,
+      "snippet": "     7 |     app: codequal-analyzer\n     8 | spec:\n     9 |   containers:\n>   10 |   - name: analyzer\n    11 |     image: ubuntu:22.04\n    12 |     command: [\"/bin/bash\"]\n    13 |     args: ",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/analysis-pod.yaml",
+      "line": 116,
+      "snippet": "   113 |         app: codequal-analyzer\n   114 |     spec:\n   115 |       containers:\n>  116 |       - name: analyzer\n   117 |         image: ubuntu:22.04\n   118 |         command: [\"/bin/bash\"]\n   119 |         args: [\"-c\", \"cp /scripts/install-tools.sh /tmp/ && chmod +x /tmp/install-tools.sh && /tmp/install-tools.sh && sleep infinity\"]",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/dependency-check-updater-cronjob.yaml",
+      "line": 55,
+      "snippet": "    52 |             kubernetes.io/arch: arm64  # Oracle A1.Flex\n    53 | \n    54 |           containers:\n>   55 |           - name: updater\n    56 |             image: node:18-alpine\n    57 | \n    58 |             command:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/deployment-python.yaml",
+      "line": 28,
+      "snippet": "    25 |         tools-count: \"17\"\n    26 |     spec:\n    27 |       containers:\n>   28 |       - name: python-analyzer\n    29 |         image: codequal/analysis:python\n    30 |         imagePullPolicy: IfNotPresent\n    31 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/environments/production-current.yaml",
+      "line": 71,
+      "snippet": "    68 |                   - analysis\n    69 |               topologyKey: kubernetes.io/hostname\n    70 |       containers:\n>   71 |       - name: analyzer-core\n    72 |         image: codequal/production:core-v2\n    73 |         imagePullPolicy: Always\n    74 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/environments/production-current.yaml",
+      "line": 136,
+      "snippet": "   133 |                   - core\n   134 |               topologyKey: kubernetes.io/hostname\n   135 |       containers:\n>  136 |       - name: analyzer-extended\n   137 |         image: codequal/production:extended-v2\n   138 |         imagePullPolicy: Always\n   139 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/environments/staging.yaml",
+      "line": 58,
+      "snippet": "    55 |         environment: staging\n    56 |     spec:\n    57 |       containers:\n>   58 |       - name: analyzer\n    59 |         image: codequal/minimal:testing-v1\n    60 |         imagePullPolicy: Always\n    61 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/java-analysis-job-fixed.yaml",
+      "line": 22,
+      "snippet": "    19 |     spec:\n    20 |       restartPolicy: Never\n    21 |       containers:\n>   22 |       - name: analyzer\n    23 |         image: openjdk:17-slim\n    24 |         imagePullPolicy: IfNotPresent\n    25 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/java-analysis-job.yaml",
+      "line": 18,
+      "snippet": "    15 |     spec:\n    16 |       restartPolicy: Never\n    17 |       containers:\n>   18 |       - name: java-analyzer\n    19 |         image: codequal/java-tools:v45  # Using the successful v45 build\n    20 |         imagePullPolicy: IfNotPresent\n    21 |         resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/java-analysis-simple.yaml",
+      "line": 13,
+      "snippet": "    10 | spec:\n    11 |   restartPolicy: Never\n    12 |   containers:\n>   13 |   - name: java-analyzer\n    14 |     image: openjdk:17-slim\n    15 |     imagePullPolicy: IfNotPresent\n    16 |     resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/k8s/pod-management-strategy.yaml",
+      "line": 255,
+      "snippet": "   252 | spec:\n   253 |   priorityClassName: tier-1-critical\n   254 |   containers:\n>  255 |   - name: analysis\n   256 |     image: codequal/analysis:LANGUAGE\n   257 |     imagePullPolicy: Always\n   258 |     resources:",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 39,
+      "snippet": "    36 |         agent: security\n    37 |     spec:\n    38 |       containers:\n>   39 |       - name: security-agent\n    40 |         image: codequal/security-agent:v9\n    41 |         ports:\n    42 |         - containerPort: 50051",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 84,
+      "snippet": "    81 |         agent: performance\n    82 |     spec:\n    83 |       containers:\n>   84 |       - name: performance-agent\n    85 |         image: codequal/performance-agent:v9\n    86 |         ports:\n    87 |         - containerPort: 50051",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 125,
+      "snippet": "   122 |         agent: quality\n   123 |     spec:\n   124 |       containers:\n>  125 |       - name: quality-agent\n   126 |         image: codequal/quality-agent:v9\n   127 |         ports:\n   128 |         - containerPort: 50051",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "packages/agents/src/two-branch/architecture/cloud-agent-deployment.yaml",
+      "line": 194,
+      "snippet": "   191 |         app: redis-cache\n   192 |     spec:\n   193 |       containers:\n>  194 |       - name: redis\n   195 |         image: redis:7-alpine\n   196 |         ports:\n   197 |         - containerPort: 6379",
+      "category": "EXISTING_REST"
+    },
+    {
+      "file": "services/api/kubernetes/dev/api-deployment.yaml",
+      "line": 17,
+      "snippet": "    14 |         app: api\n    15 |     spec:\n    16 |       containers:\n>   17 |       - name: api\n    18 |         image: registry.digitalocean.com/codequal/api:v1\n    19 |         ports:\n    20 |         - containerPort: 3000",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 105,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 53
+  }
+}

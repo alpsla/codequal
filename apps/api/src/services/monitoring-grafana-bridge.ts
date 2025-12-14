@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck - Legacy file, not part of V9 pipeline
 /**
  * Monitoring Grafana Bridge Service
  * 

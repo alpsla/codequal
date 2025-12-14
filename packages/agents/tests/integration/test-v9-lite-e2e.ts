@@ -48,6 +48,11 @@ interface TestScenario {
   expectedToolCount?: number;
   useLocalBranch?: boolean;  // SESSION 27: If true, create local branch instead of using GitHub PR
   userTier?: 'basic' | 'pro';  // SESSION 34: User subscription tier for fix execution
+  // SESSION 41: CodeQL deep security analysis (PRO tier only, opt-in)
+  codeql?: {
+    enabled: boolean;
+    queryPack?: 'security' | 'security-extended';  // security = faster, security-extended = more thorough
+  };
 }
 
 // ========================================================================
@@ -97,6 +102,12 @@ const TEST_SCENARIOS: TestScenario[] = [
     expectedFramework: 'next',
     expectedToolCount: 3,  // eslint, semgrep, npm-audit
     userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // Default to PRO
+    // SESSION 41: Enable CodeQL deep security analysis with ENV var
+    // Set ENABLE_CODEQL=true and CODEQL_PACK=security|security-extended to enable
+    codeql: process.env.ENABLE_CODEQL === 'true' ? {
+      enabled: true,
+      queryPack: (process.env.CODEQL_PACK as 'security' | 'security-extended') || 'security'
+    } : undefined,
   },
 
   // Other TypeScript frameworks: Local branch testing (full autofix validation)
@@ -130,17 +141,19 @@ const TEST_SCENARIOS: TestScenario[] = [
   // },
 
   // ========================================================================
-  // JAVA TESTS (Already Validated - Keep for reference)
+  // JAVA TESTS - Pattern Calibration (Session 38)
   // ========================================================================
 
+  // Uncomment to run Java calibration:
   // {
-  //   name: 'Spring PetClinic PR #950',
+  //   name: 'Spring PetClinic PR #950 - Java Pattern Calibration',
   //   repoUrl: 'https://github.com/spring-projects/spring-petclinic',
   //   testMode: 'pr-review',
   //   prNumber: 950,
   //   language: 'java',
   //   expectedFramework: 'spring',
-  //   expectedToolCount: 5
+  //   expectedToolCount: 5,
+  //   userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // PRO for pattern learning
   // },
 
   // ========================================================================
@@ -686,14 +699,30 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
       console.warn(`   ⚠️  Expected ${scenario.expectedToolCount} tools, got ${tools.length}`);
     }
 
+    // SESSION 41: Log CodeQL deep security analysis status
+    if (scenario.codeql?.enabled && scenario.userTier === 'pro') {
+      console.log(`   🔬 CodeQL Deep Security: ENABLED (${scenario.codeql.queryPack || 'security'} pack)`);
+      console.log(`   ⚠️  Note: CodeQL adds ~5-15 minutes to analysis time`);
+    } else if (scenario.codeql?.enabled) {
+      console.log(`   ⚠️  CodeQL requested but skipped (requires PRO tier)`);
+    }
+
     // ========================================================================
     // STEP 3: Tool Orchestration (SESSION 25: Multi-language support)
     // ========================================================================
     console.log('\n🚀 Step 3: Running tool orchestration...');
 
-    // Create language-specific orchestrator
+    // Create language-specific orchestrator with optional CodeQL config
+    // SESSION 41: Pass CodeQL config for PRO tier deep security analysis
+    const codeqlConfig = scenario.codeql?.enabled && scenario.userTier === 'pro' ? {
+      codeql: {
+        enabled: true,
+        querySuite: scenario.codeql.queryPack || 'security'
+      }
+    } : undefined;
+
     const orchestrator = scenario.language === 'java' ? new JavaToolOrchestrator() :
-      scenario.language === 'typescript' ? new TypeScriptToolOrchestrator() :
+      scenario.language === 'typescript' ? new TypeScriptToolOrchestrator(codeqlConfig) :
         new PythonToolOrchestrator();
 
     let allIssues: any[];
@@ -1173,14 +1202,21 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
 
     // ========================================================================
     // STEP 6.5: Validate LSP/SARIF Upload (SESSION 26)
+    // NOTE: LSP/SARIF is for BASIC tier only - PRO tier applies fixes automatically
     // ========================================================================
-    console.log('\n🔍 Step 6.5: Validating LSP/SARIF uploads...');
 
-    // Extract LSP/SARIF URLs from metadata (stored by formatter)
-    const lspUrl = (metadata as any).lspUrl;
-    const sarifUrl = (metadata as any).sarifUrl;
+    // Skip LSP/SARIF validation for PRO tier - they apply fixes directly
+    if (userTier === 'pro') {
+      console.log('\n🔍 Step 6.5: Skipping LSP/SARIF (PRO tier applies fixes directly)');
+      console.log(`   📊 PRO tier: Fixes applied automatically, no IDE integration needed`);
+    } else {
+      console.log('\n🔍 Step 6.5: Validating LSP/SARIF uploads (BASIC tier)...');
 
-    if (lspUrl) {
+      // Extract LSP/SARIF URLs from metadata (stored by formatter)
+      const lspUrl = (metadata as any).lspUrl;
+      const sarifUrl = (metadata as any).sarifUrl;
+
+      if (lspUrl) {
       console.log(`   📄 LSP URL: ${lspUrl}`);
       try {
         const lspResponse = await fetch(lspUrl);
@@ -1346,6 +1382,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     } else {
       console.warn(`   ⚠️  SARIF URL not found in metadata`);
     }
+    } // End of BASIC tier LSP/SARIF validation
 
     // ========================================================================
     // STEP 7: Save Results
@@ -1403,7 +1440,7 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     console.log(`📊 Cost savings: ${groupingResult.savingsPercent.toFixed(1)}%`);
     console.log(`📊 Report size: ${(result.markdown.length / 1024).toFixed(1)} KB`);
     console.log(`📊 V9 Template compliance: ${validationResult.score}% (${validationResult.foundSections}/${validationResult.totalSections} sections)`);
-    console.log(`📊 LSP/SARIF autofix: ${lspUrl && sarifUrl ? '✅ Generated' : '⚠️  Missing'}`);
+    console.log(`📊 LSP/SARIF autofix: ${userTier === 'pro' ? '⏭️  Skipped (PRO)' : '✅ Generated (BASIC)'}`);
     // SESSION 34: Add tier-aware fix execution summary
     if (scanFixResult) {
       const tierLabel = scanFixResult.fixesExecuted ? 'PRO' : 'BASIC';

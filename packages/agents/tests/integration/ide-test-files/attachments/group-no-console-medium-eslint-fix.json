@@ -1,0 +1,2204 @@
+{
+  "version": "1.0",
+  "group_id": "no-console-medium-eslint",
+  "rule": "no-console",
+  "tool": "eslint",
+  "severity": "medium",
+  "description": [
+    "Identify the specific console statement (e.g., console.log())",
+    "Replace with a logging framework like winston or console methods with proper configuration",
+    "Add eslint exception if required (with justification)"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "logger.info('User logged in:', userId);"
+    },
+    "instructions": [
+      "Identify the specific console statement (e.g., console.log())",
+      "Replace with a logging framework like winston or console methods with proper configuration",
+      "Add eslint exception if required (with justification)"
+    ]
+  },
+  "locations": [
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 76,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 77,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 78,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 81,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 84,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 85,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 111,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 114,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 115,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 118,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 119,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 120,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 125,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 130,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 135,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 140,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 143,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 144,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 145,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 150,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 155,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 160,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 165,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 166,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 169,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 174,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 179,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 180,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 183,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 204,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 208,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 209,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 212,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 213,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 214,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 217,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 218,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 240,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 241,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 247,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 248,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 252,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 275,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 293,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 295,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 296,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 318,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 332,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 342,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 389,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 390,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 391,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 405,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 406,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 407,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 444,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 475,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 476,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 481,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 484,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 491,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 529,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 538,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 539,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 541,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 543,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 546,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 548,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 557,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 565,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 573,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 738,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 744,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 840,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 856,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 867,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 869,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 876,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 894,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 901,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 917,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 923,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 977,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 980,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 985,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 987,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 990,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 993,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 994,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 1058,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/createReactApp.js",
+      "line": 1069,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/create-react-app/index.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/FileSizeReporter.js",
+      "line": 80,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/FileSizeReporter.js",
+      "line": 89,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/FileSizeReporter.js",
+      "line": 90,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/FileSizeReporter.js",
+      "line": 93,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/FileSizeReporter.js",
+      "line": 98,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 79,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 80,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 81,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 84,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 87,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 91,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 94,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 96,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 100,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 117,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 118,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 119,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 120,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 132,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 142,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 171,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 185,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 186,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 192,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 193,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 196,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 201,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 266,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 276,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 281,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 308,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 311,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 314,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 338,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/WebpackDevServerUtils.js",
+      "line": 423,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/browsersHelper.js",
+      "line": 80,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/browsersHelper.js",
+      "line": 81,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/browsersHelper.js",
+      "line": 86,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/checkRequiredFiles.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/checkRequiredFiles.js",
+      "line": 26,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/checkRequiredFiles.js",
+      "line": 27,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 262,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 263,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 270,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 274,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 275,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 284,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 339,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 340,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 343,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 344,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/launchEditor.js",
+      "line": 350,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/openBrowser.js",
+      "line": 53,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/openBrowser.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/openBrowser.js",
+      "line": 59,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/openBrowser.js",
+      "line": 60,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printBuildError.js",
+      "line": 30,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printBuildError.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printBuildError.js",
+      "line": 40,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printBuildError.js",
+      "line": 42,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printBuildError.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 41,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 42,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 45,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 49,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 61,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 62,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 64,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 70,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 71,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 75,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 76,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 81,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 83,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 85,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 87,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 90,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 92,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 93,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 94,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 100,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 105,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 106,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 108,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 109,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 111,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 115,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 116,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 120,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 122,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/printHostingInstructions.js",
+      "line": 125,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 75,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 76,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 89,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 91,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 129,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 132,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 138,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 172,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-dev-utils/webpackHotDevClient.js",
+      "line": 174,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 28,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 30,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 34,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 39,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 40,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 53,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 56,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 65,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 88,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/build.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 31,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 40,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 50,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/effects/proxyConsole.js",
+      "line": 52,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/utils/generateAnsiHTML.js",
+      "line": 69,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/bin/react-scripts.js",
+      "line": 37,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/bin/react-scripts.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/bin/react-scripts.js",
+      "line": 53,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/bin/react-scripts.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/bin/react-scripts.js",
+      "line": 55,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 81,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 82,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 83,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 88,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 94,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 97,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 105,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 122,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 129,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 137,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 144,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/build.js",
+      "line": 192,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 57,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 63,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 72,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 78,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 102,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 142,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 143,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 169,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 172,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 177,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 182,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 188,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 199,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 210,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 212,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 224,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 232,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 233,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 235,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 239,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 246,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 256,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 318,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 329,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 334,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 335,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 338,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 339,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 342,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 343,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/eject.js",
+      "line": 344,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 72,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 73,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 96,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 101,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 106,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 131,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 132,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 138,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 237,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 278,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 279,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 322,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 323,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 327,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 333,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 338,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 339,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 345,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 351,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 352,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 368,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 369,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 370,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 371,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 372,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 373,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 374,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 375,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 378,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 379,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 380,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 381,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 382,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 383,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 386,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 389,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 392,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 393,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 394,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 395,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 396,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 398,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 399,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 405,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/init.js",
+      "line": 406,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 59,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 66,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 69,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 72,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 131,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 138,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/start.js",
+      "line": 159,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/createJestConfig.js",
+      "line": 114,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/createJestConfig.js",
+      "line": 125,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 47,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 88,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 105,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 112,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 205,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 214,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 265,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 272,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 274,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 282,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/scripts/utils/verifyTypeScriptSetup.js",
+      "line": 284,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 30,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 31,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 33,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 40,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 41,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 42,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 45,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 53,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 55,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 56,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 57,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 92,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 96,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/cra.js",
+      "line": 97,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/screencast.js",
+      "line": 34,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/screencast.js",
+      "line": 40,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/screencast.js",
+      "line": 49,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/screencast.js",
+      "line": 52,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/tasks/screencast.js",
+      "line": 53,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/builds-with-multiple-runtimes/src/index.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/builds-with-multiple-runtimes/src/index.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/FooExport.js",
+      "line": 2,
+      "snippet": "",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 363,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 182
+  }
+}

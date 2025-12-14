@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "group_id": "ghsa-w48q-cv73-mx4w-low-dependency-check",
+  "rule": "GHSA-w48q-cv73-mx4w",
+  "tool": "dependency-check",
+  "severity": "low",
+  "description": "Modify the SDK's default HTTP server configuration to enable DNS rebinding protection by default. This involves updating the server initialization code to include the necessary security headers and validation checks that prevent DNS rebinding attacks.",
+  "fix_pattern": {
+    "type": "ai-generated",
+    "fixTier": 3,
+    "fixerTool": "ai",
+    "confidence": 75,
+    "example": {
+      "before": "",
+      "after": "const server = http.createServer((req, res) => {\n  // Enable DNS rebinding protection by default\n  res.setHeader('Access-Control-Allow-Origin', 'null');\n  res.setHeader('X-Content-Type-Options', 'nosniff');\n  // Additional security headers for DNS rebinding protection\n  res.setHeader('X-Frame-Options', 'DENY');\n  res.setHeader('X-DNS-Prefetch-Control', 'off');\n  // ... rest of server logic\n});"
+    },
+    "instructions": "Modify the SDK's default HTTP server configuration to enable DNS rebinding protection by default. This involves updating the server initialization code to include the necessary security headers and validation checks that prevent DNS rebinding attacks.",
+    "aiPrompt": {
+      "systemPrompt": "You are a code quality engineer generating a precise code fix.\n\nOUTPUT RULES:\n1. Output ONLY the fixed code block - no explanations\n2. Preserve all existing functionality\n3. Follow language idioms and best practices\n4. Maintain consistency with surrounding code style\n5. If the fix requires context you don't have, output a comment explaining what's needed\n\nQUALITY PRINCIPLES:\n- Single responsibility\n- Clear naming that reveals intent\n- Minimize side effects\n- Handle edge cases\n\nSPECIFIC ISSUE: GHSA-w48q-cv73-mx4w\nThis is a low quality issue detected by dependency-check.\nThe issue is: \"GHSA-w48q-cv73-mx4w: The Model Context Protocol (MCP) TypeScript SDK does not enable DNS rebinding protection by default for HTTP-based servers. When an HTTP-based MCP server is run on localhost without authentication wit\"\n\nFix this specific problem. Output only the corrected code.",
+      "userPromptTemplate": "FIX THIS QUALITY ISSUE:\n\nRULE: GHSA-w48q-cv73-mx4w (dependency-check)\nSEVERITY: low\nMESSAGE: GHSA-w48q-cv73-mx4w: The Model Context Protocol (MCP) TypeScript SDK does not enable DNS rebinding protection by default for HTTP-based servers. When an HTTP-based MCP server is run on localhost without authentication wit\n\nFILE: packages/agents/mcp-tools/devsecops-mcp/package-lock.json?@modelcontextprotocol/sdk\nLINE: 1\n\nCODE:\n```typescript\n// No code context available\n```\n\nOUTPUT: Generate ONLY the corrected code. No explanations.",
+      "outputFormat": "code-block",
+      "maxTokens": 400,
+      "temperature": 0.2,
+      "requiredContext": [
+        "file"
+      ]
+    }
+  },
+  "locations": [
+    {
+      "file": "packages/agents/mcp-tools/devsecops-mcp/package-lock.json?@modelcontextprotocol/sdk",
+      "line": 1,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/mcp-tools/k6-mcp/package-lock.json?@modelcontextprotocol/sdk",
+      "line": 1,
+      "snippet": "",
+      "category": "EXISTING_REST"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "medium",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

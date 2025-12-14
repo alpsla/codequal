@@ -19,7 +19,18 @@
 export { UniversalToolBase, UniversalToolConfig } from './universal-tool-base';
 export { UniversalSemgrepRunner, runSemgrep } from './semgrep-runner';
 export { UniversalDependencyCheckRunner, runDependencyCheck } from './dependency-check-runner';
-export { CodeQLRunner, runCodeQL, isCodeQLAvailable } from './codeql-runner';
+export {
+  CodeQLRunner,
+  CodeQLConfig,
+  CODEQL_DEFAULTS,
+  runCodeQL,
+  runCodeQLFast,
+  runCodeQLParallel,
+  runCodeQLExtended,
+  isCodeQLAvailable,
+  clearCodeQLCache,
+  getCodeQLCacheStats,
+} from './codeql-runner';
 
 /**
  * Check if a tool name is universal (should use shared runners)

@@ -4,32 +4,36 @@
   "rule": "javascript.express.session-fixation.session-fixation",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "1. Avoid using user-controlled input directly in `res.cookie()`.\n2. Use a secure session management library (e.g., express-session with secure options).\n3. If cookie values must be user-controlled, implement an allow-list of valid values.\n4. Ensure cookies are set with secure flags (HttpOnly, Secure, SameSite).",
+  "description": "To mitigate this vulnerability, implement the following steps:\n\n1. **Regenerate Session ID upon Login:**\n   - Use `req.session.regenerate()` to create a new session ID when a user logs in, preventing attackers from setting a known session ID.\n   - Example:\n     ```javascript\n     req.session.regenerate((err) => {\n       if (err) {\n         // Handle error\n       }\n       req.session.userId = user.id;\n       res.redirect('/dashboard');\n     });\n     ```\n   - Reference: [Session Fixation in express-openid-connect | CVE-2021-41246 | Snyk](https://security.snyk.io/vuln/SNYK-JS-EXPRESSOPENIDCONNECT-2314891)\n\n2. **Sanitize User Input:**\n   - Ensure that any user input used in cookies is properly sanitized to prevent malicious data from being stored.\n   - Utilize libraries or built-in functions to escape or encode user input before assigning it to cookies.\n   - Reference: [XSS prevention for ExpressJS | Semgrep](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n3. **Use Secure Cookies:**\n   - Set the `HttpOnly` and `Secure` flags on cookies to prevent client-side access and ensure they are transmitted over HTTPS only.\n   - Example:\n     ```javascript\n     res.cookie('sessionId', sessionId, { httpOnly: true, secure: true });\n     ```\n   - Reference: [express-security](https://techguides.graphy.com/s/pages/express-security)\n\n4. **Implement Session Management Best Practices:**\n   - Regularly regenerate session IDs during a user's session to prevent session fixation.\n   - Set appropriate session timeouts and handle session expiration securely.\n   - Reference: [Session Fixation | IOthreat | SOC 2 & Beyond for Startups](https://www.iothreat.com/blog/session-fixation)\n\nBy following these steps, you can enhance the security of your application and protect users from session fixation attacks.",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "// Before (vulnerable)\n// res.cookie('sessionId', req.body.sessionId);\n\n// After (secure)\nconst sessionId = generateSecureSessionId(); // Use secure session ID generation\nres.cookie('sessionId', sessionId, {\n  httpOnly: true,\n  secure: true,\n  sameSite: 'strict'\n});"
+      "after": ""
     },
-    "instructions": "1. Avoid using user-controlled input directly in `res.cookie()`.\n2. Use a secure session management library (e.g., express-session with secure options).\n3. If cookie values must be user-controlled, implement an allow-list of valid values.\n4. Ensure cookies are set with secure flags (HttpOnly, Secure, SameSite)."
+    "instructions": "To mitigate this vulnerability, implement the following steps:\n\n1. **Regenerate Session ID upon Login:**\n   - Use `req.session.regenerate()` to create a new session ID when a user logs in, preventing attackers from setting a known session ID.\n   - Example:\n     ```javascript\n     req.session.regenerate((err) => {\n       if (err) {\n         // Handle error\n       }\n       req.session.userId = user.id;\n       res.redirect('/dashboard');\n     });\n     ```\n   - Reference: [Session Fixation in express-openid-connect | CVE-2021-41246 | Snyk](https://security.snyk.io/vuln/SNYK-JS-EXPRESSOPENIDCONNECT-2314891)\n\n2. **Sanitize User Input:**\n   - Ensure that any user input used in cookies is properly sanitized to prevent malicious data from being stored.\n   - Utilize libraries or built-in functions to escape or encode user input before assigning it to cookies.\n   - Reference: [XSS prevention for ExpressJS | Semgrep](https://semgrep.dev/docs/cheat-sheets/express-xss/)\n\n3. **Use Secure Cookies:**\n   - Set the `HttpOnly` and `Secure` flags on cookies to prevent client-side access and ensure they are transmitted over HTTPS only.\n   - Example:\n     ```javascript\n     res.cookie('sessionId', sessionId, { httpOnly: true, secure: true });\n     ```\n   - Reference: [express-security](https://techguides.graphy.com/s/pages/express-security)\n\n4. **Implement Session Management Best Practices:**\n   - Regularly regenerate session IDs during a user's session to prevent session fixation.\n   - Set appropriate session timeouts and handle session expiration securely.\n   - Reference: [Session Fixation | IOthreat | SOC 2 & Beyond for Startups](https://www.iothreat.com/blog/session-fixation)\n\nBy following these steps, you can enhance the security of your application and protect users from session fixation attacks."
   },
   "locations": [
     {
       "file": "apps/api/src/routes/auth.ts",
       "line": 490,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   487 |       domain: isProduction ? '.codequal.dev' : undefined,\n   488 |     };\n   489 |     \n>  490 |     res.cookie('sb-access-token', access_token, cookieOptions);\n   491 |     res.cookie('sb-refresh-token', refresh_token, cookieOptions);\n   492 |     \n   493 |     res.json({ ",
+      "category": "EXISTING_REST"
     },
     {
       "file": "apps/api/src/routes/auth.ts",
       "line": 491,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "   488 |     };\n   489 |     \n   490 |     res.cookie('sb-access-token', access_token, cookieOptions);\n>  491 |     res.cookie('sb-refresh-token', refresh_token, cookieOptions);\n   492 |     \n   493 |     res.json({ \n   494 |       success: true,",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 2,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

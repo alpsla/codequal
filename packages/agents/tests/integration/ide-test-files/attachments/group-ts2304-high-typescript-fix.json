@@ -1,0 +1,98 @@
+{
+  "version": "1.0",
+  "group_id": "ts2304-high-typescript",
+  "rule": "TS2304",
+  "tool": "typescript",
+  "severity": "high",
+  "description": [
+    "Add import statement for 'expect' from the testing framework (e.g., 'import { expect } from '@jest/globals';')",
+    "Verify TypeScript configuration includes necessary type declarations for the test framework",
+    "Ensure test environment is properly configured with framework-specific setup files"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "import { expect } from '@jest/globals';\n\n// Test implementation using expect()"
+    },
+    "instructions": [
+      "Add import statement for 'expect' from the testing framework (e.g., 'import { expect } from '@jest/globals';')",
+      "Verify TypeScript configuration includes necessary type declarations for the test framework",
+      "Ensure test environment is properly configured with framework-specific setup files"
+    ]
+  },
+  "locations": [
+    {
+      "file": "packages/cra-template-typescript/template/src/App.test.tsx",
+      "line": 8,
+      "snippet": "     5 | test('renders learn react link', () => {\n     6 |   render(<App />);\n     7 |   const linkElement = screen.getByText(/learn react/i);\n>    8 |   expect(linkElement).toBeInTheDocument();\n     9 | });\n    10 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/cra-template-typescript/template/src/index.tsx",
+      "line": 8,
+      "snippet": "     5 | import reportWebVitals from './reportWebVitals';\n     6 | \n     7 | const root = ReactDOM.createRoot(\n>    8 |   document.getElementById('root') as HTMLElement\n     9 | );\n    10 | root.render(\n    11 |   <React.StrictMode>",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.test.ts",
+      "line": 5,
+      "snippet": "     2 | \n     3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App({});\n>    5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);\n     7 |   expect(app.n).toBe(123);\n     8 | });",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.test.ts",
+      "line": 6,
+      "snippet": "     3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App({});\n     5 |   expect(App.foo.bar).toBe(true);\n>    6 |   expect(App.foo.baz!.n).toBe(123);\n     7 |   expect(app.n).toBe(123);\n     8 | });\n     9 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript-advanced/src/App.test.ts",
+      "line": 7,
+      "snippet": "     4 |   const app = new App({});\n     5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);\n>    7 |   expect(app.n).toBe(123);\n     8 | });\n     9 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 5,
+      "snippet": "     2 | \n     3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App();\n>    5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);\n     7 |   expect(app.n).toBe(123);\n     8 | });",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 6,
+      "snippet": "     3 | it('reads a typescript file with no syntax error', () => {\n     4 |   const app = new App();\n     5 |   expect(App.foo.bar).toBe(true);\n>    6 |   expect(App.foo.baz!.n).toBe(123);\n     7 |   expect(app.n).toBe(123);\n     8 | });\n     9 | ",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 7,
+      "snippet": "     4 |   const app = new App();\n     5 |   expect(App.foo.bar).toBe(true);\n     6 |   expect(App.foo.baz!.n).toBe(123);\n>    7 |   expect(app.n).toBe(123);\n     8 | });\n     9 | \n    10 | it('supports decorators', () => {",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 11,
+      "snippet": "     8 | });\n     9 | \n    10 | it('supports decorators', () => {\n>   11 |   expect((App as any).annotated).toBe(true);\n    12 | \n    13 |   const app = new App();\n    14 |   expect(app.decorated).toBe(42);",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 14,
+      "snippet": "    11 |   expect((App as any).annotated).toBe(true);\n    12 | \n    13 |   const app = new App();\n>   14 |   expect(app.decorated).toBe(42);\n    15 | });\n    16 | \n    17 | it('supports loading modules with baseUrl', () => {",
+      "category": "NEW"
+    },
+    {
+      "file": "test/fixtures/typescript/src/App.test.ts",
+      "line": 19,
+      "snippet": "    16 | \n    17 | it('supports loading modules with baseUrl', () => {\n    18 |   const app = new App();\n>   19 |   expect(app.users).toEqual([\n    20 |     { id: 1, name: '1' },\n    21 |     { id: 2, name: '2' },\n    22 |     { id: 3, name: '3' },",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 11,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 6
+  }
+}

@@ -28,54 +28,38 @@ export interface IDEFixFile {
 
 /**
  * Check if a group can be auto-fixed by IDE tools
- * BUG FIX: CheckStyle issues are 100% auto-fixable with IDE formatters
- * SESSION 19 FIX: Security and Dependency issues with clear fixes are also auto-fixable
+ *
+ * SESSION 53 REFACTOR: Language-neutral approach
+ * CodeQual generates AI fixes for ALL issues, so most are auto-fixable.
+ * We only exclude specific patterns that require manual intervention.
  */
 function canAutoFix(group: IssueGroup | { rule: string; tool: string; severity: string }): boolean {
-  // CheckStyle issues are 100% auto-fixable with IDE formatters (google-java-format, IntelliJ, etc.)
-  if (group.tool === 'checkstyle') {
-    return true;
+  const ruleLower = group.rule?.toLowerCase() || '';
+
+  // ===== NON-AUTO-FIXABLE PATTERNS =====
+  // These require architectural changes or manual decision-making
+
+  // Circular dependencies require architectural refactoring
+  if (ruleLower.includes('circular-dependency') || ruleLower.includes('cyclic')) {
+    return false;
   }
 
-  // PMD rules that support automated fixing
-  const autoFixablePMDRules = [
-    'AvoidUsingVolatile',
-    'GuardLogStatement',
-    'SystemPrintln',
-    'ClassWithOnlyPrivateConstructorsShouldBeFinal',
-    'ReturnEmptyCollectionRatherThanNull',
-    'UnusedImports',
-    'AvoidStarImport',
-    'SimplifyBooleanReturns',
-    'SimplifyBooleanExpressions'
-  ];
-
-  if (autoFixablePMDRules.includes(group.rule)) {
-    return true;
+  // Complex architectural issues
+  if (ruleLower.includes('god-class') || ruleLower.includes('god-object')) {
+    return false;
   }
 
-  // Semgrep security issues: Many have clear, automatable fixes
-  // IDE can apply when the fix is a simple code pattern replacement
-  if (group.tool === 'semgrep') {
-    return true;  // AI generates specific fix code that IDE can apply
+  // Issues requiring human judgment on business logic
+  if (ruleLower.includes('magic-number') && group.severity === 'low') {
+    // Magic numbers often need context to determine correct constant names
+    return false;
   }
 
-  // Dependency-Check: IDE can update dependency versions automatically
-  if (group.tool === 'dependency-check') {
-    return true;  // IDEs have dependency management tools
-  }
-
-  // SESSION 22 FIX: SpotBugs issues are auto-fixable
-  if (group.tool === 'spotbugs') {
-    return true;  // Many bug patterns have clear fixes
-  }
-
-  // npm-audit: IDEs can update npm dependencies automatically
-  if (group.tool === 'npm-audit') {
-    return true;  // npm audit fix can resolve most vulnerabilities
-  }
-
-  return false;
+  // ===== DEFAULT: AUTO-FIXABLE =====
+  // CodeQual generates AI fix suggestions for 100% of issues
+  // LSP file contains ready-to-apply fixes for IDEs
+  // Even complex security issues have AI-generated fix code
+  return true;
 }
 
 /**
@@ -136,103 +120,53 @@ export function generateAnalysisMetadata(
   }
 
   // Add Tool Performance if available (optional)
+  // USER FEEDBACK (2025-12-14): Filter out tools that didn't actually run (0 issues AND 0 duration)
   if (showToolPerformance && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-    content += `\n### Tool Performance
+    // Filter out tools that didn't run (0 issues AND <= 100ms duration) or are skipped tools
+    const skippedTools = ['performance']; // Tools we skip in first iteration
+    const actuallyRanTools = metadata.toolPerformance.filter((tool: any) => {
+      const issues = tool.issuesFound || tool.issues || 0;
+      const duration = tool.duration || 0;
+      const toolName = (tool.tool || tool.name || '').toLowerCase();
+
+      // Skip tools that are in the skipped list and have 0 results
+      if (skippedTools.includes(toolName) && issues === 0 && duration < 100) {
+        return false;
+      }
+
+      // Skip tools that clearly didn't run (0 issues AND very short duration < 100ms)
+      if (issues === 0 && duration < 100) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (actuallyRanTools.length > 0) {
+      content += `\n### Tool Performance
 | Tool | Issues Found | Duration |
 |------|--------------|----------|
 `;
-    metadata.toolPerformance.forEach((tool: any) => {
-      const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
-      content += `| ${tool.tool || tool.name} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
-    });
-  }
-
-  // Add Cost & Efficiency Analysis (optional)
-  if (showEfficiencyAnalysis && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
-    content += `\n### Cost & Efficiency Analysis
-`;
-    
-    // Calculate totals
-    const totalCost = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.cost || 0), 0);
-    const totalIssues = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.issuesFound || agent.issues || 0), 0);
-    const totalTime = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.duration || 0), 0);
-    
-    content += `\n**Overall Efficiency:**\n`;
-    content += `- Total Cost: $${totalCost.toFixed(4)}\n`;
-    content += `- Cost per Issue: $${totalIssues > 0 ? (totalCost / totalIssues).toFixed(6) : '0.000000'}\n`;
-    content += `- Issues per Second: ${totalTime > 0 ? ((totalIssues / totalTime) * 1000).toFixed(2) : '0.00'}\n`;
-    content += `- Cost per Second: $${totalTime > 0 ? ((totalCost / totalTime) * 1000).toFixed(6) : '0.000000'}/s\n\n`;
-    
-    // Performance recommendations
-    content += `**Agent Efficiency Ranking:**\n\n`;
-    const agentEfficiency = metadata.agentPerformance
-      .map((agent: any) => {
-        const issues = agent.issuesFound || agent.issues || 0;
-        const cost = agent.cost || 0;
-        const time = agent.duration || 1;
-        // FIX: Show "N/A" instead of Infinity for agents with 0 issues
-        const costPerIssue = issues > 0 ? cost / issues : 0;
-        const issuesPerSec = (issues / time) * 1000;
-        return {
-          name: agent.name || agent.agent,
-          issues,
-          cost,
-          costPerIssue,
-          issuesPerSec,
-          efficiency: issues > 0 ? (issues / (cost * 1000 + 1)) : 0 // Issues per $1000 spent
-        };
-      })
-      .sort((a: any, b: any) => b.efficiency - a.efficiency);
-    
-    agentEfficiency.forEach((agent: any, idx: number) => {
-      const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-      // Display appropriate badge for agents with 0 issues
-      const badge = agent.issues === 0
-        ? '⏭️ No issues found'
-        : agent.costPerIssue < 0.001 ? '⚡ Excellent'
-        : agent.costPerIssue < 0.01 ? '✅ Good'
-        : agent.costPerIssue < 0.1 ? '⚠️ Average' : '🔴 Expensive';
-      const costPerIssueStr = agent.issues > 0 ? `$${agent.costPerIssue.toFixed(6)}/issue` : 'N/A (no issues)';
-      content += `${rank} **${agent.name}**: ${agent.issues} issues @ ${costPerIssueStr} ${badge}\n`;
-    });
-    
-    // Replacement recommendations (only for agents that found issues)
-    const expensiveAgents = agentEfficiency.filter((a: any) => a.issues > 0 && a.costPerIssue > 0.05);
-    if (expensiveAgents.length > 0) {
-      content += `\n**💡 Optimization Opportunities:**\n`;
-      expensiveAgents.forEach((agent: any) => {
-        content += `- Consider optimizing **${agent.name}** (high cost/issue: $${agent.costPerIssue.toFixed(4)})\n`;
+      actuallyRanTools.forEach((tool: any) => {
+        const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
+        content += `| ${tool.tool || tool.name} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
       });
     }
   }
-  
-  // Add Tool Efficiency Analysis
-  if (metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-    content += `\n### Tool Efficiency Analysis
+
+  // USER FEEDBACK (2025-12-14): Removed Cost & Efficiency Analysis and Agent Efficiency Ranking
+  // Since we removed agents from 1st iteration of scan and fully rely on tools,
+  // these sections are no longer relevant
+
+  // Add simple cost summary if available
+  if (showEfficiencyAnalysis && metadata.agentPerformance && Array.isArray(metadata.agentPerformance) && metadata.agentPerformance.length > 0) {
+    const totalCost = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.cost || 0), 0);
+    const totalTime = metadata.agentPerformance.reduce((sum: number, agent: any) => sum + (agent.duration || 0), 0);
+
+    content += `\n### Cost Analysis
+- **Total Analysis Cost:** $${totalCost.toFixed(4)}${totalCost === 0 ? ' (tool-based analysis)' : ''}
+- **Analysis Duration:** ${totalTime > 0 ? (totalTime / 1000).toFixed(1) + 's' : 'N/A'}
 `;
-    
-    const toolEfficiency = metadata.toolPerformance
-      .map((tool: any) => {
-        const issues = tool.issuesFound || tool.issues || 0;
-        const time = tool.duration || 1;
-        const issuesPerSec = (issues / time) * 1000;
-        return {
-          name: tool.tool || tool.name,
-          issues,
-          time,
-          issuesPerSec,
-          efficiency: issuesPerSec
-        };
-      })
-      .sort((a: any, b: any) => b.efficiency - a.efficiency);
-
-    // BUG FIX #19: Removed duplicate "Tool Performance Ranking" section
-    // This information is already displayed in "### Tool Performance" section above
-    // The ranking was showing hardcoded Java tools (checkstyle, pmd, spotbugs) regardless of language
-
-    // BUG FIX #18: Removed "Performance Concerns" section
-    // Can't compare tools with different purposes (CheckStyle finds 498K style issues, Semgrep finds 11 security issues)
-    // Each tool has its own nature - execution time varies by codebase size and tool purpose
   }
 
   // Add Models Used if available
@@ -456,39 +390,41 @@ export function generateFooter(
     footer += `3. **👁️ Individual Review** - Review each fix before applying (${totalFixable.toLocaleString()} clicks)\n\n`;
 
     footer += `---\n\n`;
-    footer += `### 🔄 How CodeQual Fixes Work (Hybrid Approach)\n\n`;
-    footer += `**Two Fix Strategies for Maximum Reliability**:\n\n`;
+    // BUG-097 FIX: Updated to use BASIC/PRO terminology consistent with Two-Tier Fix System
+    footer += `### 🔄 How CodeQual Fixes Work (Two-Tier System)\n\n`;
+    footer += `**Two Fix Tiers for Maximum Coverage**:\n\n`;
 
-    footer += `**⚡ Prescriptive Fixes (Primary)**\n`;
-    footer += `- Applied when code unchanged since analysis (~95% of fixes)\n`;
+    footer += `**📚 BASIC Tier (Pattern Library) - FREE**\n`;
+    footer += `- Covers 50-60% of common issues with validated patterns\n`;
     footer += `- Speed: Instant (< 1ms per fix)\n`;
-    footer += `- Cost: Free (no API calls)\n`;
-    footer += `- Your IDE applies our exact validated code\n\n`;
+    footer += `- Cost: FREE - included in all plans\n`;
+    footer += `- Languages: Java, TypeScript, Python, Go, Ruby\n`;
+    footer += `- Patterns from: Checkstyle, PMD, ESLint, Ruff, Pylint, RuboCop\n\n`;
 
-    footer += `**🤖 AI-Generated Fixes (Intelligent Fallback)**\n`;
-    footer += `- Applied when code changed after analysis (~5% of fixes)\n`;
-    footer += `- Speed: 2-5 seconds per fix\n`;
-    footer += `- Cost: Free to you (uses your IDE's AI subscription)\n`;
-    footer += `- IDE's AI adapts fix to your code changes\n\n`;
+    footer += `**🤖 PRO Tier (AI-Generated) - PREMIUM**\n`;
+    footer += `- Covers 100% of issues with AI-generated code\n`;
+    footer += `- Speed: 2-5 seconds per fix (real-time generation)\n`;
+    footer += `- Cost: Usage-based (AI API calls)\n`;
+    footer += `- Contextual: Adapts to your code style and patterns\n`;
+    footer += `- Smart: Handles complex refactoring, security fixes\n\n`;
 
-    footer += `**Example Scenarios**:\n`;
+    footer += `**How Application Works (IDE Integration)**:\n`;
     footer += `\`\`\`\n`;
-    footer += `Scenario A (Act Immediately):\n`;
-    footer += `- Monday: Analysis finds null pointer at line 45\n`;
-    footer += `- Monday: You click "Apply Fix" → Prescriptive applies instantly ✅\n\n`;
-    footer += `Scenario B (Act After Edits):\n`;
-    footer += `- Monday: Analysis finds null pointer at line 45\n`;
-    footer += `- Tuesday-Friday: You make other edits (lines shift, variables renamed)\n`;
-    footer += `- Friday: You click "Apply Fix" → AI generates adapted fix ✅\n`;
+    footer += `When you click "Apply Fix" in your IDE:\n\n`;
+    footer += `1. Code unchanged since analysis?\n`;
+    footer += `   → Apply pre-generated fix instantly (BASIC or PRO)\n\n`;
+    footer += `2. Code changed after analysis?\n`;
+    footer += `   → IDE AI adapts the fix to your changes\n`;
+    footer += `   → Ensures fix still applies correctly\n`;
     footer += `\`\`\`\n\n`;
 
     footer += `**Why Trust Batch Apply?**\n`;
     footer += `✅ All fixes tested against your actual code\n`;
     footer += `✅ Only safe, non-breaking changes included\n`;
-    footer += `✅ AI fallback handles code changes automatically\n`;
+    footer += `✅ IDE AI fallback handles code changes automatically\n`;
     footer += `✅ Can undo with Cmd+Z if needed\n\n`;
 
-    footer += `> 💡 **Pro Tip**: For instant fixes, apply soon after analysis. For flexibility with ongoing edits, AI adapts automatically!\n\n`;
+    footer += `> 💡 **Tip**: BASIC tier fixes are instant and free. PRO tier adds AI coverage for 100% of issues.\n\n`;
     footer += `---\n\n`;
 
     footer += `### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)\n\n`;
@@ -515,66 +451,71 @@ export function generateFooter(
 
     footer += `> 🏆 **Best for**: GitHub Code Scanning, CI/CD pipelines, permanent diagnostic records\n\n`;
 
-    // BUG FIX: Only show GitLab method for GitLab repositories AND if file was actually uploaded
-    // SECURITY FIX: Use URL parsing instead of substring check to prevent URL spoofing
-    const repoUrl = metadata?.repositoryUrl || metadata?.repository || '';
-    let isGitLabRepo = false;
-    try {
-      const parsedUrl = new URL(repoUrl);
-      isGitLabRepo = parsedUrl.hostname === 'gitlab.com' || parsedUrl.hostname.endsWith('.gitlab.com');
-    } catch {
-      // Invalid URL, not a GitLab repo
-      isGitLabRepo = false;
-    }
-    
-    // Only show GitLab method if:
-    // 1. It's a GitLab repo AND
-    // 2. gitlabUrl exists in metadata (file was successfully uploaded)
-    // This prevents 404 errors from showing broken links
-    if (isGitLabRepo && metadata?.gitlabUrl) {
-      footer += `---\n\n`;
-      footer += `### 🦊 Method 3: GitLab Code Quality (CI/CD Integration)\n\n`;
-      footer += `**Download**: \`codequal-gitlab-codequality.json\`\n`;
-      footer += `- URL: [Download GitLab Code Quality file](${metadata.gitlabUrl})\n`;
-      footer += `- Works with: GitLab CI/CD, Merge Request widgets\n`;
-      footer += `- Format: Code Climate (GitLab standard)\n\n`;
+    // SESSION 53 FIX: Show GitLab/Code Climate format for ALL repos when file exists
+    // Code Climate format is a standard supported by many CI tools, not just GitLab
+    // The file is always generated and uploaded, so show it to all users
+    if (metadata?.gitlabUrl) {
+      // Detect if this is a GitLab repo for customized messaging
+      const repoUrl = metadata?.repositoryUrl || metadata?.repository || '';
+      let isGitLabRepo = false;
+      try {
+        const parsedUrl = new URL(repoUrl);
+        isGitLabRepo = parsedUrl.hostname === 'gitlab.com' || parsedUrl.hostname.endsWith('.gitlab.com');
+      } catch {
+        isGitLabRepo = false;
+      }
 
-      footer += `**GitLab CI/CD Integration**:\n\n`;
-      footer += `\`\`\`yaml\n`;
-      footer += `# .gitlab-ci.yml\n`;
-      footer += `codequal_analysis:\n`;
-      footer += `  stage: test\n`;
-      footer += `  script:\n`;
-      footer += `    # Run CodeQual analysis (example - adjust to your setup)\n`;
-      footer += `    - codequal analyze --output codequal-gitlab-codequality.json\n`;
-      footer += `  artifacts:\n`;
-      footer += `    reports:\n`;
-      footer += `      codequality: codequal-gitlab-codequality.json\n`;
-      footer += `\`\`\`\n\n`;
+      footer += `---\n\n`;
+      footer += `### 🦊 Method 3: Code Climate / GitLab Code Quality\n\n`;
+      footer += `**Download**: \`codequal-gitlab-codequality.json\`\n`;
+      footer += `- URL: [Download Code Climate file](${metadata.gitlabUrl})\n`;
+      footer += `- Works with: GitLab CI/CD, GitHub Actions (via Code Climate), Jenkins, CircleCI\n`;
+      footer += `- Format: Code Climate (industry standard)\n\n`;
+
+      if (isGitLabRepo) {
+        // GitLab-specific instructions
+        footer += `**GitLab CI/CD Integration** (Native Support):\n\n`;
+        footer += `\`\`\`yaml\n`;
+        footer += `# .gitlab-ci.yml\n`;
+        footer += `codequal_analysis:\n`;
+        footer += `  stage: test\n`;
+        footer += `  script:\n`;
+        footer += `    - codequal analyze --output codequal-gitlab-codequality.json\n`;
+        footer += `  artifacts:\n`;
+        footer += `    reports:\n`;
+        footer += `      codequality: codequal-gitlab-codequality.json\n`;
+        footer += `\`\`\`\n\n`;
+      } else {
+        // GitHub/other CI instructions
+        footer += `**GitHub Actions Integration** (via Code Climate):\n\n`;
+        footer += `\`\`\`yaml\n`;
+        footer += `# .github/workflows/code-quality.yml\n`;
+        footer += `- name: Upload Code Quality Report\n`;
+        footer += `  uses: actions/upload-artifact@v4\n`;
+        footer += `  with:\n`;
+        footer += `    name: code-quality-report\n`;
+        footer += `    path: codequal-gitlab-codequality.json\n`;
+        footer += `\`\`\`\n\n`;
+      }
 
       footer += `**What you get**:\n`;
-      footer += `- 📊 Code Quality widget in merge requests\n`;
-      footer += `- 📈 Quality degradation/improvement metrics\n`;
+      footer += `- 📊 Code Quality metrics in CI/CD pipeline\n`;
+      footer += `- 📈 Quality degradation/improvement tracking\n`;
       footer += `- 🚫 Optional quality gates (block merge on critical issues)\n`;
-      footer += `- 📋 Issue list directly in GitLab UI\n\n`;
+      footer += `- 📋 Standardized issue format for any CI tool\n\n`;
 
       footer += `**Features**:\n`;
-      footer += `- All ${totalFixable.toLocaleString()} issues visible in GitLab\n`;
+      footer += `- All ${totalFixable.toLocaleString()} issues in Code Climate format\n`;
       footer += `- Severity mapping: Critical→Blocker, High→Critical, Medium→Major, Low→Minor\n`;
       footer += `- File paths, line numbers, and fix suggestions included\n`;
       footer += `- Automatic issue tracking across commits (fingerprints)\n\n`;
 
-      footer += `> 🦊 **Perfect for**: GitLab teams, CI/CD automation, quality gate enforcement\n\n`;
+      footer += `> 🎯 **Perfect for**: CI/CD automation, quality gates, multi-platform teams\n\n`;
     }
 
-    // BUG FIX #20: Add PR Comment Template section with actual markdown
-    footer += `---\n\n`;
-
-    // Generate PR comment template if we have the necessary data
-    if (enrichedIssues && enrichedIssues.length > 0) {
-      footer += generatePRComment(enrichedIssues, groups, metadata || {});
-      footer += `\n\n`;
-    }
+    // NOTE: PR Comment Template is generated in the main formatter (v9-grouped-report-formatter.ts line 1035)
+    // Do NOT add it here to avoid duplicate sections in the report
+    // Previously had BUG FIX #20 here which caused duplicate PR Comment Template sections
 
     // Add attachments section at the end (manifest file for reference)
     footer += `---\n\n`;

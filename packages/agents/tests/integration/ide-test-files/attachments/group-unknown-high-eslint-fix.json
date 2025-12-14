@@ -1,0 +1,138 @@
+{
+  "version": "1.0",
+  "group_id": "unknown-high-eslint",
+  "rule": "unknown",
+  "tool": "eslint",
+  "severity": "high",
+  "description": "Add a semicolon at the end of the line. If the line contains a statement, append ';' directly. For object/array literals, ensure proper closing syntax.",
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "};"
+    },
+    "instructions": "Add a semicolon at the end of the line. If the line contains a statement, append ';' directly. For object/array literals, ensure proper closing syntax."
+  },
+  "locations": [
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/flow/env.js",
+      "line": 2,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/CloseButton.js",
+      "line": 24,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/CodeBlock.js",
+      "line": 27,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/Collapsible.js",
+      "line": 41,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/ErrorOverlay.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/Footer.js",
+      "line": 20,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/Header.js",
+      "line": 26,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/components/NavigationBar.js",
+      "line": 47,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/containers/CompileErrorContainer.js",
+      "line": 23,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/containers/RuntimeError.js",
+      "line": 21,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/containers/RuntimeErrorContainer.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/containers/StackFrame.js",
+      "line": 48,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/containers/StackFrameCodeBlock.js",
+      "line": 18,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/containers/StackTrace.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/index.js",
+      "line": 23,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/listenToRuntimeErrors.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/styles.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/utils/parseCompileError.js",
+      "line": 4,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5176-flow-class-properties/src/App.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 19,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 10
+  }
+}

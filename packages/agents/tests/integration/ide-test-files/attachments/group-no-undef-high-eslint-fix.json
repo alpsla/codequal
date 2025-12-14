@@ -1,0 +1,2078 @@
+{
+  "version": "1.0",
+  "group_id": "no-undef-high-eslint",
+  "rule": "no-undef",
+  "tool": "eslint",
+  "severity": "high",
+  "description": [
+    "Add import statement for Jest functions",
+    "Ensure file extension matches test runner configuration",
+    "Verify Jest configuration includes proper globals"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "import { test } from '@jest/globals';"
+    },
+    "instructions": [
+      "Add import statement for Jest functions",
+      "Ensure file extension matches test runner configuration",
+      "Verify Jest configuration includes proper globals"
+    ]
+  },
+  "locations": [
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/cra-template/template/src/App.test.js",
+      "line": 4,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/cra-template/template/src/App.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/extract-source-map.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/extract-source-map.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/extract-source-map.js",
+      "line": 18,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/extract-source-map.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 45,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 51,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 52,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 63,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/get-source-map.js",
+      "line": 64,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/lines-around.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/lines-around.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/lines-around.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/lines-around.js",
+      "line": 17,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 39,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 63,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 64,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 68,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/mapper.js",
+      "line": 83,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/chrome.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/chrome.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 20,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 21,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 30,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 40,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 41,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 51,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/firefox.js",
+      "line": 52,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/generic.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/generic.js",
+      "line": 17,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/generic.js",
+      "line": 18,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/generic.js",
+      "line": 21,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/generic.js",
+      "line": 28,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/generic.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/react.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/react.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/safari.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/parser/safari.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/script-lines.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/script-lines.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/script-lines.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/script-lines.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 31,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 33,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 34,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/stack-frame.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 39,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 51,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 55,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-error-overlay/src/__tests__/unmapper.js",
+      "line": 71,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/config.test.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/config.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/config.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/config.test.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/config.test.js",
+      "line": 22,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 22,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 37,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 44,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 47,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 52,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 55,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 60,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 63,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 66,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 69,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/env.test.js",
+      "line": 72,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/initDOM.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/initDOM.js",
+      "line": 36,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 10,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 22,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 27,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 30,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 46,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 51,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 54,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 59,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 62,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 67,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 70,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 75,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 78,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 83,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 86,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 91,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 94,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 99,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 102,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 107,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 110,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 113,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 116,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 121,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 124,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 129,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/syntax.test.js",
+      "line": 132,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 23,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 27,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 34,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 51,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 59,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 64,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 72,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 77,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 85,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 88,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 93,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 97,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 102,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 105,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 110,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 113,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 118,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 120,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 125,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 128,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 131,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 136,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/integration/webpack.test.js",
+      "line": 139,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/config/BaseUrl.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/config/BaseUrl.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/ExpandEnvVariables.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/ExpandEnvVariables.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/FileEnvVariables.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/FileEnvVariables.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/PublicUrl.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/PublicUrl.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/ShellEnvVariables.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/env/ShellEnvVariables.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ArrayDestructuring.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ArrayDestructuring.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ArraySpread.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ArraySpread.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/AsyncAwait.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/AsyncAwait.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ClassProperties.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ClassProperties.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ComputedProperties.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ComputedProperties.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/CustomInterpolation.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/CustomInterpolation.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/DefaultParameters.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/DefaultParameters.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/DestructuringAndAwait.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/DestructuringAndAwait.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/Generators.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/Generators.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/NullishCoalescing.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/NullishCoalescing.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ObjectDestructuring.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ObjectDestructuring.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ObjectSpread.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/ObjectSpread.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/OptionalChaining.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/OptionalChaining.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/Promises.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/Promises.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/RestAndDefault.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/RestAndDefault.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/RestParameters.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/RestParameters.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/TemplateInterpolation.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/syntax/TemplateInterpolation.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/CssInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/CssInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/CssModulesInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/CssModulesInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/DynamicImport.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/DynamicImport.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/DynamicImport.test.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/ImageInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/ImageInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/JsonInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/JsonInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/LinkedModules.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/LinkedModules.test.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/LinkedModules.test.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/LinkedModules.test.js",
+      "line": 17,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/LinkedModules.test.js",
+      "line": 20,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/NoExtInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/NoExtInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SassInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SassInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SassModulesInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SassModulesInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/ScssInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/ScssInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/ScssModulesInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/ScssModulesInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgComponent.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgComponent.test.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgComponent.test.js",
+      "line": 20,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgComponent.test.js",
+      "line": 23,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgComponent.test.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgComponent.test.js",
+      "line": 33,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgInCss.test.js",
+      "line": 6,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgInCss.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/SvgInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/UnknownExtInclusion.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/packages/react-scripts/fixtures/kitchensink/template/src/features/webpack/UnknownExtInclusion.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/__shared__/test-setup.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/__shared__/test-setup.js",
+      "line": 17,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/__shared__/test-setup.js",
+      "line": 21,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/boostrap-sass/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/boostrap-sass/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/boostrap-sass/index.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/boostrap-sass/index.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/boostrap-sass/index.test.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/builds-with-multiple-runtimes/index.test.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/builds-with-multiple-runtimes/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/builds-with-multiple-runtimes/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/builds-with-multiple-runtimes/index.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/global-scss-asset-resolution/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/global-scss-asset-resolution/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/global-scss-asset-resolution/index.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/global-scss-asset-resolution/index.test.js",
+      "line": 14,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/global-scss-asset-resolution/index.test.js",
+      "line": 16,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5176-flow-class-properties/index.test.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5176-flow-class-properties/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5176-flow-class-properties/src/App.test.js",
+      "line": 3,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5176-flow-class-properties/src/App.test.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5947-not-typescript/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5947-not-typescript/index.test.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5947-not-typescript/index.test.js",
+      "line": 39,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/issue-5947-not-typescript/index.test.js",
+      "line": 45,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/index.test.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/index.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/index.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/index.test.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/jsconfig/src/App.test.js",
+      "line": 12,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/mjs-support/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/mjs-support/index.test.js",
+      "line": 19,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/mjs-support/index.test.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/mjs-support/index.test.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/relative-paths/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/relative-paths/index.test.js",
+      "line": 24,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-advanced/index.test.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-advanced/index.test.js",
+      "line": 7,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-advanced/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-advanced/index.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-advanced/index.test.js",
+      "line": 13,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-advanced/index.test.js",
+      "line": 17,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-typecheck/index.test.js",
+      "line": 8,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-typecheck/index.test.js",
+      "line": 20,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-typecheck/index.test.js",
+      "line": 27,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-typecheck/index.test.js",
+      "line": 29,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-typecheck/index.test.js",
+      "line": 32,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript-typecheck/index.test.js",
+      "line": 34,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript/index.test.js",
+      "line": 5,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/typescript/index.test.js",
+      "line": 9,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 8,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 15,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 18,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 25,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 28,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 35,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 38,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 45,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 48,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 55,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 58,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 68,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 71,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 82,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 85,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 92,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 95,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 102,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 104,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 109,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 121,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 124,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 133,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 138,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 144,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 154,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/src/AppLintError.js",
+      "line": 4,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 11,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 33,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 34,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 43,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 63,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 65,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 66,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 70,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 73,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 77,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 78,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 79,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 82,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 86,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 92,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 106,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 109,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 117,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 125,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 131,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 138,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 148,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/integration/create-react-app/index.test.js",
+      "line": 157,
+      "snippet": "",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 342,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 171
+  }
+}

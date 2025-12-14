@@ -107,6 +107,9 @@ abstract class BaseSpecializedAgent {
       ? (() => { throw new Error('ALERT: No model configured for agent under STRICT_NO_FALLBACK'); })()
       : 'google/gemini-2.5-flash');
 
+    // BUG-101 FIX: Get fallback_model from Supabase config for 429 rate limit handling
+    const fallbackModel = this.modelConfig?.fallback_model;
+
     const systemPrompt = this.getSystemPrompt();
     const userPrompt = this.buildPrompt(issue);
 
@@ -118,6 +121,7 @@ abstract class BaseSpecializedAgent {
         systemPrompt,
         userPrompt,
         model: modelToUse,
+        fallbackModel,  // BUG-101 FIX: Pass Supabase fallback_model for 429 handling
         temperature: 0.3,
         maxTokens: issue.codeSnippet ? 2500 : 1200  // More tokens when code snippet provided
       });
@@ -250,10 +254,12 @@ Provide JSON response following system prompt structure.`;
                   issueDescriptionKeys: parsed.issueDescription ? Object.keys(parsed.issueDescription) : []
                 });
 
-                if (parsed.fix && parsed.correctedCode) {
+                // SESSION 50 FIX: Only require parsed.fix, default correctedCode to empty
+                // BUG: When AI returns fix but no correctedCode, fallback was using raw JSON
+                if (parsed.fix) {
                   return {
                     fix: parsed.fix,
-                    correctedCode: parsed.correctedCode,
+                    correctedCode: parsed.correctedCode || '',  // Default to empty if missing
                     explanation: parsed.fix,
                     // BUG #89 FIX: Copy issueDescription from AI response
                     issueDescription: parsed.issueDescription,
@@ -275,10 +281,11 @@ Provide JSON response following system prompt structure.`;
     if (jsonBlockMatch) {
       try {
         const parsed = JSON.parse(jsonBlockMatch[1]);
-        if (parsed.fix && parsed.correctedCode) {
+        // SESSION 50 FIX: Only require parsed.fix, default correctedCode to empty
+        if (parsed.fix) {
           return {
             fix: parsed.fix,
-            correctedCode: parsed.correctedCode,
+            correctedCode: parsed.correctedCode || '',  // Default to empty if missing
             explanation: parsed.fix,
             // BUG #89 FIX: Copy issueDescription from AI response
             issueDescription: parsed.issueDescription,
@@ -295,10 +302,11 @@ Provide JSON response following system prompt structure.`;
     if (codeBlockJsonMatch) {
       try {
         const parsed = JSON.parse(codeBlockJsonMatch[1]);
-        if (parsed.fix && parsed.correctedCode) {
+        // SESSION 50 FIX: Only require parsed.fix, default correctedCode to empty
+        if (parsed.fix) {
           return {
             fix: parsed.fix,
-            correctedCode: parsed.correctedCode,
+            correctedCode: parsed.correctedCode || '',  // Default to empty if missing
             explanation: parsed.fix,
             // BUG #89 FIX: Copy issueDescription from AI response
             issueDescription: parsed.issueDescription,

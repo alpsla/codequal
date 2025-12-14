@@ -4,32 +4,36 @@
   "rule": "yaml.kubernetes.security.allow-privilege-escalation.allow-privilege-escalation",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Add securityContext with allowPrivilegeEscalation set to false in the pod specification. This prevents containers from escalating privileges and limits potential damage from compromised containers.",
+  "description": "To mitigate this risk, add a security context to your pod configuration with 'allowPrivilegeEscalation' set to 'false'. This setting prevents containers from gaining more privileges than their parent process, thereby enhancing security. For detailed guidance, refer to the Kubernetes documentation on configuring security contexts. ([kubernetes.io](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/?utm_source=openai))",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: builder-job\nspec:\n  template:\n    spec:\n      containers:\n      - name: builder\n        image: my-builder-image\n        securityContext:\n          allowPrivilegeEscalation: false\n      restartPolicy: Never"
+      "after": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: your-pod-name\nspec:\n  securityContext:\n    allowPrivilegeEscalation: false\n  containers:\n  - name: your-container-name\n    image: your-image-name"
     },
-    "instructions": "Add securityContext with allowPrivilegeEscalation set to false in the pod specification. This prevents containers from escalating privileges and limits potential damage from compromised containers."
+    "instructions": "To mitigate this risk, add a security context to your pod configuration with 'allowPrivilegeEscalation' set to 'false'. This setting prevents containers from gaining more privileges than their parent process, thereby enhancing security. For detailed guidance, refer to the Kubernetes documentation on configuring security contexts. ([kubernetes.io](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/?utm_source=openai))"
   },
   "locations": [
     {
       "file": "kubernetes/builder-job.yaml",
       "line": 12,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "     9 |       containers:\n    10 |       - name: docker-builder\n    11 |         image: docker:24-dind\n>   12 |         securityContext:\n    13 |           privileged: true\n    14 |         env:\n    15 |         - name: DOCKER_HOST",
+      "category": "EXISTING_REST"
     },
     {
       "file": "kubernetes/export-import-images.yaml",
       "line": 84,
-      "snippet": "",
-      "category": "RESOLVED"
+      "snippet": "    81 |             docker save registry.digitalocean.com/codequal/analyzer:lang-${lang}-v3 \\\n    82 |               -o /tmp/${lang}.tar 2>/dev/null && echo \"Saved $lang\" || echo \"Failed $lang\"\n    83 |           done\n>   84 |         securityContext:\n    85 |           privileged: true\n    86 |         volumeMounts:\n    87 |         - name: docker-sock",
+      "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 2,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }

@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "group_id": "jest-no-conditional-expect-medium-eslint",
+  "rule": "jest/no-conditional-expect",
+  "tool": "eslint",
+  "severity": "medium",
+  "description": [
+    "Install eslint-plugin-jest if not already installed",
+    "Update ESLint configuration to extend Jest's recommended rules",
+    "Verify the rule name matches exactly with the plugin's available rules"
+  ],
+  "fix_pattern": {
+    "type": "template",
+    "example": {
+      "before": "",
+      "after": "module.exports = {\n  extends: ['plugin:jest/recommended'],\n  rules: {\n    'jest/no-conditional-expect': 'error'\n  }\n};"
+    },
+    "instructions": [
+      "Install eslint-plugin-jest if not already installed",
+      "Update ESLint configuration to extend Jest's recommended rules",
+      "Verify the rule name matches exactly with the plugin's available rules"
+    ]
+  },
+  "locations": [
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 132,
+      "snippet": "",
+      "category": "NEW"
+    },
+    {
+      "file": "/private/tmp/test-repo-1763521651333/test/fixtures/webpack-message-formatting/index.test.js",
+      "line": 137,
+      "snippet": "",
+      "category": "NEW"
+    }
+  ],
+  "metadata": {
+    "total_occurrences": 2,
+    "confidence": "low",
+    "safe_auto_apply": false,
+    "estimated_time_seconds": 1
+  }
+}

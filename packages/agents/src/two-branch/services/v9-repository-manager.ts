@@ -38,6 +38,19 @@ export interface CloneOptions {
   timeoutSeconds?: number;
 }
 
+/**
+ * Git commit metadata extracted from repository
+ * Common interface for all languages
+ */
+export interface GitCommitMetadata {
+  authorName: string;
+  authorEmail: string;
+  commitHash: string;
+  commitHashShort: string;
+  commitDate: string;
+  commitMessage: string;
+}
+
 export class V9RepositoryManager {
   private readonly cacheDir: string;
 
@@ -199,6 +212,47 @@ export class V9RepositoryManager {
       return result.trim();
     } catch (error: any) {
       throw new Error(`Failed to get current branch: ${error.message}`);
+    }
+  }
+
+  /**
+   * Extract git commit metadata (author, hash, date, message)
+   * Common method for all languages - use this instead of per-language extraction
+   *
+   * @param localPath - Path to the repository
+   * @param commitRef - Optional commit reference (default: HEAD)
+   * @returns GitCommitMetadata with author info and commit details
+   */
+  getCommitMetadata(localPath: string, commitRef = 'HEAD'): GitCommitMetadata {
+    try {
+      // Use a single git log command with custom format for efficiency
+      const format = '%an%n%ae%n%H%n%h%n%aI%n%s';
+      const result = execSync(`git log -1 --format='${format}' ${commitRef}`, {
+        cwd: localPath,
+        encoding: 'utf-8',
+        stdio: 'pipe'
+      });
+
+      const lines = result.trim().split('\n');
+
+      return {
+        authorName: lines[0] || 'Unknown',
+        authorEmail: lines[1] || 'unknown@example.com',
+        commitHash: lines[2] || '',
+        commitHashShort: lines[3] || '',
+        commitDate: lines[4] || new Date().toISOString(),
+        commitMessage: lines[5] || ''
+      };
+    } catch (error: any) {
+      console.warn(`   ⚠️  Could not extract commit metadata: ${error.message}`);
+      return {
+        authorName: 'Unknown',
+        authorEmail: 'unknown@example.com',
+        commitHash: '',
+        commitHashShort: '',
+        commitDate: new Date().toISOString(),
+        commitMessage: ''
+      };
     }
   }
 
