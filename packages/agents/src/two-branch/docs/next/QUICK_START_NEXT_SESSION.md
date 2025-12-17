@@ -66,10 +66,35 @@
 
 ### 📋 NEXT SESSION TODO
 
-1. **Defer to UI Phase**: App Health Score visualization (+/- confusion)
-2. **Pattern Cleanup**: Delete bad Supabase patterns with full file content
-3. **API Service**: Create final report format for each provider
-4. **Multi-Language**: Test TypeScript, Python with same cost verification
+#### 🔴 HIGH PRIORITY
+1. **Pattern Cleanup** - Delete remaining bad Supabase patterns with full file content
+   - Query: `WHERE fix_template::text ILIKE '%Copyright%' OR fix_template::text ILIKE '%Licensed%'`
+   - Estimated: 10-20 patterns may still have license headers
+   
+2. **Pattern Calibration** - Run calibration to rebuild clean patterns
+   - Spring PetClinic (Java) - rebuild Checkstyle/PMD patterns
+   - CodeQual itself (TypeScript) - build ESLint patterns
+   - New patterns will be clean thanks to Session 26 fixes
+
+#### 🟡 MEDIUM PRIORITY
+3. **Performance Tools Integration** - Add performance analysis for all languages
+   | Language | Tools to Add | Status |
+   |----------|--------------|--------|
+   | Java | JMH, SpotBugs Perf Rules, PMD Performance | ❌ Missing |
+   | Python | py-spy, memory_profiler, scalene | ❌ Missing |
+   | Go | pprof, benchstat | ❌ Missing |
+   | Rust | criterion, flamegraph | ❌ Missing |
+   | TypeScript | Lighthouse, Bundle Analyzer | ✅ Exists |
+   
+4. **Multi-Language Testing** - Verify BASIC tier = $0.00 for all languages
+   - TypeScript E2E test
+   - Python E2E test
+   - Go E2E test
+
+#### 🟢 LOWER PRIORITY (Defer to UI Phase)
+5. **App Health Score UI** - Visualization of +/- scoring (confusing in text)
+6. **API Service** - Create final report format for each provider (Web, IDE, CI/CD)
+7. **Pattern Library Expansion** - Target 2000+ patterns across all languages
 
 ---
 
