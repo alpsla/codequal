@@ -158,6 +158,75 @@ function isTemplateOrExampleContext(codeSnippet: string): boolean {
 }
 
 /**
+ * SESSION 26: Strip license headers from correctedCode
+ * These are repository-specific and shouldn't be included in fix suggestions
+ */
+function cleanLicenseHeaders(code: string | undefined): string {
+  if (!code) return '';
+  
+  let cleaned = code.trim();
+  
+  // Find license block: starts with /* and contains Copyright/License
+  const lines = cleaned.split('\n');
+  let licenseStartLine = -1;
+  let licenseEndLine = -1;
+  
+  for (let i = 0; i < Math.min(lines.length, 30); i++) {
+    const line = lines[i].trim();
+    
+    // Track where the comment block starts
+    if (line.startsWith('/*') && licenseStartLine === -1) {
+      licenseStartLine = i;
+    }
+    
+    // If we're in a comment block and find license-related content
+    if (licenseStartLine !== -1 && (line.includes('Copyright') || line.includes('Licensed') || line.includes('Apache License'))) {
+      // Find the end of this license block
+      for (let j = i; j < lines.length; j++) {
+        if (lines[j].includes('*/')) {
+          licenseEndLine = j;
+          break;
+        }
+      }
+      break;
+    }
+    
+    // If comment block ended without finding license content, reset
+    if (line.includes('*/') && licenseStartLine !== -1 && licenseEndLine === -1) {
+      const commentContent = lines.slice(licenseStartLine, i + 1).join(' ');
+      if (!commentContent.includes('Copyright') && !commentContent.includes('Licensed')) {
+        licenseStartLine = -1;
+      }
+    }
+  }
+  
+  if (licenseEndLine > 0 && licenseStartLine >= 0) {
+    cleaned = lines.slice(licenseEndLine + 1).join('\n').trim();
+  }
+  
+  // If code is still too long (full file), truncate
+  const codeLines = cleaned.split('\n');
+  if (codeLines.length > 50) {
+    const firstCodeLine = codeLines.findIndex((line, idx) => 
+      idx > 0 && 
+      !line.trim().startsWith('import ') && 
+      !line.trim().startsWith('package ') &&
+      !line.trim().startsWith('//') &&
+      line.trim().length > 0
+    );
+    
+    if (firstCodeLine > 5) {
+      const packageLine = codeLines.find(l => l.trim().startsWith('package ')) || '';
+      const importSummary = `// ... imports ...`;
+      const relevantCode = codeLines.slice(firstCodeLine, firstCodeLine + 30);
+      cleaned = [packageLine, importSummary, '', ...relevantCode, '\n// ... rest of file ...'].join('\n');
+    }
+  }
+  
+  return cleaned.trim();
+}
+
+/**
  * Validate that detected issue is not a false positive
  * Returns true if the issue appears valid, false if it's likely a false positive
  *
@@ -234,6 +303,12 @@ const AI_ERROR_PATTERNS: RegExp[] = [
   /I cannot (?:fix|modify|generate)/i,
   /I'm unable to/i,
   /\?$/m,  // Ends with a question mark (likely asking for clarification)
+  // BUG-LSP-001: Template-style descriptions instead of actual code
+  /should be:/i,  // Template pattern: "X should be: Y"
+  /change to:/i,   // Template pattern: "Change X to: Y"
+  /replace with:/i, // Template pattern: "Replace X with: Y"
+  /instead of:/i,  // Template pattern: "Use X instead of: Y"
+  /the fix is:/i,  // Template pattern: "The fix is: X"
 ];
 
 /**
@@ -448,9 +523,27 @@ async function generateAIFix(
   originalCode: string,
   issueMessage: string,
   filePath: string,
-  lineNumber: number
+  lineNumber: number,
+  maxRetries = 2  // BUG-LSP-001: Add retry support for template patterns
 ): Promise<string> {
-  const systemPrompt = `You are an expert code security fixer. Your task is to fix security and code quality issues.
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const isRetry = attempt > 1;
+    
+    // BUG-LSP-001: Stronger prompt on retry to prevent template responses
+    const neverAskConstraint = isRetry
+      ? `
+CRITICAL - YOU MUST NEVER:
+- Output "should be:", "change to:", "replace with:", or similar descriptions
+- Ask for more code or context
+- State that you cannot provide a fix
+- Give instructions instead of actual code
+
+YOU MUST ALWAYS:
+- Output ONLY the fixed code
+- Make reasonable assumptions if context is limited`
+      : '';
+    
+    const systemPrompt = `You are an expert code security fixer. Your task is to fix security and code quality issues.
 
 CRITICAL RULES:
 1. Return ONLY the fixed code snippet - NO explanations, NO markdown code blocks, NO "Here's the fixed code:" text
@@ -459,10 +552,11 @@ CRITICAL RULES:
 4. Preserve the exact structure and formatting of the original code
 5. Fix ONLY the specific issue mentioned - do NOT refactor or change unrelated code
 6. If the fix requires adding imports, include them at the appropriate location
+${neverAskConstraint}
 
 IMPORTANT: Your output will be verified. If braces are unbalanced, the fix will be rejected.`;
 
-  const userPrompt = `Fix this ${tool} security issue in ${filePath}:
+    const userPrompt = `Fix this ${tool} security issue in ${filePath}:
 
 Rule: ${ruleId}
 Issue: ${issueMessage}
@@ -471,20 +565,37 @@ Line: ${lineNumber}
 Original code to fix:
 ${originalCode}
 
-Return the fixed version of this EXACT code snippet. Ensure all braces are balanced.`;
+Return the fixed version of this EXACT code snippet. Ensure all braces are balanced.${isRetry ? ' Output ONLY code, no descriptions.' : ''}`;
 
-  const response = await client.chat({
-    systemPrompt,
-    userPrompt,
-    model: 'anthropic/claude-sonnet-4',
-    temperature: 0.2,
-    maxTokens: 2000,
-  });
+    const response = await client.chat({
+      systemPrompt,
+      userPrompt,
+      model: 'anthropic/claude-sonnet-4',
+      temperature: isRetry ? 0.1 : 0.2,  // Lower temperature on retry
+      maxTokens: 2000,
+    });
 
-  // Clean the response - handle markdown, explanations, and fix minor brace issues
-  const fixedCode = cleanAICodeResponse(response.content, originalCode);
+    // Clean the response - handle markdown, explanations, and fix minor brace issues
+    const fixedCode = cleanAICodeResponse(response.content, originalCode);
+    
+    // BUG-LSP-001: Check for template patterns
+    const templateValidation = validatePatternTemplate(fixedCode);
+    if (!templateValidation.isValid) {
+      console.warn(`[AIFix] Template pattern detected on attempt ${attempt}/${maxRetries}: ${templateValidation.reason}`);
+      if (attempt < maxRetries) {
+        console.log(`[AIFix] Retrying with stronger prompt...`);
+        continue;  // Retry with stronger prompt
+      }
+      // All retries failed - return empty to signal failure
+      console.error(`[AIFix] All ${maxRetries} attempts returned template patterns`);
+      return '';
+    }
 
-  return fixedCode;
+    return fixedCode;
+  }
+  
+  // Should not reach here
+  return '';
 }
 
 /**
@@ -1268,6 +1379,7 @@ export class ScanFixExecutor {
                   totalFixed++;
 
                   // Add to fixedButNeedsReview with correctedCode for IDE integration
+                  // SESSION 26: Clean license headers from pattern-based fixes
                   fixedButNeedsReview!.push({
                     file: issue.file,
                     line: issue.line,
@@ -1276,7 +1388,7 @@ export class ScanFixExecutor {
                     category: issue.classification.issueType,
                     aiModel: 'pattern-reuse',
                     confidence: pattern.confidence,
-                    correctedCode: patternFixedCode,  // Include fix code for LSP
+                    correctedCode: cleanLicenseHeaders(patternFixedCode),  // Clean license headers
                   });
 
                   results.push({
@@ -1300,6 +1412,22 @@ export class ScanFixExecutor {
           }
 
           // Only generate AI fix if pattern reuse failed
+          // COST OPTIMIZATION: Skip AI generation for BASIC tier - use patterns only
+          if (!isPro) {
+            console.log(`[ScanFix:BASIC] No pattern found for ${issue.rule} - adding to manual review (no AI call)`);
+            const guidance = getActionableGuidance(issue, 'No cached pattern available');
+            manualReviewRequired.push({
+              file: issue.file,
+              line: issue.line,
+              rule: issue.rule,
+              message: issue.message,
+              reason: 'No cached fix pattern available. AI generation skipped in BASIC tier.',
+              suggestedAction: guidance.suggestedAction,
+              category: guidance.category,
+            });
+            continue;  // Skip AI generation for BASIC tier
+          }
+          
           let initialFix = '';
           try {
             initialFix = await generateAIFix(
@@ -1335,6 +1463,7 @@ export class ScanFixExecutor {
             totalFixed++;
 
             // Add to fixedButNeedsReview with correctedCode for IDE integration
+            // SESSION 26: Clean license headers from AI-generated fixes
             fixedButNeedsReview!.push({
               file: issue.file,
               line: issue.line,
@@ -1343,7 +1472,7 @@ export class ScanFixExecutor {
               category: issue.classification.issueType,
               aiModel: 'claude-sonnet-4-20250514',
               confidence: result.patternResponse?.pattern?.confidence,
-              correctedCode: result.verifiedFix,  // Include fix code for LSP (verifiedFix is the code string)
+              correctedCode: cleanLicenseHeaders(result.verifiedFix),  // Clean license headers
             });
 
             results.push({
@@ -1458,6 +1587,7 @@ export class ScanFixExecutor {
                 patternHits++;
 
                 // Add to fixedButNeedsReview with correctedCode for IDE integration
+                // SESSION 26: Clean license headers from cached patterns
                 fixedButNeedsReview!.push({
                   file: issue.file,
                   line: issue.line,
@@ -1466,7 +1596,7 @@ export class ScanFixExecutor {
                   category: issue.classification.issueType,
                   aiModel: 'pattern-cache',
                   confidence: pattern.confidence,
-                  correctedCode: applyResult.fixedCode,
+                  correctedCode: cleanLicenseHeaders(applyResult.fixedCode),  // Clean license headers
                 });
 
                 // Count as fixed (for summary purposes - no actual file changes in BASIC tier)

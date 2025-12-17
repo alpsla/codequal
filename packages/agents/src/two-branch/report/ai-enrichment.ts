@@ -13,6 +13,7 @@
 
 import { EnrichedIssue } from './types';
 import { IssueGroup } from '../utils/issue-grouping';
+import { cleanAIContent, containsAIErrorPatterns } from './formatter-utils';
 
 /**
  * Get curated educational resources for specific rules
@@ -74,14 +75,19 @@ export async function enrichIssuesWithAI(
   costByAgent?: Record<string, number>;  // SESSION 21 FIX
   tokensByAgent?: Record<string, number>;  // SESSION 21 FIX
 }> {
-  // Skip AI calls if no model config resolver - use rule descriptions instead (BASIC tier)
+  // Skip AI calls if no model config resolver - use Supabase patterns + rule descriptions (BASIC tier)
   // SESSION 53 FIX: This saves $1.50+ per report by avoiding 61 AI API calls
+  // SESSION 57 ENHANCEMENT: Check Supabase patterns first (713 patterns available)
   if (!modelConfigResolver) {
-    console.log('[AI Enrichment] Using rule descriptions only (no AI calls) - BASIC tier mode');
-    console.log('[AI Enrichment] To enable AI enrichment, pass a modelConfigResolver (PRO tier)');
+    console.log('[AI Enrichment] Using Supabase patterns + rule descriptions (no AI calls) - BASIC tier mode');
 
-    // Use rule-descriptions as primary source instead of AI
+    // Import Supabase pattern store and rule descriptions
+    const { getSupabasePatternStore } = await import('../../fix-agent/fix-pattern-registry/supabase-pattern-store');
     const { getRuleDescription } = await import('../config/rule-descriptions');
+
+    const patternStore = getSupabasePatternStore();
+    let patternsUsed = 0;
+    let descriptionsUsed = 0;
 
     for (const group of groups) {
       const groupIssues = issues.filter(i =>
@@ -90,23 +96,103 @@ export async function enrichIssuesWithAI(
 
       if (groupIssues.length === 0) continue;
 
-      const ruleDesc = getRuleDescription(group.rule, group.tool);
+      // STEP 1: Try to find a Supabase pattern first (richer fix info)
+      let fixFromPattern: { fix: string; correctedCode: string; explanation: string } | null = null;
 
-      // Apply rule description to ALL issues in this group
+      try {
+        const pattern = await patternStore.lookupPattern(group.rule, group.tool, true);
+
+        if (pattern) {
+          // Extract fix from pattern - prefer fixTemplate, fall back to examples
+          const fixTemplate = pattern.fixTemplate?.template || '';
+          const exampleAfter = pattern.examples?.find(ex => ex.after)?.after || '';
+          const correctedCode = fixTemplate || exampleAfter;
+
+          // VALIDATION: Check if pattern data is usable (not corrupted AI responses)
+          // Corrupted patterns contain phrases like "Could you please provide", "I need to see", etc.
+          // Also includes template-style descriptions like "should be:", "change to:", etc.
+          const corruptedPatterns = [
+            'could you please provide',
+            'i need to see',
+            'please provide the',
+            'can you share',
+            'i would need',
+            'the complete code',
+            'the actual code',
+            'should be:',           // Template pattern: "X should be: Y"
+            'change to:',           // Template pattern: "Change X to: Y"
+            'replace with:',        // Template pattern: "Replace X with: Y"
+            'instead of:',          // Template pattern: "Use X instead of: Y"
+            'the fix is:',          // Template pattern: "The fix is: X"
+            'code snippet',         // AI asking for context
+            'you haven\'t provided',// AI asking for context
+            'i cannot',             // AI unable to complete
+            'without seeing',       // AI asking for context
+          ];
+          const isCorrupted = corruptedPatterns.some(phrase =>
+            correctedCode.toLowerCase().includes(phrase) ||
+            (pattern.description || '').toLowerCase().includes(phrase)
+          );
+
+          if (correctedCode && !isCorrupted && correctedCode.length > 10) {
+            // SESSION 26: Clean license headers from Supabase patterns
+            const cleanedPatternCode = cleanAIContent(correctedCode);
+            fixFromPattern = {
+              fix: pattern.description || `Apply ${pattern.name} fix pattern`,
+              correctedCode: cleanedPatternCode,
+              explanation: pattern.description || `Fix for ${group.rule} using verified pattern`
+            };
+            patternsUsed++;
+            console.log(`[AI Enrichment] ✅ Pattern found for ${group.rule} (confidence: ${pattern.confidence}%)`);
+          } else if (isCorrupted) {
+            console.log(`[AI Enrichment] ⚠️ Skipping corrupted pattern for ${group.rule} - contains incomplete AI response`);
+          }
+        }
+      } catch (err) {
+        // Pattern lookup failed silently - will fall back to rule descriptions
+        console.log(`[AI Enrichment] Pattern lookup skipped for ${group.rule}: ${(err as Error).message}`);
+      }
+
+      // STEP 2: Fall back to rule descriptions if no pattern
+      if (!fixFromPattern) {
+        const ruleDesc = getRuleDescription(group.rule, group.tool);
+        fixFromPattern = {
+          fix: ruleDesc.fix || `Review and address this ${ruleDesc.category.toLowerCase()} issue. ${ruleDesc.why}`,
+          correctedCode: '',
+          explanation: ruleDesc.description
+        };
+        descriptionsUsed++;
+      }
+
+      // Apply fix to ALL issues in this group
       // IMPORTANT: Preserve existing correctedCode from ScanFixExecutor (BASIC tier recommendations)
+      // BUG-LSP-001 FIX: Clean correctedCode to remove template patterns
       for (const issue of groupIssues) {
         const existingCorrectedCode = issue.fixSuggestion?.correctedCode;
+        const rawCorrectedCode = existingCorrectedCode || fixFromPattern.correctedCode;
+        // Clean template patterns from correctedCode (returns empty string if pattern detected)
+        const cleanedCorrectedCode = cleanAIContent(rawCorrectedCode);
         issue.fixSuggestion = {
-          fix: ruleDesc.fix || `Review and address this ${ruleDesc.category.toLowerCase()} issue. ${ruleDesc.why}`,
-          correctedCode: existingCorrectedCode || '',  // Preserve existing code from fix executor
-          explanation: ruleDesc.description,
+          fix: fixFromPattern.fix,
+          correctedCode: cleanedCorrectedCode,
+          explanation: fixFromPattern.explanation,
           bestPractices: []
         };
       }
     }
 
-    console.log(`[AI Enrichment] ✅ Applied rule descriptions to ${groups.length} groups (0 AI calls, $0.00 cost)`);
-    return { enrichedIssues: issues, modelsByAgent: {}, costByAgent: {}, tokensByAgent: {} };
+    console.log(`[AI Enrichment] ✅ Enriched ${groups.length} groups: ${patternsUsed} from Supabase patterns, ${descriptionsUsed} from rule descriptions (0 AI calls, $0.00 cost)`);
+
+    // Return enrichment stats for report metadata
+    return {
+      enrichedIssues: issues,
+      modelsByAgent: {
+        'pattern_reuse': `${patternsUsed} patterns from Supabase (713 available)`,
+        'rule_descriptions': `${descriptionsUsed} from static descriptions`
+      },
+      costByAgent: { 'pattern_lookup': 0, 'rule_descriptions': 0 },
+      tokensByAgent: { 'pattern_lookup': 0, 'rule_descriptions': 0 }
+    };
   }
 
   console.log(`[AI Enrichment] Starting enrichment for ${groups.length} groups...`);
@@ -185,10 +271,12 @@ export async function enrichIssuesWithAI(
         }
 
         // Apply fix to ALL issues in this group
+        // BUG-LSP-001 FIX: Clean correctedCode to remove template patterns
+        const cleanedAICorrectedCode = cleanAIContent(fixSuggestion.correctedCode);
         for (const issue of groupIssues) {
           issue.fixSuggestion = {
             fix: fixSuggestion.fix,
-            correctedCode: fixSuggestion.correctedCode,
+            correctedCode: cleanedAICorrectedCode,
             explanation: fixSuggestion.explanation || fixSuggestion.fix,  // Ensure explanation is always present
             // BUG #89 FIX: Copy issueDescription from AI response
             issueDescription: fixSuggestion.issueDescription,

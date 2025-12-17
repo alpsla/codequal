@@ -315,6 +315,119 @@ export class V9GroupedReportFormatter {
   private readonly SHOW_TOOL_PERFORMANCE: boolean = true;   // BUG #8 FIX: Enable tool performance tracking
   private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = true; // BUG #10 FIX: Enable cost analysis
 
+  /**
+   * Template patterns that indicate AI error responses (not actual code)
+   * These should be stripped from fix examples to avoid confusing users
+   */
+  private static readonly TEMPLATE_PATTERNS = [
+    /should be:/i,
+    /change to:/i,
+    /replace with:/i,
+    /instead of:/i,
+    /the fix is:/i,
+    /could you (?:please )?provide/i,
+    /can you (?:please )?(?:provide|share|show)/i,
+    /I (?:need|would need|require)/i,
+    /please (?:provide|share|show)/i,
+    /you haven't provided/i,
+    /I don't have/i,
+    /without (?:seeing|the actual)/i,
+    /I cannot/i,
+    /the actual code/i,
+    /the complete code/i,
+    /code snippet/i,
+  ];
+
+  /**
+   * Clean template text from corrected code
+   * Returns empty string if the code contains AI error patterns
+   */
+  private cleanCorrectedCode(code: string | undefined): string {
+    if (!code) return '';
+    
+    // Check if code contains any template patterns
+    for (const pattern of V9GroupedReportFormatter.TEMPLATE_PATTERNS) {
+      if (pattern.test(code)) {
+        console.log(`[V9Formatter] Rejecting template-style code: "${code.substring(0, 50)}..."`);
+        return '';  // Return empty to indicate no valid fix
+      }
+    }
+    
+    // SESSION 26: Strip license headers - users have their own
+    // This handles Apache, MIT, GPL, and other common licenses
+    let cleaned = code.trim();
+    
+    // Remove license block comments at the start (/* ... */) - allow leading whitespace
+    const licenseBlockPattern = /^\s*\/\*[\s\S]*?(Copyright|License|Apache|MIT|GPL|BSD|Mozilla|Creative Commons)[\s\S]*?\*\/\s*/i;
+    if (licenseBlockPattern.test(cleaned)) {
+      cleaned = cleaned.replace(licenseBlockPattern, '').trim();
+    }
+    
+    // Also try matching license headers line by line (for multi-line /* */ patterns)
+    const lines = cleaned.split('\n');
+    let licenseStartLine = -1;
+    let licenseEndLine = -1;
+    
+    // Find license block: starts with /* and contains Copyright/License within first 30 lines
+    for (let i = 0; i < Math.min(lines.length, 30); i++) {
+      const line = lines[i].trim();
+      
+      // Track where the comment block starts
+      if (line.startsWith('/*') && licenseStartLine === -1) {
+        licenseStartLine = i;
+      }
+      
+      // If we're in a comment block and find license-related content
+      if (licenseStartLine !== -1 && (line.includes('Copyright') || line.includes('Licensed') || line.includes('Apache License'))) {
+        // Find the end of this license block
+        for (let j = i; j < lines.length; j++) {
+          if (lines[j].includes('*/')) {
+            licenseEndLine = j;
+            break;
+          }
+        }
+        break;
+      }
+      
+      // If comment block ended without finding license content, reset
+      if (line.includes('*/') && licenseStartLine !== -1 && licenseEndLine === -1) {
+        // Check if this comment had no license content
+        const commentContent = lines.slice(licenseStartLine, i + 1).join(' ');
+        if (!commentContent.includes('Copyright') && !commentContent.includes('Licensed')) {
+          licenseStartLine = -1; // Reset, this wasn't a license block
+        }
+      }
+    }
+    
+    if (licenseEndLine > 0 && licenseStartLine >= 0) {
+      console.log(`[V9Formatter] Stripping license header from lines ${licenseStartLine}-${licenseEndLine}`);
+      cleaned = lines.slice(licenseEndLine + 1).join('\n').trim();
+    }
+    
+    // If remaining code is too long (likely full file), truncate to relevant portion
+    const codeLines = cleaned.split('\n');
+    if (codeLines.length > 50) {
+      // Find the first non-import, non-package line (likely the actual code)
+      const firstCodeLine = codeLines.findIndex((line, idx) => 
+        idx > 0 && 
+        !line.trim().startsWith('import ') && 
+        !line.trim().startsWith('package ') &&
+        !line.trim().startsWith('//') &&
+        line.trim().length > 0
+      );
+      
+      if (firstCodeLine > 5) {
+        // Keep package/imports summary + first 30 lines of actual code
+        const packageLine = codeLines.find(l => l.trim().startsWith('package ')) || '';
+        const importSummary = `// ... imports ...`;
+        const relevantCode = codeLines.slice(firstCodeLine, firstCodeLine + 30);
+        cleaned = [packageLine, importSummary, '', ...relevantCode, '\n// ... rest of file ...'].join('\n');
+      }
+    }
+    
+    return cleaned.trim();
+  }
+
   constructor(
     modelConfigResolver?: any,
     language?: string,
@@ -402,26 +515,26 @@ export class V9GroupedReportFormatter {
         }
 
         return uploadResult;
-      } catch (error: any) {
-        const errorMessage = error?.message || String(error);
-        if (errorMessage.includes('<!DOCTYPE') || errorMessage.includes('<html')) {
-          console.error(`[Supabase Upload] ❌ HTML response in catch (likely auth/permission issue):`, errorMessage.substring(0, 200));
-          return { data: null, error };
-        }
+      } catch (networkError: any) {
+        // Handle network-level errors (EPIPE, ECONNRESET, etc.)
+        const errorCode = networkError?.cause?.code || networkError?.code;
+        const isNetworkError = ['EPIPE', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND'].includes(errorCode);
 
-        if (attempt < maxRetries) {
+        if (isNetworkError && attempt < maxRetries) {
           const delay = retryDelay * Math.pow(2, attempt - 1);
-          console.warn(`[Supabase Upload] ⚠️  Upload exception (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+          console.warn(`[Supabase Upload] ⚠️  Network error (${errorCode}) on attempt ${attempt}/${maxRetries}, retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
-          lastError = error;
+          lastError = networkError;
           continue;
         }
 
-        return { data: null, error };
+        // If not retryable or max retries reached, throw
+        throw networkError;
       }
     }
 
-    return { data: null, error: lastError };
+    // All retries exhausted
+    return { data: null, error: lastError || new Error('Upload failed after all retries') };
   }
 
   private async uploadAttachmentsToSupabase(
@@ -2406,13 +2519,15 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
 
     // Enhancement #1: Auto-fix mention in recommendations (safe auto-apply subset)
-    const autoFixableIssues = issues.filter(i =>
+    // SESSION 26 FIX: Exclude RESOLVED issues - they're already fixed!
+    const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+    const autoFixableIssues = activeIssues.filter(i =>
       this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
-    const autoFixPercent = issues.length > 0 ? Math.round((autoFixableIssues.length / issues.length) * 100) : 0;
+    const autoFixPercent = activeIssues.length > 0 ? Math.round((autoFixableIssues.length / activeIssues.length) * 100) : 0;
 
     if (autoFixableIssues.length > 0) {
-      content += `🚀 **Quick Win**: Use the attached manifest file to automatically fix ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) - saving significant development time!\n\n`;
+      content += `🚀 **Quick Win**: ${autoFixableIssues.length.toLocaleString()} active issues (${autoFixPercent}%) have auto-fix available via IDE integration (see **How to Apply Fixes** section for LSP, SARIF, or GitLab options).\n\n`;
     }
 
     if (blockingCount > 0) {
@@ -4004,20 +4119,37 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       };
     }
 
+    // SESSION 26: Check rule-descriptions.ts before falling back to fully generic text
+    // This provides better specific guidance for known rules
+    try {
+      const { getRuleDescription, RULE_DESCRIPTIONS } = require('../config/rule-descriptions');
+      const ruleDesc = RULE_DESCRIPTIONS[rule];
+      if (ruleDesc) {
+        return {
+          what: ruleDesc.description || `This issue was detected by ${tool}. Rule: ${rule}`,
+          why: ruleDesc.why || 'This pattern can impact code quality or maintainability.',
+          causes: ruleDesc.causes || ['Common code pattern that may need attention'],
+          impact: severity === 'critical' || severity === 'high'
+            ? 'Should be reviewed and addressed to maintain code quality.'
+            : 'May contribute to technical debt. Consider addressing during regular maintenance.'
+        };
+      }
+    } catch (e) {
+      // Fall through to generic if rule-descriptions not available
+    }
+
     // Generic description based on tool and severity (last resort)
     const genericWhat = `This issue was detected by ${tool} as a ${severity} severity problem. Rule: ${rule}`;
     const genericWhy = severity === 'critical' || severity === 'high'
-      ? 'This pattern can lead to security vulnerabilities, bugs, or system failures.'
-      : 'This pattern can lead to technical debt, maintenance issues, or code quality degradation.';
+      ? 'This pattern can lead to bugs or system issues.'
+      : 'This pattern can lead to technical debt or maintenance issues.';
     const genericCauses = [
-      `Code patterns that violate ${tool} best practices`,
-      'Legacy code that needs refactoring',
-      'Quick implementation without following standards',
-      'Lack of code review or static analysis integration'
+      `Code pattern flagged by ${tool}`,
+      'May need refactoring or review'
     ];
     const genericImpact = severity === 'critical' || severity === 'high'
-      ? 'Could lead to security breaches, data loss, system instability, or production outages. Requires immediate attention.'
-      : 'May reduce code quality, increase maintenance costs, and accumulate technical debt over time.';
+      ? 'Should be reviewed and addressed before deployment.'
+      : 'Consider addressing to improve code quality.';
 
     return {
       what: genericWhat,
@@ -4499,6 +4631,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
               section += cleanCorrectedCode;
               section += '\n```\n\n';
             }
+          } else {
+            // BUG-LSP-001: Fix was rejected (template pattern detected) - show manual review message
+            section += `> ⚠️ **Manual Review Required**: An automated fix could not be generated for this issue. `;
+            section += `Please review the code at the locations listed below and apply the fix manually based on the guidance above.\n\n`;
           }
         }
       } else {
@@ -4910,17 +5046,30 @@ mvn spotless:check  # Verify (use in CI)
       }
 
       // Standard Tier 1/2 fix
+      const cleanedCode = this.cleanCorrectedCode(fix?.correctedCode);
+      
+      // BUG-LSP-001: If fix was rejected (empty after cleaning), mark as manual review
+      const requiresManualReview = !cleanedCode && fix?.correctedCode;
+      
       return {
-        type: 'template',
+        type: requiresManualReview ? 'manual-review' : 'template',
         fixTier: classification.fixTier,
-        fixerTool: this.getFixerToolForRule(group.tool, classification.issueType),
-        fixerCommand: this.getFixerCommand(group.tool, classification.issueType),
-        confidence: classification.fixTier === 1 ? 95 : 85,
+        fixerTool: requiresManualReview ? 'manual' : this.getFixerToolForRule(group.tool, classification.issueType),
+        fixerCommand: requiresManualReview ? undefined : this.getFixerCommand(group.tool, classification.issueType),
+        confidence: requiresManualReview ? 0 : (classification.fixTier === 1 ? 95 : 85),
         example: {
           before: representative.snippet || '',
-          after: fix?.correctedCode || ''
+          after: cleanedCode
         },
-        instructions: fix?.fix || 'Apply the suggested fix'
+        instructions: fix?.fix || 'Apply the suggested fix',
+        // BUG-LSP-001: Add manual review info when fix was rejected
+        manualReview: requiresManualReview ? {
+          reason: 'FIX_GENERATION_FAILED',
+          explanation: 'An automated fix could not be generated for this issue.',
+          userAction: 'Please review the code and apply the fix manually.',
+          aiCanHelp: true,
+          riskLevel: group.severity === 'critical' ? 'high' : (group.severity === 'high' ? 'medium' : 'low')
+        } : undefined
       };
     }
 
@@ -4943,17 +5092,31 @@ mvn spotless:check  # Verify (use in CI)
     const aiPrompt = getOptimizedPrompt(issueContext);
 
     // All Tier 3 issues get AI-generated fixes with dynamic prompts
+    const cleanedTier3Code = this.cleanCorrectedCode(fix?.correctedCode);
+    
+    // BUG-LSP-001: If fix was rejected (empty after cleaning), mark as manual review
+    const requiresManualReview = !cleanedTier3Code && fix?.correctedCode;
+    
     return {
-      type: 'ai-generated',
+      type: requiresManualReview ? 'manual-review' : 'ai-generated',
       fixTier: 3,
-      fixerTool: 'ai',
-      confidence: aiPrompt.temperature <= 0.1 ? 90 : 75,  // Lower temp = higher confidence
+      fixerTool: requiresManualReview ? 'manual' : 'ai',
+      confidence: requiresManualReview ? 0 : (aiPrompt.temperature <= 0.1 ? 90 : 75),
       example: {
         before: representative.snippet || '',
-        after: fix?.correctedCode || ''
+        after: cleanedTier3Code
       },
       instructions: fix?.fix || `AI-generated fix for ${group.rule}`,
-      aiPrompt: {
+      // BUG-LSP-001: Add manual review info when fix was rejected
+      manualReview: requiresManualReview ? {
+        reason: 'FIX_GENERATION_FAILED',
+        explanation: 'An automated fix could not be generated for this issue due to insufficient context.',
+        userAction: 'Please review the code at the specified locations and apply the fix manually based on the instructions above.',
+        aiCanHelp: true,
+        aiPromptHint: `Fix ${group.rule} issue: ${representative.message || group.rule}`,
+        riskLevel: group.severity === 'critical' ? 'high' : (group.severity === 'high' ? 'medium' : 'low')
+      } : undefined,
+      aiPrompt: requiresManualReview ? undefined : {
         systemPrompt: aiPrompt.systemPrompt,
         userPromptTemplate: aiPrompt.userPromptTemplate,
         outputFormat: aiPrompt.outputFormat,
@@ -6669,21 +6832,28 @@ Continue following best practices and consider integrating static analysis into 
 
     // Add Tool Performance if available (optional)
     // FIX 3 (2025-12-07): Filter out tools with 0s duration (same as Agent Performance)
+    // FIX 4 (2025-12-15): Filter out tools with 0 issues - only show tools that found problems
+    // SESSION 26: Show total tools ran + note about clean tools
     if (this.SHOW_TOOL_PERFORMANCE && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-      // Filter to only show tools that actually ran (duration > 0)
-      const activeTools = metadata.toolPerformance.filter((tool: any) => {
-        const duration = tool.duration || 0;
-        return duration > 0; // Only include tools that actually ran
+      // Count tools that ran vs tools that found issues
+      const allTools = metadata.toolPerformance.filter((tool: any) => (tool.duration || 0) > 0);
+      const activeTools = allTools.filter((tool: any) => {
+        const issues = tool.issuesFound || tool.issues || tool.issueCount || 0;
+        return issues > 0;
       });
+      const cleanTools = allTools.length - activeTools.length;
 
-      if (activeTools.length > 0) {
-        content += `\n### Tool Performance
-| Tool | Files Scanned | Issues Found | Duration |
-|------|---------------|--------------|----------|
+      if (activeTools.length > 0 || allTools.length > 0) {
+        content += `\n### Tool Performance\n`;
+        if (cleanTools > 0) {
+          content += `*${allTools.length} tools executed, ${cleanTools} returned clean (0 issues)*\n\n`;
+        }
+        content += `| Tool | Issues Found | Duration |
+|------|--------------|----------|
 `;
         activeTools.forEach((tool: any) => {
           const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
-          content += `| ${tool.tool || tool.name} | ${tool.filesScanned || tool.files || 'N/A'} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
+          content += `| ${tool.tool || tool.name} | ${tool.issuesFound || tool.issues || tool.issueCount || 0} | ${duration} |\n`;
         });
       }
     }
@@ -6778,13 +6948,11 @@ Continue following best practices and consider integrating static analysis into 
     }
 
     // Add Tool Efficiency Analysis
+    // FIX 4 (2025-12-15): Only show tools that found issues
     if (metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-      content += `\n### Tool Efficiency Analysis
-`;
-
       const toolEfficiency = metadata.toolPerformance
         .map((tool: any) => {
-          const issues = tool.issuesFound || tool.issues || 0;
+          const issues = tool.issuesFound || tool.issues || tool.issueCount || 0;
           const time = tool.duration || 1;
           const issuesPerSec = (issues / time) * 1000;
           return {
@@ -6795,16 +6963,23 @@ Continue following best practices and consider integrating static analysis into 
             efficiency: issuesPerSec
           };
         })
+        .filter((tool: any) => tool.issues > 0) // Only include tools that found issues
         .sort((a: any, b: any) => b.efficiency - a.efficiency);
 
-      content += `\n**Tool Performance Ranking:**\n\n`;
-      toolEfficiency.forEach((tool: any, idx: number) => {
-        const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-        const speed = tool.issuesPerSec > 10 ? '⚡ Fast' :
-          tool.issuesPerSec > 1 ? '✅ Good' :
-            tool.issuesPerSec > 0.1 ? '⚠️ Slow' : '🐌 Very Slow';
-        content += `${rank} **${tool.name}**: ${tool.issues} issues in ${(tool.time / 1000).toFixed(1)}s (${tool.issuesPerSec.toFixed(2)}/s) ${speed}\n`;
-      });
+      // Only show section if there are tools with issues
+      if (toolEfficiency.length > 0) {
+        content += `\n### Tool Efficiency Analysis
+`;
+
+        content += `\n**Tool Performance Ranking:**\n\n`;
+        toolEfficiency.forEach((tool: any, idx: number) => {
+          const rank = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+          const speed = tool.issuesPerSec > 10 ? '⚡ Fast' :
+            tool.issuesPerSec > 1 ? '✅ Good' :
+              tool.issuesPerSec > 0.1 ? '⚠️ Slow' : '🐌 Very Slow';
+          content += `${rank} **${tool.name}**: ${tool.issues} issues in ${(tool.time / 1000).toFixed(1)}s (${tool.issuesPerSec.toFixed(2)}/s) ${speed}\n`;
+        });
+      }
 
       // BUG FIX #18: Removed "Performance Concerns" section
       // Can't compare tools with different purposes (CheckStyle finds 498K style issues, Semgrep finds 11 security issues)

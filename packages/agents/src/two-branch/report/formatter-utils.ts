@@ -55,7 +55,40 @@ export function formatDuration(durationMs?: number): string {
 }
 
 /**
+ * Template patterns that indicate AI error responses (not actual code)
+ * These patterns are checked case-insensitively
+ */
+const AI_ERROR_PATTERNS = [
+  /should be:/i,
+  /change to:/i,
+  /replace with:/i,
+  /instead of:/i,
+  /the fix is:/i,
+  /could you (?:please )?provide/i,
+  /can you (?:please )?(?:provide|share|show)/i,
+  /I (?:need|would need|require)/i,
+  /please (?:provide|share|show)/i,
+  /you haven't provided/i,
+  /I don't have/i,
+  /without (?:seeing|the actual)/i,
+  /I cannot/i,
+  /the actual code/i,
+  /the complete code/i,
+  /code snippet.*provided/i,
+  /wasn't provided/i,
+];
+
+/**
+ * Check if content contains AI error patterns
+ */
+export function containsAIErrorPatterns(content: string): boolean {
+  if (!content) return false;
+  return AI_ERROR_PATTERNS.some(pattern => pattern.test(content));
+}
+
+/**
  * Clean AI-generated content by removing think tags, bug references, etc.
+ * Also rejects content that contains AI error patterns (returns empty string)
  */
 export function cleanAIContent(content: string | string[] | any): string {
   if (!content) return '';
@@ -69,6 +102,13 @@ export function cleanAIContent(content: string | string[] | any): string {
     cleaned = JSON.stringify(content);
   } else {
     cleaned = content;
+  }
+  
+  // BUG-LSP-001 FIX: Check for AI error patterns FIRST
+  // If content contains template-style text like "should be:", reject it entirely
+  if (containsAIErrorPatterns(cleaned)) {
+    console.log(`[cleanAIContent] Rejecting AI error response: "${cleaned.substring(0, 60)}..."`);
+    return '';  // Return empty to indicate no valid content
   }
   
   // Remove <think> blocks (with or without closing tags)
@@ -94,6 +134,78 @@ export function cleanAIContent(content: string | string[] | any): string {
   
   // Remove empty lines caused by removals (but keep intentional spacing)
   cleaned = cleaned.replace(/\n\n\n+/g, '\n\n');
+  
+  // SESSION 26: Strip license headers - users have their own
+  cleaned = stripLicenseHeaders(cleaned);
+  
+  return cleaned.trim();
+}
+
+/**
+ * SESSION 26: Strip license headers from code content
+ * These are repository-specific and shouldn't be included in fix suggestions
+ */
+function stripLicenseHeaders(code: string): string {
+  if (!code) return '';
+  
+  let cleaned = code.trim();
+  
+  // Find license block: starts with /* and contains Copyright/License within first 30 lines
+  const lines = cleaned.split('\n');
+  let licenseStartLine = -1;
+  let licenseEndLine = -1;
+  
+  for (let i = 0; i < Math.min(lines.length, 30); i++) {
+    const line = lines[i].trim();
+    
+    // Track where the comment block starts
+    if (line.startsWith('/*') && licenseStartLine === -1) {
+      licenseStartLine = i;
+    }
+    
+    // If we're in a comment block and find license-related content
+    if (licenseStartLine !== -1 && (line.includes('Copyright') || line.includes('Licensed') || line.includes('Apache License'))) {
+      // Find the end of this license block
+      for (let j = i; j < lines.length; j++) {
+        if (lines[j].includes('*/')) {
+          licenseEndLine = j;
+          break;
+        }
+      }
+      break;
+    }
+    
+    // If comment block ended without finding license content, reset
+    if (line.includes('*/') && licenseStartLine !== -1 && licenseEndLine === -1) {
+      const commentContent = lines.slice(licenseStartLine, i + 1).join(' ');
+      if (!commentContent.includes('Copyright') && !commentContent.includes('Licensed')) {
+        licenseStartLine = -1;
+      }
+    }
+  }
+  
+  if (licenseEndLine > 0 && licenseStartLine >= 0) {
+    cleaned = lines.slice(licenseEndLine + 1).join('\n').trim();
+  }
+  
+  // If code is still too long (full file), truncate to relevant portion
+  const codeLines = cleaned.split('\n');
+  if (codeLines.length > 50) {
+    const firstCodeLine = codeLines.findIndex((line, idx) => 
+      idx > 0 && 
+      !line.trim().startsWith('import ') && 
+      !line.trim().startsWith('package ') &&
+      !line.trim().startsWith('//') &&
+      line.trim().length > 0
+    );
+    
+    if (firstCodeLine > 5) {
+      const packageLine = codeLines.find(l => l.trim().startsWith('package ')) || '';
+      const importSummary = `// ... imports ...`;
+      const relevantCode = codeLines.slice(firstCodeLine, firstCodeLine + 30);
+      cleaned = [packageLine, importSummary, '', ...relevantCode, '\n// ... rest of file ...'].join('\n');
+    }
+  }
   
   return cleaned.trim();
 }
