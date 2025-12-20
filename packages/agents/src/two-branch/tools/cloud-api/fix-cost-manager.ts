@@ -116,13 +116,25 @@ export interface RoutingDecision {
 // DEFAULT CONFIGURATIONS
 // ============================================================
 
-// Estimated costs (will be updated with real data)
-const ESTIMATED_COSTS: Record<FixSource, number> = {
-  corgea: 10,           // 10 cents per fix (Corgea API)
-  ai_fixer: 2,          // 2 cents per fix (OpenRouter average)
+// Fallback costs (used when Supabase data unavailable)
+// Real costs are fetched from Supabase: fix_cost_comparison view
+const FALLBACK_COSTS: Record<FixSource, number> = {
+  corgea: 10,           // 10 cents per fix (fallback estimate)
+  ai_fixer: 2,          // 2 cents per fix (fallback estimate)
   pattern_registry: 0,  // Free (local patterns)
   native: 0             // Free (eslint --fix, etc.)
 };
+
+// Cost comparison result from Supabase
+export interface SupabaseCostComparison {
+  corgeaPlan: string;
+  corgeaMonthlyCents: number;
+  corgeaFixesUsed: number;
+  corgeaCostPerFixCents: number;
+  aiFixerCostPerFixCents: number;
+  recommendedSource: FixSource;
+  costDifferenceCents: number;
+}
 
 // Confidence scores by source
 const SOURCE_CONFIDENCE: Record<FixSource, number> = {
@@ -166,7 +178,7 @@ export class FixCostManager {
   private lastMonthReset = new Date();
 
   // Rolling averages (updated with real data)
-  private avgCosts: Record<FixSource, number> = { ...ESTIMATED_COSTS };
+  private avgCosts: Record<FixSource, number> = { ...FALLBACK_COSTS };
   private successRates: Record<FixSource, number> = {
     corgea: 0.9,
     ai_fixer: 0.75,
@@ -185,6 +197,146 @@ export class FixCostManager {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (url && key) {
       this.supabase = createClient(url, key);
+    }
+  }
+
+  // ============================================================
+  // SUPABASE COST QUERIES
+  // ============================================================
+
+  /**
+   * Fetch real-time cost comparison from Supabase
+   * Uses the fix_cost_comparison view which compares:
+   * - Corgea effective cost (subscription / fixes used)
+   * - AI-fixer avg cost (from ai_fixer_research table)
+   */
+  async getSupabaseCostComparison(): Promise<SupabaseCostComparison | null> {
+    if (!this.supabase) return null;
+
+    try {
+      const { data, error } = await this.supabase
+        .from('fix_cost_comparison')
+        .select('*')
+        .single();
+
+      if (error || !data) {
+        console.warn('[FixCostManager] Failed to fetch cost comparison:', error);
+        return null;
+      }
+
+      return {
+        corgeaPlan: data.corgea_plan,
+        corgeaMonthlyCents: data.corgea_monthly_cents,
+        corgeaFixesUsed: data.corgea_fixes_used,
+        corgeaCostPerFixCents: parseFloat(data.corgea_cost_per_fix_cents) || 0,
+        aiFixerCostPerFixCents: parseFloat(data.ai_fixer_cost_per_fix_cents) || 2,
+        recommendedSource: data.recommended_source as FixSource,
+        costDifferenceCents: parseFloat(data.cost_difference_cents) || 0
+      };
+    } catch (error) {
+      console.warn('[FixCostManager] Error querying cost comparison:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Log Corgea usage to update effective cost calculation
+   */
+  async logCorgeaUsage(params: {
+    userId?: string;
+    organizationId?: string;
+    repositoryUrl?: string;
+    prNumber?: number;
+    issueCount: number;
+    fixesGenerated: number;
+    fixesApplied?: number;
+    responseTimeMs?: number;
+    fromCache?: boolean;
+    success?: boolean;
+    errorMessage?: string;
+    rateLimited?: boolean;
+  }): Promise<void> {
+    if (!this.supabase) return;
+
+    try {
+      // Get current effective cost for estimation
+      const comparison = await this.getSupabaseCostComparison();
+      const estimatedCostCents = comparison
+        ? params.fixesGenerated * comparison.corgeaCostPerFixCents
+        : params.fixesGenerated * FALLBACK_COSTS.corgea;
+
+      await this.supabase.from('corgea_usage_log').insert({
+        user_id: params.userId,
+        organization_id: params.organizationId,
+        repository_url: params.repositoryUrl,
+        pr_number: params.prNumber,
+        issue_count: params.issueCount,
+        fixes_generated: params.fixesGenerated,
+        fixes_applied: params.fixesApplied || 0,
+        estimated_cost_cents: estimatedCostCents,
+        response_time_ms: params.responseTimeMs,
+        from_cache: params.fromCache || false,
+        success: params.success ?? true,
+        error_message: params.errorMessage,
+        rate_limited: params.rateLimited || false
+      });
+
+      // Trigger in Supabase will auto-update corgea_subscription effective cost
+    } catch (error) {
+      console.warn('[FixCostManager] Failed to log Corgea usage:', error);
+    }
+  }
+
+  /**
+   * Get which source is currently cheaper based on Supabase data
+   * Falls back to hardcoded estimates if Supabase unavailable
+   */
+  async getCheaperSource(): Promise<{
+    source: FixSource;
+    costCents: number;
+    reason: string;
+  }> {
+    const comparison = await this.getSupabaseCostComparison();
+
+    if (comparison) {
+      // Use real data from Supabase
+      if (comparison.corgeaCostPerFixCents <= 0) {
+        // No Corgea usage yet - use AI-fixer
+        return {
+          source: 'ai_fixer',
+          costCents: comparison.aiFixerCostPerFixCents,
+          reason: 'No Corgea usage data yet, using AI-fixer'
+        };
+      }
+
+      if (comparison.corgeaCostPerFixCents < comparison.aiFixerCostPerFixCents) {
+        return {
+          source: 'corgea',
+          costCents: comparison.corgeaCostPerFixCents,
+          reason: `Corgea cheaper: ${comparison.corgeaCostPerFixCents.toFixed(1)}¢ vs AI-fixer ${comparison.aiFixerCostPerFixCents.toFixed(1)}¢`
+        };
+      } else {
+        return {
+          source: 'ai_fixer',
+          costCents: comparison.aiFixerCostPerFixCents,
+          reason: `AI-fixer cheaper: ${comparison.aiFixerCostPerFixCents.toFixed(1)}¢ vs Corgea ${comparison.corgeaCostPerFixCents.toFixed(1)}¢`
+        };
+      }
+    }
+
+    // Fallback to estimates
+    if (FALLBACK_COSTS.ai_fixer < FALLBACK_COSTS.corgea) {
+      return {
+        source: 'ai_fixer',
+        costCents: FALLBACK_COSTS.ai_fixer,
+        reason: 'Using fallback estimates - AI-fixer cheaper'
+      };
+    } else {
+      return {
+        source: 'corgea',
+        costCents: FALLBACK_COSTS.corgea,
+        reason: 'Using fallback estimates - Corgea cheaper'
+      };
     }
   }
 
@@ -343,29 +495,18 @@ export class FixCostManager {
       };
     }
 
-    // Cost-based decision
-    const corgeaValue = this.calculateValue('corgea');
-    const aiFixerValue = this.calculateValue('ai_fixer');
+    // Cost-based decision using real Supabase data
+    // This compares Corgea effective cost (subscription/fixes) vs AI-fixer avg cost
+    const cheaperSource = await this.getCheaperSource();
 
-    if (corgeaValue >= aiFixerValue) {
-      return {
-        source: 'corgea',
-        reason: `Better value (confidence: ${SOURCE_CONFIDENCE.corgea}%, cost: ${corgeaCost}¢)`,
-        estimatedCost: corgeaCost,
-        confidence: SOURCE_CONFIDENCE.corgea,
-        fallbackAvailable: true,
-        fallbackSource: 'ai_fixer'
-      };
-    } else {
-      return {
-        source: 'ai_fixer',
-        reason: `Better value (confidence: ${SOURCE_CONFIDENCE.ai_fixer}%, cost: ${aiFixerCost}¢)`,
-        estimatedCost: aiFixerCost,
-        confidence: SOURCE_CONFIDENCE.ai_fixer,
-        fallbackAvailable: true,
-        fallbackSource: 'corgea'
-      };
-    }
+    return {
+      source: cheaperSource.source,
+      reason: cheaperSource.reason,
+      estimatedCost: cheaperSource.costCents,
+      confidence: SOURCE_CONFIDENCE[cheaperSource.source],
+      fallbackAvailable: true,
+      fallbackSource: cheaperSource.source === 'corgea' ? 'ai_fixer' : 'corgea'
+    };
   }
 
   /**
