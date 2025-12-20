@@ -153,8 +153,9 @@ export class CorgeaFixer extends CloudAPIToolBase {
   constructor(config: CorgeaConfig) {
     super({
       name: 'Corgea',
-      baseUrl: config.baseUrl || 'https://api.corgea.app',
+      baseUrl: config.baseUrl || 'https://www.corgea.app/api/v1',
       apiKey: config.apiKey,
+      authHeaderName: 'CORGEA-TOKEN', // Corgea uses custom header, not Bearer
       timeout: config.timeout || 300000,
       retries: config.retries || 3,
       retryDelay: config.retryDelay || 1000

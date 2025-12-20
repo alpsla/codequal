@@ -31,6 +31,9 @@ export interface CloudAPIConfig {
   /** API key or token for authentication */
   apiKey: string;
 
+  /** Custom auth header name (default: uses 'Authorization: Bearer <key>') */
+  authHeaderName?: string;
+
   /** Request timeout in milliseconds (default: 300000 = 5 min) */
   timeout?: number;
 
@@ -200,10 +203,15 @@ export abstract class CloudAPIToolBase {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+        // Build auth header based on config
+        const authHeader = this.config.authHeaderName
+          ? { [this.config.authHeaderName]: this.config.apiKey }
+          : { 'Authorization': `Bearer ${this.config.apiKey}` };
+
         const response = await fetch(url, {
           method,
           headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            ...authHeader,
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'User-Agent': 'CodeQual/1.0',
