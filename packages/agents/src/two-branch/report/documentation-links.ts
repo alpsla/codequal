@@ -105,33 +105,192 @@ export const TOOL_DOCUMENTATION: Record<string, { name: string; baseUrl: string;
     name: 'CodeQL',
     baseUrl: 'https://codeql.github.com/',
     rulesUrl: 'https://codeql.github.com/codeql-query-help/'
+  },
+
+  // Architecture Tools (Scanner-only, no auto-fix)
+  madge: {
+    name: 'Madge',
+    baseUrl: 'https://github.com/pahen/madge',
+    rulesUrl: 'https://github.com/pahen/madge#readme'
+  },
+  'dependency-cruiser': {
+    name: 'Dependency Cruiser',
+    baseUrl: 'https://github.com/sverweij/dependency-cruiser',
+    rulesUrl: 'https://github.com/sverweij/dependency-cruiser/blob/main/doc/rules-reference.md'
+  },
+  'ts-unused-exports': {
+    name: 'ts-unused-exports',
+    baseUrl: 'https://github.com/pzavolinsky/ts-unused-exports',
+    rulesUrl: 'https://github.com/pzavolinsky/ts-unused-exports#readme'
+  },
+  pydeps: {
+    name: 'pydeps',
+    baseUrl: 'https://github.com/thebjorn/pydeps',
+    rulesUrl: 'https://github.com/thebjorn/pydeps#readme'
+  },
+
+  // Performance Tools (Scanner-only, no auto-fix)
+  lighthouse: {
+    name: 'Lighthouse',
+    baseUrl: 'https://developers.google.com/web/tools/lighthouse',
+    rulesUrl: 'https://web.dev/performance-scoring/'
+  },
+  'bundle-analyzer': {
+    name: 'Bundle Analyzer',
+    baseUrl: 'https://github.com/webpack-contrib/webpack-bundle-analyzer',
+    rulesUrl: 'https://web.dev/reduce-javascript-payloads-with-tree-shaking/'
+  },
+
+  // ============================================
+  // P0 CRITICAL SECURITY TOOLS (Session 59)
+  // ============================================
+
+  // Secret Detection
+  gitleaks: {
+    name: 'Gitleaks',
+    baseUrl: 'https://github.com/gitleaks/gitleaks',
+    rulesUrl: 'https://github.com/gitleaks/gitleaks#configuration'
+  },
+  trufflehog: {
+    name: 'TruffleHog',
+    baseUrl: 'https://trufflesecurity.com/trufflehog',
+    rulesUrl: 'https://github.com/trufflesecurity/trufflehog#what-is-a-detector'
+  },
+
+  // IaC Security
+  checkov: {
+    name: 'Checkov',
+    baseUrl: 'https://www.checkov.io/',
+    rulesUrl: 'https://www.checkov.io/5.Policy%20Index/all.html'
+  },
+
+  // Container Security
+  trivy: {
+    name: 'Trivy',
+    baseUrl: 'https://aquasecurity.github.io/trivy/',
+    rulesUrl: 'https://aquasecurity.github.io/trivy/latest/docs/scanner/'
+  },
+  grype: {
+    name: 'Grype',
+    baseUrl: 'https://github.com/anchore/grype',
+    rulesUrl: 'https://github.com/anchore/grype#supported-sources'
+  },
+
+  // ============================================
+  // P1 API/GRAPHQL TOOLS (Session 59)
+  // ============================================
+
+  spectral: {
+    name: 'Spectral',
+    baseUrl: 'https://stoplight.io/open-source/spectral',
+    rulesUrl: 'https://meta.stoplight.io/docs/spectral/docs/reference/openapi-rules.md'
+  },
+  'graphql-cop': {
+    name: 'GraphQL-Cop',
+    baseUrl: 'https://github.com/dolevf/graphql-cop',
+    rulesUrl: 'https://github.com/dolevf/graphql-cop#supported-audits'
+  },
+
+  // ============================================
+  // P2 ARCHITECTURE TOOLS (Session 59)
+  // ============================================
+
+  jdepend: {
+    name: 'JDepend',
+    baseUrl: 'https://github.com/clarkware/jdepend',
+    rulesUrl: 'https://github.com/clarkware/jdepend#metrics'
+  },
+  'import-linter': {
+    name: 'Import Linter',
+    baseUrl: 'https://import-linter.readthedocs.io/',
+    rulesUrl: 'https://import-linter.readthedocs.io/en/stable/contract_types.html'
+  },
+  'go-arch-lint': {
+    name: 'go-arch-lint',
+    baseUrl: 'https://github.com/fe3dback/go-arch-lint',
+    rulesUrl: 'https://github.com/fe3dback/go-arch-lint#rules'
+  },
+  'cargo-modules': {
+    name: 'cargo-modules',
+    baseUrl: 'https://github.com/regehr/cargo-modules',
+    rulesUrl: 'https://github.com/regehr/cargo-modules#usage'
+  },
+  packwerk: {
+    name: 'Packwerk',
+    baseUrl: 'https://github.com/Shopify/packwerk',
+    rulesUrl: 'https://github.com/Shopify/packwerk/blob/main/USAGE.md'
+  },
+  deptrac: {
+    name: 'Deptrac',
+    baseUrl: 'https://qossmic.github.io/deptrac/',
+    rulesUrl: 'https://qossmic.github.io/deptrac/concepts/'
+  },
+
+  // ============================================
+  // CLOUD API FIXER TOOLS (Session 60)
+  // ============================================
+
+  corgea: {
+    name: 'Corgea',
+    baseUrl: 'https://corgea.com/',
+    rulesUrl: 'https://docs.corgea.app/'
   }
 };
 
 /**
  * Bandit rule documentation mapping
  * https://bandit.readthedocs.io/en/latest/plugins/
+ *
+ * NOTE: Includes both B-code aliases (B101, B105) and full names (assert_used, hardcoded_password_string)
+ * for flexible lookup since different tools report Bandit findings differently.
  */
 const BANDIT_RULES: Record<string, DocumentationLink[]> = {
+  // B101 - Assert Used
   'assert_used': [
     { title: 'Bandit B101: assert_used', url: 'https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html', type: 'official' },
     { title: 'Python Assert Statement', url: 'https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement', type: 'reference' }
   ],
+  'b101': [
+    { title: 'Bandit B101: assert_used', url: 'https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html', type: 'official' },
+    { title: 'Python Assert Statement', url: 'https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement', type: 'reference' }
+  ],
+  // B102 - Exec Used
   'exec_used': [
     { title: 'Bandit B102: exec_used', url: 'https://bandit.readthedocs.io/en/latest/plugins/b102_exec_used.html', type: 'official' },
     { title: 'CWE-78: OS Command Injection', url: 'https://cwe.mitre.org/data/definitions/78.html', type: 'cwe' },
     { title: 'OWASP Command Injection', url: 'https://owasp.org/www-community/attacks/Command_Injection', type: 'owasp' }
   ],
+  'b102': [
+    { title: 'Bandit B102: exec_used', url: 'https://bandit.readthedocs.io/en/latest/plugins/b102_exec_used.html', type: 'official' },
+    { title: 'CWE-78: OS Command Injection', url: 'https://cwe.mitre.org/data/definitions/78.html', type: 'cwe' },
+    { title: 'OWASP Command Injection', url: 'https://owasp.org/www-community/attacks/Command_Injection', type: 'owasp' }
+  ],
+  // B105 - Hardcoded Password String
   'hardcoded_password_string': [
     { title: 'Bandit B105: hardcoded_password_string', url: 'https://bandit.readthedocs.io/en/latest/plugins/b105_hardcoded_password_string.html', type: 'official' },
     { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' },
     { title: 'OWASP Secrets Management', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html', type: 'owasp' }
   ],
+  'b105': [
+    { title: 'Bandit B105: hardcoded_password_string', url: 'https://bandit.readthedocs.io/en/latest/plugins/b105_hardcoded_password_string.html', type: 'official' },
+    { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' },
+    { title: 'OWASP Secrets Management', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html', type: 'owasp' }
+  ],
+  // B106 - Hardcoded Password Func Arg
   'hardcoded_password_funcarg': [
     { title: 'Bandit B106: hardcoded_password_funcarg', url: 'https://bandit.readthedocs.io/en/latest/plugins/b106_hardcoded_password_funcarg.html', type: 'official' },
     { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' }
   ],
+  'b106': [
+    { title: 'Bandit B106: hardcoded_password_funcarg', url: 'https://bandit.readthedocs.io/en/latest/plugins/b106_hardcoded_password_funcarg.html', type: 'official' },
+    { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' }
+  ],
+  // B107 - Hardcoded Password Default
   'hardcoded_password_default': [
+    { title: 'Bandit B107: hardcoded_password_default', url: 'https://bandit.readthedocs.io/en/latest/plugins/b107_hardcoded_password_default.html', type: 'official' },
+    { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' }
+  ],
+  'b107': [
     { title: 'Bandit B107: hardcoded_password_default', url: 'https://bandit.readthedocs.io/en/latest/plugins/b107_hardcoded_password_default.html', type: 'official' },
     { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' }
   ],
@@ -168,7 +327,13 @@ const BANDIT_RULES: Record<string, DocumentationLink[]> = {
     { title: 'Bandit B502: ssl_with_bad_version', url: 'https://bandit.readthedocs.io/en/latest/plugins/b502_ssl_with_bad_version.html', type: 'official' },
     { title: 'OWASP TLS Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html', type: 'owasp' }
   ],
+  // B608 - SQL Injection
   'sql_injection': [
+    { title: 'Bandit B608: SQL Injection', url: 'https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html', type: 'official' },
+    { title: 'OWASP SQL Injection Prevention', url: 'https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html', type: 'owasp' },
+    { title: 'CWE-89: SQL Injection', url: 'https://cwe.mitre.org/data/definitions/89.html', type: 'cwe' }
+  ],
+  'b608': [
     { title: 'Bandit B608: SQL Injection', url: 'https://bandit.readthedocs.io/en/latest/plugins/b608_hardcoded_sql_expressions.html', type: 'official' },
     { title: 'OWASP SQL Injection Prevention', url: 'https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html', type: 'owasp' },
     { title: 'CWE-89: SQL Injection', url: 'https://cwe.mitre.org/data/definitions/89.html', type: 'cwe' }
@@ -323,20 +488,67 @@ const PMD_RULES: Record<string, DocumentationLink[]> = {
 /**
  * Checkstyle rule documentation mapping
  */
+// SESSION 26: Enhanced Checkstyle URL mapping with category detection
+const CHECKSTYLE_CATEGORY_PATHS: Record<string, string> = {
+  'coding': 'config_coding',
+  'javadoc': 'config_javadoc', 
+  'imports': 'config_imports',
+  'naming': 'config_naming',
+  'sizes': 'config_sizes',
+  'whitespace': 'config_whitespace',
+  'blocks': 'config_blocks',
+  'design': 'config_design',
+  'misc': 'config_misc',
+  'modifier': 'config_modifier',
+  'annotation': 'config_annotation',
+  'metrics': 'config_metrics',
+  'header': 'config_header',
+  'regexp': 'config_regexp'
+};
+
 const CHECKSTYLE_RULES: Record<string, DocumentationLink[]> = {
-  'com.puppycrawl.tools.checkstyle.checks.imports.AvoidStarImportCheck': [
-    { title: 'Checkstyle: AvoidStarImport', url: 'https://checkstyle.org/config_imports.html#AvoidStarImport', type: 'official' },
-    { title: 'Google Java Style Guide', url: 'https://google.github.io/styleguide/javaguide.html#s3.3.1-wildcard-imports', type: 'reference' }
+  // Import rules
+  'AvoidStarImportCheck': [
+    { title: 'Checkstyle: AvoidStarImport', url: 'https://checkstyle.org/config_imports.html#AvoidStarImport', type: 'official' }
   ],
-  'com.puppycrawl.tools.checkstyle.checks.javadoc.MissingJavadocMethodCheck': [
-    { title: 'Checkstyle: MissingJavadocMethod', url: 'https://checkstyle.org/config_javadoc.html#MissingJavadocMethod', type: 'official' },
-    { title: 'Javadoc Best Practices', url: 'https://www.oracle.com/technical-resources/articles/java/javadoc-tool.html', type: 'reference' }
+  // Javadoc rules
+  'MissingJavadocMethodCheck': [
+    { title: 'Checkstyle: MissingJavadocMethod', url: 'https://checkstyle.org/config_javadoc.html#MissingJavadocMethod', type: 'official' }
   ],
-  'com.puppycrawl.tools.checkstyle.checks.coding.MagicNumberCheck': [
+  'JavadocVariableCheck': [
+    { title: 'Checkstyle: JavadocVariable', url: 'https://checkstyle.org/config_javadoc.html#JavadocVariable', type: 'official' }
+  ],
+  'JavadocMethodCheck': [
+    { title: 'Checkstyle: JavadocMethod', url: 'https://checkstyle.org/config_javadoc.html#JavadocMethod', type: 'official' }
+  ],
+  // Coding rules
+  'MagicNumberCheck': [
     { title: 'Checkstyle: MagicNumber', url: 'https://checkstyle.org/config_coding.html#MagicNumber', type: 'official' }
   ],
-  'com.puppycrawl.tools.checkstyle.checks.naming.ConstantNameCheck': [
+  'HiddenFieldCheck': [
+    { title: 'Checkstyle: HiddenField', url: 'https://checkstyle.org/config_coding.html#HiddenField', type: 'official' }
+  ],
+  // Naming rules
+  'ConstantNameCheck': [
     { title: 'Checkstyle: ConstantName', url: 'https://checkstyle.org/config_naming.html#ConstantName', type: 'official' }
+  ],
+  // Misc rules
+  'FinalParametersCheck': [
+    { title: 'Checkstyle: FinalParameters', url: 'https://checkstyle.org/config_misc.html#FinalParameters', type: 'official' }
+  ],
+  'FileTabCharacterCheck': [
+    { title: 'Checkstyle: FileTabCharacter', url: 'https://checkstyle.org/config_whitespace.html#FileTabCharacter', type: 'official' }
+  ],
+  // Design rules
+  'DesignForExtensionCheck': [
+    { title: 'Checkstyle: DesignForExtension', url: 'https://checkstyle.org/config_design.html#DesignForExtension', type: 'official' }
+  ],
+  'VisibilityModifierCheck': [
+    { title: 'Checkstyle: VisibilityModifier', url: 'https://checkstyle.org/config_design.html#VisibilityModifier', type: 'official' }
+  ],
+  // Size rules  
+  'LineLengthCheck': [
+    { title: 'Checkstyle: LineLength', url: 'https://checkstyle.org/config_sizes.html#LineLength', type: 'official' }
   ]
 };
 
@@ -359,6 +571,80 @@ const MYPY_RULES: Record<string, DocumentationLink[]> = {
   ],
   'assignment': [
     { title: 'Mypy: assignment', url: 'https://mypy.readthedocs.io/en/stable/error_code_list.html#check-that-assigned-value-is-compatible-assignment', type: 'official' }
+  ]
+};
+
+/**
+ * Architecture tool rule documentation (Scanner-only tools)
+ * These tools detect architectural issues but cannot auto-fix
+ */
+const ARCHITECTURE_TOOL_RULES: Record<string, DocumentationLink[]> = {
+  // Madge - Circular Dependencies
+  'circular-dependency': [
+    { title: 'Circular Dependency Anti-Pattern', url: 'https://refactoring.guru/smells/circular-dependency', type: 'tutorial' },
+    { title: 'Breaking Circular Dependencies', url: 'https://blog.ploeh.dk/2022/02/21/breaking-circular-dependencies/', type: 'tutorial' },
+    { title: 'Dependency Injection Pattern', url: 'https://www.martinfowler.com/articles/injection.html', type: 'reference' }
+  ],
+  // Dependency Cruiser - Layer Violations
+  'no-circular': [
+    { title: 'Circular Dependency Anti-Pattern', url: 'https://refactoring.guru/smells/circular-dependency', type: 'tutorial' },
+    { title: 'Dependency Cruiser Rules Reference', url: 'https://github.com/sverweij/dependency-cruiser/blob/main/doc/rules-reference.md', type: 'official' }
+  ],
+  'not-reachable-from-folder': [
+    { title: 'Layered Architecture', url: 'https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/ch01.html', type: 'reference' },
+    { title: 'Clean Architecture Layers', url: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html', type: 'tutorial' }
+  ],
+  'layer-violation': [
+    { title: 'Layered Architecture', url: 'https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/ch01.html', type: 'reference' },
+    { title: 'SOLID Principles', url: 'https://www.digitalocean.com/community/conceptual_articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design', type: 'tutorial' }
+  ],
+  // ts-unused-exports
+  'unused-export': [
+    { title: 'Tree Shaking Explained', url: 'https://webpack.js.org/guides/tree-shaking/', type: 'tutorial' },
+    { title: 'Dead Code Elimination', url: 'https://refactoring.guru/smells/dead-code', type: 'tutorial' }
+  ],
+  // pydeps - Python circular imports
+  'circular-import': [
+    { title: 'Python Circular Imports', url: 'https://realpython.com/python-import/#handle-cyclic-imports', type: 'tutorial' },
+    { title: 'Breaking Python Circular Imports', url: 'https://www.stefaanlippens.net/python-circular-imports/', type: 'tutorial' }
+  ]
+};
+
+/**
+ * Performance tool rule documentation (Scanner-only tools)
+ * These tools detect performance issues but cannot auto-fix
+ */
+const PERFORMANCE_TOOL_RULES: Record<string, DocumentationLink[]> = {
+  // Lighthouse - Web Core Vitals
+  'largest-contentful-paint': [
+    { title: 'Optimize LCP', url: 'https://web.dev/optimize-lcp/', type: 'tutorial' },
+    { title: 'LCP Explained', url: 'https://web.dev/lcp/', type: 'official' }
+  ],
+  'cumulative-layout-shift': [
+    { title: 'Optimize CLS', url: 'https://web.dev/optimize-cls/', type: 'tutorial' },
+    { title: 'CLS Explained', url: 'https://web.dev/cls/', type: 'official' }
+  ],
+  'first-input-delay': [
+    { title: 'Optimize FID', url: 'https://web.dev/optimize-fid/', type: 'tutorial' },
+    { title: 'FID Explained', url: 'https://web.dev/fid/', type: 'official' }
+  ],
+  'first-contentful-paint': [
+    { title: 'Optimize FCP', url: 'https://web.dev/fcp/', type: 'tutorial' }
+  ],
+  'time-to-first-byte': [
+    { title: 'Optimize TTFB', url: 'https://web.dev/ttfb/', type: 'tutorial' }
+  ],
+  'total-blocking-time': [
+    { title: 'Optimize TBT', url: 'https://web.dev/tbt/', type: 'tutorial' }
+  ],
+  // Bundle Analyzer
+  'large-bundle': [
+    { title: 'Reduce JavaScript Payloads', url: 'https://web.dev/reduce-javascript-payloads-with-tree-shaking/', type: 'tutorial' },
+    { title: 'Code Splitting', url: 'https://webpack.js.org/guides/code-splitting/', type: 'official' },
+    { title: 'Bundle Analysis Guide', url: 'https://web.dev/reduce-javascript-payloads-with-code-splitting/', type: 'tutorial' }
+  ],
+  'duplicate-dependency': [
+    { title: 'Avoid Duplicate Dependencies', url: 'https://webpack.js.org/plugins/split-chunks-plugin/', type: 'official' }
   ]
 };
 
@@ -425,17 +711,36 @@ export function getDocumentationLinks(ruleId: string, tool: string): Documentati
         { title: `PMD: ${ruleId}`, url: `https://pmd.github.io/latest/pmd_rules_java.html`, type: 'official' }
       ];
 
-    case 'checkstyle':
+    case 'checkstyle': {
+      // Try exact match first
+      const ruleName = ruleId.replace('Check', '').split('.').pop() || ruleId;
       if (CHECKSTYLE_RULES[ruleId]) return CHECKSTYLE_RULES[ruleId];
+      if (CHECKSTYLE_RULES[`${ruleName}Check`]) return CHECKSTYLE_RULES[`${ruleName}Check`];
+      
+      // Try partial match
       for (const [key, value] of Object.entries(CHECKSTYLE_RULES)) {
-        if (normalizedRule.includes(key.toLowerCase()) || key.toLowerCase().includes(normalizedRule)) {
+        if (normalizedRule.includes(key.toLowerCase().replace('check', '')) || 
+            key.toLowerCase().includes(normalizedRule.replace('check', ''))) {
           return value;
         }
       }
-      // Generate dynamic Checkstyle link
+      
+      // SESSION 26: Generate specific URL by detecting category from rule ID
+      // e.g., "com.puppycrawl.tools.checkstyle.checks.coding.HiddenFieldCheck" → config_coding.html#HiddenField
+      for (const [category, path] of Object.entries(CHECKSTYLE_CATEGORY_PATHS)) {
+        if (ruleId.toLowerCase().includes(`.${category}.`)) {
+          const cleanRuleName = ruleName.replace('Check', '');
+          return [
+            { title: `Checkstyle: ${cleanRuleName}`, url: `https://checkstyle.org/${path}.html#${cleanRuleName}`, type: 'official' }
+          ];
+        }
+      }
+      
+      // Fallback: General checks page (last resort)
       return [
-        { title: `Checkstyle: ${ruleId.split('.').pop() || ruleId}`, url: 'https://checkstyle.org/checks.html', type: 'official' }
+        { title: `Checkstyle: ${ruleName}`, url: 'https://checkstyle.org/checks.html', type: 'official' }
       ];
+    }
 
     case 'mypy':
       if (MYPY_RULES[ruleId]) return MYPY_RULES[ruleId];
@@ -463,6 +768,168 @@ export function getDocumentationLinks(ruleId: string, tool: string): Documentati
     case 'eslint':
       return [
         { title: `ESLint: ${ruleId}`, url: `https://eslint.org/docs/latest/rules/${ruleId}`, type: 'official' }
+      ];
+
+    // Architecture Scanner Tools (no auto-fix)
+    case 'madge':
+      if (ARCHITECTURE_TOOL_RULES['circular-dependency']) return ARCHITECTURE_TOOL_RULES['circular-dependency'];
+      break;
+
+    case 'dependency-cruiser':
+      for (const [key, value] of Object.entries(ARCHITECTURE_TOOL_RULES)) {
+        if (normalizedRule.includes(key) || key.includes(normalizedRule)) {
+          return value;
+        }
+      }
+      // Fallback for dependency-cruiser
+      return ARCHITECTURE_TOOL_RULES['no-circular'] || [];
+
+    case 'ts-unused-exports':
+      return ARCHITECTURE_TOOL_RULES['unused-export'] || [];
+
+    case 'pydeps':
+      return ARCHITECTURE_TOOL_RULES['circular-import'] || [];
+
+    // Performance Scanner Tools (no auto-fix)
+    case 'lighthouse':
+      if (PERFORMANCE_TOOL_RULES[normalizedRule]) return PERFORMANCE_TOOL_RULES[normalizedRule];
+      for (const [key, value] of Object.entries(PERFORMANCE_TOOL_RULES)) {
+        if (normalizedRule.includes(key) || key.includes(normalizedRule)) {
+          return value;
+        }
+      }
+      // Fallback for lighthouse - general Core Web Vitals
+      return [
+        { title: 'Core Web Vitals Guide', url: 'https://web.dev/vitals/', type: 'official' },
+        { title: 'Lighthouse Performance Scoring', url: 'https://web.dev/performance-scoring/', type: 'tutorial' }
+      ];
+
+    case 'bundle-analyzer':
+    case 'webpack-bundle-analyzer':
+      if (PERFORMANCE_TOOL_RULES[normalizedRule]) return PERFORMANCE_TOOL_RULES[normalizedRule];
+      for (const [key, value] of Object.entries(PERFORMANCE_TOOL_RULES)) {
+        if (normalizedRule.includes(key) || key.includes(normalizedRule)) {
+          return value;
+        }
+      }
+      // Fallback for bundle analyzer
+      return PERFORMANCE_TOOL_RULES['large-bundle'] || [];
+
+    // ============================================
+    // P0 CRITICAL SECURITY TOOLS (Session 59)
+    // ============================================
+
+    // Secret Detection Tools
+    case 'gitleaks':
+      return [
+        { title: 'Gitleaks Documentation', url: 'https://github.com/gitleaks/gitleaks', type: 'official' },
+        { title: 'Secret Management Best Practices', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html', type: 'owasp' },
+        { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' }
+      ];
+
+    case 'trufflehog':
+      return [
+        { title: 'TruffleHog Documentation', url: 'https://trufflesecurity.com/trufflehog', type: 'official' },
+        { title: 'Secret Management Best Practices', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html', type: 'owasp' },
+        { title: 'CWE-798: Hard-coded Credentials', url: 'https://cwe.mitre.org/data/definitions/798.html', type: 'cwe' }
+      ];
+
+    // IaC Security Tools
+    case 'checkov':
+      return [
+        { title: 'Checkov Documentation', url: 'https://www.checkov.io/', type: 'official' },
+        { title: 'Checkov Policy Index', url: 'https://www.checkov.io/5.Policy%20Index/all.html', type: 'reference' },
+        { title: 'OWASP Infrastructure as Code Security', url: 'https://owasp.org/www-project-devsecops-guideline/latest/02b-Infrastructure-as-Code', type: 'owasp' }
+      ];
+
+    // Container Security Tools
+    case 'trivy':
+      return [
+        { title: 'Trivy Documentation', url: 'https://aquasecurity.github.io/trivy/', type: 'official' },
+        { title: 'Container Security Best Practices', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html', type: 'owasp' },
+        { title: 'CVE Database', url: 'https://nvd.nist.gov/vuln/search', type: 'reference' }
+      ];
+
+    case 'grype':
+      return [
+        { title: 'Grype Documentation', url: 'https://github.com/anchore/grype', type: 'official' },
+        { title: 'Container Security Best Practices', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html', type: 'owasp' },
+        { title: 'CVE Database', url: 'https://nvd.nist.gov/vuln/search', type: 'reference' }
+      ];
+
+    // ============================================
+    // P1 API/GRAPHQL TOOLS (Session 59)
+    // ============================================
+
+    case 'spectral':
+      return [
+        { title: 'Spectral Documentation', url: 'https://stoplight.io/open-source/spectral', type: 'official' },
+        { title: 'OpenAPI Best Practices', url: 'https://oai.github.io/Documentation/best-practices.html', type: 'reference' },
+        { title: 'API Security Best Practices', url: 'https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html', type: 'owasp' }
+      ];
+
+    case 'graphql-cop':
+      return [
+        { title: 'GraphQL-Cop Documentation', url: 'https://github.com/dolevf/graphql-cop', type: 'official' },
+        { title: 'GraphQL Security Best Practices', url: 'https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html', type: 'owasp' },
+        { title: 'GraphQL Security Considerations', url: 'https://graphql.org/learn/authorization/', type: 'reference' }
+      ];
+
+    // ============================================
+    // P2 ARCHITECTURE TOOLS (Session 59)
+    // ============================================
+
+    case 'jdepend':
+      return [
+        { title: 'JDepend Documentation', url: 'https://github.com/clarkware/jdepend', type: 'official' },
+        { title: 'Package Design Principles', url: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html', type: 'tutorial' },
+        { title: 'Dependency Management', url: 'https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/', type: 'reference' }
+      ];
+
+    case 'import-linter':
+      return [
+        { title: 'Import Linter Documentation', url: 'https://import-linter.readthedocs.io/', type: 'official' },
+        { title: 'Python Circular Imports', url: 'https://realpython.com/python-import/#handle-cyclic-imports', type: 'tutorial' },
+        { title: 'Layered Architecture', url: 'https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/ch01.html', type: 'reference' }
+      ];
+
+    case 'go-arch-lint':
+      return [
+        { title: 'go-arch-lint Documentation', url: 'https://github.com/fe3dback/go-arch-lint', type: 'official' },
+        { title: 'Go Project Layout', url: 'https://github.com/golang-standards/project-layout', type: 'reference' },
+        { title: 'Clean Architecture in Go', url: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html', type: 'tutorial' }
+      ];
+
+    case 'cargo-modules':
+      return [
+        { title: 'cargo-modules Documentation', url: 'https://github.com/regehr/cargo-modules', type: 'official' },
+        { title: 'Rust Module System', url: 'https://doc.rust-lang.org/book/ch07-02-defining-modules-to-control-scope-and-privacy.html', type: 'reference' },
+        { title: 'Rust Package Layout', url: 'https://doc.rust-lang.org/cargo/guide/project-layout.html', type: 'reference' }
+      ];
+
+    case 'packwerk':
+      return [
+        { title: 'Packwerk Documentation', url: 'https://github.com/Shopify/packwerk', type: 'official' },
+        { title: 'Rails Modular Monolith', url: 'https://shopify.engineering/shopify-monolith', type: 'tutorial' },
+        { title: 'Package-Based Architecture', url: 'https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/', type: 'reference' }
+      ];
+
+    case 'deptrac':
+      return [
+        { title: 'Deptrac Documentation', url: 'https://qossmic.github.io/deptrac/', type: 'official' },
+        { title: 'PHP Package Design', url: 'https://qossmic.github.io/deptrac/concepts/', type: 'reference' },
+        { title: 'Clean Architecture', url: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html', type: 'tutorial' }
+      ];
+
+    // ============================================
+    // CLOUD API FIXER TOOLS (Session 60)
+    // ============================================
+
+    case 'corgea':
+      return [
+        { title: 'Corgea Documentation', url: 'https://docs.corgea.app/', type: 'official' },
+        { title: 'Corgea AI Auto-Fix', url: 'https://corgea.com/auto-fix', type: 'reference' },
+        { title: 'BLAST AI-Powered SAST', url: 'https://corgea.com/blog/whitepaper-blast-ai-powered-sast-scanner', type: 'tutorial' }
       ];
   }
 

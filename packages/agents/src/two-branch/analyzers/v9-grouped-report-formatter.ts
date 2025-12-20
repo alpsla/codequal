@@ -261,14 +261,15 @@ export interface FixPattern {
   fixerCommand?: string;        // Command to execute (eslint --fix, ruff check --fix)
   confidence?: number;          // 0-100, confidence in the fix
 
-  // For Tier 3 (AI-generated fixes)
+  // For Tier 3 (AI-generated fixes) or recommendations
   aiPrompt?: {
     systemPrompt: string;
     userPromptTemplate: string;
-    outputFormat: 'diff' | 'full-file' | 'code-block';
+    outputFormat: 'diff' | 'full-file' | 'code-block' | 'markdown';  // markdown for recommendations
     maxTokens: number;
     temperature: number;
     requiredContext: ('file' | 'function' | 'class' | 'imports' | 'related-files')[];
+    isRecommendation?: boolean;  // true for secrets/IaC/container issues
   };
 
   // For manual review (when auto-fix is not possible)
@@ -4122,6 +4123,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     // SESSION 26: Check rule-descriptions.ts before falling back to fully generic text
     // This provides better specific guidance for known rules
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { getRuleDescription, RULE_DESCRIPTIONS } = require('../config/rule-descriptions');
       const ruleDesc = RULE_DESCRIPTIONS[rule];
       if (ruleDesc) {
@@ -4848,7 +4850,8 @@ mvn spotless:check  # Verify (use in CI)
         Promise.resolve(converter.generateSARIFReport(enrichedIssues, groups, {
           repository: metadata.repository || 'unknown',
           version: metadata.analyzerVersion || '9.0.0',
-          analyzedAt: metadata.analyzedAt || new Date().toISOString()
+          analyzedAt: metadata.analyzedAt || new Date().toISOString(),
+          workspaceRoot: workspaceRoot  // Use relative paths in SARIF output
         })),
         // Generate GitLab Code Quality Report
         Promise.resolve(gitlabConverter.generateGitLabCodeQualityReport(enrichedIssues, this.repoPath))
@@ -5023,7 +5026,8 @@ mvn spotless:check  # Verify (use in CI)
     const classification = classifyIssue(group.rule, group.tool);
 
     // Determine issue category for AI prompts
-    const issueCategory = this.determineIssueCategory(classification.issueType);
+    // Session 59: Pass tool to detect recommendation-only categories (secrets, IaC, container, GraphQL)
+    const issueCategory = this.determineIssueCategory(classification.issueType, group.tool);
 
     // Tier 1 & 2: Native tools and dedicated fixers
     if (classification.fixTier <= 2 && classification.fixable) {
@@ -5130,8 +5134,44 @@ mvn spotless:check  # Verify (use in CI)
 
   /**
    * Determine issue category for AI prompt lookup
+   * Session 59: Updated to handle recommendation-only tools (secrets, IaC, container, GraphQL)
+   * These tools require specialized prompts that generate remediation steps, not code fixes
    */
-  private determineIssueCategory(issueType: string): 'security' | 'quality' | 'performance' {
+  private determineIssueCategory(
+    issueType: string,
+    tool?: string
+  ): 'security' | 'quality' | 'performance' | 'secrets' | 'iac_security' | 'container_security' | 'graphql_security' | 'api_design' {
+    const normalizedTool = (tool || '').toLowerCase();
+
+    // Session 59: Recommendation-only tools get specific categories
+    // These tools cannot auto-fix issues, they provide remediation guidance
+
+    // Secrets detection tools (P0)
+    if (['gitleaks', 'trufflehog'].includes(normalizedTool)) {
+      return 'secrets';
+    }
+
+    // IaC security tools (P0)
+    if (normalizedTool === 'checkov') {
+      return 'iac_security';
+    }
+
+    // Container security tools (P0)
+    if (['trivy', 'grype'].includes(normalizedTool)) {
+      return 'container_security';
+    }
+
+    // GraphQL security tools (P1)
+    if (['graphql-cop', 'graphql-scanner', 'graphql-static'].includes(normalizedTool)) {
+      return 'graphql_security';
+    }
+
+    // API schema tools (P1)
+    if (normalizedTool === 'spectral') {
+      return 'api_design';
+    }
+
+    // Standard categories for code-fixable issues
     switch (issueType) {
       case 'security':
         return 'security';
