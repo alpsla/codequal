@@ -130,7 +130,8 @@ interface CorgeaScanResponse {
 }
 
 interface CorgeaVerifyResponse {
-  valid: boolean;
+  status?: string;  // API returns {"status": "ok"}
+  valid?: boolean;  // Alternative format
   user?: {
     email: string;
     organization: string;
@@ -244,7 +245,8 @@ export class CorgeaFixer extends CloudAPIToolBase {
   async checkHealth(): Promise<boolean> {
     try {
       const response = await this.makeRequest<CorgeaVerifyResponse>('GET', '/verify');
-      return response.data.valid === true;
+      // API returns {"status": "ok"} or {"valid": true}
+      return response.data.status === 'ok' || response.data.valid === true;
     } catch {
       return false;
     }
