@@ -1,15 +1,22 @@
 # CodeQual Production Monitoring & Observability Plan
-**Last Updated: July 28, 2025**
+**Last Updated: December 20, 2025**
 
 ## Overview
 
-A comprehensive monitoring strategy for CodeQual to track performance, errors, resource usage, and enable efficient troubleshooting. This plan has been significantly updated to reflect the monitoring infrastructure implemented in July 2025.
+A comprehensive monitoring strategy for CodeQual to track performance, errors, resource usage, and enable efficient troubleshooting. This plan has been significantly updated to reflect the monitoring infrastructure implemented through December 2025.
 
 ## Current Status
 
+### ✅ Completed (December 2025 - Session 63)
+- **Fix Cost Tracking**: Real-time cost comparison between Corgea and AI-fixer
+- **Supabase Cost Tables**: `corgea_subscription`, `corgea_usage_log`, `fix_cost_comparison` view
+- **Intelligent Routing**: Auto-select cheaper fix source based on effective cost
+- **Multi-user Infrastructure**: Usage tracking, smart batching, fix caching, rate limiting
+- **Existing Monitoring Reuse**: Integrated with `CostTrackerService`, `ModelUsageAnalytics`
+
 ### ✅ Completed (July 2025)
 - DeepWiki monitoring infrastructure with real-time metrics
-- Prometheus-format metrics export  
+- Prometheus-format metrics export
 - Grafana dashboard integration
 - JWT-authenticated monitoring endpoints
 - Public monitoring dashboard with auto-refresh
@@ -329,8 +336,117 @@ const businessMetrics = {
 };
 ```
 
+### Phase 2.6: Fix Cost Monitoring ✅ COMPLETED (December 2025)
+
+**Purpose**: Track and optimize costs between Corgea (cloud fixer) and AI-fixer (OpenRouter).
+
+#### Supabase Schema
+
+```sql
+-- Subscription tracking
+CREATE TABLE corgea_subscription (
+  id VARCHAR(50) PRIMARY KEY DEFAULT 'current',
+  plan_name VARCHAR(50) NOT NULL,        -- starter, growth, scale, enterprise
+  monthly_cost_cents INTEGER NOT NULL,    -- e.g., 2900 for $29
+  fixes_this_period INTEGER DEFAULT 0,
+  effective_cost_per_fix_cents DECIMAL(10,2)  -- auto-calculated
+);
+
+-- Usage logging (triggers effective cost update)
+CREATE TABLE corgea_usage_log (
+  id UUID PRIMARY KEY,
+  user_id VARCHAR(100),
+  organization_id VARCHAR(100),
+  issue_count INTEGER,
+  fixes_generated INTEGER,
+  estimated_cost_cents DECIMAL(10,2),
+  success BOOLEAN,
+  created_at TIMESTAMP
+);
+
+-- Real-time cost comparison view
+CREATE VIEW fix_cost_comparison AS
+SELECT
+  corgea_cost_per_fix_cents,
+  ai_fixer_cost_per_fix_cents,  -- from ai_fixer_research.avg_cost
+  CASE WHEN corgea < ai_fixer THEN 'corgea' ELSE 'ai_fixer' END AS recommended_source
+FROM corgea_subscription, ai_fixer_research;
+```
+
+#### Key Metrics
+
+| Metric | Source | Purpose |
+|--------|--------|---------|
+| `corgea_effective_cost` | `corgea_subscription.effective_cost_per_fix_cents` | Subscription / fixes used |
+| `ai_fixer_cost` | `ai_fixer_research.avg_cost` | From quarterly research |
+| `recommended_source` | `fix_cost_comparison` view | Which is cheaper |
+| `corgea_fixes_used` | `corgea_subscription.fixes_this_period` | Usage this billing cycle |
+
+#### Cost Decision Logic
+
+```typescript
+// In fix-cost-manager.ts
+async getCheaperSource(): Promise<{ source: FixSource; costCents: number; reason: string }> {
+  const comparison = await this.getSupabaseCostComparison();
+
+  if (comparison.corgeaCostPerFixCents < comparison.aiFixerCostPerFixCents) {
+    return { source: 'corgea', costCents: comparison.corgeaCostPerFixCents, ... };
+  } else {
+    return { source: 'ai_fixer', costCents: comparison.aiFixerCostPerFixCents, ... };
+  }
+}
+```
+
+#### Monitoring Dashboard Queries
+
+```sql
+-- Corgea plan efficiency
+SELECT
+  plan_name,
+  monthly_cost_cents / 100.0 AS monthly_cost_dollars,
+  fixes_this_period,
+  effective_cost_per_fix_cents / 100.0 AS cost_per_fix_dollars
+FROM corgea_subscription;
+
+-- Usage trend (last 7 days)
+SELECT
+  DATE(created_at) AS date,
+  SUM(fixes_generated) AS total_fixes,
+  SUM(estimated_cost_cents) / 100.0 AS total_cost
+FROM corgea_usage_log
+WHERE created_at > NOW() - INTERVAL '7 days'
+GROUP BY DATE(created_at)
+ORDER BY date;
+
+-- Cost comparison history
+SELECT
+  DATE(created_at) AS date,
+  AVG(estimated_cost_cents) AS avg_corgea_cost,
+  (SELECT avg_cost * 100 FROM ai_fixer_research ORDER BY research_date DESC LIMIT 1) AS ai_fixer_cost
+FROM corgea_usage_log
+GROUP BY DATE(created_at);
+```
+
+#### Alerts
+
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| `CorgeaHighCost` | `effective_cost_per_fix > ai_fixer_cost * 2` | Warning |
+| `CorgeaRateLimited` | Rate limit hit | Warning |
+| `CorgeaPlanUpgrade` | `fixes_this_period > estimated_monthly_fix_limit * 0.8` | Info |
+| `CostCeilingApproaching` | `daily_cost > max_daily_cost * 0.8` | Warning |
+
+#### Existing Infrastructure Used
+
+| Service | Location | Purpose |
+|---------|----------|---------|
+| `CostTrackerService` | `standard/monitoring/services/cost-tracker.service.ts` | Model pricing database |
+| `ModelUsageAnalytics` | `standard/monitoring/services/model-usage-analytics.ts` | Usage patterns, optimization recommendations |
+| `UnifiedMonitoringService` | `standard/monitoring/services/unified-monitoring.service.ts` | Centralized metrics collection |
+| `SmartAgentTrackerService` | `standard/monitoring/services/smart-agent-tracker.service.ts` | Auto-detect primary vs fallback usage |
+
 ### Phase 3: Advanced Analytics (Implement Later) 🔬
-**Timeline: 1-2 months**  
+**Timeline: 1-2 months**
 **Priority: MEDIUM**
 
 These provide predictive insights and advanced troubleshooting.
@@ -487,7 +603,7 @@ alerts:
 4. **Cost Control**: Track and optimize expenses
 5. **Data-Driven Improvements**: Identify what to optimize based on real usage
 
-## Next Steps (Updated July 2025)
+## Next Steps (Updated December 2025)
 
 ### ✅ Completed
 1. **DeepWiki Monitoring**: Real-time metrics collection and dashboards
@@ -495,23 +611,40 @@ alerts:
 3. **Alert System**: Configurable thresholds for disk usage
 4. **Authentication**: JWT-based secure access to metrics
 5. **Documentation**: Comprehensive monitoring guides
+6. **Fix Cost Tracking**: Corgea vs AI-fixer cost comparison (Session 63)
+7. **Multi-user Infrastructure**: Usage tracking, batching, caching, rate limiting
+8. **Intelligent Routing**: Auto-select cheaper fix source based on real data
 
 ### 🔄 In Progress
 1. **Enhanced Error Tracking**: Integrate Sentry for detailed error aggregation
 2. **Distributed Tracing**: OpenTelemetry implementation for request tracing
-3. **Business Metrics**: Cost tracking, usage patterns, ROI metrics
+3. **Corgea Fix Flow**: Complete scan polling and fix retrieval implementation
 
 ### 📋 Still Needed
 1. **Log Aggregation**: Centralized logging with Elasticsearch/Loki
 2. **Advanced Alerts**: Anomaly detection, predictive alerts
 3. **Performance Optimization**: Automated insights and recommendations
-4. **Cost Analytics**: Detailed breakdown and optimization suggestions
-5. **SLO/SLA Monitoring**: Service level objective tracking
+4. **SLO/SLA Monitoring**: Service level objective tracking
+5. **Cost Dashboard UI**: Visual dashboard for cost comparison metrics
 
 ### Immediate Priorities (Next 2 weeks)
-1. **Production Deployment**: Deploy monitoring infrastructure to production
-2. **Alert Channels**: Configure Slack/email/PagerDuty integrations
-3. **Runbooks**: Create operational runbooks for common alerts
-4. **Load Testing**: Validate monitoring under production load
+1. **Run Supabase Migration**: Deploy `20251220_corgea_cost_tracking.sql`
+2. **Production Testing**: Validate cost tracking with real Corgea usage
+3. **Alert Channels**: Configure Slack/email/PagerDuty integrations
+4. **Runbooks**: Create operational runbooks for cost alerts
 
-This updated plan reflects the significant progress made in July 2025, with core monitoring infrastructure now in place and focus shifting to advanced observability features.
+## Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `src/two-branch/tools/cloud-api/fix-cost-manager.ts` | Cost tracking and routing decisions |
+| `src/two-branch/tools/cloud-api/intelligent-fix-router.ts` | Smart fix source selection |
+| `src/two-branch/tools/cloud-api/corgea-usage-tracker.ts` | Per-user usage tracking |
+| `src/two-branch/tools/cloud-api/corgea-fix-cache.ts` | Fix caching (7-day TTL) |
+| `src/two-branch/tools/cloud-api/corgea-request-queue.ts` | Rate-limited queue |
+| `src/two-branch/tools/cloud-api/corgea-analytics.ts` | Dashboard and alerts |
+| `src/standard/monitoring/services/cost-tracker.service.ts` | Model pricing database |
+| `src/standard/monitoring/services/model-usage-analytics.ts` | Usage optimization |
+| `src/infrastructure/supabase/migrations/20251220_corgea_cost_tracking.sql` | Schema migration |
+
+This updated plan reflects progress through December 2025, with comprehensive fix cost monitoring now in place.

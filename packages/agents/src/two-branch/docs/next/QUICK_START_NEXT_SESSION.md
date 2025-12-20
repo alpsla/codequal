@@ -1,8 +1,8 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: December 20, 2025 (Session 63 Cont. - Tool Verification & Corgea Integration)
-**Current Phase**: Tool Verification Complete, Corgea Partially Integrated
-**Status**: ✅ **SESSION 63 COMPLETE** | 45+ tools verified, Corgea API connected (fix flow needs work)
+**Last Updated**: December 20, 2025 (Session 63 Cont. - Cost Tracking & Monitoring)
+**Current Phase**: Cost Management Infrastructure Complete
+**Status**: ✅ **SESSION 63 COMPLETE** | 45+ tools verified, Corgea multi-user infrastructure, Supabase cost tracking
 
 ---
 
@@ -181,14 +181,35 @@
 - ✅ Priority queue with rate limiting
 - ✅ Automatic fallback when rate limited
 
+### ✅ SUPABASE COST TRACKING (Session 63 Cont.)
+
+**New Migration:** `20251220_corgea_cost_tracking.sql`
+
+**Tables Created:**
+| Table | Purpose |
+|-------|---------|
+| `corgea_subscription` | Track plan tier, monthly cost, effective cost per fix |
+| `corgea_usage_log` | Log each fix request for analytics |
+| `fix_cost_comparison` | View comparing Corgea vs AI-fixer costs |
+
+**Updated Files:**
+- `fix-cost-manager.ts`: Now queries Supabase for real costs
+- `production-monitoring-plan.md`: Added Phase 2.6 for fix cost monitoring
+
+**Key Methods:**
+- `getSupabaseCostComparison()`: Fetch real-time cost comparison
+- `logCorgeaUsage()`: Log usage to update effective cost
+- `getCheaperSource()`: Returns cheaper source with reason
+
 ### ⚠️ NEXT STEPS (Session 64)
 
 | Task | Priority | Description |
 |------|----------|-------------|
+| **Run Supabase Migration** | 🔴 High | Deploy `20251220_corgea_cost_tracking.sql` |
 | **Complete Corgea Fix Flow** | 🔴 High | Implement scan polling and fix retrieval |
-| **Test Multi-Language PR** | 🔴 High | Verify cross-language analysis |
+| **Test Cost Routing** | 🔴 High | Verify cheaper source selection works |
+| **Test Multi-Language PR** | 🟠 Medium | Verify cross-language analysis |
 | **Update Docker Images** | 🟠 Medium | Add new tools to analyzer images |
-| **Performance Benchmark** | 🟢 Lower | Document baseline scan times |
 
 **🎉 All 49 unique binaries installed (72 registry entries) across 7 runtimes!**
 **🎉 Synthetic tests: 45+ tools verified, all finding issues on appropriate fixtures!**
