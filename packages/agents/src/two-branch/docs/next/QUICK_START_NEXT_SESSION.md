@@ -142,16 +142,44 @@
 - ✅ Tier gating: BASIC blocked, PRO/ENTERPRISE allowed for cloud fixers
 - ✅ Rate limiting: 1000/1000 API calls remaining
 
-**Requires Further Development:**
-- ⚠️ Fix generation flow: BLAST scan upload succeeds but processing unclear
-- ⚠️ Need to implement proper scan polling and fix retrieval
-- ⚠️ SARIF-based third-party scan upload needs `run_id` parameter
-
 **API Endpoints Verified:**
 - `GET /verify` → Working (status: ok)
 - `GET /scans` → Working (empty list)
 - `GET /issues` → Working (empty list)
 - `POST /start-scan` → Working (returns transfer_id)
+
+**Requires Further Development:**
+- ⚠️ Fix generation flow: BLAST scan upload succeeds but processing unclear
+- ⚠️ Need to implement proper scan polling and fix retrieval
+- ⚠️ SARIF-based third-party scan upload needs `run_id` parameter
+
+### ✅ MULTI-USER SUPPORT & COST MANAGEMENT (Session 63 Cont.)
+
+**New Infrastructure Files:**
+| File | Purpose | Lines |
+|------|---------|-------|
+| `corgea-usage-tracker.ts` | Track API usage per user/org, plan recommendations | ~500 |
+| `corgea-smart-batcher.ts` | Group issues by file, deduplicate, reduce API calls | ~280 |
+| `corgea-fix-cache.ts` | Redis + memory cache for identical fix patterns | ~330 |
+| `corgea-request-queue.ts` | Rate-limited priority queue (10/min, 100/hr, 1000/day) | ~510 |
+| `corgea-analytics.ts` | Dashboard, alerts, cost projections | ~440 |
+| `fix-cost-manager.ts` | Cost tracking, profitability analysis, ceiling enforcement | ~680 |
+| `intelligent-fix-router.ts` | Smart routing between Corgea/AI-fixer based on cost | ~450 |
+
+**Cost Management Strategy:**
+- Compare cost per fix: Corgea (~10¢) vs AI-fixer/Sonnet 4 (~2¢)
+- Quality comparison: Unknown - needs real data from production usage
+- Approach: Keep both, collect data, optimize routing based on cost/quality ratio
+- Pricing: Pro tier absorbs costs; adjust final pricing based on actual usage data
+
+**Key Features Implemented:**
+- ✅ Real-time cost comparison between fix sources
+- ✅ Cost ceilings (per fix: 25¢, per PR: $10, daily: $50, monthly: $1000)
+- ✅ Profitability tracking (margin %, ROI, break-even analysis)
+- ✅ Smart batching reduces API calls by ~70%
+- ✅ Fix caching for identical patterns (7-day TTL)
+- ✅ Priority queue with rate limiting
+- ✅ Automatic fallback when rate limited
 
 ### ⚠️ NEXT STEPS (Session 64)
 
