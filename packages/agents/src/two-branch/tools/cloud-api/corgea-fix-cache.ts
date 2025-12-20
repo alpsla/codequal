@@ -99,8 +99,8 @@ export class CorgeaFixCache {
    * Generate cache key for an issue
    */
   generateKey(issue: Issue): string {
-    const ruleId = issue.rule || issue.ruleId || 'unknown';
-    const snippet = this.normalizeCode(issue.snippet || issue.message || '');
+    const ruleId = issue.rule || 'unknown';
+    const snippet = this.normalizeCode(issue.codeSnippet || issue.description || '');
 
     return createHash('sha256')
       .update(`${ruleId}|${snippet}`)
@@ -186,10 +186,10 @@ export class CorgeaFixCache {
       lastAccessedAt: now,
       hitCount: 0,
       sourceIssue: {
-        ruleId: issue.rule || issue.ruleId || 'unknown',
-        codeSnippet: (issue.snippet || '').substring(0, 200),
-        file: issue.file || issue.path || 'unknown',
-        line: issue.line || issue.startLine || 0
+        ruleId: issue.rule || 'unknown',
+        codeSnippet: (issue.codeSnippet || '').substring(0, 200),
+        file: issue.file || 'unknown',
+        line: issue.line || 0
       }
     };
 
@@ -385,14 +385,19 @@ export class CorgeaFixCache {
       // Create synthetic issue for key generation
       const issue: Issue = {
         id: `pattern-${pattern.ruleId}`,
-        tool: 'pattern-registry',
-        rule: pattern.ruleId,
-        ruleId: pattern.ruleId,
+        category: 'Quality',
         severity: 'medium',
-        message: '',
-        snippet: pattern.codePattern,
+        status: 'new',
+        title: pattern.ruleId,
+        description: '',
         file: 'pattern',
-        line: 0
+        line: 0,
+        tool: 'pattern-registry',
+        agent: 'QualityAgent',
+        impact: '',
+        businessImpact: '',
+        rule: pattern.ruleId,
+        codeSnippet: pattern.codePattern
       };
 
       await this.set(issue, fix);
