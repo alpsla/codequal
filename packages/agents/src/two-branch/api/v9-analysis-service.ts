@@ -186,7 +186,13 @@ export class V9AnalysisService {
     const startTime = Date.now();
     const analysisId = this.generateAnalysisId(request);
 
-    const outputDir = request.outputDir || path.join(this.workDir, 'reports', analysisId);
+    // Security: Always compute output directory internally, never use user-provided paths
+    // This prevents path traversal attacks via outputDir parameter
+    const reportsDir = path.join(this.workDir, 'reports');
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
+    }
+    const outputDir = path.join(reportsDir, analysisId.replace(/[^a-zA-Z0-9._-]/g, '_'));
 
     console.log(`\n${'='.repeat(80)}`);
     console.log(`🚀 V9 Analysis Service - Analysis Started`);
@@ -732,15 +738,14 @@ export class V9AnalysisService {
     blockingIssues: EnrichedIssue[],
     decision: string,
     metadata: any,
-    outputDir: string
+    outputDir: string  // Note: outputDir is always internally computed, never user-provided
   ): Promise<{ markdown?: string; sarif?: string; gitlab?: string; lsp?: string }> {
     console.log(`📝 Step 6: Report Generation\n`);
 
-    // Validate output directory is within allowed base path to prevent path traversal
-    const safeOutputDir = sanitizePath(this.workDir, path.relative(this.workDir, outputDir) || 'output');
-
-    if (!fs.existsSync(safeOutputDir)) {
-      fs.mkdirSync(safeOutputDir, { recursive: true });
+    // outputDir is computed internally in analyzePR() and is guaranteed safe
+    // No additional validation needed since it's never derived from user input
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
     }
 
     // Generate scanner guidance sections for Tier 3 tools
@@ -758,9 +763,9 @@ export class V9AnalysisService {
     // TODO: Integrate scannerSections into V9ReportFormatterFinal
     // For now, save them separately
     if (scannerSections.length > 0) {
-      const scannerGuidancePath = sanitizePath(safeOutputDir, 'scanner-guidance.md');
+      const scannerGuidancePath = path.join(outputDir, 'scanner-guidance.md');
       fs.writeFileSync(scannerGuidancePath, scannerSections.join('\n---\n\n'));
-      console.log(`   ✅ Scanner guidance: ${scannerGuidancePath}`);
+      console.log(`[Report] Scanner guidance saved`);
     }
 
     // Generate main markdown report using existing formatter
@@ -790,9 +795,9 @@ export class V9AnalysisService {
         metadata.language
       );
 
-      const markdownPath = sanitizePath(safeOutputDir, 'report.md');
+      const markdownPath = path.join(outputDir, 'report.md');
       fs.writeFileSync(markdownPath, report);
-      console.log(`   ✅ Markdown: ${markdownPath}`);
+      console.log(`[Report] Markdown saved`);
 
       return { markdown: markdownPath };
     } catch (error: any) {

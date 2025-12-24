@@ -158,25 +158,44 @@ export function sanitizePath(basePath: string, userPath: string): string {
 
 /**
  * Extracts and validates repository name from URL
+ * Uses string parsing instead of regex to avoid ReDoS vulnerabilities
  * @param repoUrl - The repository URL
  * @returns The repository name (e.g., 'owner/repo')
  */
 export function extractRepoName(repoUrl: string): string {
   const sanitized = sanitizeRepoUrl(repoUrl);
 
-  // Extract from HTTPS URL
-  const httpsMatch = sanitized.match(/https?:\/\/[^/]+\/([^/]+\/[^/.]+)/);
-  if (httpsMatch) {
-    return httpsMatch[1].replace(/\.git$/, '');
+  // Parse HTTPS URL: https://github.com/owner/repo.git
+  if (sanitized.startsWith('http://') || sanitized.startsWith('https://')) {
+    const urlPath = sanitized.split('/').slice(3); // Remove protocol and host
+    if (urlPath.length >= 2) {
+      const owner = urlPath[0];
+      let repo = urlPath[1];
+      if (repo.endsWith('.git')) {
+        repo = repo.slice(0, -4);
+      }
+      if (owner && repo) {
+        return `${owner}/${repo}`;
+      }
+    }
   }
 
-  // Extract from SSH URL
-  const sshMatch = sanitized.match(/git@[^:]+:([^/]+\/[^/.]+)/);
-  if (sshMatch) {
-    return sshMatch[1].replace(/\.git$/, '');
+  // Parse SSH URL: git@github.com:owner/repo.git
+  if (sanitized.startsWith('git@')) {
+    const colonIndex = sanitized.indexOf(':');
+    if (colonIndex > 0) {
+      let repoPath = sanitized.slice(colonIndex + 1);
+      if (repoPath.endsWith('.git')) {
+        repoPath = repoPath.slice(0, -4);
+      }
+      const parts = repoPath.split('/');
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        return `${parts[0]}/${parts[1]}`;
+      }
+    }
   }
 
-  throw new Error(`Could not extract repository name from URL: ${repoUrl}`);
+  throw new Error('Could not extract repository name from URL');
 }
 
 /**

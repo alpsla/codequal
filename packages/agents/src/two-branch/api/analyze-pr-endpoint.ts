@@ -635,26 +635,13 @@ async function runAnalysisAsync(analysisId: string, request: AnalyzeRequestBody)
       analysis.completedAt = new Date().toISOString();
     }
 
-    // Call webhook if provided (with SSRF protection)
+    // Webhook functionality disabled for security (SSRF prevention)
+    // TODO: Implement secure webhook system with:
+    // 1. Webhook registration via authenticated API
+    // 2. Stored webhook URLs in database (not user-provided per request)
+    // 3. Signature verification for webhook payloads
     if (request.webhook) {
-      if (!isValidWebhookUrl(request.webhook)) {
-        console.warn(`[Security] Rejected webhook URL for analysis ${analysisId}: URL not in allowlist`);
-      } else {
-        try {
-          await fetch(request.webhook, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              analysisId,
-              status: result.success ? 'completed' : 'failed',
-              decision: result.decision,
-              issues: result.issues
-            })
-          });
-        } catch (webhookError) {
-          console.error(`[Webhook] Failed for analysis ${analysisId}`, webhookError);
-        }
-      }
+      console.warn('[Security] Webhook functionality is disabled. Configure webhooks via API settings.');
     }
 
   } catch (error: any) {
