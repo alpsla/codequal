@@ -4,7 +4,7 @@
   "rule": "javascript.express.security.cors-misconfiguration.cors-misconfiguration",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Implement strict validation and sanitization of user input before applying it to CORS settings. Ensure that only trusted and predefined domains are allowed in CORS configurations. Refer to Semgrep's rule for CORS misconfiguration in Express.js applications for guidance on identifying and mitigating such issues. ([semgrep.dev](https://semgrep.dev/blog/2021/new-high-signal-rules-for-the-javascript-ecosystem/?utm_source=openai))",
+  "description": "AI-generated fix pattern for javascript.express.security.cors-misconfiguration.cors-misconfiguration",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "const allowedOrigins = ['https://trusted-domain.com'];\nconst corsOptions = {\n  origin: function (origin, callback) {\n    if (allowedOrigins.indexOf(origin) !== -1) {\n      callback(null, true);\n    } else {\n      callback(new Error('Not allowed by CORS'));\n    }\n  }\n};\napp.use(cors(corsOptions));"
+      "after": "const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];\n  const origin = req.headers.origin;\n  \n  if (origin && allowedOrigins.includes(origin)) {\n    const validOrigin = allowedOrigins.find(allowedOrigin => allowedOrigin === origin);\n    res.header('Access-Control-Allow-Origin', validOrigin);\n    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');\n    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');\n    res.header('Access-Control-Allow-Credentials', 'true');\n  } else if (origin) {\n    return res.status(403).json({ error: 'Origin not allowed' });\n}"
     },
-    "instructions": "Implement strict validation and sanitization of user input before applying it to CORS settings. Ensure that only trusted and predefined domains are allowed in CORS configurations. Refer to Semgrep's rule for CORS misconfiguration in Express.js applications for guidance on identifying and mitigating such issues. ([semgrep.dev](https://semgrep.dev/blog/2021/new-high-signal-rules-for-the-javascript-ecosystem/?utm_source=openai))"
+    "instructions": "AI-generated fix pattern for javascript.express.security.cors-misconfiguration.cors-misconfiguration"
   },
   "locations": [
     {

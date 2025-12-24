@@ -401,6 +401,199 @@ const GO_PATTERNS: DetectionPattern[] = [
     framework: 'echo',
     language: 'go',
     buildSystem: 'go-mod'
+  },
+  {
+    files: ['go.mod'],
+    content: [
+      {
+        file: 'go.mod',
+        patterns: [/github\.com\/gofiber\/fiber/]
+      }
+    ],
+    priority: 10,
+    framework: 'fiber',
+    language: 'go',
+    buildSystem: 'go-mod'
+  }
+];
+
+/**
+ * Rust framework detection patterns
+ */
+const RUST_PATTERNS: DetectionPattern[] = [
+  {
+    files: ['Cargo.toml'],
+    content: [
+      {
+        file: 'Cargo.toml',
+        patterns: [/actix-web/]
+      }
+    ],
+    priority: 10,
+    framework: 'actix',
+    language: 'rust',
+    buildSystem: 'cargo'
+  },
+  {
+    files: ['Cargo.toml'],
+    content: [
+      {
+        file: 'Cargo.toml',
+        patterns: [/rocket\s*=/]
+      }
+    ],
+    priority: 10,
+    framework: 'rocket',
+    language: 'rust',
+    buildSystem: 'cargo'
+  },
+  {
+    files: ['Cargo.toml'],
+    content: [
+      {
+        file: 'Cargo.toml',
+        patterns: [/warp\s*=/]
+      }
+    ],
+    priority: 10,
+    framework: 'warp',
+    language: 'rust',
+    buildSystem: 'cargo'
+  }
+];
+
+/**
+ * Ruby framework detection patterns
+ */
+const RUBY_PATTERNS: DetectionPattern[] = [
+  {
+    files: ['Gemfile', 'config/application.rb'],
+    content: [
+      {
+        file: 'Gemfile',
+        patterns: [/gem\s+['"]rails['"]/]
+      }
+    ],
+    priority: 10,
+    framework: 'rails',
+    language: 'ruby',
+    buildSystem: 'bundle'
+  },
+  {
+    files: ['Gemfile'],
+    content: [
+      {
+        file: 'Gemfile',
+        patterns: [/gem\s+['"]sinatra['"]/]
+      }
+    ],
+    priority: 10,
+    framework: 'sinatra',
+    language: 'ruby',
+    buildSystem: 'bundle'
+  },
+  {
+    files: ['Gemfile'],
+    content: [
+      {
+        file: 'Gemfile',
+        patterns: [/gem\s+['"]hanami['"]/]
+      }
+    ],
+    priority: 10,
+    framework: 'hanami',
+    language: 'ruby',
+    buildSystem: 'bundle'
+  }
+];
+
+/**
+ * PHP framework detection patterns
+ */
+const PHP_PATTERNS: DetectionPattern[] = [
+  {
+    files: ['composer.json', 'artisan'],
+    content: [
+      {
+        file: 'composer.json',
+        patterns: [/laravel\/framework/]
+      }
+    ],
+    priority: 10,
+    framework: 'laravel',
+    language: 'php',
+    buildSystem: 'composer'
+  },
+  {
+    files: ['composer.json'],
+    content: [
+      {
+        file: 'composer.json',
+        patterns: [/symfony\/framework-bundle/]
+      }
+    ],
+    priority: 10,
+    framework: 'symfony',
+    language: 'php',
+    buildSystem: 'composer'
+  },
+  {
+    files: ['composer.json'],
+    content: [
+      {
+        file: 'composer.json',
+        patterns: [/codeigniter4\/framework/]
+      }
+    ],
+    priority: 10,
+    framework: 'codeigniter',
+    language: 'php',
+    buildSystem: 'composer'
+  },
+  {
+    files: ['composer.json'],
+    content: [
+      {
+        file: 'composer.json',
+        patterns: [/slim\/slim/]
+      }
+    ],
+    priority: 10,
+    framework: 'slim',
+    language: 'php',
+    buildSystem: 'composer'
+  }
+];
+
+/**
+ * C#/.NET framework detection patterns
+ */
+const DOTNET_PATTERNS: DetectionPattern[] = [
+  {
+    files: ['*.csproj', '*.sln'],
+    content: [
+      {
+        file: '*.csproj',
+        patterns: [/Microsoft\.AspNetCore\.App/]
+      }
+    ],
+    priority: 10,
+    framework: 'aspnet-core',
+    language: 'csharp',
+    buildSystem: 'nuget'
+  },
+  {
+    files: ['*.csproj'],
+    content: [
+      {
+        file: '*.csproj',
+        patterns: [/Microsoft\.NET\.Sdk\.Web/]
+      }
+    ],
+    priority: 9,
+    framework: 'aspnet-core',
+    language: 'csharp',
+    buildSystem: 'nuget'
   }
 ];
 
@@ -411,7 +604,11 @@ const ALL_PATTERNS = [
   ...JAVA_PATTERNS,
   ...PYTHON_PATTERNS,
   ...JS_TS_PATTERNS,
-  ...GO_PATTERNS
+  ...GO_PATTERNS,
+  ...RUST_PATTERNS,
+  ...RUBY_PATTERNS,
+  ...PHP_PATTERNS,
+  ...DOTNET_PATTERNS
 ];
 
 // ============================================================
@@ -618,31 +815,31 @@ export class FrameworkDetector {
       'svelte': ['eslint', 'semgrep', 'npm-audit'],
       
       // Go
-      'gin': ['golangci-lint', 'gosec'],
-      'echo': ['golangci-lint', 'gosec'],
-      'fiber': ['golangci-lint', 'gosec'],
-      'chi': ['golangci-lint', 'gosec'],
-      'beego': ['golangci-lint', 'gosec'],
-      
+      'gin': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+      'echo': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+      'fiber': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+      'chi': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+      'beego': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+
       // Ruby
-      'rails': ['rubocop', 'brakeman', 'bundler-audit'],
-      'sinatra': ['rubocop', 'brakeman', 'bundler-audit'],
-      'hanami': ['rubocop', 'brakeman', 'bundler-audit'],
-      
+      'rails': ['rubocop', 'brakeman', 'bundler-audit', 'semgrep'],
+      'sinatra': ['rubocop', 'brakeman', 'bundler-audit', 'semgrep'],
+      'hanami': ['rubocop', 'brakeman', 'bundler-audit', 'semgrep'],
+
       // PHP
-      'laravel': ['phpcs', 'psalm', 'composer-audit'],
-      'symfony': ['phpcs', 'psalm', 'composer-audit'],
-      'codeigniter': ['phpcs', 'psalm'],
-      'slim': ['phpcs', 'psalm'],
-      
+      'laravel': ['phpstan', 'psalm', 'phpcs', 'composer-audit', 'semgrep'],
+      'symfony': ['phpstan', 'psalm', 'phpcs', 'composer-audit', 'semgrep'],
+      'codeigniter': ['phpstan', 'psalm', 'phpcs', 'composer-audit'],
+      'slim': ['phpstan', 'psalm', 'phpcs', 'composer-audit'],
+
       // .NET
-      'aspnet': ['dotnet-format', 'security-code-scan'],
-      'aspnet-core': ['dotnet-format', 'security-code-scan'],
-      
+      'aspnet': ['dotnet-format', 'security-code-scan', 'dotnet-outdated', 'semgrep'],
+      'aspnet-core': ['dotnet-format', 'security-code-scan', 'dotnet-outdated', 'semgrep'],
+
       // Rust
-      'actix': ['clippy', 'cargo-audit'],
-      'rocket': ['clippy', 'cargo-audit'],
-      'warp': ['clippy', 'cargo-audit'],
+      'actix': ['clippy', 'cargo-audit', 'cargo-deny', 'semgrep'],
+      'rocket': ['clippy', 'cargo-audit', 'cargo-deny', 'semgrep'],
+      'warp': ['clippy', 'cargo-audit', 'cargo-deny', 'semgrep'],
       
       // Kotlin
       'ktor': ['detekt', 'ktlint'],
@@ -663,5 +860,285 @@ export class FrameworkDetector {
  */
 export function createFrameworkDetector(): FrameworkDetector {
   return new FrameworkDetector();
+}
+
+// ============================================================
+// INFRASTRUCTURE DETECTION
+// ============================================================
+
+/**
+ * Infrastructure types that can be detected
+ */
+export type InfrastructureType =
+  | 'docker'
+  | 'kubernetes'
+  | 'terraform'
+  | 'cloudformation'
+  | 'helm'
+  | 'ansible'
+  | 'pulumi'
+  | 'openapi'
+  | 'graphql';
+
+/**
+ * Infrastructure detection result
+ */
+export interface InfrastructureDetectionResult {
+  hasInfrastructure: boolean;
+  types: InfrastructureType[];
+  files: Record<InfrastructureType, string[]>;
+  scanRecommendations: {
+    enableSecrets: boolean;
+    enableIaC: boolean;
+    enableContainer: boolean;
+  };
+}
+
+/**
+ * Infrastructure file patterns
+ */
+const INFRASTRUCTURE_PATTERNS: Record<InfrastructureType, {
+  files: string[];
+  extensions: string[];
+  contentPatterns?: RegExp[];
+}> = {
+  docker: {
+    files: ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore'],
+    extensions: [],
+    contentPatterns: [/^FROM\s+/m]
+  },
+  kubernetes: {
+    files: [],
+    extensions: ['.yaml', '.yml'],
+    contentPatterns: [
+      /apiVersion:\s*(apps\/v1|v1|batch\/v1|networking\.k8s\.io)/,
+      /kind:\s*(Deployment|Service|Pod|ConfigMap|Secret|Ingress|StatefulSet|DaemonSet)/
+    ]
+  },
+  terraform: {
+    files: ['main.tf', 'variables.tf', 'outputs.tf', 'providers.tf', 'terraform.tfvars'],
+    extensions: ['.tf', '.tfvars'],
+    contentPatterns: [/^resource\s+"/, /^provider\s+"/, /^module\s+"/]
+  },
+  cloudformation: {
+    files: [],
+    extensions: ['.yaml', '.yml', '.json'],
+    contentPatterns: [
+      /AWSTemplateFormatVersion/,
+      /Resources:\s*\n\s+\w+:\s*\n\s+Type:\s*AWS::/
+    ]
+  },
+  helm: {
+    files: ['Chart.yaml', 'Chart.yml', 'values.yaml', 'values.yml'],
+    extensions: [],
+    contentPatterns: [/apiVersion:\s*v[12]/, /name:\s*\w+/, /version:\s*[\d.]+/]
+  },
+  ansible: {
+    files: ['ansible.cfg', 'playbook.yml', 'site.yml', 'inventory.yml'],
+    extensions: [],
+    contentPatterns: [/hosts:\s*/, /tasks:\s*\n/, /- name:\s*/]
+  },
+  pulumi: {
+    files: ['Pulumi.yaml', 'Pulumi.yml'],
+    extensions: [],
+    contentPatterns: [/name:\s*\w+/, /runtime:\s*(nodejs|python|go|dotnet)/]
+  },
+  openapi: {
+    files: ['openapi.yaml', 'openapi.yml', 'openapi.json', 'swagger.yaml', 'swagger.yml', 'swagger.json'],
+    extensions: [],
+    contentPatterns: [/openapi:\s*["']?3\./, /swagger:\s*["']?2\./]
+  },
+  graphql: {
+    files: ['schema.graphql', 'schema.gql'],
+    extensions: ['.graphql', '.gql'],
+    contentPatterns: [/type\s+Query\s*\{/, /type\s+Mutation\s*\{/, /schema\s*\{/]
+  }
+};
+
+/**
+ * Detect infrastructure in a repository
+ */
+export async function detectInfrastructure(repoPath: string): Promise<InfrastructureDetectionResult> {
+  const result: InfrastructureDetectionResult = {
+    hasInfrastructure: false,
+    types: [],
+    files: {} as Record<InfrastructureType, string[]>,
+    scanRecommendations: {
+      enableSecrets: false,
+      enableIaC: false,
+      enableContainer: false
+    }
+  };
+
+  // Initialize empty arrays for each type
+  for (const type of Object.keys(INFRASTRUCTURE_PATTERNS) as InfrastructureType[]) {
+    result.files[type] = [];
+  }
+
+  try {
+    // Get all files recursively (max depth 5)
+    const allFiles = await scanDirectoryRecursive(repoPath, 5);
+
+    for (const type of Object.keys(INFRASTRUCTURE_PATTERNS) as InfrastructureType[]) {
+      const pattern = INFRASTRUCTURE_PATTERNS[type];
+      const matchedFiles: string[] = [];
+
+      for (const file of allFiles) {
+        const relativePath = path.relative(repoPath, file);
+        const fileName = path.basename(file);
+        const ext = path.extname(file).toLowerCase();
+
+        // Check explicit file names
+        if (pattern.files.includes(fileName)) {
+          matchedFiles.push(relativePath);
+          continue;
+        }
+
+        // Check extensions
+        if (pattern.extensions.includes(ext)) {
+          // Verify with content patterns if available
+          if (pattern.contentPatterns && pattern.contentPatterns.length > 0) {
+            try {
+              const content = await fs.readFile(file, 'utf-8');
+              const matches = pattern.contentPatterns.some(regex => regex.test(content));
+              if (matches) {
+                matchedFiles.push(relativePath);
+              }
+            } catch {
+              // Skip unreadable files
+            }
+          } else {
+            matchedFiles.push(relativePath);
+          }
+        }
+      }
+
+      if (matchedFiles.length > 0) {
+        result.files[type] = matchedFiles;
+        result.types.push(type);
+      }
+    }
+
+    result.hasInfrastructure = result.types.length > 0;
+
+    // Set scan recommendations based on detected infrastructure
+    if (result.types.includes('docker') || result.types.includes('kubernetes') || result.types.includes('helm')) {
+      result.scanRecommendations.enableContainer = true;
+    }
+    if (result.types.includes('terraform') || result.types.includes('cloudformation') ||
+        result.types.includes('kubernetes') || result.types.includes('helm') ||
+        result.types.includes('ansible') || result.types.includes('pulumi')) {
+      result.scanRecommendations.enableIaC = true;
+    }
+    // Always enable secrets scanning if any infrastructure is detected
+    if (result.hasInfrastructure) {
+      result.scanRecommendations.enableSecrets = true;
+    }
+
+    logger.info(`🏗️ Infrastructure detection: Found ${result.types.length} types: ${result.types.join(', ') || 'none'}`);
+
+  } catch (error) {
+    logger.error(`Infrastructure detection failed: ${error}`);
+  }
+
+  return result;
+}
+
+/**
+ * Recursively scan directory for files
+ */
+async function scanDirectoryRecursive(dir: string, maxDepth: number, currentDepth = 0): Promise<string[]> {
+  if (currentDepth >= maxDepth) return [];
+
+  const files: string[] = [];
+  const skipDirs = ['node_modules', '.git', 'vendor', '__pycache__', '.venv', 'venv', 'dist', 'build', 'target'];
+
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('.') && !skipDirs.includes(entry.name)) {
+          const subFiles = await scanDirectoryRecursive(fullPath, maxDepth, currentDepth + 1);
+          files.push(...subFiles);
+        }
+      } else if (entry.isFile()) {
+        files.push(fullPath);
+      }
+    }
+  } catch {
+    // Ignore permission errors
+  }
+
+  return files;
+}
+
+/**
+ * Quick check if repository has any infrastructure files
+ * (Faster than full detection - just checks for existence)
+ */
+export async function hasInfrastructureFiles(repoPath: string): Promise<boolean> {
+  const quickCheckFiles = [
+    'Dockerfile',
+    'docker-compose.yml',
+    'docker-compose.yaml',
+    'main.tf',
+    'Chart.yaml',
+    'kubernetes',
+    'k8s',
+    'deploy',
+    'infra',
+    'infrastructure'
+  ];
+
+  for (const file of quickCheckFiles) {
+    const fullPath = path.join(repoPath, file);
+    if (existsSync(fullPath)) {
+      return true;
+    }
+  }
+
+  // Check for common infrastructure directories
+  const infraDirs = ['kubernetes', 'k8s', 'deploy', 'infra', 'infrastructure', 'helm', 'terraform', 'cloudformation'];
+  for (const dir of infraDirs) {
+    const dirPath = path.join(repoPath, dir);
+    if (existsSync(dirPath)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Get security scan configuration based on infrastructure detection
+ */
+export async function getSecurityScanConfig(repoPath: string): Promise<{
+  enableSecrets: boolean;
+  enableIaC: boolean;
+  enableContainer: boolean;
+  detectedInfrastructure: InfrastructureType[];
+}> {
+  // Quick check first
+  const hasInfra = await hasInfrastructureFiles(repoPath);
+
+  if (!hasInfra) {
+    // Still enable secrets scanning (can find hardcoded secrets in any code)
+    return {
+      enableSecrets: true,  // Always scan for secrets
+      enableIaC: false,
+      enableContainer: false,
+      detectedInfrastructure: []
+    };
+  }
+
+  // Full detection for detailed config
+  const detection = await detectInfrastructure(repoPath);
+
+  return {
+    ...detection.scanRecommendations,
+    detectedInfrastructure: detection.types
+  };
 }
 

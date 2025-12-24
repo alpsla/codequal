@@ -1,6 +1,400 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: December 13, 2025**
+**Last Updated: December 20, 2025**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
+
+---
+
+## 🌐 Cloud Infrastructure & Tool Verification (Session 63)
+
+### Oracle Cloud Instance
+- **IP**: 129.213.49.128
+- **User**: opc
+- **SSH Key**: `/Users/alpinro/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key`
+- **Architecture**: ARM64 (Oracle A1.Flex)
+
+### dependency-check Configuration (PERMANENT)
+
+**Properties File**: `/home/opc/dependency-check/dependency-check.properties`
+```properties
+data.driver_name=org.postgresql.Driver
+data.connection_string=jdbc:postgresql://localhost:5432/depcheck
+data.user=depcheck_scanner
+data.password=depcheck123
+```
+
+**Wrapper Script**: `/home/opc/bin/dc-scan`
+```bash
+# Usage - automatically uses PostgreSQL with 211K CVEs
+dc-scan /path/to/project --format JSON --out /tmp/report
+
+# Example
+dc-scan /tmp/my-app --format JSON --out /tmp/dc-report
+```
+
+**CVE Database Stats**:
+- **Total CVEs**: 211,304
+- **Latest entries**: CVE-2025-* (up to date)
+- **Analysis time**: ~9 seconds per scan
+
+### Verified Working Tools (Cloud)
+
+| Tool | Location | Type | Verified |
+|------|----------|------|----------|
+| **semgrep** | `/home/opc/.local/bin/semgrep` | Host | ✅ 4+ issues |
+| **eslint** | `/opt/codequal-tools/bin/eslint` | Host | ✅ 10 issues |
+| **ruff** | `/home/opc/.local/bin/ruff` | Host | ✅ Working |
+| **checkstyle** | `/usr/local/bin/checkstyle` | Host | ✅ 35 issues |
+| **npm audit** | `/usr/bin/npm` | Host | ✅ 9 vulns |
+| **dependency-check** | `/home/opc/dependency-check` | Host+PostgreSQL | ✅ 17 CVEs |
+| **bandit** | `lang-python-v4.1-arm` | Docker | ✅ 7 issues |
+| **mypy** | `lang-python-v4.1-arm` | Docker | ✅ Available |
+| **tsc** | `lang-typescript-v4.6-arm` | Docker | ✅ 2 issues |
+
+### Docker Analyzer Images
+
+```bash
+# Available on cloud
+codequal/analyzer:lang-javascript-v4.3-arm
+codequal/analyzer:lang-python-v4.1-arm
+codequal/analyzer:lang-typescript-v4.6-arm
+iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm
+codeql-runner:latest
+```
+
+### Runtimes Installed (Session 63)
+
+| Runtime | Version | Purpose |
+|---------|---------|---------|
+| **Go** | 1.23.4 | gosec, golangci-lint, govulncheck |
+| **Ruby** | 3.0.7 | brakeman, rubocop, bundler-audit |
+| **Python** | 3.9.21 | bandit, ruff, checkov, pip-audit |
+| **Node.js** | 20.19.5 | eslint, spectral, npm audit |
+| **Java** | 25.0.1 LTS | checkstyle, pmd, dependency-check |
+| **PHP** | 8.0.30 | phpstan |
+| **Rust** | 1.92.0 | cargo-audit |
+
+### All Tools Verified Working (Session 63 - COMPLETE)
+
+#### P0: Critical Security (6 tools)
+| Tool | Version | Purpose | Verified |
+|------|---------|---------|----------|
+| **semgrep** | 1.136.0 | Multi-language SAST | ✅ |
+| **gitleaks** | 8.21.2 | Secret scanning | ✅ |
+| **trufflehog** | 3.88.3 | Deep secret scanning | ✅ |
+| **trivy** | 0.58.0 | Container/IaC | ✅ |
+| **grype** | 0.104.2 | SBOM scanning | ✅ |
+| **checkov** | 3.2.495 | IaC security | ✅ |
+
+#### P1: Language Security (5 tools)
+| Tool | Version | Language | Verified |
+|------|---------|----------|----------|
+| **bandit** | 1.8.6 | Python | ✅ |
+| **gosec** | 2.22.2 | Go | ✅ |
+| **brakeman** | 6.2.2 | Ruby/Rails | ✅ |
+| **spectral** | 6.15.0 | OpenAPI | ✅ |
+| **graphql-cop** | installed | GraphQL | ✅ |
+
+#### P2: Code Quality (11 tools)
+| Tool | Version | Language | Verified |
+|------|---------|----------|----------|
+| **ruff** | 0.14.7 | Python | ✅ |
+| **pylint** | 3.3.9 | Python | ✅ |
+| **eslint** | 9.39.2 | JavaScript | ✅ |
+| **biome** | 2.3.10 | JS/TS | ✅ |
+| **rubocop** | 1.82.0 | Ruby | ✅ |
+| **phpstan** | 2.1.33 | PHP | ✅ |
+| **checkstyle** | 10.21.2 | Java | ✅ |
+| **spotbugs** | 4.8.6 | Java | ✅ |
+| **staticcheck** | 2025.1.1 | Go | ✅ |
+| **golangci-lint** | 1.62.2 | Go | ✅ |
+| **pmd** | 7.9.0 | Java/Apex | ✅ |
+
+#### P3: Architecture (10 tools)
+| Tool | Version | Language | Verified |
+|------|---------|----------|----------|
+| **madge** | 8.0.0 | JS/TS | ✅ |
+| **dependency-cruiser** | 17.3.4 | JS/TS | ✅ |
+| **ts-unused-exports** | installed | TypeScript | ✅ |
+| **pydeps** | 3.0.1 | Python | ✅ |
+| **import-linter** | 2.5.2 | Python | ✅ |
+| **go-arch-lint** | 1.14.0 | Go | ✅ |
+| **jdepend** | 2.10 | Java | ✅ |
+| **packwerk** | 3.2.1 | Ruby | ✅ |
+| **deptrac** | 0.24.0 | PHP | ✅ |
+| **cargo-modules** | 0.25.0 | Rust | ✅ |
+
+#### P4: Dependency Scanning (6 tools)
+| Tool | Version | Ecosystem | Verified |
+|------|---------|-----------|----------|
+| **dc-scan** | 12.1.0 | Java (211K CVEs) | ✅ |
+| **npm audit** | built-in | Node.js | ✅ |
+| **pip-audit** | 2.9.0 | Python | ✅ |
+| **bundler-audit** | 0.9.3 | Ruby | ✅ |
+| **govulncheck** | 1.1.4 | Go | ✅ |
+| **cargo-audit** | 0.22.0 | Rust | ✅ |
+
+#### Fixer Tools (9 tools)
+| Tool | Version | Language | Verified |
+|------|---------|----------|----------|
+| **black** | 25.11.0 | Python | ✅ |
+| **isort** | 6.1.0 | Python | ✅ |
+| **autoflake** | 2.3.1 | Python | ✅ |
+| **pyupgrade** | installed | Python | ✅ |
+| **google-java-format** | 1.24.0 | Java | ✅ |
+| **prettier** | 3.7.3 | JS/TS | ✅ |
+| **gofmt** | built-in | Go | ✅ |
+| **rustfmt** | 1.8.0 | Rust | ✅ |
+| **sorald** | 0.8.6 | Java | ✅ |
+
+**Total: 49 unique binaries (72 registry entries) verified across 7 runtimes**
+
+> **Note**: The Supabase registry has 72 tool entries, but many share binaries:
+> - `semgrep` → 12 entries (semgrep-java, semgrep-ts, etc.)
+> - `eslint` → 4 entries (eslint, eslint-ts, eslint-fix, etc.)
+> - `ruff` → 3 entries (ruff-check, ruff-fix, ruff-format)
+> - Other shared binaries: clippy, golangci-lint, biome
+
+---
+
+## 🔍 Fix Verification & Unfixed Issue Handler (Session 61)
+
+### Overview
+Complete post-fix verification pipeline that re-scans fixed code to confirm fixes work, and provides user-friendly guidance for issues that couldn't be auto-fixed.
+
+### New Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| **FixVerifier** | `fix-branch/fix-verifier.ts` | Re-scans with same tool, checks for regressions |
+| **UnfixedIssueHandler** | `fix-branch/unfixed-issue-handler.ts` | Records reasons, generates author guidance |
+
+### Fix Verification Flow
+```typescript
+import { FixVerifier, createFixVerifier } from './fix-branch';
+
+const verifier = createFixVerifier({
+  workingDir: '/path/to/repo',
+  skipTools: ['deprecated-tool']  // Optional: tools to skip
+});
+
+// Register scanner (same tool that found the issue)
+verifier.registerScanner(async (file, tool) => {
+  return runTool(tool, file);  // Returns Issue[]
+});
+
+// Verify a single fix
+const result = await verifier.verifyFix(categorizedFix);
+// Returns: { fix, verified, issueResolved, regressionsFound, regressedIssues? }
+
+// Verify batch of fixes
+const batchResult = await verifier.verifyBatch(fixes);
+// Returns: { results[], verifiedFixes[], failedFixes[], summary }
+```
+
+### Verification Logic
+1. **Re-scan file** with the SAME tool that found the original issue
+2. **Check if resolved**: Original issue should NOT appear at same line (±2 lines drift allowed)
+3. **Check for regressions**: No NEW issues should appear at the fix location (±5 lines)
+4. **Pass/Fail determination**: `verified = issueResolved && !regressionsFound`
+
+### Unfixed Issue Handling
+```typescript
+import { UnfixedIssueHandler, createUnfixedIssueHandler } from './fix-branch';
+
+const handler = createUnfixedIssueHandler();
+
+// Record an unfixed issue
+handler.recordUnfixed(
+  { id, ruleId, toolId, file, line, message, severity },
+  'verification_failed',  // reason
+  { attemptedTiers: ['tier1', 'tier2'], tierFailures: [...] }  // context
+);
+
+// Record a verification failure
+handler.recordVerificationFailure(categorizedFix, verificationResult);
+
+// Get summary
+const summary = handler.getSummary();
+// Returns: { total, byReason, byPriority, mergeBlockers, requiresAuthorAction }
+
+// Generate markdown for report
+const markdown = handler.generateMarkdown();
+```
+
+### Unfixed Issue Reasons
+
+| Reason | Description | Author Action |
+|--------|-------------|---------------|
+| `no_pattern_match` | No fix pattern in registry | Upgrade to PRO or wait for pattern |
+| `cloud_api_failed` | Corgea couldn't generate fix | Manual fix required |
+| `ai_generation_failed` | AI couldn't generate reliable fix | Manual fix required |
+| `verification_failed` | Fix didn't resolve the issue | Review and fix manually |
+| `regression_introduced` | Fix created new issues | Investigate approach |
+| `code_context_insufficient` | Not enough context | Provide more code context |
+| `complex_refactoring` | Requires architecture change | Plan refactoring |
+| `external_dependency` | Issue in external library | Update or fork library |
+| `cost_limit_exceeded` | AI cost limit reached | Upgrade tier or reduce scope |
+| `timeout` | Fix attempt timed out | Retry or manual fix |
+
+### Integration in FixBranchOrchestrator
+```typescript
+const orchestrator = new FixBranchOrchestrator({
+  repoUrl: 'https://github.com/org/repo',
+  prNumber: 123,
+  workingDir: '/tmp/repo',
+  currentBranch: 'feature/my-pr',
+  verifyFixes: true,  // Enable verification
+  skipVerificationTools: ['slow-tool']  // Optional
+});
+
+// Register tool scanner
+orchestrator.registerToolScanner(async (file, tool) => {
+  return runTool(tool, file);
+});
+
+const result = await orchestrator.orchestrate(issues);
+// result.verification: { performed, passed, failed, regressions, details }
+// result.unfixedIssues: { total, byReason, mergeBlockers, markdown }
+```
+
+### Key Files
+```
+packages/agents/src/two-branch/fix-branch/
+├── fix-verifier.ts           # Fix verification logic
+├── unfixed-issue-handler.ts  # Unfixed issue handling
+├── fix-branch-orchestrator.ts # Updated with verification
+└── index.ts                   # Exports new modules
+```
+
+---
+
+## ☁️ Cloud API Fixer Integration (Session 60)
+
+### Overview
+Corgea AI Fixer integration for PRO/ENTERPRISE tiers with SARIF conversion and pattern learning.
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| **CorgeaFixer** | `cloud-api/corgea-fixer.ts` | Corgea API integration |
+| **SARIFConverter** | `cloud-api/sarif-converter.ts` | Issue to SARIF 2.1.0 |
+| **CloudAPIOrchestrator** | `cloud-api/api-tool-orchestrator.ts` | Async execution + tier gating |
+
+### Tier 2.5 Flow (Optimized)
+```
+Tier 2.5A: Pattern Registry (CHECK FIRST - instant, free)
+     │
+     ▼ (unmatched issues only)
+Tier 2.5B: Cloud API (Corgea - PRO/ENTERPRISE only)
+     │
+     ▼ (successful fixes)
+Store as patterns for future reuse
+```
+
+### Subscription Tier Gating
+
+| Tier | Cloud Fixers | Max Fixes/Analysis |
+|------|--------------|-------------------|
+| **BASIC** | ❌ | 0 |
+| **PRO** | ✅ Corgea | 50 |
+| **ENTERPRISE** | ✅ Corgea | 200 |
+
+### Key Files
+```
+packages/agents/src/two-branch/tools/cloud-api/
+├── index.ts                    # Module exports
+├── base-api-tool.ts            # Abstract base class
+├── sarif-converter.ts          # SARIF conversion
+├── corgea-fixer.ts             # Corgea integration
+└── api-tool-orchestrator.ts    # Orchestration
+```
+
+---
+
+## 🔐 Security Infrastructure Tools (Session 59)
+
+### Overview
+New security tool integrations for secrets, IaC, and container scanning with intelligent infrastructure detection.
+
+### New Tools Integrated
+
+| Tool | Category | Purpose | Output Type |
+|------|----------|---------|-------------|
+| **Gitleaks** | Secrets | Detect hardcoded secrets | Recommendation-only |
+| **TruffleHog** | Secrets | Deep secret scanning | Recommendation-only |
+| **Checkov** | IaC Security | Terraform/K8s/CloudFormation | Hybrid (some auto-fix) |
+| **Trivy** | Container/IaC | CVE + misconfiguration | Recommendation-only |
+| **Grype** | Container | SBOM-based vulnerability | Recommendation-only |
+
+### Infrastructure Auto-Detection
+```typescript
+import { detectInfrastructure, getSecurityScanConfig } from './utils/framework-detector';
+
+// Detects: docker, kubernetes, terraform, cloudformation, helm, ansible, pulumi, openapi, graphql
+const infra = await detectInfrastructure(repoPath);
+// Returns: { types: ['docker', 'kubernetes'], detected: true, patterns: {...} }
+
+// Orchestrator uses this to enable appropriate scans
+const scanConfig = await getSecurityScanConfig(repoPath);
+// Returns: { enableSecrets: true, enableIaC: true, enableContainer: true, detectedInfrastructure: [...] }
+```
+
+### Blocker Logic (CRITICAL)
+```typescript
+// smart-issue-filter.ts
+const ALWAYS_BLOCKER_CATEGORIES = ['Secrets', 'secrets'];  // ALWAYS block regardless of severity
+const SECURITY_BLOCKER_CATEGORIES = ['Security', 'Infrastructure', 'Container Security'];
+
+// Blocker determination:
+// 1. Secrets → ALWAYS block (any severity)
+// 2. Security (critical) → Block regardless of code location (configurable via securityCriticalAlwaysBlocks)
+// 3. Security (high) → Block only in NEW/EXISTING_MODIFIED code
+// 4. Standard critical → Block only in NEW/EXISTING_MODIFIED code
+```
+
+### Recommendation-Only Tools
+These tools DON'T produce auto-fixable code - they generate AI recommendations instead:
+- **Gitleaks/TruffleHog**: "Rotate this credential and remove from git history"
+- **Trivy/Grype**: "Update base image or add vulnerability exception with justification"
+
+```typescript
+// ai-fix-prompts.ts
+const RECOMMENDATION_ONLY_CATEGORIES = ['secrets', 'iac_security', 'container_security'];
+
+// Output format is markdown recommendations, not code patches
+export function isRecommendationCategory(category: IssueCategory): boolean {
+  return RECOMMENDATION_ONLY_CATEGORIES.includes(category);
+}
+```
+
+### Subscription Tiers
+| Tool | BASIC | PRO |
+|------|-------|-----|
+| Gitleaks | ✅ | ✅ |
+| TruffleHog | ✅ | ✅ |
+| Checkov | ✅ | ✅ |
+| Trivy | ✅ | ✅ |
+| Grype | ✅ | ✅ |
+| CodeQL | ❌ | ✅ |
+
+### Key Files
+```
+src/two-branch/tools/universal/
+├── secret-scanner.ts       # Gitleaks/TruffleHog integration
+├── iac-scanner.ts          # Checkov/Trivy IaC
+├── container-scanner.ts    # Trivy/Grype containers
+└── index.ts                # Updated exports
+
+src/two-branch/utils/
+├── smart-issue-filter.ts   # Blocker logic with security categories
+├── framework-detector.ts   # Infrastructure detection
+└── issue-grouping.ts       # Fix tier determination
+
+src/fix-agent/
+├── ai-fix-prompts.ts       # Recommendation-only category prompts
+└── tool-fix-registry.ts    # New tools registered
+```
 
 ---
 
@@ -347,13 +741,21 @@ True AI Failures: 0
 | **Docker Images** | Pre-built only | No runtime npm install |
 | **Pattern System** | Self-improving | PRO learns → BASIC benefits |
 
-### Auto-Fix Architecture (Session 38 - UPDATED)
-| Tier | Source | Confidence | Coverage |
-|------|--------|------------|----------|
-| **Tier 0** | Pattern reuse | HIGHEST | Growing (target: 70-80%) |
-| **Tier 1** | Tool native (`--fix`) | HIGH | ~60-70% |
-| **Tier 2** | Dedicated fixers | HIGH | ~15-20% |
-| **Tier 3** | AI generation | MEDIUM | ~10-15% |
+### Auto-Fix Architecture (Session 61 - COMPLETE)
+| Tier | Source | Confidence | Coverage | Notes |
+|------|--------|------------|----------|-------|
+| **Tier 1** | Native `--fix` | 95-100% | ~60-70% | eslint, prettier, ruff, gofmt |
+| **Tier 2** | Dedicated fixers | 85-95% | ~15-20% | Sorald, pyupgrade, semgrep --autofix |
+| **Tier 2.5A** | Pattern Registry | 80-90% | Growing | Supabase lookup (FREE, instant) |
+| **Tier 2.5B** | Cloud API (Corgea) | 70-85% | PRO only | SARIF → AI fixes → save as patterns |
+| **Tier 3** | AI generation | 50-80% | Fallback | Claude/GPT with self-improvement loop |
+
+**Post-Fix Flow (Session 61):**
+| Step | Component | Purpose |
+|------|-----------|---------|
+| 7 | FixVerifier | Re-scan with same tool, check regressions |
+| 8 | UnfixedIssueHandler | Record failures with author guidance |
+| 9 | FixBranchGenerator | Apply verified fixes, generate review doc |
 
 ### Language Priority
 | Priority | Languages | Status |
@@ -492,6 +894,83 @@ Every 3 months research both:
 ---
 
 ## RECENT FIXES
+
+### Session 61 (Dec 19, 2025) - FIX VERIFICATION & UNFIXED ISSUE HANDLER
+
+**Major Additions:**
+1. **FixVerifier** - Re-scans fixed code with same tool to confirm fixes work
+2. **UnfixedIssueHandler** - Records reasons + generates author guidance
+3. **Orchestrator Integration** - Complete verification pipeline in fix-branch-orchestrator
+4. **Cloud API Type Fixes** - Fixed TypeScript errors in SARIF converter
+
+**Key Architecture Changes:**
+- `fix-branch-orchestrator.ts`: Added `verifyFixes` config, `registerToolScanner()` method
+- `fix-branch/index.ts`: Exports FixVerifier and UnfixedIssueHandler
+- `cloud-api/sarif-converter.ts`: Fixed Issue type property mappings
+- `cloud-api/base-api-tool.ts`: Fixed unknown type for error response
+
+**New Result Fields:**
+```typescript
+interface FixOrchestrationResult {
+  // ...existing fields...
+  verification?: {
+    performed: boolean;
+    passed: number;
+    failed: number;
+    regressions: number;
+    details?: BatchVerificationResult;
+  };
+  unfixedIssues: {
+    total: number;
+    byReason: Record<string, number>;
+    mergeBlockers: number;
+    markdown: string;
+  };
+}
+```
+
+---
+
+### Session 60 (Dec 19, 2025) - CLOUD API FIXER INTEGRATION
+
+**Major Integrations:**
+1. **Corgea AI Fixer** - Cloud-based fix generation for PRO tier
+2. **SARIF Converter** - Issue to SARIF 2.1.0 conversion
+3. **API Tool Orchestrator** - Async execution + tier gating
+4. **Tier 2.5 Routing** - Pattern FIRST, then Cloud API
+
+**Key Files Created:**
+- `src/two-branch/tools/cloud-api/corgea-fixer.ts`
+- `src/two-branch/tools/cloud-api/sarif-converter.ts`
+- `src/two-branch/tools/cloud-api/api-tool-orchestrator.ts`
+
+---
+
+### Session 59 (Dec 19, 2025) - SECURITY INFRASTRUCTURE TOOLS
+
+**Major Integrations:**
+1. **Secrets Detection** - Gitleaks + TruffleHog for hardcoded credentials
+2. **IaC Security** - Checkov for Terraform, K8s, CloudFormation, Helm
+3. **Container Security** - Trivy + Grype for CVE scanning
+4. **Infrastructure Detection** - Auto-detect Docker, Kubernetes, Terraform in repos
+5. **Security Blocker Logic** - Secrets ALWAYS block, critical security blocks regardless of code location
+
+**Key Architecture Changes:**
+- `smart-issue-filter.ts`: New `isBlockerIssue()` function with security-aware logic
+- `framework-detector.ts`: Added `detectInfrastructure()` and `getSecurityScanConfig()`
+- `issue-grouping.ts`: Updated `inferCategoryFromTool()` for new security tools
+- `ai-fix-prompts.ts`: Added recommendation-only categories with markdown output
+
+**Blocker Configuration:**
+```typescript
+// Default: Critical security issues block regardless of code location
+securityCriticalAlwaysBlocks: true
+
+// Secrets ALWAYS block
+secretsAlwaysBlock: true
+```
+
+---
 
 ### Session 53 (Dec 13, 2025) - PYTHON FIXER INTEGRATION & $0 BASIC TIER
 

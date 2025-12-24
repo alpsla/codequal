@@ -4,7 +4,7 @@
   "rule": "yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Add a `securityContext` to the container specification in the pod definition and set `allowPrivilegeEscalation` to `false`. This prevents processes within the container from gaining higher privileges than initially assigned.  Reference: Kubernetes documentation on Security Contexts.",
+  "description": "AI-generated fix pattern for yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "securityContext:\n  allowPrivilegeEscalation: false"
+      "after": "      containers:\n        - image: postgres:18.1\n          name: postgresql\n          securityContext:\n            allowPrivilegeEscalation: false\n            runAsNonRoot: true\n            readOnlyRootFilesystem: false\n            capabilities:\n              drop:\n                - ALL\n          env:\n            - name: POSTGRES_USER\n              valueFrom:\n                secretKeyRef:\n                  name: demo-db"
     },
-    "instructions": "Add a `securityContext` to the container specification in the pod definition and set `allowPrivilegeEscalation` to `false`. This prevents processes within the container from gaining higher privileges than initially assigned.  Reference: Kubernetes documentation on Security Contexts."
+    "instructions": "AI-generated fix pattern for yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext"
   },
   "locations": [
     {

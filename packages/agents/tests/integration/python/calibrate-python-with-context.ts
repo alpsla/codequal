@@ -58,7 +58,7 @@ let globalRepoPath = '';
 
 /**
  * Extract code snippet from file (10 lines around the issue)
- * Handles macOS /private prefix, relative paths, and other variations
+ * Handles macOS /private prefix, relative paths, Docker /workspace paths, and other variations
  */
 function extractCodeSnippet(filePath: string, line: number): string {
   try {
@@ -70,6 +70,11 @@ function extractCodeSnippet(filePath: string, line: number): string {
       // Handle relative paths (./file.py or file.py)
       path.join(globalRepoPath, filePath),
       path.join(globalRepoPath, filePath.replace(/^\.\//, '')),
+      // Handle Docker /workspace/ prefix (tools may run in Docker)
+      path.join(globalRepoPath, filePath.replace(/^\/workspace\//, '')),
+      path.join(globalRepoPath, filePath.replace(/^\/workspace/, '')),
+      filePath.replace(/^\/workspace\//, globalRepoPath + '/'),
+      filePath.replace(/^\/workspace/, globalRepoPath),
     ];
 
     let actualPath = '';

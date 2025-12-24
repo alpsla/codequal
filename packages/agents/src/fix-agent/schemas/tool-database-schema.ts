@@ -636,6 +636,9 @@ export const SEED_TOOLS: Tool[] = [
     documentationUrl: 'https://semgrep.dev/',
     isEnabled: true,
   },
+  // =========================================================================
+  // P0 CRITICAL SECURITY TOOLS (Session 59)
+  // =========================================================================
   {
     id: 'gitleaks',
     name: 'Gitleaks',
@@ -649,6 +652,31 @@ export const SEED_TOOLS: Tool[] = [
     isEnabled: true,
   },
   {
+    id: 'trufflehog',
+    name: 'TruffleHog',
+    type: 'analyzer',
+    categories: ['secrets', 'security'],
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust', 'kotlin', 'swift', 'c', 'cpp'],
+    command: 'trufflehog filesystem . --json',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://trufflesecurity.com/trufflehog',
+    isEnabled: true,
+  },
+  {
+    id: 'checkov',
+    name: 'Checkov',
+    type: 'hybrid',
+    categories: ['security'],
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    command: 'checkov -d . --output json',
+    outputFormat: 'json',
+    hasNativeFix: true,
+    nativeFixCommand: 'checkov -d . --fix',
+    documentationUrl: 'https://www.checkov.io/',
+    isEnabled: true,
+  },
+  {
     id: 'trivy',
     name: 'Trivy',
     type: 'analyzer',
@@ -658,6 +686,47 @@ export const SEED_TOOLS: Tool[] = [
     outputFormat: 'json',
     hasNativeFix: false,
     documentationUrl: 'https://trivy.dev/',
+    isEnabled: true,
+  },
+  {
+    id: 'grype',
+    name: 'Grype',
+    type: 'analyzer',
+    categories: ['security', 'dependency'],
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'rust'],
+    command: 'grype dir:. -o json',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/anchore/grype',
+    isEnabled: true,
+  },
+
+  // =========================================================================
+  // P1 API/GraphQL TOOLS (Session 59)
+  // =========================================================================
+  {
+    id: 'spectral',
+    name: 'Spectral',
+    type: 'hybrid',
+    categories: ['quality'],
+    languages: ['javascript', 'typescript', 'java', 'python', 'go', 'ruby', 'php'],
+    command: 'spectral lint . --format json',
+    outputFormat: 'json',
+    hasNativeFix: true,
+    nativeFixCommand: 'spectral lint . --fix',
+    documentationUrl: 'https://stoplight.io/open-source/spectral',
+    isEnabled: true,
+  },
+  {
+    id: 'graphql-cop',
+    name: 'GraphQL-Cop',
+    type: 'analyzer',
+    categories: ['security'],
+    languages: ['javascript', 'typescript', 'java', 'python', 'go', 'ruby'],
+    command: 'graphql-cop -t http://localhost:4000/graphql',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/dolevf/graphql-cop',
     isEnabled: true,
   },
   {
@@ -913,13 +982,151 @@ export const SEED_TOOLS: Tool[] = [
   },
 
   // =========================================================================
+  // P2 ARCHITECTURE TOOLS (Session 59)
+  // =========================================================================
+
+  // TypeScript Architecture
+  {
+    id: 'madge',
+    name: 'Madge',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['javascript', 'typescript'],
+    command: 'madge --circular --json .',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/pahen/madge',
+    isEnabled: true,
+  },
+  {
+    id: 'dependency-cruiser',
+    name: 'Dependency Cruiser',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['javascript', 'typescript'],
+    command: 'depcruise --output-type json .',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/sverweij/dependency-cruiser',
+    isEnabled: true,
+  },
+  {
+    id: 'ts-unused-exports',
+    name: 'ts-unused-exports',
+    type: 'analyzer',
+    categories: ['architecture', 'quality'],
+    languages: ['typescript'],
+    command: 'ts-unused-exports tsconfig.json --excludePathsFromReport=node_modules',
+    outputFormat: 'text',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/pzavolinsky/ts-unused-exports',
+    isEnabled: true,
+  },
+
+  // Python Architecture
+  {
+    id: 'pydeps',
+    name: 'pydeps',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['python'],
+    command: 'pydeps . --show-deps --no-show --noshow',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/thebjorn/pydeps',
+    isEnabled: true,
+  },
+  {
+    id: 'import-linter',
+    name: 'Import Linter',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['python'],
+    command: 'lint-imports',
+    outputFormat: 'text',
+    hasNativeFix: false,
+    documentationUrl: 'https://import-linter.readthedocs.io/',
+    isEnabled: true,
+  },
+
+  // Java Architecture
+  {
+    id: 'jdepend',
+    name: 'JDepend',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['java'],
+    command: 'jdepend -xml target/classes',
+    outputFormat: 'xml',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/clarkware/jdepend',
+    isEnabled: true,
+  },
+
+  // Go Architecture
+  {
+    id: 'go-arch-lint',
+    name: 'go-arch-lint',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['go'],
+    command: 'go-arch-lint check --project-path .',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/fe3dback/go-arch-lint',
+    isEnabled: true,
+  },
+
+  // Rust Architecture
+  {
+    id: 'cargo-modules',
+    name: 'cargo-modules',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['rust'],
+    command: 'cargo modules structure --json',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/regber/cargo-modules',
+    isEnabled: true,
+  },
+
+  // Ruby Architecture
+  {
+    id: 'packwerk',
+    name: 'Packwerk',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['ruby'],
+    command: 'packwerk check',
+    outputFormat: 'text',
+    hasNativeFix: false,
+    documentationUrl: 'https://github.com/Shopify/packwerk',
+    isEnabled: true,
+  },
+
+  // PHP Architecture
+  {
+    id: 'deptrac',
+    name: 'Deptrac',
+    type: 'analyzer',
+    categories: ['architecture'],
+    languages: ['php'],
+    command: 'deptrac analyse --report-uncovered --formatter json',
+    outputFormat: 'json',
+    hasNativeFix: false,
+    documentationUrl: 'https://qossmic.github.io/deptrac/',
+    isEnabled: true,
+  },
+
+  // =========================================================================
   // TIER 3 AI FIXER (Virtual Tool)
   // =========================================================================
   {
     id: 'ai',
     name: 'AI Fixer (Tier 3)',
     type: 'fixer',
-    categories: ['quality', 'security', 'performance', 'style', 'dependency', 'type-safety'],
+    categories: ['quality', 'security', 'performance', 'style', 'dependency', 'type-safety', 'architecture'],
     languages: ['java', 'python', 'javascript', 'typescript', 'rust', 'go', 'csharp', 'cpp', 'c', 'ruby', 'php', 'swift', 'kotlin'],
     command: 'codequal-ai-fix',  // Virtual command - handled by AI system
     outputFormat: 'json',
@@ -994,6 +1201,28 @@ export const SEED_FIXER_MAPPINGS: FixerMapping[] = [
 
   // Secret detection - always needs manual review
   { analyzerToolId: 'gitleaks', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 30, notes: 'Secrets need careful manual review' },
+  { analyzerToolId: 'trufflehog', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 30, notes: 'Secrets need careful manual review' },
+
+  // P0 Security Tools (Session 59)
+  { analyzerToolId: 'checkov', rulePattern: '.*', fixerToolId: 'checkov', fixTier: 2, confidence: 70, notes: 'Partial fix support for ~30% of checks' },
+  { analyzerToolId: 'trivy', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 40, notes: 'Dependency updates need review' },
+  { analyzerToolId: 'grype', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 40, notes: 'Dependency updates need review' },
+
+  // P1 API/GraphQL Tools (Session 59)
+  { analyzerToolId: 'spectral', rulePattern: '.*', fixerToolId: 'spectral', fixTier: 2, confidence: 60, notes: 'API schema fixes' },
+  { analyzerToolId: 'graphql-cop', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 50, notes: 'GraphQL security issues need manual review' },
+
+  // P2 Architecture Tools (Session 59) - All need AI/manual due to architectural nature
+  { analyzerToolId: 'madge', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 20, notes: 'Circular dependencies require architectural changes' },
+  { analyzerToolId: 'dependency-cruiser', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 25, notes: 'Architecture rule violations need design changes' },
+  { analyzerToolId: 'ts-unused-exports', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 60, notes: 'Dead code removal is relatively safe' },
+  { analyzerToolId: 'pydeps', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 25, notes: 'Circular dependencies require architectural changes' },
+  { analyzerToolId: 'import-linter', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 20, notes: 'Layer violations require architectural refactoring' },
+  { analyzerToolId: 'jdepend', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 20, notes: 'Package cycles require architectural refactoring' },
+  { analyzerToolId: 'go-arch-lint', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 20, notes: 'Architecture violations require design changes' },
+  { analyzerToolId: 'cargo-modules', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 25, notes: 'Circular dependencies require module restructuring' },
+  { analyzerToolId: 'packwerk', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 30, notes: 'Boundary violations require package restructuring' },
+  { analyzerToolId: 'deptrac', rulePattern: '.*', fixerToolId: 'ai', fixTier: 3, confidence: 25, notes: 'Layer violations require architecture refactoring' },
 ];
 
 // =============================================================================

@@ -17,6 +17,7 @@ dotenv.config({ path: path.join(__dirname, '../../../../../.env') });
 
 import { PythonToolOrchestrator } from '../../../src/two-branch/tools/python/python-tool-orchestrator';
 import { ScanFixExecutor } from '../../../src/fix-agent/scan-fix-executor';
+import { quickParallelFix } from '../../../src/fix-agent/parallel-ai-fixer';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
@@ -197,11 +198,34 @@ async function calibratePythonRepo(): Promise<void> {
     console.log(`   Fixed: ${fixResults.summary.fixedIssues}`);
     console.log(`   Tier 1 (Tools): ${fixResults.summary.tier1Fixed || 0}`);
     console.log(`   Tier 2 (Patterns): ${fixResults.summary.tier2Fixed || 0}`);
-    console.log(`   Tier 3 (AI): ${fixResults.summary.tier3Fixed || 0}`);
+    let tier3Fixed = fixResults.summary.tier3Fixed || 0;
+    console.log(`   Tier 3 (AI): ${tier3Fixed}`);
     console.log('');
 
+    // Step 5: AI Fallback for unfixed issues (CALIBRATION SPECIFIC)
+    const unfixedCount = mappedIssues.length - fixResults.summary.fixedIssues;
+    if (unfixedCount > 0) {
+      console.log(`🤖 Step 5: AI Fallback for ${unfixedCount} unfixed issues...`);
+
+      // Use parallel AI fixer for efficiency
+      const aiResult = await quickParallelFix(
+        mappedIssues,
+        repoPath,
+        (msg) => console.log(`   ${msg}`)
+      );
+
+      console.log(`\n   AI Fallback Results:`);
+      console.log(`   ✅ Patterns generated: ${aiResult.summary.fixedIssues}`);
+      console.log(`   ❌ Failed: ${aiResult.summary.failedIssues}`);
+      console.log(`   ⏭️  Skipped: ${aiResult.summary.skippedIssues}`);
+
+      // Update totals
+      tier3Fixed += aiResult.summary.fixedIssues;
+      console.log('');
+    }
+
     // Get final pattern count
-    console.log('📊 Step 5: Checking final pattern stats...');
+    console.log('📊 Step 6: Checking final pattern stats...');
     const finalStats = await getPatternStats();
     const newPatterns = finalStats.total - initialStats.total;
     const newPythonPatterns = finalStats.pythonRelated - initialStats.pythonRelated;

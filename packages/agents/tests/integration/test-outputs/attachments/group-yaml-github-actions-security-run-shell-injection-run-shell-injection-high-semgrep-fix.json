@@ -4,7 +4,7 @@
   "rule": "yaml.github-actions.security.run-shell-injection.run-shell-injection",
   "tool": "semgrep",
   "severity": "high",
-  "description": "Use an intermediate environment variable to store the `github` context data and then reference the environment variable within the `run:` step, ensuring it's properly quoted. This prevents direct execution of injected code. Define the environment variable using the `env:` key and access it in the `run:` step using double quotes, like \"$ENVVAR\".",
+  "description": "Moves GitHub context variables from direct interpolation to env: block to prevent shell injection",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "env:\n  ISSUE_TITLE: ${{ github.event.issue.title }}\nrun: echo \"$ISSUE_TITLE\""
+      "after": "      - if: inputs.dry_run == true\n        name: Publish packages to npm (dry run)\n        env:\n          VERSION_NAME: ${{ inputs.version_name }}\n          DIST_TAG: ${{ inputs.dist_tag }}\n          TAG_VERSION: ${{ inputs.tag_version }}\n        run: |\n          cp ./scripts/release/ci-npmrc ~/.npmrc\n          scripts/release/publish.js --frfr --debug --ci --versionName=\"$VERSION_NAME\" --tag=\"$DIST_TAG\" ${{ inputs.tag_version && '--tagVersion=\"$TAG_VERSION\"' || '' }}"
     },
-    "instructions": "Use an intermediate environment variable to store the `github` context data and then reference the environment variable within the `run:` step, ensuring it's properly quoted. This prevents direct execution of injected code. Define the environment variable using the `env:` key and access it in the `run:` step using double quotes, like \"$ENVVAR\"."
+    "instructions": "Moves GitHub context variables from direct interpolation to env: block to prevent shell injection"
   },
   "locations": [
     {

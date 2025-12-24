@@ -784,6 +784,51 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[],
 
   content += `> 💡 **Note**: Focus on the knowledge areas above to write better code and avoid similar issues in future PRs.\n`;
 
+  // SESSION 26: Add Phase 3 for LOW severity style issues (grouped by tool)
+  // Instead of listing 543 individual links, provide ONE aggregated reference per tool
+  const lowIssues = issues.filter(i => i.severity === 'low' || i.severity === 'medium');
+  if (lowIssues.length > 0) {
+    // Group by tool
+    const toolCounts = new Map<string, number>();
+    for (const issue of lowIssues) {
+      const tool = issue.tool?.toLowerCase() || 'other';
+      toolCounts.set(tool, (toolCounts.get(tool) || 0) + 1);
+    }
+
+    // Only add section if we have significant style issues
+    if (toolCounts.size > 0) {
+      content += `\n### 📚 Phase 3: Code Style & Formatting (Optional)\n\n`;
+      content += `**${lowIssues.length} style/formatting issues** can be addressed to improve code consistency.\n\n`;
+      content += `| Tool | Issues | Reference |\n`;
+      content += `|------|--------|----------|\n`;
+
+      // Add one row per tool with aggregated link
+      const toolDocs: Record<string, { name: string; url: string }> = {
+        'checkstyle': { name: 'Checkstyle', url: 'https://checkstyle.org/checks.html' },
+        'pmd': { name: 'PMD', url: 'https://pmd.github.io/latest/pmd_rules_java.html' },
+        'eslint': { name: 'ESLint', url: 'https://eslint.org/docs/rules/' },
+        'ruff': { name: 'Ruff', url: 'https://docs.astral.sh/ruff/rules/' },
+        'mypy': { name: 'MyPy', url: 'https://mypy.readthedocs.io/en/stable/error_codes.html' },
+        'pylint': { name: 'Pylint', url: 'https://pylint.readthedocs.io/en/latest/user_guide/messages/index.html' },
+        'spotbugs': { name: 'SpotBugs', url: 'https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html' }
+      };
+
+      // Sort by count (highest first)
+      const sortedTools = Array.from(toolCounts.entries()).sort((a, b) => b[1] - a[1]);
+      
+      for (const [tool, count] of sortedTools) {
+        const doc = toolDocs[tool] || { name: tool, url: '' };
+        if (doc.url) {
+          content += `| ${doc.name} | ${count} | [📚 ${doc.name} Rules Reference](${doc.url}) |\n`;
+        } else {
+          content += `| ${tool} | ${count} | See tool documentation |\n`;
+        }
+      }
+
+      content += `\n> 💡 **Tip**: These are style issues with no runtime impact. Fix via IDE auto-format or linter \`--fix\` commands.\n`;
+    }
+  }
+
   // ENHANCEMENT #2: Return fallback if no blockers or critical/high issues
   if (blockerIssues.length === 0 && restCriticalHighIssues.length === 0) {
     return generateEducationalResources(issues, language);

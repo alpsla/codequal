@@ -1,8 +1,176 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: December 20, 2025 (Session 63 Cont. - Cost Tracking & Monitoring)
-**Current Phase**: Cost Management Infrastructure Complete
-**Status**: ✅ **SESSION 63 COMPLETE** | 45+ tools verified, Corgea multi-user infrastructure, Supabase cost tracking
+**Last Updated**: December 21, 2025 (Session 65 - AI-Fixer Multi-Key & Pattern Analysis)
+**Current Phase**: Fix System Fully Operational
+**Status**: ✅ **SESSION 65 COMPLETE** | Multi-key rotation fixed, pattern system verified, cost estimates corrected
+
+---
+
+## 🚨 SESSION 65: AI-Fixer & Pattern System (COMPLETE)
+
+### 🏆 KEY ACHIEVEMENTS (Session 65)
+
+| Task | Description | Status |
+|------|-------------|--------|
+| **Multi-Key Rotation Fixed** | AI-Fixer now uses OpenRouterKeyManager for key rotation | ✅ Complete |
+| **Pattern Registry Cost Corrected** | Fixed from 0.10¢ to FREE (Supabase query only) | ✅ Complete |
+| **All Fix Tiers Verified** | Tier 1: N/A, Tier 2.5: 100%, Tier 3: 75% | ✅ Complete |
+| **Pattern Learning Investigated** | Confirmed system works - "0 learned" is correct (patterns exist) | ✅ Complete |
+| **OpenRouter Keys Tested** | 3/4 keys working, auto-rotation implemented | ✅ Complete |
+
+### 📊 FIX TIER EFFECTIVENESS (Session 65)
+
+| Tier | Issues | Fixed | Success | Cost/Fix | Time |
+|------|--------|-------|---------|----------|------|
+| **Tier 1** (Native) | 0 | 0 | N/A | FREE | ~1s |
+| **Tier 2.5** (Pattern) | 4 | 4 | **100%** | **FREE** | 350ms |
+| **Tier 3** (AI-Fixer) | 4 | 3 | 75% | 0.17¢ | 33.7s |
+
+### 🔑 AI-FIXER MULTI-KEY ROTATION
+
+**Problem**: AI-Fixer was getting 401 errors because `OPENROUTER_API_KEY` (singular) was invalid.
+
+**Solution**: Updated `ai-fixer-agent.ts` to use `OpenRouterKeyManager`:
+- Uses `OPENROUTER_API_KEYS` (plural, comma-separated)
+- Automatic key rotation on 401 errors
+- 3 working keys available
+
+**Files Changed**:
+- `src/fix-agent/agents/ai-fixer-agent.ts` - Multi-key rotation added
+
+### 📦 PATTERN REGISTRY STATUS
+
+| Metric | Value |
+|--------|-------|
+| Total Patterns | 640 |
+| Active Patterns | 640 |
+| Unique Rules Covered | 636 |
+| Average Confidence | 93.5% |
+| Average Success Rate | 99.7% |
+| AI Cost Avoided | $8,415.30 |
+
+**Why "Patterns Learned: 0"**: This is CORRECT behavior - all tested issues already had patterns in the registry. Pattern learning only occurs for NEW issue types.
+
+### ⚠️ NEXT SESSION TODO (Session 66)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Test pattern creation with NEW issue types | High | 1 hour |
+| Monitor routing decisions in production | Medium | Ongoing |
+| Docker images review/update | Low | 2 hours |
+| Document fix flow architecture | Low | 30 min |
+
+### 🚀 QUICK START (Session 66)
+
+```bash
+cd packages/agents
+
+# Test AI-Fixer with multi-key rotation
+npx ts-node tests/integration/test-all-fix-tiers-effectiveness.ts
+
+# Check pattern coverage
+npx ts-node tests/integration/find-missing-patterns.ts
+
+# Monitor patterns
+npx ts-node tests/integration/test-pattern-learning-monitor.ts
+
+# Test OpenRouter keys
+npx ts-node tests/integration/test-openrouter-keys.ts
+```
+
+### 📋 Rules Without Patterns (Test Candidates)
+
+These rules don't have patterns yet - good candidates for testing pattern creation:
+- `python.django.security.injection.sql.sql-injection-using-raw`
+- `javascript.express.security.audit.xss-direct-response-write`
+- `java.lang.security.audit.xml-external-entities`
+
+---
+
+## 🚨 SESSION 64: Fix Flow Integration Testing (COMPLETE)
+
+### 🏆 KEY ACHIEVEMENTS (Session 64)
+
+| Task | Description | Status |
+|------|-------------|--------|
+| **Full Fix Flow Test** | Created test-full-fix-flow.ts - all 8 steps passed | ✅ Complete |
+| **Fix Verifier Re-scan** | Created test-fix-verifier-rescan.ts - 6 tests passed | ✅ Complete |
+| **Routing Decisions Logging** | test-routing-decisions-logging.ts - 6 tests passed | ✅ Complete |
+| **PHP E2E Test** | Laravel Framework - 4 tools, 0 issues | ✅ Complete |
+| **Ruby E2E Test** | Rails Framework - 4 tools, 40 issues (Semgrep) | ✅ Complete |
+| **Corgea Decision** | Deprioritized - AI-fixer at 1.65¢/fix is competitive | ✅ Documented |
+
+### 📊 TEST RESULTS (Session 64)
+
+#### Full Fix Flow Test (test-full-fix-flow.ts)
+| Step | Result | Details |
+|------|--------|---------|
+| Clone Repository | ✅ | 581ms |
+| Run Scan | ✅ | 5 issues in 29.4s |
+| Convert Issues | ✅ | 5 issues converted |
+| Route Issues | ✅ | T1:4, T2:1 |
+| Pattern Registry | ✅ | Supabase connected |
+| Fix Verifier | ✅ | Instantiated |
+| Unfixed Handler | ✅ | 1 issue tracked |
+| Fix Branch Generator | ✅ | Ready |
+
+#### Fix Verifier Re-scan Test (test-fix-verifier-rescan.ts)
+| Test Case | Result |
+|-----------|--------|
+| Successful Fix - Issue Resolved | ✅ |
+| Failed Fix - Issue Still Present | ✅ |
+| Fix With Regression - New Issue | ✅ |
+| Line Drift - Different Line | ✅ |
+| Minor Regression Allowed | ✅ |
+| Batch Verification | ✅ |
+
+#### Routing Decisions Logging (test-routing-decisions-logging.ts)
+| Test | Result | Details |
+|------|--------|---------|
+| Supabase Connection | ✅ | Connected |
+| Routing Config | ✅ | Mode=manual, Preferred=ai_fixer |
+| Log Decision | ✅ | UUID logged |
+| Get Stats | ✅ | Total decisions tracked |
+| Cost Comparison | ✅ | Corgea: 0¢, AI: 1.65¢ |
+| decideSource Logs | ✅ | Auto-logged |
+
+### 🔄 MULTI-LANGUAGE E2E RESULTS
+
+| Language | Framework | Tools Run | Issues | Time |
+|----------|-----------|-----------|--------|------|
+| PHP | Laravel | phpstan, psalm, composer-audit, semgrep | 0 | 25.8s |
+| Ruby | Rails | rubocop, brakeman, bundler-audit, semgrep | 40 | 47.2s |
+| Java | Spring PetClinic | (Session 63) | Various | ~2.5m |
+| TypeScript | Express | (Session 63) | Various | ~1.5m |
+| Python | Flask | (Session 63) | Various | ~1m |
+| Go | Gin/Mux | (Session 63) | Various | ~30s |
+| Rust | Tokio | (Session 63) | Various | ~20s |
+
+### ⚠️ NEXT SESSION TODO (Session 65)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Docker images review/update | Low | 2 hours |
+| Add more integration test scenarios | Low | 1 hour |
+| Document fix flow architecture | Low | 30 min |
+| Monitor routing decisions in production | Medium | Ongoing |
+
+### 🚀 QUICK START (Session 65)
+
+```bash
+# Run all fix flow tests
+cd packages/agents
+npx ts-node tests/integration/test-full-fix-flow.ts
+npx ts-node tests/integration/test-fix-verifier-rescan.ts
+npx ts-node tests/integration/test-routing-decisions-logging.ts
+
+# Run PHP/Ruby E2E
+npx ts-node tests/integration/php/test-v9-php-lite-e2e.ts
+npx ts-node tests/integration/ruby/test-v9-ruby-lite-e2e.ts
+
+# Check routing stats in Supabase
+# SELECT * FROM fix_routing_decisions ORDER BY created_at DESC LIMIT 10;
+```
 
 ---
 
@@ -201,17 +369,89 @@
 - `logCorgeaUsage()`: Log usage to update effective cost
 - `getCheaperSource()`: Returns cheaper source with reason
 
+### 🏆 SESSION 63 FINAL: E2E Testing & Corgea Verification
+
+| Task | Description | Status |
+|------|-------------|--------|
+| **Corgea API Access** | Free tier DOES have API access (contrary to research) | ✅ Verified |
+| **Correct API URL** | `www.corgea.app/api/v1` (NOT api.corgea.app) | ✅ Fixed |
+| **Java E2E Test** | Spring PetClinic PR #950 - 99.8% auto-fix rate | ✅ PASSED |
+| **TypeScript E2E Test** | Express.js - 50 issues, 7 categories | ✅ PASSED |
+| **Python E2E Test** | Flask - 98 issues, 13 patterns calibrated | ✅ PASSED |
+| **Routing Infrastructure** | Manual/automatic mode, cost comparison view | ✅ Ready |
+| **Cost Tracking** | AI-fixer: 1.65¢/fix, Corgea: 0¢ (pending usage) | ✅ Working |
+
+### 📊 E2E TEST RESULTS (December 20, 2025)
+
+| Repository | Language | Tools | Issues | Auto-Fix | Duration |
+|------------|----------|-------|--------|----------|----------|
+| **Spring PetClinic** | Java | 13 | 545 | 99.8% (544/545) | 130.6s |
+| **Express.js** | TypeScript | 5 | 50 | N/A (scanner only) | 27.3s |
+| **Flask** | Python | 7 | 98 | 13 patterns | 130.1s |
+| **Gin Web Framework** | Go | 4 | 6 | N/A (scanner only) | 26.5s |
+| **Actix Web** | Rust | 4 | 0 | N/A (clean code) | 79.9s |
+
+### 🔧 KEY FINDING: Corgea API URL
+
+**CRITICAL**: The documented URL `api.corgea.app` returns 522 timeout errors!
+
+| Endpoint | Status | Notes |
+|----------|--------|-------|
+| `api.corgea.app` | ❌ 522 Timeout | DO NOT USE |
+| `www.corgea.app/api/v1` | ✅ 200 OK | CORRECT URL |
+
+Updated files:
+- `.env.example` - Updated with correct URL
+- `corgea-fixer.ts` - Comment and default URL fixed
+- `20251220_cloud_api_tools.sql` - Migration updated
+
+### 💰 Routing Mode Status
+
+```
+Mode: MANUAL
+Preferred Source: ai_fixer
+AI-fixer Cost: 1.65¢/fix
+Corgea Cost: 0.00¢/fix (no usage yet)
+Data Collection Target: 100 fixes
+```
+
+### ✅ SESSION 63 EXTENDED: Additional Testing (December 20, 2025 PM)
+
+| Task | Description | Status |
+|------|-------------|--------|
+| **Go E2E Test** | Gin web framework - 6 issues, 4 tools | ✅ PASSED |
+| **Rust E2E Test** | Actix Web - 0 issues (clean code), 4 tools | ✅ PASSED |
+| **Corgea Scan Upload** | SARIF upload working, scans processing | ✅ VERIFIED |
+| **Pattern Caching Fix** | ArrayTypeStyleCheck pattern added, 0 API calls | ✅ FIXED |
+
+**Corgea Scan Upload API:**
+```
+POST /scan-upload?run_id=...&engine=semgrep&project=...&repo_data=...
+Content-Type: text/plain
+CORGEA-TOKEN: <api_key>
+Body: <SARIF JSON>
+
+Response: {"status": "ok", "sast_scan_id": "..."}
+```
+
+**Pattern Caching Optimization:**
+- Issue: ArrayTypeStyleCheck rule had no cached pattern, triggering 2 API calls per run
+- Solution: Added pattern to Supabase fix_patterns table
+- Result: Subsequent runs show 0 OpenRouter API calls
+
 ### ⚠️ NEXT STEPS (Session 64)
 
 | Task | Priority | Description |
 |------|----------|-------------|
-| **Run Supabase Migration** | 🔴 High | Deploy `20251220_corgea_cost_tracking.sql` |
-| **Complete Corgea Fix Flow** | 🔴 High | Implement scan polling and fix retrieval |
-| **Test Cost Routing** | 🔴 High | Verify cheaper source selection works |
-| **Test Multi-Language PR** | 🟠 Medium | Verify cross-language analysis |
+| **Wait for Corgea Scan Processing** | 🔴 High | Poll scan status, retrieve AI fixes when ready |
+| **Compare Fix Quality** | 🔴 High | AI-fixer vs Corgea fix quality assessment |
+| **Log Routing Decisions** | 🔴 High | Generate fixes and verify cost logging in Supabase |
+| **PHP E2E Test** | 🟠 Medium | Test Laravel framework analysis |
+| **Ruby E2E Test** | 🟠 Medium | Test Rails framework analysis |
 | **Update Docker Images** | 🟠 Medium | Add new tools to analyzer images |
 
 **🎉 All 49 unique binaries installed (72 registry entries) across 7 runtimes!**
+**🎉 E2E Tests: 5 languages verified (Java, TypeScript, Python, Go, Rust)!**
 **🎉 Synthetic tests: 45+ tools verified, all finding issues on appropriate fixtures!**
 
 > **Registry vs Binaries**: The Supabase registry has 72 tool entries, but many share binaries:

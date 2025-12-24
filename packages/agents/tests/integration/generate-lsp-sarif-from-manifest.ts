@@ -134,7 +134,8 @@ async function generateLSPSARIFFiles(manifestPath: string, outputDir: string) {
   const sarifReport = converter.generateSARIFReport(allIssues, issueGroups, {
     repository: manifest.metadata.repository,
     version: '9.0.0',
-    analyzedAt: manifest.metadata.generated_at
+    analyzedAt: manifest.metadata.generated_at,
+    workspaceRoot: workspaceRoot  // Use relative paths in SARIF output
   });
 
   // Create output directory

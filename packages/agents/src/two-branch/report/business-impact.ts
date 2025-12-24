@@ -1,47 +1,69 @@
 /**
  * Business Impact Analysis Service
- * 
+ *
  * Calculates financial impact, risk assessment, and ROI for code issues.
  * Extracted from v9-grouped-report-formatter.ts for better modularity.
+ *
+ * Session 66: Added tier differentiation for BASIC vs PRO reports
  */
 
 import { EnrichedIssue } from './types';
 import { IssueGroup } from '../utils/issue-grouping';
+import { isGroupAutoFixable } from './fix-capability-utils';
+
+/**
+ * User tier for report customization
+ */
+export type UserTier = 'basic' | 'pro' | 'enterprise';
+
+/**
+ * Historical analysis data for PRO tier dashboards
+ */
+export interface AnalysisHistoryRecord {
+  prNumber: number;
+  repository: string;
+  analysisDate: Date;
+  score: number;
+  issuesFound: number;
+  issuesFixed: number;
+  timeSavedMinutes: number;
+  costSavedDollars: number;
+}
+
+/**
+ * Monthly statistics for PRO tier
+ */
+export interface MonthlyStats {
+  totalAnalyses: number;
+  totalIssuesFixed: number;
+  totalTimeSavedHours: number;
+  totalCostSaved: number;
+  avgScore: number;
+}
+
+/**
+ * User metrics for personalized reports (PRO tier)
+ */
+export interface UserMetrics {
+  previousAnalyses?: AnalysisHistoryRecord[];
+  monthlyStats?: MonthlyStats;
+  ytdStats?: MonthlyStats;
+  patternsContributed?: number;
+  usersHelped?: number;
+}
 
 /**
  * Check if a group can be auto-fixed by IDE tools
  *
- * SESSION 53 REFACTOR: Language-neutral approach
- * CodeQual generates AI fixes for ALL issues, so most are auto-fixable.
- * We only exclude specific patterns that require manual intervention.
+ * SESSION 57 Part 3: Uses ToolFixRegistry for accurate fix capability detection
+ * - Tier 1: Native --fix support → auto-fixable
+ * - Tier 2: Dedicated fixer tool → auto-fixable
+ * - Tier 3: AI required → NOT auto-fixable (but AI suggestions available)
+ *
+ * This replaces the pattern-based approach with registry-based accuracy.
  */
 function canAutoFix(group: IssueGroup): boolean {
-  const ruleLower = group.rule?.toLowerCase() || '';
-
-  // ===== NON-AUTO-FIXABLE PATTERNS =====
-  // These require architectural changes or manual decision-making
-
-  // Circular dependencies require architectural refactoring
-  if (ruleLower.includes('circular-dependency') || ruleLower.includes('cyclic')) {
-    return false;
-  }
-
-  // Complex architectural issues
-  if (ruleLower.includes('god-class') || ruleLower.includes('god-object')) {
-    return false;
-  }
-
-  // Issues requiring human judgment on business logic
-  if (ruleLower.includes('magic-number') && group.severity === 'low') {
-    // Magic numbers often need context to determine correct constant names
-    return false;
-  }
-
-  // ===== DEFAULT: AUTO-FIXABLE =====
-  // CodeQual generates AI fix suggestions for 100% of issues
-  // LSP file contains ready-to-apply fixes for IDEs
-  // Even complex security issues have AI-generated fix code
-  return true;
+  return isGroupAutoFixable(group);
 }
 
 /**
@@ -160,8 +182,15 @@ function getPreCommitHookRecommendation(language: string): string {
  * Generate comprehensive business impact analysis
  * Includes financial impact, risk assessment, and recommendations
  * SESSION 50 FIX: Added language parameter for language-specific recommendations
+ * SESSION 66: Added tier parameter for BASIC vs PRO differentiation
  */
-export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[], language = 'java'): string {
+export function generateBusinessImpact(
+  issues: EnrichedIssue[],
+  groups: IssueGroup[],
+  language = 'java',
+  tier: UserTier = 'basic',
+  userMetrics?: UserMetrics
+): string {
   // BLOCKERS ONLY: NEW/EXISTING_MODIFIED + critical/high
   const blocking = issues.filter(i =>
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
@@ -252,22 +281,29 @@ export function generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGro
   const autoFixPercentage = blocking.length > 0 ? (autoFixableBlockingCount / blocking.length) * 100 : 0;
   const mostlyAutoFixable = autoFixPercentage >= 70; // 70%+ of blocking issues are auto-fixable
 
-  // Count ALL auto-fixable issues (not just blocking) - gives full cleanup potential
-  const autoFixableTotalCount = issues.filter(issue => {
+  // SESSION 26 FIX: Count auto-fixable issues EXCLUDING RESOLVED (they don't need fixing!)
+  // RESOLVED issues are already fixed in the PR - no action needed
+  const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+  const autoFixableTotalCount = activeIssues.filter(issue => {
     return autoFixableGroups.some(g =>
       g.rule === issue.rule &&
       g.tool === issue.tool &&
       g.severity === issue.severity
     );
   }).length;
-  const totalAutoFixPercentage = issues.length > 0 ? (autoFixableTotalCount / issues.length) * 100 : 0;
+  const totalAutoFixPercentage = activeIssues.length > 0 ? (autoFixableTotalCount / activeIssues.length) * 100 : 0;
+  
+  // Bonus opportunities = non-blocking active issues (excludes RESOLVED)
+  const bonusOpportunities = autoFixableTotalCount - autoFixableBlockingCount;
 
-  // Calculate manual review time for non-auto-fixable issues (Tier 3: Manual with AI guidance)
-  const nonAutoFixableCount = issues.length - autoFixableTotalCount;
+  // SESSION 26 FIX: Calculate manual review for ACTIVE issues only (exclude RESOLVED)
+  // RESOLVED issues don't need review - the developer already fixed them!
+  const nonAutoFixableCount = activeIssues.length - autoFixableTotalCount;
   const manualReviewHours = nonAutoFixableCount * 0.25; // 15 minutes per issue with AI guidance
   const manualReviewCost = Math.round(manualReviewHours * developerRate);
+  const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
 
-  return `## 💼 Business Impact Analysis
+  const baseReport = `## 💼 Business Impact Analysis
 
 ### Executive Summary
 ${blocking.length > 0
@@ -288,9 +324,10 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 | **Auto-Fix Time** | **${Math.ceil(autoFixableBlockingCount / 100)} minutes** (run formatters + linters) |
 | **Manual Review Time** | **${manualReviewHours.toFixed(1)} hours** (${nonAutoFixableCount} issues × 15 min with AI guidance = $${manualReviewCost.toLocaleString()}) |
 | **🟢 Safe Auto-Fix (Tier 1)** | **Subset of Tier 2** - Apply immediately, no testing needed |
-| **🟡 Advanced Auto-Fix (Tier 2)** | **${Math.round(totalAutoFixPercentage)}%** (${autoFixableTotalCount}/${issues.length} issues) - Includes security/critical, requires testing |
-| **🔴 Manual Review (Tier 3)** | **${Math.round((nonAutoFixableCount / issues.length) * 100)}%** (${nonAutoFixableCount}/${issues.length} issues) - Full review with AI guidance |
-| **AI Code Suggestions** | **100%** (${issues.length}/${issues.length} issues) - Every issue has AI-generated fix code |
+| **🟡 Advanced Auto-Fix (Tier 2)** | **${Math.round(totalAutoFixPercentage)}%** (${autoFixableTotalCount}/${activeIssues.length} active issues) - Includes security/critical, requires testing |
+| **🔴 Manual Review (Tier 3)** | **${activeIssues.length > 0 ? Math.round((nonAutoFixableCount / activeIssues.length) * 100) : 0}%** (${nonAutoFixableCount}/${activeIssues.length} active issues) - AI guidance available |
+| **✅ Already Resolved** | **${resolvedCount}** issues fixed by developer in this PR |
+| **AI Code Suggestions** | **100%** (${activeIssues.length}/${activeIssues.length} active issues) - Every issue has AI-generated fix code |
 | **Potential Exploit Cost** | **$${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()}** |
 | **Security Risk** | ${exploitDesc} |
 | **Return on Investment** | **${roi}x minimum return** by preventing issues now vs. fixing in production |
@@ -302,7 +339,9 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 - **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL ${issues.length} issues (100%)
 - **Financial Impact**: Fixing these issues now costs ~${fixDays} days vs $${minExploitCost.toLocaleString()}+ if they cause production incidents
 
-**💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, you can apply linter auto-fix to ${autoFixableTotalCount - autoFixableBlockingCount} additional issues (~${Math.ceil(autoFixableTotalCount / 60)} min). For issues not auto-fixable by linters, use the AI-generated code suggestions.`
+**💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, ${bonusOpportunities > 0 ? `you can fix ${bonusOpportunities} additional non-blocking issues` : 'all remaining issues are already RESOLVED in this PR'}. 
+
+> ⚠️ **Always review auto-fixed code** - verify fixes maintain expected behavior before committing.`
         : `**🚀 CodeQual Value Proposition**
 
 | Metric | Without CodeQual | With CodeQual |
@@ -310,7 +349,7 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 | **Fix Time** | ${baseFixHours.toFixed(1)} hours (~${fixDays} days) | **${Math.max(1, Math.ceil(blocking.length * 0.05))} hours** (AI-assisted) |
 | **Developer Cost** | $${totalFixCost.toLocaleString()} | **$${Math.round(Math.max(1, blocking.length * 0.05) * developerRate).toLocaleString()}** |
 | **Time Saved** | - | **${Math.round((baseFixHours - Math.max(1, blocking.length * 0.05)) / baseFixHours * 100)}%** |
-| **Auto-Fix Coverage** | 0% | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${issues.length} issues) |
+| **Auto-Fix Coverage** | 0% | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${activeIssues.length} active issues) |
 
 **How CodeQual Reduces Fix Time:**
 - **PRO Tier**: 1-click auto-fix for ${autoFixableTotalCount} issues (~3 min review + apply)
@@ -331,7 +370,7 @@ No critical or high-severity issues detected. All identified issues are related 
 **Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
 **Recommendation:** Address during regular refactoring cycles or enable ${getPreCommitHookRecommendation(language)}.
 
-${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${issues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with linter \`--fix\` commands.` : ''}`
+${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${activeIssues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with linter \`--fix\` commands.` : ''}`
     }
 
 ### Risk Assessment
@@ -346,18 +385,19 @@ ${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of $
   - ${securityIssues.length > 0 ? `Security vulnerabilities (${securityIssues.length}) pose ongoing risk` : 'Security posture is acceptable'}
 
 ### Risk Matrix by Category
-| Category | Blocking | Backlog | Total Issues | Risk Level |
-|----------|----------|---------|--------------|------------|
-| **Security** | ${securityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${securityIssues.length - securityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${securityIssues.length} | ${getRiskImpactLevel(securityIssues)} |
-| **Performance** | ${performanceIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${performanceIssues.length - performanceIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${performanceIssues.length} | ${getRiskImpactLevel(performanceIssues)} |
-| **Architecture** | ${architectureIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${architectureIssues.length - architectureIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${architectureIssues.length} | ${getRiskImpactLevel(architectureIssues)} |
-| **Dependencies** | ${dependencyIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${dependencyIssues.length - dependencyIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${dependencyIssues.length} | ${getRiskImpactLevel(dependencyIssues)} |
-| **Code Quality** | ${codeQualityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${codeQualityIssues.length - codeQualityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${codeQualityIssues.length} | ${getRiskImpactLevel(codeQualityIssues)} |
+| Category | This PR | Pre-existing | Auto-fixable | Action Required |
+|----------|---------|--------------|--------------|-----------------|
+| **Security** | ${securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${securityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${securityIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${getRiskImpactLevel(securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Performance** | ${performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${performanceIssues.filter(i => i.category === 'EXISTING_REST').length} | ${performanceIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${getRiskImpactLevel(performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Architecture** | ${architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${architectureIssues.filter(i => i.category === 'EXISTING_REST').length} | ${architectureIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${getRiskImpactLevel(architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Dependencies** | ${dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${dependencyIssues.filter(i => i.category === 'EXISTING_REST').length} | ${dependencyIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${getRiskImpactLevel(dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Code Quality** | ${codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${codeQualityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${codeQualityIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${getRiskImpactLevel(codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
 
 **Legend:**
-- **Blocking:** Critical/High severity issues in NEW or EXISTING_MODIFIED files (must fix before merge)
-- **Backlog:** Medium/Low severity or pre-existing issues (can be addressed later)
-- **Risk Level:** Overall impact assessment based on severity distribution
+- **This PR:** Issues in files modified by this PR (NEW + EXISTING_MODIFIED)
+- **Pre-existing:** Issues in files NOT touched by this PR (EXISTING_REST)
+- **Auto-fixable:** Issues with available 1-click fixes
+- **Action Required:** Priority based on severity of issues introduced/modified by this PR
 
 ### Recommendations
 ${blocking.length > 0 ? `
@@ -376,5 +416,135 @@ ${blocking.length > 0 ? `
 `}
 
 **Note:** Each issue group section above includes detailed business impact analysis specific to that issue type.`;
+
+  // Add tier-specific content
+  if (tier === 'pro' || tier === 'enterprise') {
+    return baseReport + generateProTierSection(
+      baseFixHours,
+      autoFixableTotalCount,
+      activeIssues.length,
+      totalFixCost,
+      developerRate,
+      userMetrics
+    );
+  } else {
+    return baseReport + generateBasicTierSection(
+      baseFixHours,
+      totalFixCost,
+      developerRate,
+      autoFixableTotalCount,
+      activeIssues.length
+    );
+  }
+}
+
+/**
+ * Generate PRO tier specific section
+ * Includes automated fix pipeline, financial dashboard, and historical trends
+ */
+function generateProTierSection(
+  baseFixHours: number,
+  autoFixableCount: number,
+  totalActiveIssues: number,
+  totalFixCost: number,
+  developerRate: number,
+  userMetrics?: UserMetrics
+): string {
+  const aiFixCount = totalActiveIssues - autoFixableCount;
+  const patternFixTime = autoFixableCount > 0 ? Math.ceil(autoFixableCount * 0.35) : 0; // ~0.35 seconds per pattern fix
+  const aiFixTime = aiFixCount > 0 ? Math.ceil(aiFixCount * 8.4) : 0; // ~8.4 seconds per AI fix
+
+  // Calculate savings
+  const thisPrTimeSaved = baseFixHours - ((patternFixTime + aiFixTime) / 3600); // Convert seconds to hours
+  const thisPrCostSaved = Math.round(thisPrTimeSaved * developerRate);
+
+  // Get historical data if available
+  const monthlyStats = userMetrics?.monthlyStats;
+  const ytdStats = userMetrics?.ytdStats;
+
+  let section = `
+
+---
+
+### 🚀 PRO: Automated Fix Pipeline
+
+| Stage | Items | Status | Time |
+|-------|-------|--------|------|
+| **Pattern Fixes** | ${autoFixableCount} issues | ✅ Ready | ~${patternFixTime > 60 ? `${Math.ceil(patternFixTime / 60)} min` : `${patternFixTime} sec`} |
+| **AI Generation** | ${aiFixCount} issues | ✅ Ready | ~${aiFixTime > 60 ? `${Math.ceil(aiFixTime / 60)} min` : `${aiFixTime} sec`} |
+
+### 📊 Financial Dashboard
+
+| Metric | This PR | This Month | YTD |
+|--------|---------|------------|-----|
+| **Time Saved** | ${thisPrTimeSaved.toFixed(1)} hrs | ${monthlyStats?.totalTimeSavedHours?.toFixed(0) ?? '—'} hrs | ${ytdStats?.totalTimeSavedHours?.toFixed(0) ?? '—'} hrs |
+| **Cost Saved** | $${thisPrCostSaved.toLocaleString()} | $${monthlyStats?.totalCostSaved?.toLocaleString() ?? '—'} | $${ytdStats?.totalCostSaved?.toLocaleString() ?? '—'} |
+| **Issues Fixed** | ${totalActiveIssues} | ${monthlyStats?.totalIssuesFixed ?? '—'} | ${ytdStats?.totalIssuesFixed ?? '—'} |
+| **ROI** | ${totalFixCost > 0 ? Math.round((thisPrCostSaved / totalFixCost) * 100) : 0}% | ${monthlyStats ? '—' : '—'} | ${ytdStats ? '—' : '—'} |
+`;
+
+  // Add community impact if available
+  if (userMetrics?.patternsContributed || userMetrics?.usersHelped) {
+    section += `
+### 🌟 Your Community Impact
+
+Your fix patterns have helped **${userMetrics.usersHelped ?? 0} developers** across the community.
+You've contributed **${userMetrics.patternsContributed ?? 0} patterns** that accelerate fixes for everyone.
+`;
+  }
+
+  return section;
+}
+
+/**
+ * Generate BASIC tier specific section
+ * Shows value proposition and upgrade path
+ */
+function generateBasicTierSection(
+  baseFixHours: number,
+  totalFixCost: number,
+  developerRate: number,
+  autoFixableCount: number,
+  totalActiveIssues: number
+): string {
+  // BASIC tier gets pattern-based fixes but not AI generation
+  const patternFixTime = autoFixableCount > 0 ? Math.ceil(autoFixableCount * 0.35 / 60) : 0; // minutes
+  const manualReviewTime = totalActiveIssues - autoFixableCount;
+  const basicTimeSaved = baseFixHours * 0.69; // ~69% time reduction with BASIC
+
+  return `
+
+---
+
+### 💼 Time & Cost Analysis
+
+| Metric | Manual Fix | With CodeQual BASIC |
+|--------|------------|---------------------|
+| **Developer Time** | ${baseFixHours.toFixed(1)} hours | **${(baseFixHours - basicTimeSaved).toFixed(1)} hours** |
+| **Cost (@$${developerRate}/hr)** | $${totalFixCost.toLocaleString()} | **$${Math.round((baseFixHours - basicTimeSaved) * developerRate).toLocaleString()}** |
+| **Time Reduction** | — | **${Math.round((basicTimeSaved / baseFixHours) * 100)}%** ✅ |
+
+**What BASIC includes:**
+- ✅ Pattern-based fixes for ${autoFixableCount} issues (~${patternFixTime} min)
+- ✅ AI recommendations for IDE agents (Cursor, Copilot)
+- ✅ Detailed fix guidance for ${manualReviewTime} remaining issues
+
+---
+
+### 💡 Upgrade to PRO
+
+**Reduce ${(baseFixHours - basicTimeSaved).toFixed(1)} hours to ~30 seconds**
+
+| Feature | BASIC | PRO |
+|---------|-------|-----|
+| Pattern Fixes | ✅ | ✅ |
+| AI Recommendations | ✅ | ✅ |
+| **Auto-Apply Fixes** | ❌ | ✅ |
+| **AI Fix Generation** | ❌ | ✅ |
+| Historical Analytics | ❌ | ✅ |
+| Community Impact | ❌ | ✅ |
+
+[🚀 Upgrade to PRO] — Start your free trial
+`;
 }
 

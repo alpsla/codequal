@@ -4,7 +4,7 @@
   "rule": "dockerfile.security.missing-user-entrypoint.missing-user-entrypoint",
   "tool": "semgrep",
   "severity": "high",
-  "description": "To mitigate this issue, create a non-root user within the Dockerfile and specify it using the 'USER' instruction. This approach enhances security by limiting the permissions of processes running inside the container. For example, you can add the following lines to your Dockerfile:\n\n```dockerfile\nRUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser\nUSER appuser\n```\n\nThis creates a system group and user named 'appgroup' and 'appuser', respectively, and sets 'appuser' as the default user for the container. For more details, refer to Docker's best practices on user management. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))",
+  "description": "AI-generated fix pattern for dockerfile.security.missing-user-entrypoint.missing-user-entrypoint",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser\nUSER appuser"
+      "after": "RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app /artifacts\n\nUSER appuser\n\nENTRYPOINT [\"mv\", \"/app/extras/packaging/linux/dist/\", \"/artifacts\"]"
     },
-    "instructions": "To mitigate this issue, create a non-root user within the Dockerfile and specify it using the 'USER' instruction. This approach enhances security by limiting the permissions of processes running inside the container. For example, you can add the following lines to your Dockerfile:\n\n```dockerfile\nRUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser\nUSER appuser\n```\n\nThis creates a system group and user named 'appgroup' and 'appuser', respectively, and sets 'appuser' as the default user for the container. For more details, refer to Docker's best practices on user management. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))"
+    "instructions": "AI-generated fix pattern for dockerfile.security.missing-user-entrypoint.missing-user-entrypoint"
   },
   "locations": [
     {

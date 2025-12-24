@@ -4,7 +4,7 @@
   "rule": "dockerfile.security.missing-user.missing-user",
   "tool": "semgrep",
   "severity": "high",
-  "description": "To mitigate this issue, implement the following steps in your Dockerfile:\n\n1. **Create a Non-Root User**: Add a non-root user to the Docker image using the 'RUN' instruction. For example:\n\n   ```dockerfile\n   RUN addgroup --system appuser && adduser --system --ingroup appuser appuser\n   ```\n\n   This command creates a system group and user named 'appuser'.\n\n2. **Set Appropriate Permissions**: Ensure that the application files and directories are owned by the newly created user. You can use the 'COPY' instruction with the '--chown' flag to set ownership:\n\n   ```dockerfile\n   COPY --chown=appuser:appuser . /app\n   ```\n\n   This command copies the application files to the '/app' directory and sets the ownership to 'appuser'.\n\n3. **Switch to the Non-Root User**: Use the 'USER' instruction to switch to the non-root user before running the application:\n\n   ```dockerfile\n   USER appuser\n   ```\n\n   This instruction sets 'appuser' as the user for subsequent instructions, including the 'CMD' or 'ENTRYPOINT' that runs the application.\n\nBy following these steps, you ensure that the container runs with limited privileges, enhancing security by adhering to the principle of least privilege. For more detailed guidance, refer to Docker's official documentation on best practices for building Docker images. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))",
+  "description": "AI-generated fix pattern for dockerfile.security.missing-user.missing-user",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": ""
+      "after": "RUN adduser --disabled-password --gecos '' appuser\nUSER appuser\nCMD [\"gunicorn\", \"--bind\", \"0.0.0.0:8000\", \"--workers\",\"6\", \"pygoat.wsgi\"]"
     },
-    "instructions": "To mitigate this issue, implement the following steps in your Dockerfile:\n\n1. **Create a Non-Root User**: Add a non-root user to the Docker image using the 'RUN' instruction. For example:\n\n   ```dockerfile\n   RUN addgroup --system appuser && adduser --system --ingroup appuser appuser\n   ```\n\n   This command creates a system group and user named 'appuser'.\n\n2. **Set Appropriate Permissions**: Ensure that the application files and directories are owned by the newly created user. You can use the 'COPY' instruction with the '--chown' flag to set ownership:\n\n   ```dockerfile\n   COPY --chown=appuser:appuser . /app\n   ```\n\n   This command copies the application files to the '/app' directory and sets the ownership to 'appuser'.\n\n3. **Switch to the Non-Root User**: Use the 'USER' instruction to switch to the non-root user before running the application:\n\n   ```dockerfile\n   USER appuser\n   ```\n\n   This instruction sets 'appuser' as the user for subsequent instructions, including the 'CMD' or 'ENTRYPOINT' that runs the application.\n\nBy following these steps, you ensure that the container runs with limited privileges, enhancing security by adhering to the principle of least privilege. For more detailed guidance, refer to Docker's official documentation on best practices for building Docker images. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))"
+    "instructions": "AI-generated fix pattern for dockerfile.security.missing-user.missing-user"
   },
   "locations": [
     {

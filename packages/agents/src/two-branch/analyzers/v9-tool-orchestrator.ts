@@ -20,6 +20,31 @@ import { JavaToolOrchestrator, JavaToolConfig } from '../tools/java/java-tool-or
 import { ToolResult as JavaToolResult, RawIssue } from '../tools/base-tool-orchestrator';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
 
+// Security Scanners (Phase 1 Integration - Session 58)
+import {
+  SecretScanner,
+  SecretIssue,
+  SecretScannerConfig
+} from '../tools/universal/secret-scanner';
+import {
+  IaCScanner,
+  IaCIssue,
+  IaCScannerConfig
+} from '../tools/universal/iac-scanner';
+import {
+  ContainerScanner,
+  ContainerVulnerability,
+  DockerfileIssue,
+  ContainerScannerConfig
+} from '../tools/universal/container-scanner';
+
+// Infrastructure Detection (Phase 1 - Session 59)
+import {
+  getSecurityScanConfig,
+  detectInfrastructure,
+  InfrastructureType
+} from '../utils/framework-detector';
+
 const execAsync = promisify(exec);
 
 export interface ToolScanResult {
@@ -58,6 +83,11 @@ export class V9ToolOrchestrator {
   private useKubernetes: boolean;
   private modelConfigResolver: ModelConfigResolver;
 
+  // Security Scanners (Phase 1 Integration)
+  private secretScanner: SecretScanner;
+  private iacScanner: IaCScanner;
+  private containerScanner: ContainerScanner;
+
   constructor() {
     this.supabase = createClient(
       process.env.SUPABASE_URL!,
@@ -72,13 +102,30 @@ export class V9ToolOrchestrator {
     this.k8sCodeFetcher = new KubernetesCodeFetcher();
     this.useKubernetes = !process.env.CLOUD_API_URL || process.env.USE_KUBERNETES !== 'false';
     this.modelConfigResolver = new ModelConfigResolver(logger);
+
+    // Initialize Security Scanners (Phase 1)
+    this.secretScanner = new SecretScanner({
+      scanHistory: false,  // Don't scan git history by default (faster)
+      includeVerification: true  // TruffleHog credential verification
+    });
+    this.iacScanner = new IaCScanner({
+      // Scan all supported frameworks
+      frameworks: ['terraform', 'kubernetes', 'cloudformation', 'dockerfile', 'helm', 'ansible'],
+      compactOutput: true
+    });
+    this.containerScanner = new ContainerScanner({
+      severityThreshold: 'medium',
+      scanDockerfiles: true,
+      ignoreUnfixed: false
+    });
   }
 
   /**
    * Main orchestration flow
-   * STEP 1: Run all tools to scan code
-   * STEP 2: Send results to agents for interpretation
-   * STEP 3: Compile and deduplicate results
+   * STEP 1: Detect infrastructure and determine security scan config
+   * STEP 2: Run language-specific tools + security scans in parallel
+   * STEP 3: Send results to agents for interpretation
+   * STEP 4: Compile and deduplicate results
    */
   async orchestrateAnalysis(
     files: string[],
@@ -86,26 +133,103 @@ export class V9ToolOrchestrator {
     language: string,
     tools: any[],
     workspaceId?: string,
-    pvcName?: string
+    pvcName?: string,
+    options?: {
+      skipSecurityScans?: boolean;  // Skip infrastructure security scans
+      securityScanOverride?: {      // Force specific security scans
+        enableSecrets?: boolean;
+        enableIaC?: boolean;
+        enableContainer?: boolean;
+      };
+    }
   ): Promise<ProcessedIssue[]> {
     logger.info(`🎯 Starting Tool Orchestration for ${language}`);
     logger.info(`📁 Repository: ${repoPath}`);
     logger.info(`📊 Files to analyze: ${files.length}`);
     logger.info(`🔧 Tools configured: ${tools.length}`);
 
-    // STEP 1: Run all scanning tools in parallel
-    logger.info('\n📡 STEP 1: Running scanning tools...');
-    const toolResults = await this.runAllTools(tools, files, repoPath);
+    // STEP 1: Detect infrastructure and determine security scan config
+    logger.info('\n🏗️ STEP 1: Detecting infrastructure...');
+    let securityConfig = {
+      enableSecrets: true,  // Always scan for secrets by default
+      enableIaC: false,
+      enableContainer: false,
+      detectedInfrastructure: [] as InfrastructureType[]
+    };
+
+    if (!options?.skipSecurityScans) {
+      try {
+        securityConfig = await getSecurityScanConfig(repoPath);
+        logger.info(`  📋 Infrastructure detected: ${securityConfig.detectedInfrastructure.join(', ') || 'none'}`);
+        logger.info(`  🔑 Secrets scan: ${securityConfig.enableSecrets ? 'enabled' : 'disabled'}`);
+        logger.info(`  🏗️ IaC scan: ${securityConfig.enableIaC ? 'enabled' : 'disabled'}`);
+        logger.info(`  🐳 Container scan: ${securityConfig.enableContainer ? 'enabled' : 'disabled'}`);
+      } catch (error) {
+        logger.warn(`  ⚠️ Infrastructure detection failed, using defaults: ${error}`);
+      }
+
+      // Apply overrides if provided
+      if (options?.securityScanOverride) {
+        securityConfig = {
+          ...securityConfig,
+          ...options.securityScanOverride
+        };
+        logger.info('  📝 Applied security scan overrides from options');
+      }
+    } else {
+      logger.info('  ⏭️ Security scans skipped (skipSecurityScans=true)');
+    }
+
+    // STEP 2: Run language-specific tools and security scans in parallel
+    logger.info('\n📡 STEP 2: Running scanning tools...');
+
+    const scanPromises: Promise<any>[] = [];
+
+    // Language-specific tools
+    scanPromises.push(
+      this.runAllTools(tools, files, repoPath)
+        .then(results => ({ type: 'language', results }))
+    );
+
+    // Security scans (run in parallel with language tools)
+    if (!options?.skipSecurityScans) {
+      scanPromises.push(
+        this.runSecurityScans(repoPath, {
+          enableSecrets: securityConfig.enableSecrets,
+          enableIaC: securityConfig.enableIaC,
+          enableContainer: securityConfig.enableContainer
+        }).then(issues => ({ type: 'security', issues }))
+      );
+    }
+
+    // Wait for all scans to complete
+    const scanResults = await Promise.allSettled(scanPromises);
+
+    // Extract language tool results
+    let toolResults: ToolScanResult[] = [];
+    let securityIssues: ProcessedIssue[] = [];
+
+    for (const result of scanResults) {
+      if (result.status === 'fulfilled') {
+        if (result.value.type === 'language') {
+          toolResults = result.value.results;
+        } else if (result.value.type === 'security') {
+          securityIssues = result.value.issues;
+        }
+      } else {
+        logger.error(`Scan failed: ${result.reason}`);
+      }
+    }
 
     // Store results for caching
     toolResults.forEach(result => {
       this.toolResults.set(result.tool, result);
     });
 
-    logger.info(`✅ Tool scanning complete. ${toolResults.length} tools executed.`);
+    logger.info(`✅ Tool scanning complete. ${toolResults.length} tools executed, ${securityIssues.length} security issues found.`);
 
-    // STEP 2: Send tool results to AI agents for interpretation
-    logger.info('\n🤖 STEP 2: Sending results to AI agents for interpretation...');
+    // STEP 3: Send tool results to AI agents for interpretation
+    logger.info('\n🤖 STEP 3: Sending results to AI agents for interpretation...');
     const interpretedIssues = await this.sendResultsToAgents(
       toolResults,
       language,
@@ -114,12 +238,15 @@ export class V9ToolOrchestrator {
 
     logger.info(`✅ Agent interpretation complete. ${interpretedIssues.length} issues identified.`);
 
-    // STEP 3: Deduplicate and categorize issues
-    logger.info('\n🔍 STEP 3: Deduplicating and categorizing issues...');
-    const dedupedIssues = this.deduplicateIssues(interpretedIssues);
+    // Merge security issues with interpreted issues
+    const allIssues = [...interpretedIssues, ...securityIssues];
 
-    // STEP 4: Fetch actual code snippets from Kubernetes or locally
-    logger.info('\n📝 STEP 4: Fetching code snippets for issues...');
+    // STEP 4: Deduplicate and categorize issues
+    logger.info('\n🔍 STEP 4: Deduplicating and categorizing issues...');
+    const dedupedIssues = this.deduplicateIssues(allIssues);
+
+    // STEP 5: Fetch actual code snippets from Kubernetes or locally
+    logger.info('\n📝 STEP 5: Fetching code snippets for issues...');
     if (this.useKubernetes && workspaceId && pvcName) {
       await this.fetchCodeSnippetsFromKubernetes(dedupedIssues, workspaceId, pvcName);
     } else {
@@ -1192,5 +1319,240 @@ export class V9ToolOrchestrator {
     logger.info('  By Severity:', bySeverity);
     logger.info('  By Category:', byCategory);
     logger.info('  By Tool:', byTool);
+  }
+
+  // ==========================================================================
+  // SECURITY SCANNERS (Phase 1 Integration - Session 58)
+  // ==========================================================================
+
+  /**
+   * Run all security scanners (secrets, IaC, containers)
+   * These run in parallel for performance
+   */
+  async runSecurityScans(
+    repoPath: string,
+    options?: {
+      enableSecrets?: boolean;
+      enableIaC?: boolean;
+      enableContainer?: boolean;
+      changedFiles?: string[];
+    }
+  ): Promise<ProcessedIssue[]> {
+    const opts = {
+      enableSecrets: true,
+      enableIaC: true,
+      enableContainer: true,
+      ...options
+    };
+
+    logger.info('🔐 Starting Security Scans (Phase 1 Tools)...');
+    const allIssues: ProcessedIssue[] = [];
+
+    // Build scan promises based on what's enabled
+    const scanPromises: Promise<ProcessedIssue[]>[] = [];
+
+    if (opts.enableSecrets) {
+      scanPromises.push(this.runSecretScan(repoPath));
+    }
+    if (opts.enableIaC) {
+      scanPromises.push(this.runIaCScan(repoPath));
+    }
+    if (opts.enableContainer) {
+      scanPromises.push(this.runContainerScan(repoPath));
+    }
+
+    // Run all enabled scans in parallel
+    const results = await Promise.allSettled(scanPromises);
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        allIssues.push(...result.value);
+      } else {
+        logger.error(`Security scan failed: ${result.reason}`);
+      }
+    }
+
+    logger.info(`🔐 Security scans complete: ${allIssues.length} issues found`);
+    return allIssues;
+  }
+
+  /**
+   * Run secret detection (Gitleaks + TruffleHog)
+   */
+  private async runSecretScan(repoPath: string): Promise<ProcessedIssue[]> {
+    logger.info('  🔑 Running secret detection (Gitleaks + TruffleHog)...');
+
+    try {
+      const result = await this.secretScanner.runAll(repoPath);
+      const issues: ProcessedIssue[] = [];
+
+      for (const secret of result.issues) {
+        issues.push({
+          id: `secret-${secret.tool}-${secret.file}-${secret.line}-${Date.now()}`,
+          title: `Secret Detected: ${secret.secretType}`,
+          severity: secret.severity === 'critical' ? 'critical' :
+                   secret.severity === 'high' ? 'high' :
+                   secret.severity === 'medium' ? 'medium' : 'low',
+          category: 'secrets',
+          file: secret.file,
+          line: secret.line,
+          column: secret.column,
+          tool: secret.tool,
+          agent: 'SecurityAgent',
+          confidence: secret.verified ? 0.99 : 0.85,
+          description: `${secret.description}${secret.verified ? ' (VERIFIED ACTIVE)' : ''}`,
+          suggestion: `1. Rotate this credential immediately
+2. Remove from code and use environment variables
+3. Add to .gitignore if configuration file
+4. Scan git history for exposure`,
+          rawToolOutput: JSON.stringify(secret, null, 2)
+        });
+      }
+
+      logger.info(`    ✅ Found ${issues.length} secrets (${result.summary.verified} verified active)`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error(`    ❌ Secret scan failed: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Run IaC security scan (Checkov + Trivy IaC)
+   */
+  private async runIaCScan(repoPath: string): Promise<ProcessedIssue[]> {
+    logger.info('  🏗️ Running IaC security scan (Checkov + Trivy)...');
+
+    try {
+      const result = await this.iacScanner.runAll(repoPath);
+      const issues: ProcessedIssue[] = [];
+
+      for (const iacIssue of result.issues) {
+        issues.push({
+          id: `iac-${iacIssue.tool}-${iacIssue.file}-${iacIssue.line}-${Date.now()}`,
+          title: `IaC Misconfiguration: ${iacIssue.checkId}`,
+          severity: iacIssue.severity === 'critical' ? 'critical' :
+                   iacIssue.severity === 'high' ? 'high' :
+                   iacIssue.severity === 'medium' ? 'medium' : 'low',
+          category: 'iac_security',
+          file: iacIssue.file,
+          line: iacIssue.line,
+          tool: iacIssue.tool,
+          agent: 'SecurityAgent',
+          confidence: 0.85,
+          description: iacIssue.description,
+          suggestion: iacIssue.guideline || `Review ${iacIssue.checkId} documentation for remediation`,
+          rawToolOutput: JSON.stringify(iacIssue, null, 2)
+        });
+      }
+
+      logger.info(`    ✅ Found ${issues.length} IaC issues`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error(`    ❌ IaC scan failed: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Run container security scan (Trivy + Grype for Dockerfiles)
+   */
+  private async runContainerScan(repoPath: string): Promise<ProcessedIssue[]> {
+    logger.info('  🐳 Running container security scan (Trivy + Grype)...');
+
+    try {
+      const result = await this.containerScanner.scanRepository(repoPath);
+      const issues: ProcessedIssue[] = [];
+
+      // Process Dockerfile issues
+      for (const dockerIssue of result.dockerfileIssues) {
+        issues.push({
+          id: `dockerfile-${dockerIssue.rule}-${dockerIssue.file}-${dockerIssue.line}-${Date.now()}`,
+          title: `Dockerfile Issue: ${dockerIssue.rule}`,
+          severity: dockerIssue.severity === 'critical' ? 'critical' :
+                   dockerIssue.severity === 'high' ? 'high' :
+                   dockerIssue.severity === 'medium' ? 'medium' : 'low',
+          category: 'container_security',
+          file: dockerIssue.file,
+          line: dockerIssue.line,
+          tool: 'trivy',
+          agent: 'SecurityAgent',
+          confidence: 0.80,
+          description: dockerIssue.message,
+          suggestion: dockerIssue.description || 'Review Dockerfile best practices',
+          rawToolOutput: JSON.stringify(dockerIssue, null, 2)
+        });
+      }
+
+      // Process dependency vulnerabilities in container context
+      for (const vuln of result.vulnerabilities) {
+        issues.push({
+          id: `container-vuln-${vuln.vulnerabilityId}-${vuln.pkgName}-${Date.now()}`,
+          title: `Container Vulnerability: ${vuln.vulnerabilityId} in ${vuln.pkgName}`,
+          severity: vuln.severity === 'critical' ? 'critical' :
+                   vuln.severity === 'high' ? 'high' :
+                   vuln.severity === 'medium' ? 'medium' : 'low',
+          category: 'container_security',
+          file: 'Dockerfile',  // Container-level issue
+          line: 1,
+          tool: vuln.tool,
+          agent: 'DependencyAgent',
+          confidence: vuln.cvss ? 0.95 : 0.80,
+          description: `${vuln.title}\n\nPackage: ${vuln.pkgName} ${vuln.installedVersion}${vuln.fixedVersion ? `\nFixed in: ${vuln.fixedVersion}` : '\nNo fix available'}`,
+          suggestion: vuln.fixedVersion
+            ? `Update ${vuln.pkgName} to version ${vuln.fixedVersion}`
+            : `Consider replacing ${vuln.pkgName} with an alternative package`,
+          rawToolOutput: JSON.stringify(vuln, null, 2)
+        });
+      }
+
+      logger.info(`    ✅ Found ${result.dockerfileIssues.length} Dockerfile issues, ${result.vulnerabilities.length} vulnerabilities`);
+      return issues;
+
+    } catch (error: any) {
+      logger.error(`    ❌ Container scan failed: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Check which security tools are available on the system
+   */
+  async checkSecurityToolsAvailability(): Promise<{
+    gitleaks: boolean;
+    trufflehog: boolean;
+    checkov: boolean;
+    trivy: boolean;
+    grype: boolean;
+  }> {
+    const checkTool = async (cmd: string): Promise<boolean> => {
+      try {
+        await execAsync(cmd, { timeout: 5000 });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const [gitleaks, trufflehog, checkov, trivy, grype] = await Promise.all([
+      checkTool('gitleaks version'),
+      checkTool('trufflehog --version'),
+      checkTool('checkov --version'),
+      checkTool('trivy version'),
+      checkTool('grype version')
+    ]);
+
+    const availability = { gitleaks, trufflehog, checkov, trivy, grype };
+
+    logger.info('🔧 Security Tools Availability:');
+    logger.info(`   Gitleaks: ${gitleaks ? '✅' : '❌'}`);
+    logger.info(`   TruffleHog: ${trufflehog ? '✅' : '❌'}`);
+    logger.info(`   Checkov: ${checkov ? '✅' : '❌'}`);
+    logger.info(`   Trivy: ${trivy ? '✅' : '❌'}`);
+    logger.info(`   Grype: ${grype ? '✅' : '❌'}`);
+
+    return availability;
   }
 }

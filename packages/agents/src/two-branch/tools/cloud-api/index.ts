@@ -80,7 +80,11 @@ export {
   CostCeiling,
   RoutingDecision,
   CostComparison,
-  ProfitabilityAnalysis
+  ProfitabilityAnalysis,
+  // Routing mode management
+  RoutingMode,
+  RoutingConfig,
+  SupabaseCostComparison
 } from './fix-cost-manager';
 
 export {

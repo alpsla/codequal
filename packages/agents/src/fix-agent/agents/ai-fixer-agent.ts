@@ -24,6 +24,7 @@ import {
   createAIFixerVerifier,
   AIFixerVerifier,
 } from '../fix-pattern-registry';
+import { OpenRouterKeyManager } from '../../two-branch/services/openrouter-key-manager';
 
 // ============================================================================
 // TYPES
@@ -80,6 +81,18 @@ export interface AIFixRecommendation {
     completionTokens: number;
     totalTokens: number;
   };
+  /**
+   * Session 59: Manual review recommendation when AI fix generation fails
+   * Provides structured guidance similar to recommendation-only categories
+   */
+  manualReview?: {
+    required: boolean;
+    reason: 'AI_FIX_FAILED' | 'CORRUPTED_RESPONSE' | 'CONTEXT_INSUFFICIENT' | 'COMPLEX_ISSUE';
+    remediationSteps: string[];
+    documentationLinks: string[];
+    riskLevel: 'critical' | 'high' | 'medium' | 'low';
+    estimatedEffort: 'trivial' | 'minor' | 'moderate' | 'significant';
+  };
 }
 
 /**
@@ -111,15 +124,56 @@ export interface AIFixerBatchResult {
 }
 
 // ============================================================================
+// SESSION 49: Corrupted response detection
+// ============================================================================
+
+const CORRUPTED_PHRASES = [
+  // AI asking for context
+  'could you please provide',
+  'i need to see',
+  'please provide the',
+  'can you share',
+  'i would need',
+  'the complete code',
+  'the actual code',
+  'provide the complete',
+  'share the code',
+  'need more context',
+  'without seeing',
+  'cannot provide a fix',
+  'unable to provide',
+  'need to see the',
+  'please share',
+  'can you provide',
+  // BUG-LSP-001: Template-style descriptions instead of actual code
+  'should be:',      // Template pattern: "X should be: Y"
+  'change to:',      // Template pattern: "Change X to: Y"
+  'replace with:',   // Template pattern: "Replace X with: Y"
+  'instead of:',     // Template pattern: "Use X instead of: Y"
+  'the fix is:',     // Template pattern: "The fix is: X"
+  'wasn\'t provided',// AI complaining about missing context
+  'code snippet',    // AI asking for context
+];
+
+function isCorruptedResponse(content: string): boolean {
+  const lowerContent = content.toLowerCase();
+  return CORRUPTED_PHRASES.some(phrase => lowerContent.includes(phrase));
+}
+
+// ============================================================================
 // AI-FIXER AGENT
 // ============================================================================
 
 export class AIFixerAgent {
   private supabase: SupabaseClient;
-  private openRouter: OpenAI;
+  private keyManager: OpenRouterKeyManager | null = null;
   private modelCache: Map<string, string> = new Map();
   private fixerVerifier: AIFixerVerifier | null = null;
   private submitToRegistry = false;
+
+  // SESSION 49: Retry configuration
+  private maxRetries = 2;
+  private retryStats = { total: 0, retried: 0, succeeded: 0 };
 
   constructor(options?: { submitToRegistry?: boolean }) {
     this.submitToRegistry = options?.submitToRegistry ?? false;
@@ -132,19 +186,38 @@ export class AIFixerAgent {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    const openRouterConfig: any = {
-      apiKey: process.env.OPENROUTER_API_KEY || '',
-    };
+    // Use OpenRouterKeyManager for multi-key rotation
+    try {
+      this.keyManager = new OpenRouterKeyManager();
+      console.log('[AIFixer] Using multi-key rotation with OpenRouterKeyManager');
+    } catch (e) {
+      console.log('[AIFixer] OpenRouterKeyManager not available, will use single key');
+    }
+  }
 
-    if (process.env.OPENROUTER_API_KEY?.startsWith('sk-or-')) {
-      openRouterConfig.baseURL = 'https://openrouter.ai/api/v1';
-      openRouterConfig.defaultHeaders = {
-        'HTTP-Referer': 'https://codequal.com',
-        'X-Title': 'CodeQual AI-Fixer Agent',
-      };
+  /**
+   * Execute OpenRouter API call with automatic key rotation
+   */
+  private async executeOpenRouterCall<T>(
+    fn: (client: OpenAI) => Promise<T>
+  ): Promise<T> {
+    // If key manager is available, use it for automatic fallback
+    if (this.keyManager) {
+      return this.keyManager.executeWithFallback(fn, 'AI-Fixer');
     }
 
-    this.openRouter = new OpenAI(openRouterConfig);
+    // Fallback to single key
+    const apiKey = process.env.OPENROUTER_API_KEY || '';
+    const client = new OpenAI({
+      apiKey,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': 'https://codequal.com',
+        'X-Title': 'CodeQual AI-Fixer Agent',
+      },
+    } as any);
+
+    return fn(client);
   }
 
   // ==========================================================================
@@ -250,65 +323,351 @@ export class AIFixerAgent {
 
   /**
    * Generate fix recommendation using AI with tool context
+   * SESSION 49: Added retry logic for corrupted responses
+   * SESSION 50: Use OpenRouterKeyManager for multi-key rotation
    */
   private async generateFixRecommendation(
     issue: AIFixerIssue,
     model: string
   ): Promise<AIFixRecommendation> {
-    const systemPrompt = this.buildSystemPrompt(issue);
-    const userPrompt = this.buildUserPrompt(issue);
+    this.retryStats.total++;
 
-    try {
-      const response = await this.openRouter.chat.completions.create({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 2500,
-      });
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      const systemPrompt = this.buildSystemPrompt(issue, attempt > 1);
+      const userPrompt = this.buildUserPrompt(issue, attempt > 1);
 
-      const content = response.choices[0]?.message?.content || '';
-      const parsed = this.parseAIResponse(content, issue);
+      try {
+        // Use key manager with automatic fallback if available
+        const response = await this.executeOpenRouterCall(async (client) => {
+          return client.chat.completions.create({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            temperature: attempt === 1 ? 0.3 : 0.1,
+            max_tokens: 2500,
+          });
+        });
 
-      // Calculate usage
-      const usage = {
-        promptTokens: response.usage?.prompt_tokens || 0,
-        completionTokens: response.usage?.completion_tokens || 0,
-        totalTokens: response.usage?.total_tokens || 0,
-      };
+        const content = response.choices[0]?.message?.content || '';
 
-      // Estimate cost (varies by model)
-      const cost = this.estimateCost(model, usage);
+        // SESSION 49: Check for corrupted response
+        if (isCorruptedResponse(content)) {
+          console.warn(
+            `[AI-Fixer] Corrupted response on attempt ${attempt}/${this.maxRetries} for ${issue.ruleId} - AI asked for context`
+          );
 
-      return {
-        ...parsed,
-        confidence: this.calculateConfidence(parsed, issue),
-        model,
-        cost,
-        usage,
-      };
-    } catch (error: any) {
-      console.error(`[AI-Fixer] Error generating fix:`, error.message);
+          if (attempt < this.maxRetries) {
+            this.retryStats.retried++;
+            console.log(`[AI-Fixer] Retrying with stronger prompt...`);
+            continue; // Retry with stronger prompt
+          }
 
-      // Return fallback recommendation
-      return {
-        fix: `Address ${issue.severity} ${issue.ruleId} issue`,
-        correctedCode: issue.codeContext || '// Fix required',
-        explanation: `AI could not generate fix: ${error.message}`,
-        bestPractices: [],
-        confidence: 30,
-        model,
-      };
+          // Session 59: All retries failed - return manual review recommendation
+          console.error(`[AI-Fixer] All ${this.maxRetries} attempts returned corrupted responses`);
+          return this.buildManualReviewRecommendation(issue, model, 'CORRUPTED_RESPONSE');
+        }
+
+        const parsed = this.parseAIResponse(content, issue);
+
+        // Calculate usage
+        const usage = {
+          promptTokens: response.usage?.prompt_tokens || 0,
+          completionTokens: response.usage?.completion_tokens || 0,
+          totalTokens: response.usage?.total_tokens || 0,
+        };
+
+        // Estimate cost (varies by model)
+        const cost = this.estimateCost(model, usage);
+
+        if (attempt > 1) {
+          this.retryStats.succeeded++;
+          console.log(`[AI-Fixer] Retry succeeded on attempt ${attempt}`);
+        }
+
+        return {
+          ...parsed,
+          confidence: this.calculateConfidence(parsed, issue),
+          model,
+          cost,
+          usage,
+        };
+      } catch (error: any) {
+        console.error(`[AI-Fixer] Error on attempt ${attempt}:`, error.message);
+
+        // Key rotation is now handled by OpenRouterKeyManager.executeWithFallback
+        if (attempt < this.maxRetries) {
+          this.retryStats.retried++;
+          continue;
+        }
+
+        // Session 59: Return manual review recommendation with structured guidance
+        return this.buildManualReviewRecommendation(issue, model, 'AI_FIX_FAILED', error.message);
+      }
     }
+
+    // Should not reach here, but TypeScript needs this
+    return this.buildManualReviewRecommendation(issue, model, 'COMPLEX_ISSUE');
+  }
+
+  /**
+   * SESSION 59: Build manual review recommendation when AI fix generation fails
+   * Provides structured guidance similar to recommendation-only categories
+   */
+  private buildManualReviewRecommendation(
+    issue: AIFixerIssue,
+    model: string,
+    reason: 'AI_FIX_FAILED' | 'CORRUPTED_RESPONSE' | 'CONTEXT_INSUFFICIENT' | 'COMPLEX_ISSUE',
+    errorMessage?: string
+  ): AIFixRecommendation {
+    const tool = issue.validatorToolId.toLowerCase();
+
+    // Generate tool-specific documentation links
+    const documentationLinks = this.getDocumentationLinks(tool, issue.ruleId);
+
+    // Generate remediation steps based on issue type and tool
+    const remediationSteps = this.generateRemediationSteps(issue);
+
+    // Map severity to risk level
+    const riskLevel = this.mapSeverityToRisk(issue.severity);
+
+    // Estimate effort based on issue complexity
+    const estimatedEffort = this.estimateFixEffort(issue);
+
+    // Build comprehensive issue description
+    const issueDescription = {
+      what: `${issue.ruleId} violation detected by ${issue.validatorToolId}`,
+      why: issue.message || `This issue may impact code ${this.getImpactArea(tool)}`,
+      causes: this.getCommonCauses(tool, issue.ruleId),
+      impact: this.getImpactDescription(issue.severity, tool),
+    };
+
+    return {
+      fix: `Manual review required for ${issue.ruleId}`,
+      correctedCode: `// Manual fix required for ${issue.ruleId}
+// Location: ${issue.file}:${issue.line}
+//
+// Follow the remediation steps below to fix this issue.
+// See documentation links for detailed guidance.`,
+      explanation: errorMessage
+        ? `AI could not generate an automatic fix: ${errorMessage}. Please follow the manual remediation steps.`
+        : 'AI could not generate an automatic fix after multiple attempts. Please follow the manual remediation steps.',
+      issueDescription,
+      bestPractices: [
+        `Review ${issue.validatorToolId} documentation for ${issue.ruleId}`,
+        'Understand the security/quality implications before fixing',
+        'Test the fix in a safe environment first',
+        'Consider adding tests to prevent regression',
+        'Document any architectural decisions made'
+      ],
+      confidence: 0, // Zero confidence - requires manual review
+      model,
+      manualReview: {
+        required: true,
+        reason,
+        remediationSteps,
+        documentationLinks,
+        riskLevel,
+        estimatedEffort,
+      },
+    };
+  }
+
+  /**
+   * Get documentation links for a tool and rule
+   */
+  private getDocumentationLinks(tool: string, ruleId: string): string[] {
+    const links: string[] = [];
+
+    // Tool-specific documentation
+    const toolDocs: Record<string, string> = {
+      eslint: `https://eslint.org/docs/rules/${ruleId}`,
+      'typescript-eslint': `https://typescript-eslint.io/rules/${ruleId.replace('@typescript-eslint/', '')}`,
+      semgrep: `https://semgrep.dev/r?q=${encodeURIComponent(ruleId)}`,
+      bandit: `https://bandit.readthedocs.io/en/latest/plugins/`,
+      ruff: `https://docs.astral.sh/ruff/rules/${ruleId}`,
+      pylint: `https://pylint.readthedocs.io/en/latest/user_guide/messages/messages_list.html`,
+      checkstyle: `https://checkstyle.sourceforge.io/checks.html`,
+      spotbugs: `https://spotbugs.readthedocs.io/en/stable/bugDescriptions.html`,
+      pmd: `https://pmd.github.io/latest/pmd_rules_java.html`,
+    };
+
+    if (toolDocs[tool]) {
+      links.push(toolDocs[tool]);
+    }
+
+    // Add OWASP reference for security issues
+    if (this.isSecurityRule(ruleId, tool)) {
+      links.push('https://owasp.org/www-project-top-ten/');
+    }
+
+    // Add CWE reference if applicable
+    const cweMatch = ruleId.match(/CWE-(\d+)/i);
+    if (cweMatch) {
+      links.push(`https://cwe.mitre.org/data/definitions/${cweMatch[1]}.html`);
+    }
+
+    return links.length > 0 ? links : [`Search: "${tool} ${ruleId} fix"`];
+  }
+
+  /**
+   * Generate step-by-step remediation guidance
+   */
+  private generateRemediationSteps(issue: AIFixerIssue): string[] {
+    const tool = issue.validatorToolId.toLowerCase();
+    const steps: string[] = [];
+
+    // Step 1: Understand the issue
+    steps.push(`1. Review the issue at ${issue.file}:${issue.line}`);
+    steps.push(`2. Understand why ${issue.ruleId} was triggered: ${issue.message || 'See rule documentation'}`);
+
+    // Tool-specific steps
+    if (tool === 'eslint' || tool === 'typescript-eslint') {
+      steps.push('3. Check if the issue can be auto-fixed: npx eslint --fix <file>');
+      steps.push('4. If auto-fix doesn\'t work, manually apply the recommended pattern');
+    } else if (tool === 'semgrep') {
+      steps.push('3. Review the Semgrep rule pattern and recommended fix');
+      steps.push('4. Apply the secure coding pattern from the rule documentation');
+    } else if (tool === 'bandit' || tool === 'ruff') {
+      steps.push('3. For Python security issues, review secure coding practices');
+      steps.push('4. Replace insecure patterns with recommended alternatives');
+    } else if (tool === 'checkstyle' || tool === 'spotbugs' || tool === 'pmd') {
+      steps.push('3. For Java issues, check IDE quick-fix suggestions');
+      steps.push('4. Apply the fix following Java best practices');
+    } else {
+      steps.push('3. Review the tool documentation for fix guidance');
+      steps.push('4. Apply the recommended fix pattern');
+    }
+
+    // Common final steps
+    steps.push('5. Verify the fix doesn\'t break existing functionality');
+    steps.push('6. Run tests to ensure no regressions');
+
+    return steps;
+  }
+
+  /**
+   * Map severity to risk level
+   * Handles both standard (critical/high/medium/low) and legacy (error/warning/info) formats
+   */
+  private mapSeverityToRisk(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+    const sev = severity.toLowerCase();
+    // Standard severity levels
+    if (sev === 'critical') return 'critical';
+    if (sev === 'high') return 'high';
+    if (sev === 'medium') return 'medium';
+    if (sev === 'low') return 'low';
+    // Legacy severity levels (error/warning/info)
+    if (sev === 'error') return 'critical';
+    if (sev === 'warning') return 'high';
+    if (sev === 'info') return 'low';
+    return 'medium';  // Default
+  }
+
+  /**
+   * Estimate fix effort based on issue complexity
+   */
+  private estimateFixEffort(issue: AIFixerIssue): 'trivial' | 'minor' | 'moderate' | 'significant' {
+    const tool = issue.validatorToolId.toLowerCase();
+
+    // Style issues are usually trivial
+    if (['checkstyle', 'prettier', 'black'].includes(tool)) {
+      return 'trivial';
+    }
+
+    // Security issues require more effort
+    if (this.isSecurityRule(issue.ruleId, tool)) {
+      return issue.severity === 'critical' || issue.severity === 'high'
+        ? 'significant'
+        : 'moderate';
+    }
+
+    // Quality issues are usually minor to moderate
+    return 'minor';
+  }
+
+  /**
+   * Check if a rule is security-related
+   */
+  private isSecurityRule(ruleId: string, tool: string): boolean {
+    const securityTools = ['bandit', 'semgrep', 'gosec', 'brakeman'];
+    if (securityTools.includes(tool)) return true;
+
+    const securityKeywords = ['security', 'injection', 'xss', 'csrf', 'auth', 'crypto', 'secret', 'sql'];
+    return securityKeywords.some(kw => ruleId.toLowerCase().includes(kw));
+  }
+
+  /**
+   * Get impact area based on tool type
+   */
+  private getImpactArea(tool: string): string {
+    const impactAreas: Record<string, string> = {
+      bandit: 'security and vulnerability exposure',
+      semgrep: 'security, quality, or best practices',
+      eslint: 'code quality and maintainability',
+      checkstyle: 'code style and readability',
+      spotbugs: 'potential bugs and code quality',
+      pmd: 'code quality and potential issues',
+      ruff: 'Python code quality and style',
+      pylint: 'Python code quality and standards',
+    };
+    return impactAreas[tool] || 'code quality';
+  }
+
+  /**
+   * Get common causes for issue type
+   */
+  private getCommonCauses(tool: string, ruleId: string): string[] {
+    // Generic causes that apply to most issues
+    return [
+      'Code pattern doesn\'t follow best practices',
+      'Legacy code that predates current standards',
+      'Copy-paste code that wasn\'t properly reviewed',
+    ];
+  }
+
+  /**
+   * Get impact description based on severity
+   * Handles both standard (critical/high/medium/low) and legacy (error/warning/info) formats
+   */
+  private getImpactDescription(severity: string, _tool: string): string {
+    const sev = severity.toLowerCase();
+    if (sev === 'critical' || sev === 'error') {
+      return 'Critical issue that may cause security vulnerabilities, crashes, or data loss if not addressed';
+    }
+    if (sev === 'high' || sev === 'warning') {
+      return 'Important issue that should be fixed to maintain code quality and prevent potential problems';
+    }
+    return 'Minor issue that improves code quality when fixed but may not cause immediate problems';
   }
 
   /**
    * Build system prompt for AI
+   * SESSION 49: Added isRetry parameter for stronger prompt on retry
    */
-  private buildSystemPrompt(issue: AIFixerIssue): string {
+  private buildSystemPrompt(issue: AIFixerIssue, isRetry = false): string {
+    // SESSION 49: Critical constraint to prevent corrupted responses
+    const neverAskConstraint = isRetry
+      ? `CRITICAL - YOU MUST NEVER:
+- Ask for more code or context
+- Say "I need to see", "please provide", "could you share"
+- Request any additional information
+- State that you cannot provide a fix
+
+YOU MUST ALWAYS:
+- Work with the code provided
+- Generate a valid fix based on the rule documentation
+- Make reasonable assumptions if context is limited
+- Output valid JSON with correctedCode field`
+      : `IMPORTANT:
+- Work with the code provided
+- Never ask for more context
+- Generate a fix based on rule documentation`;
+
     return `You are an expert code fixer. Generate precise, compilable fixes for code issues.
+
+${neverAskConstraint}
 
 CONTEXT:
 - Language: ${issue.language}
@@ -356,8 +715,13 @@ CRITICAL: Output ONLY valid JSON. No markdown, no explanation text.`;
 
   /**
    * Build user prompt with issue details
+   * SESSION 49: Added isRetry parameter for more explicit instruction on retry
    */
-  private buildUserPrompt(issue: AIFixerIssue): string {
+  private buildUserPrompt(issue: AIFixerIssue, isRetry = false): string {
+    const instruction = isRetry
+      ? `Generate a fix NOW. Do NOT ask for more information. Output JSON with correctedCode.`
+      : `Provide the fix as JSON.`;
+
     return `Fix this ${issue.severity} issue:
 
 FILE: ${issue.file}
@@ -371,10 +735,10 @@ ${
 \`\`\`${issue.language}
 ${issue.codeContext}
 \`\`\``
-    : 'No code context available - generate fix based on rule and message.'
+    : 'No code context available - generate a generic fix pattern based on rule documentation.'
 }
 
-Provide the fix as JSON.`;
+${instruction}`;
   }
 
   /**
@@ -532,11 +896,23 @@ Provide the fix as JSON.`;
 
   /**
    * Get processing summary
+   * SESSION 49: Added retry stats
    */
-  getStats(): { modelCache: number } {
+  getStats(): {
+    modelCache: number;
+    retryStats: { total: number; retried: number; succeeded: number };
+  } {
     return {
       modelCache: this.modelCache.size,
+      retryStats: { ...this.retryStats },
     };
+  }
+
+  /**
+   * Reset retry stats (for testing)
+   */
+  resetRetryStats(): void {
+    this.retryStats = { total: 0, retried: 0, succeeded: 0 };
   }
 
   // ==========================================================================

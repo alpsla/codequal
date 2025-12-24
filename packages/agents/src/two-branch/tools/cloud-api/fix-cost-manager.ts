@@ -134,6 +134,22 @@ export interface SupabaseCostComparison {
   aiFixerCostPerFixCents: number;
   recommendedSource: FixSource;
   costDifferenceCents: number;
+  // Routing mode (Session 63)
+  routingMode: 'manual' | 'automatic';
+  manualPreferredSource?: FixSource;
+}
+
+// Routing configuration
+export type RoutingMode = 'manual' | 'automatic';
+
+export interface RoutingConfig {
+  routingMode: RoutingMode;
+  manualPreferredSource: FixSource;
+  manualReason?: string;
+  dataCollectionTargetFixes: number;
+  decisionsSinceCollectionStart: number;
+  autoPreferCorgeaForSecurity: boolean;
+  autoFallbackOnRateLimit: boolean;
 }
 
 // Confidence scores by source
@@ -231,7 +247,9 @@ export class FixCostManager {
         corgeaCostPerFixCents: parseFloat(data.corgea_cost_per_fix_cents) || 0,
         aiFixerCostPerFixCents: parseFloat(data.ai_fixer_cost_per_fix_cents) || 2,
         recommendedSource: data.recommended_source as FixSource,
-        costDifferenceCents: parseFloat(data.cost_difference_cents) || 0
+        costDifferenceCents: parseFloat(data.cost_difference_cents) || 0,
+        routingMode: data.routing_mode || 'manual',
+        manualPreferredSource: data.manual_preferred_source as FixSource
       };
     } catch (error) {
       console.warn('[FixCostManager] Error querying cost comparison:', error);
@@ -341,6 +359,230 @@ export class FixCostManager {
   }
 
   // ============================================================
+  // ROUTING MODE MANAGEMENT (Session 63)
+  // ============================================================
+
+  /**
+   * Get current routing configuration
+   */
+  async getRoutingConfig(): Promise<RoutingConfig | null> {
+    if (!this.supabase) return null;
+
+    try {
+      const { data, error } = await this.supabase
+        .from('fix_routing_config')
+        .select('*')
+        .eq('id', 'current')
+        .single();
+
+      if (error || !data) {
+        console.warn('[FixCostManager] Failed to fetch routing config:', error);
+        return null;
+      }
+
+      return {
+        routingMode: data.routing_mode as RoutingMode,
+        manualPreferredSource: data.manual_preferred_source as FixSource,
+        manualReason: data.manual_reason,
+        dataCollectionTargetFixes: data.data_collection_target_fixes || 100,
+        decisionsSinceCollectionStart: 0, // Will be calculated from view
+        autoPreferCorgeaForSecurity: data.auto_prefer_corgea_for_security ?? true,
+        autoFallbackOnRateLimit: data.auto_fallback_on_rate_limit ?? true
+      };
+    } catch (error) {
+      console.warn('[FixCostManager] Error fetching routing config:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Switch routing mode between manual and automatic
+   *
+   * @param mode - 'manual' for data collection phase, 'automatic' for cost-optimized routing
+   * @param preferredSource - When manual, which source to use (default: current preference)
+   * @param reason - Documentation for why the switch was made
+   */
+  async setRoutingMode(
+    mode: RoutingMode,
+    preferredSource?: FixSource,
+    reason?: string
+  ): Promise<{ success: boolean; message: string }> {
+    if (!this.supabase) {
+      return { success: false, message: 'Supabase not available' };
+    }
+
+    try {
+      // Use the switch_routing_mode function if available, otherwise direct update
+      const { data, error } = await this.supabase.rpc('switch_routing_mode', {
+        new_mode: mode,
+        preferred_source: preferredSource || null,
+        change_reason: reason || null,
+        changed_by: 'fix-cost-manager'
+      });
+
+      if (error) {
+        // Fallback to direct update if function doesn't exist
+        const { error: updateError } = await this.supabase
+          .from('fix_routing_config')
+          .update({
+            routing_mode: mode,
+            manual_preferred_source: preferredSource,
+            manual_reason: reason,
+            last_mode_change_at: new Date().toISOString(),
+            last_mode_change_by: 'fix-cost-manager',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 'current');
+
+        if (updateError) {
+          return { success: false, message: updateError.message };
+        }
+      }
+
+      const modeDescription = mode === 'manual'
+        ? `Manual mode: Using ${preferredSource || 'ai_fixer'} for data collection`
+        : 'Automatic mode: Cost-optimized source selection';
+
+      console.log(`[FixCostManager] ${modeDescription}`);
+      return { success: true, message: modeDescription };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Set the preferred source for manual mode
+   * Convenience method for quick switching between Corgea and AI-fixer
+   */
+  async setManualSource(
+    source: 'corgea' | 'ai_fixer',
+    reason?: string
+  ): Promise<{ success: boolean; message: string }> {
+    return this.setRoutingMode('manual', source, reason);
+  }
+
+  /**
+   * Enable automatic routing (cost-optimized)
+   * Should be called after sufficient data collection
+   */
+  async enableAutomaticRouting(
+    reason?: string
+  ): Promise<{ success: boolean; message: string }> {
+    return this.setRoutingMode(
+      'automatic',
+      undefined,
+      reason || 'Switching to automatic routing after data collection'
+    );
+  }
+
+  /**
+   * Log a routing decision for analysis
+   */
+  async logRoutingDecision(params: {
+    routingMode: RoutingMode;
+    selectedSource: FixSource;
+    decisionReason: string;
+    wasFallback?: boolean;
+    fallbackReason?: string;
+    corgeaCostCents?: number;
+    aiFixerCostCents?: number;
+    issueSeverity?: string;
+    issueCategory?: string;
+    language?: string;
+    ruleId?: string;
+    userId?: string;
+    organizationId?: string;
+  }): Promise<void> {
+    if (!this.supabase) return;
+
+    try {
+      const costSavings = params.corgeaCostCents && params.aiFixerCostCents
+        ? Math.abs(params.corgeaCostCents - params.aiFixerCostCents)
+        : null;
+
+      await this.supabase.from('fix_routing_decisions').insert({
+        routing_mode: params.routingMode,
+        selected_source: params.selectedSource,
+        decision_reason: params.decisionReason,
+        was_fallback: params.wasFallback || false,
+        fallback_reason: params.fallbackReason,
+        corgea_cost_cents: params.corgeaCostCents,
+        ai_fixer_cost_cents: params.aiFixerCostCents,
+        cost_savings_cents: costSavings,
+        issue_severity: params.issueSeverity,
+        issue_category: params.issueCategory,
+        language: params.language,
+        rule_id: params.ruleId,
+        user_id: params.userId,
+        organization_id: params.organizationId
+      });
+    } catch (error) {
+      console.warn('[FixCostManager] Failed to log routing decision:', error);
+    }
+  }
+
+  /**
+   * Get routing statistics for analysis
+   */
+  async getRoutingStats(): Promise<{
+    mode: RoutingMode;
+    preferredSource?: FixSource;
+    totalDecisions: number;
+    corgeaDecisions: number;
+    aiFixerDecisions: number;
+    fallbackCount: number;
+    avgCostSavings: number;
+  } | null> {
+    if (!this.supabase) return null;
+
+    try {
+      // Get config
+      const config = await this.getRoutingConfig();
+      if (!config) return null;
+
+      // Get decision stats
+      const { data: stats, error } = await this.supabase
+        .from('fix_routing_decisions')
+        .select('selected_source, was_fallback, cost_savings_cents');
+
+      if (error || !stats) {
+        return {
+          mode: config.routingMode,
+          preferredSource: config.manualPreferredSource,
+          totalDecisions: 0,
+          corgeaDecisions: 0,
+          aiFixerDecisions: 0,
+          fallbackCount: 0,
+          avgCostSavings: 0
+        };
+      }
+
+      const corgeaDecisions = stats.filter(s => s.selected_source === 'corgea').length;
+      const aiFixerDecisions = stats.filter(s => s.selected_source === 'ai_fixer').length;
+      const fallbackCount = stats.filter(s => s.was_fallback).length;
+      const savingsValues = stats
+        .filter(s => s.cost_savings_cents !== null)
+        .map(s => parseFloat(s.cost_savings_cents) || 0);
+      const avgCostSavings = savingsValues.length > 0
+        ? savingsValues.reduce((a, b) => a + b, 0) / savingsValues.length
+        : 0;
+
+      return {
+        mode: config.routingMode,
+        preferredSource: config.manualPreferredSource,
+        totalDecisions: stats.length,
+        corgeaDecisions,
+        aiFixerDecisions,
+        fallbackCount,
+        avgCostSavings
+      };
+    } catch (error) {
+      console.warn('[FixCostManager] Error fetching routing stats:', error);
+      return null;
+    }
+  }
+
+  // ============================================================
   // COST RECORDING
   // ============================================================
 
@@ -417,6 +659,10 @@ export class FixCostManager {
 
   /**
    * Decide which source to use for a fix
+   *
+   * Respects routing mode:
+   * - 'manual': Uses the manually selected preferred source (for data collection)
+   * - 'automatic': Uses cost-optimized source selection
    */
   async decideSource(
     severity: string,
@@ -424,6 +670,10 @@ export class FixCostManager {
     language: string
   ): Promise<RoutingDecision> {
     this.resetCountersIfNeeded();
+
+    // Get routing configuration
+    const routingConfig = await this.getRoutingConfig();
+    const comparison = await this.getSupabaseCostComparison();
 
     // Check Corgea rate limit
     const corgeaTracker = getCorgeaUsageTracker();
@@ -433,8 +683,23 @@ export class FixCostManager {
     const remainingDailyBudget = this.ceilings.maxDailyCost - this.dailyCost;
     const remainingMonthlyBudget = this.ceilings.maxMonthlyCost - this.monthlyCost;
 
-    // Priority 1: Native fixes (free, highest confidence)
+    // Get costs
+    const corgeaCost = comparison?.corgeaCostPerFixCents || this.avgCosts.corgea;
+    const aiFixerCost = comparison?.aiFixerCostPerFixCents || this.avgCosts.ai_fixer;
+
+    // Priority 1: Native fixes (free, highest confidence) - always use if available
     if (this.canUseNative(category)) {
+      await this.logRoutingDecision({
+        routingMode: routingConfig?.routingMode || 'manual',
+        selectedSource: 'native',
+        decisionReason: 'Native fix available (free, highest confidence)',
+        corgeaCostCents: corgeaCost,
+        aiFixerCostCents: aiFixerCost,
+        issueSeverity: severity,
+        issueCategory: category,
+        language
+      });
+
       return {
         source: 'native',
         reason: 'Native fix available (free, highest confidence)',
@@ -445,8 +710,19 @@ export class FixCostManager {
       };
     }
 
-    // Priority 2: Pattern registry (free, high confidence)
+    // Priority 2: Pattern registry (free, high confidence) - always use if available
     if (this.hasPattern(severity, category)) {
+      await this.logRoutingDecision({
+        routingMode: routingConfig?.routingMode || 'manual',
+        selectedSource: 'pattern_registry',
+        decisionReason: 'Known pattern available (free, proven fix)',
+        corgeaCostCents: corgeaCost,
+        aiFixerCostCents: aiFixerCost,
+        issueSeverity: severity,
+        issueCategory: category,
+        language
+      });
+
       return {
         source: 'pattern_registry',
         reason: 'Known pattern available (free, proven fix)',
@@ -457,51 +733,131 @@ export class FixCostManager {
       };
     }
 
-    // Priority 3: Choose between Corgea and AI-fixer
-    const corgeaCost = this.avgCosts.corgea;
-    const aiFixerCost = this.avgCosts.ai_fixer;
-
-    // Check if Corgea is rate limited
+    // Priority 3: Check rate limits and budget - these override manual mode
     if (rateLimitStatus.isThrottled) {
-      return {
+      const decision: RoutingDecision = {
         source: 'ai_fixer',
         reason: `Corgea rate limited (${rateLimitStatus.throttleReason}), using AI-fixer`,
         estimatedCost: aiFixerCost,
         confidence: SOURCE_CONFIDENCE.ai_fixer,
         fallbackAvailable: false
       };
+
+      await this.logRoutingDecision({
+        routingMode: routingConfig?.routingMode || 'manual',
+        selectedSource: 'ai_fixer',
+        decisionReason: decision.reason,
+        wasFallback: true,
+        fallbackReason: 'Corgea rate limited',
+        corgeaCostCents: corgeaCost,
+        aiFixerCostCents: aiFixerCost,
+        issueSeverity: severity,
+        issueCategory: category,
+        language
+      });
+
+      return decision;
     }
+
+    // ============================================================
+    // MANUAL MODE: Use preferred source for data collection
+    // ============================================================
+    if (routingConfig?.routingMode === 'manual') {
+      const preferredSource = routingConfig.manualPreferredSource || 'ai_fixer';
+      const estimatedCost = preferredSource === 'corgea' ? corgeaCost : aiFixerCost;
+      const reason = `Manual mode: Using ${preferredSource} for data collection`;
+
+      await this.logRoutingDecision({
+        routingMode: 'manual',
+        selectedSource: preferredSource,
+        decisionReason: reason,
+        corgeaCostCents: corgeaCost,
+        aiFixerCostCents: aiFixerCost,
+        issueSeverity: severity,
+        issueCategory: category,
+        language
+      });
+
+      return {
+        source: preferredSource,
+        reason,
+        estimatedCost,
+        confidence: SOURCE_CONFIDENCE[preferredSource],
+        fallbackAvailable: true,
+        fallbackSource: preferredSource === 'corgea' ? 'ai_fixer' : 'corgea'
+      };
+    }
+
+    // ============================================================
+    // AUTOMATIC MODE: Cost-optimized source selection
+    // ============================================================
 
     // Check budget constraints
     if (corgeaCost > remainingDailyBudget || corgeaCost > remainingMonthlyBudget) {
-      return {
+      const decision: RoutingDecision = {
         source: 'ai_fixer',
-        reason: 'Budget constraint - using cheaper AI-fixer',
+        reason: 'Budget constraint - using AI-fixer',
         estimatedCost: aiFixerCost,
         confidence: SOURCE_CONFIDENCE.ai_fixer,
         fallbackAvailable: false
       };
+
+      await this.logRoutingDecision({
+        routingMode: 'automatic',
+        selectedSource: 'ai_fixer',
+        decisionReason: decision.reason,
+        corgeaCostCents: corgeaCost,
+        aiFixerCostCents: aiFixerCost,
+        issueSeverity: severity,
+        issueCategory: category,
+        language
+      });
+
+      return decision;
     }
 
-    // Security issues: prefer Corgea (better verification)
-    if (category === 'security' && severity !== 'low') {
-      return {
+    // Security issues: prefer Corgea (better verification) in automatic mode
+    if (routingConfig?.autoPreferCorgeaForSecurity && category === 'security' && severity !== 'low') {
+      const decision: RoutingDecision = {
         source: 'corgea',
-        reason: 'Security issue - using Corgea for verified fix',
+        reason: 'Automatic mode: Security issue - using Corgea for verified fix',
         estimatedCost: corgeaCost,
         confidence: SOURCE_CONFIDENCE.corgea,
         fallbackAvailable: true,
         fallbackSource: 'ai_fixer'
       };
+
+      await this.logRoutingDecision({
+        routingMode: 'automatic',
+        selectedSource: 'corgea',
+        decisionReason: decision.reason,
+        corgeaCostCents: corgeaCost,
+        aiFixerCostCents: aiFixerCost,
+        issueSeverity: severity,
+        issueCategory: category,
+        language
+      });
+
+      return decision;
     }
 
     // Cost-based decision using real Supabase data
-    // This compares Corgea effective cost (subscription/fixes) vs AI-fixer avg cost
     const cheaperSource = await this.getCheaperSource();
+
+    await this.logRoutingDecision({
+      routingMode: 'automatic',
+      selectedSource: cheaperSource.source,
+      decisionReason: cheaperSource.reason,
+      corgeaCostCents: corgeaCost,
+      aiFixerCostCents: aiFixerCost,
+      issueSeverity: severity,
+      issueCategory: category,
+      language
+    });
 
     return {
       source: cheaperSource.source,
-      reason: cheaperSource.reason,
+      reason: `Automatic mode: ${cheaperSource.reason}`,
       estimatedCost: cheaperSource.costCents,
       confidence: SOURCE_CONFIDENCE[cheaperSource.source],
       fallbackAvailable: true,

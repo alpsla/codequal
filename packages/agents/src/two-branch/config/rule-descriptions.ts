@@ -11,6 +11,8 @@ export interface RuleDescription {
   why: string;
   category: 'Security' | 'Performance' | 'Code Quality' | 'Architecture' | 'Dependencies';
   fix?: string; // Generic fix recommendation
+  docUrl?: string; // Official documentation URL
+  causes?: string[]; // Specific causes for this issue (avoids generic fallback)
 }
 
 export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
@@ -20,7 +22,9 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Lines exceed the maximum allowed length (typically 120 or 140 characters).',
     why: 'Long lines are harder to read on smaller screens and difficult to see in side-by-side diffs during code review.',
     category: 'Code Quality',
-    fix: 'Break long lines using proper formatting. For method signatures, break at parameter boundaries. For long strings, use string concatenation or multi-line strings.'
+    fix: 'Break long lines using proper formatting. For method signatures, break at parameter boundaries. For long strings, use string concatenation or multi-line strings.',
+    docUrl: 'https://checkstyle.org/checks/sizes/linelength.html',
+    causes: ['Long method signatures', 'Long string literals', 'Chained method calls', 'Complex expressions']
   },
 
   'MissingJavadocMethodCheck': {
@@ -28,6 +32,8 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Public methods lack Javadoc comments explaining their purpose, parameters, and return values.',
     why: 'Undocumented code is harder for other developers to understand and maintain correctly.',
     category: 'Code Quality',
+    docUrl: 'https://checkstyle.org/checks/javadoc/missingjavadocmethod.html',
+    causes: ['Rapid development without documentation', 'Private methods made public later', 'Generated code'],
     fix: 'Add Javadoc comments above public methods describing what they do, their parameters (@param), return values (@return), and any exceptions (@throws).'
   },
 
@@ -44,7 +50,9 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Public fields lack Javadoc comments.',
     why: 'Field documentation clarifies the purpose and constraints of public fields.',
     category: 'Code Quality',
-    fix: 'Add brief Javadoc comments above public fields explaining what they represent.'
+    fix: 'Add brief Javadoc comments above public fields explaining what they represent.',
+    docUrl: 'https://checkstyle.org/checks/javadoc/javadocvariable.html',
+    causes: ['Rapid development', 'Self-documenting field names', 'Generated code']
   },
 
   'JavadocStyleCheck': {
@@ -74,9 +82,10 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
   'HiddenFieldCheck': {
     title: 'Local Variable Shadows Class Field',
     description: 'A local variable or parameter has the same name as a class field, hiding the field.',
-    why: 'This can lead to bugs where you think you\'re using the field but you\'re actually using the local variable.',
+    why: 'In non-setter/constructor methods, this can lead to bugs where you accidentally use the parameter instead of the field.',
     category: 'Code Quality',
-    fix: 'Rename the local variable or parameter to a different name, or use "this." to explicitly reference the field.'
+    fix: 'For setters/constructors (using this.field = param), this is a standard Java pattern - consider configuring Checkstyle to ignore these with ignoreSetter=true and ignoreConstructorParameter=true. For other methods, rename the parameter to avoid shadowing.',
+    docUrl: 'https://checkstyle.org/checks/coding/hiddenfield.html'
   },
 
   'MagicNumberCheck': {
@@ -84,7 +93,9 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Numeric literals appear directly in code without explanation.',
     why: 'Magic numbers make code less readable and harder to maintain. Their meaning is unclear without context.',
     category: 'Code Quality',
-    fix: 'Replace magic numbers with named constants (static final fields) that explain their meaning.'
+    fix: 'Replace magic numbers with named constants (static final fields) that explain their meaning.',
+    docUrl: 'https://checkstyle.org/checks/coding/magicnumber.html',
+    causes: ['Hard-coded configuration values', 'Array sizes', 'Loop bounds', 'Annotation values (often acceptable)']
   },
 
   'FinalParametersCheck': {
@@ -92,7 +103,9 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Method parameters are not declared as final.',
     why: 'Final parameters prevent accidental reassignment and make code intent clearer.',
     category: 'Code Quality',
-    fix: 'Add "final" keyword to method parameters unless they need to be reassigned (which is rare).'
+    fix: 'Add "final" keyword to method parameters unless they need to be reassigned (which is rare).',
+    docUrl: 'https://checkstyle.org/checks/misc/finalparameters.html',
+    causes: ['Standard coding style in most projects', 'Rarely needed but enforces immutability']
   },
 
   'DesignForExtensionCheck': {
@@ -100,7 +113,9 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Non-private methods in non-final classes should be abstract, final, or have empty implementation.',
     why: 'Methods that can be overridden should be explicitly designed for inheritance to prevent unexpected behavior.',
     category: 'Architecture',
-    fix: 'Either make the method final, make the class final, document the extension contract, or make it abstract.'
+    fix: 'Either make the method final, make the class final, document the extension contract, or make it abstract.',
+    docUrl: 'https://checkstyle.org/checks/design/designforextension.html',
+    causes: ['Framework classes designed for extension', 'Consider if class needs to be extendable at all']
   },
 
   'VisibilityModifierCheck': {
@@ -108,7 +123,9 @@ export const RULE_DESCRIPTIONS: Record<string, RuleDescription> = {
     description: 'Class has public or protected fields instead of using accessor methods.',
     why: 'Public fields expose internal implementation and make it impossible to add validation or change representation later.',
     category: 'Architecture',
-    fix: 'Make fields private and provide public getter/setter methods if needed.'
+    fix: 'Make fields private and provide public getter/setter methods if needed.',
+    docUrl: 'https://checkstyle.org/checks/design/visibilitymodifier.html',
+    causes: ['Quick prototyping', 'DTOs without validation needs (consider records in Java 16+)']
   },
 
   'HideUtilityClassConstructorCheck': {
@@ -387,15 +404,84 @@ export function getUserFriendlyTitle(rule: string, tool: string): string {
 }
 
 /**
+ * Get tool-specific fix guidance when no specific rule description exists
+ */
+function getToolSpecificFixGuidance(rule: string, tool: string): string {
+  const toolGuidance: Record<string, string> = {
+    // Security tools
+    'bandit': `Run \`bandit -r <file>\` to see detailed security recommendations. Check the Bandit documentation for ${rule} at https://bandit.readthedocs.io/`,
+    'semgrep': `Run \`semgrep --config auto <file>\` for auto-fix suggestions. See Semgrep rules at https://semgrep.dev/r/${rule}`,
+
+    // Architecture tools
+    'madge': 'Break the circular dependency by extracting shared code to a new module, using dependency injection, or introducing an interface layer.',
+    'dependency-cruiser': 'Review the layer/dependency violation and restructure imports to follow your architecture rules.',
+    'pydeps': 'Refactor circular imports by moving shared code to a separate module or using lazy imports.',
+    'ts-unused-exports': 'Remove the unused export or add a consumer if the export is intentionally public API.',
+
+    // Performance tools
+    'lighthouse': 'Optimize the Core Web Vital metric. See https://web.dev/vitals/ for specific optimization techniques.',
+    'bundle-analyzer': 'Reduce bundle size by code splitting, tree shaking, or replacing heavy dependencies with lighter alternatives.',
+
+    // Code quality tools
+    'eslint': `Run \`eslint --fix <file>\` to auto-fix this issue.`,
+    'checkstyle': `Run IDE auto-format or configure Checkstyle settings.`,
+    'pmd': `Review and refactor based on PMD guidance.`,
+    'ruff': `Run \`ruff check --fix <file>\` to auto-fix. See https://docs.astral.sh/ruff/rules/${rule}`,
+    'mypy': 'Add proper type annotations to resolve the type error. See https://mypy.readthedocs.io/',
+
+    // Default
+    'default': `Review the ${rule} violation and apply the recommended fix pattern for ${tool}.`
+  };
+
+  return toolGuidance[tool.toLowerCase()] || toolGuidance['default'];
+}
+
+/**
+ * Get category based on tool
+ */
+function getCategoryFromTool(tool: string): RuleDescription['category'] {
+  const toolCategories: Record<string, RuleDescription['category']> = {
+    'bandit': 'Security',
+    'semgrep': 'Security',
+    'gosec': 'Security',
+    'brakeman': 'Security',
+    'lighthouse': 'Performance',
+    'bundle-analyzer': 'Performance',
+    'madge': 'Architecture',
+    'dependency-cruiser': 'Architecture',
+    'pydeps': 'Architecture',
+    'ts-unused-exports': 'Architecture',
+    'jdepend': 'Architecture',
+    'pip-audit': 'Dependencies',
+    'npm-audit': 'Dependencies',
+    'dependency-check': 'Dependencies'
+  };
+  return toolCategories[tool.toLowerCase()] || 'Code Quality';
+}
+
+/**
  * Get full description for a rule
  */
 export function getRuleDescription(rule: string, tool: string): RuleDescription {
-  return RULE_DESCRIPTIONS[rule] || {
+  // First check for explicit rule description
+  if (RULE_DESCRIPTIONS[rule]) {
+    return RULE_DESCRIPTIONS[rule];
+  }
+
+  // Generate a useful fallback based on tool and rule
+  const category = getCategoryFromTool(tool);
+  const fixGuidance = getToolSpecificFixGuidance(rule, tool);
+
+  return {
     title: getUserFriendlyTitle(rule, tool),
-    description: `This rule checks for ${rule.toLowerCase().replace(/check$/, '')} violations in your code.`,
-    why: 'Following this rule improves code quality, maintainability, and reduces potential bugs.',
-    category: 'Code Quality',
-    fix: 'Review the specific violation and refactor the code to comply with the rule.'
+    description: `This issue was detected by ${tool} as a ${category.toLowerCase()} concern. Rule: ${rule}`,
+    why: `This pattern can lead to ${category === 'Security' ? 'security vulnerabilities' :
+          category === 'Performance' ? 'performance degradation' :
+          category === 'Architecture' ? 'architectural issues and technical debt' :
+          category === 'Dependencies' ? 'dependency vulnerabilities' :
+          'code quality issues'}.`,
+    category,
+    fix: fixGuidance
   };
 }
 

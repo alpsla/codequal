@@ -10,7 +10,9 @@ A comprehensive monitoring strategy for CodeQual to track performance, errors, r
 ### ✅ Completed (December 2025 - Session 63)
 - **Fix Cost Tracking**: Real-time cost comparison between Corgea and AI-fixer
 - **Supabase Cost Tables**: `corgea_subscription`, `corgea_usage_log`, `fix_cost_comparison` view
-- **Intelligent Routing**: Auto-select cheaper fix source based on effective cost
+- **Manual/Automatic Routing Mode**: Switch between data collection (manual) and cost-optimized (automatic) modes
+- **Routing Decision Logging**: `fix_routing_config`, `fix_routing_decisions` tables track all routing decisions
+- **Dynamic Model Cost**: AI-fixer cost retrieved from Supabase `model_configurations` + `ai_fixer_research`
 - **Multi-user Infrastructure**: Usage tracking, smart batching, fix caching, rate limiting
 - **Existing Monitoring Reuse**: Integrated with `CostTrackerService`, `ModelUsageAnalytics`
 
@@ -340,6 +342,20 @@ const businessMetrics = {
 
 **Purpose**: Track and optimize costs between Corgea (cloud fixer) and AI-fixer (OpenRouter).
 
+#### Routing Modes
+
+| Mode | Purpose | When to Use |
+|------|---------|-------------|
+| **Manual** | Data collection, testing | Start here - collect ~100 fixes from each source |
+| **Automatic** | Cost-optimized routing | After analyzing data, switch to auto mode |
+
+```bash
+# Switch modes via CLI
+npx ts-node tests/integration/test-routing-mode.ts --corgea     # Test Corgea
+npx ts-node tests/integration/test-routing-mode.ts --ai-fixer   # Test AI-fixer
+npx ts-node tests/integration/test-routing-mode.ts --automatic  # Enable auto mode
+```
+
 #### Supabase Schema
 
 ```sql
@@ -364,13 +380,40 @@ CREATE TABLE corgea_usage_log (
   created_at TIMESTAMP
 );
 
--- Real-time cost comparison view
+-- Routing configuration (manual/automatic mode)
+CREATE TABLE fix_routing_config (
+  id VARCHAR(50) PRIMARY KEY DEFAULT 'current',
+  routing_mode VARCHAR(20) NOT NULL,          -- 'manual' | 'automatic'
+  manual_preferred_source VARCHAR(20),         -- 'corgea' | 'ai_fixer'
+  data_collection_target_fixes INTEGER,        -- e.g., 100
+  data_collection_started_at TIMESTAMP
+);
+
+-- Routing decision logging (for analysis)
+CREATE TABLE fix_routing_decisions (
+  id UUID PRIMARY KEY,
+  routing_mode VARCHAR(20),
+  selected_source VARCHAR(20),
+  decision_reason TEXT,
+  corgea_cost_cents DECIMAL(10,2),
+  ai_fixer_cost_cents DECIMAL(10,2),
+  issue_severity VARCHAR(20),
+  issue_category VARCHAR(50)
+);
+
+-- Real-time cost comparison view (respects routing mode)
 CREATE VIEW fix_cost_comparison AS
 SELECT
   corgea_cost_per_fix_cents,
-  ai_fixer_cost_per_fix_cents,  -- from ai_fixer_research.avg_cost
-  CASE WHEN corgea < ai_fixer THEN 'corgea' ELSE 'ai_fixer' END AS recommended_source
-FROM corgea_subscription, ai_fixer_research;
+  ai_fixer_cost_per_fix_cents,
+  routing_mode,
+  manual_preferred_source,
+  CASE
+    WHEN routing_mode = 'manual' THEN manual_preferred_source
+    WHEN corgea_cost < ai_fixer_cost THEN 'corgea'
+    ELSE 'ai_fixer'
+  END AS recommended_source
+FROM corgea_subscription, fix_routing_config, ai_fixer_research;
 ```
 
 #### Key Metrics
@@ -614,30 +657,34 @@ alerts:
 6. **Fix Cost Tracking**: Corgea vs AI-fixer cost comparison (Session 63)
 7. **Multi-user Infrastructure**: Usage tracking, batching, caching, rate limiting
 8. **Intelligent Routing**: Auto-select cheaper fix source based on real data
+9. **Manual/Automatic Mode**: Routing mode switch for data collection phase
+10. **Dynamic Model Cost**: AI-fixer cost from Supabase (no hardcoded models)
+11. **Routing Decision Logging**: Track all routing decisions for analysis
 
 ### 🔄 In Progress
-1. **Enhanced Error Tracking**: Integrate Sentry for detailed error aggregation
-2. **Distributed Tracing**: OpenTelemetry implementation for request tracing
-3. **Corgea Fix Flow**: Complete scan polling and fix retrieval implementation
+1. **E2E Testing with Cost Collection**: Run full V9 pipeline to collect cost data
+2. **Corgea Fix Flow**: Complete scan polling and fix retrieval implementation
 
 ### 📋 Still Needed
-1. **Log Aggregation**: Centralized logging with Elasticsearch/Loki
-2. **Advanced Alerts**: Anomaly detection, predictive alerts
-3. **Performance Optimization**: Automated insights and recommendations
-4. **SLO/SLA Monitoring**: Service level objective tracking
-5. **Cost Dashboard UI**: Visual dashboard for cost comparison metrics
+1. **Enhanced Error Tracking**: Integrate Sentry for detailed error aggregation
+2. **Distributed Tracing**: OpenTelemetry implementation for request tracing
+3. **Log Aggregation**: Centralized logging with Elasticsearch/Loki
+4. **Advanced Alerts**: Anomaly detection, predictive alerts
+5. **Performance Optimization**: Automated insights and recommendations
+6. **SLO/SLA Monitoring**: Service level objective tracking
+7. **Cost Dashboard UI**: Visual dashboard for cost comparison metrics
 
-### Immediate Priorities (Next 2 weeks)
-1. **Run Supabase Migration**: Deploy `20251220_corgea_cost_tracking.sql`
-2. **Production Testing**: Validate cost tracking with real Corgea usage
-3. **Alert Channels**: Configure Slack/email/PagerDuty integrations
-4. **Runbooks**: Create operational runbooks for cost alerts
+### Immediate Priorities (Current Session)
+1. **E2E Test All Tools**: Run V9 pipeline with all available scanner tools
+2. **Collect Cost Data**: Log fix costs from both AI-fixer and Corgea
+3. **Analyze Routing Decisions**: Review `fix_routing_decisions` table
+4. **Determine Corgea Tier**: Based on fix volume, select optimal plan
 
 ## Key Files Reference
 
 | File | Purpose |
 |------|---------|
-| `src/two-branch/tools/cloud-api/fix-cost-manager.ts` | Cost tracking and routing decisions |
+| `src/two-branch/tools/cloud-api/fix-cost-manager.ts` | Cost tracking, routing mode, decisions |
 | `src/two-branch/tools/cloud-api/intelligent-fix-router.ts` | Smart fix source selection |
 | `src/two-branch/tools/cloud-api/corgea-usage-tracker.ts` | Per-user usage tracking |
 | `src/two-branch/tools/cloud-api/corgea-fix-cache.ts` | Fix caching (7-day TTL) |
@@ -645,6 +692,22 @@ alerts:
 | `src/two-branch/tools/cloud-api/corgea-analytics.ts` | Dashboard and alerts |
 | `src/standard/monitoring/services/cost-tracker.service.ts` | Model pricing database |
 | `src/standard/monitoring/services/model-usage-analytics.ts` | Usage optimization |
-| `src/infrastructure/supabase/migrations/20251220_corgea_cost_tracking.sql` | Schema migration |
+| `src/infrastructure/supabase/migrations/20251220_corgea_cost_tracking.sql` | Cost tables schema |
+| `src/infrastructure/supabase/migrations/20251220_fix_routing_config.sql` | Routing mode schema |
+| `tests/integration/test-routing-mode.ts` | CLI for switching routing modes |
+| `tests/integration/update-ai-fixer-cost.ts` | Update AI-fixer cost from model config |
+| `tests/integration/verify-cost-tables.ts` | Verify Supabase tables exist |
 
-This updated plan reflects progress through December 2025, with comprehensive fix cost monitoring now in place.
+## Supabase Tables Reference
+
+| Table | Purpose |
+|-------|---------|
+| `corgea_subscription` | Current plan, monthly cost, fixes used, effective cost |
+| `corgea_usage_log` | Individual fix requests, triggers cost update |
+| `fix_routing_config` | Manual/automatic mode, preferred source |
+| `fix_routing_decisions` | Log of all routing decisions for analysis |
+| `ai_fixer_research` | AI-fixer avg cost from quarterly research |
+| `model_configurations` | Current AI models per role/language |
+| `fix_cost_comparison` | View: real-time cost comparison |
+
+This updated plan reflects progress through December 2025, with comprehensive fix cost monitoring and routing mode control now in place.

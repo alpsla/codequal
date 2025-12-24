@@ -7,6 +7,7 @@
 
 import { EnrichedIssue, ReportMetadata, ScoreBreakdown } from './types';
 import { IssueGroup } from '../utils/issue-grouping';
+import { isGroupAutoFixable, getTierBadge, getFixCapabilityInfo, getScannerToolGuidance } from './fix-capability-utils';
 
 export class SectionGenerators {
   /**
@@ -234,12 +235,69 @@ export class SectionGenerators {
   }
 
   /**
+   * Generate scanner tool guidance section for Tier 3 (scanner-only) tools
+   * This shows users what they get even without auto-fix capabilities
+   * Session 57 Part 5: Added to ensure scanner value is communicated
+   */
+  generateScannerGuidanceSection(issues: EnrichedIssue[]): string {
+    // Group issues by tool
+    const toolCounts = new Map<string, number>();
+    for (const issue of issues) {
+      toolCounts.set(issue.tool, (toolCounts.get(issue.tool) || 0) + 1);
+    }
+
+    // Get scanner guidance for each tool
+    const scannerTools: Array<{ tool: string; count: number; guidance: any }> = [];
+    for (const [tool, count] of toolCounts.entries()) {
+      const guidance = getScannerToolGuidance(tool);
+      if (guidance) {
+        scannerTools.push({ tool, count, guidance });
+      }
+    }
+
+    if (scannerTools.length === 0) {
+      return '';
+    }
+
+    let section = '## 🔍 Scanner Tool Insights\n\n';
+    section += '*These tools provide valuable analysis even without auto-fix capabilities. ';
+    section += 'Review the findings and apply fixes manually using the guidance below.*\n\n';
+
+    for (const { tool, count, guidance } of scannerTools) {
+      section += `### ${guidance.tool} (${count} issues)\n\n`;
+      section += `**Category:** ${guidance.category}\n\n`;
+
+      section += `**What You Get:**\n`;
+      for (const item of guidance.whatYouGet) {
+        section += `- ${item}\n`;
+      }
+      section += '\n';
+
+      section += `**How to Fix:**\n`;
+      for (const item of guidance.howToFix) {
+        section += `- ${item}\n`;
+      }
+      section += '\n';
+
+      if (guidance.resources && guidance.resources.length > 0) {
+        section += `**Resources:**\n`;
+        for (const resource of guidance.resources) {
+          section += `- ${resource}\n`;
+        }
+        section += '\n';
+      }
+    }
+
+    return section;
+  }
+
+  /**
    * Generate financial impact section
    */
   generateFinancialImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
     const critical = issues.filter(i => i.severity === 'critical').length;
     const high = issues.filter(i => i.severity === 'high').length;
-    
+
     let section = '### Financial Impact\n\n';
     
     if (critical === 0 && high === 0) {
@@ -332,15 +390,12 @@ export class SectionGenerators {
     return grouped;
   }
 
+  /**
+   * Check if a group is auto-fixable using the ToolFixRegistry
+   * Session 57 Part 3: Uses registry instead of hardcoded rules
+   */
   private isAutoFixable(group: IssueGroup): boolean {
-    const autoFixableRules = [
-      'TabCharacter',
-      'MissingJavadocMethod',
-      'MissingJavadocType',
-      'WhitespaceAround',
-      'IndentationCheck'
-    ];
-    return autoFixableRules.includes(group.rule);
+    return isGroupAutoFixable(group);
   }
 
   private getRuleTitle(rule: string, tool: string): string {

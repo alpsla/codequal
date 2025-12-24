@@ -45,14 +45,14 @@ VALUES
 ('golangci-lint-check', 'golangci-lint', 'Go meta-linter', ARRAY['go'], 'github', 'golangci-lint', 'golangci/golangci-lint', '1.55.0', ARRAY['style', 'code_quality', 'bugs', 'performance'], 'golangci-lint run --out-format json {files}', 'json'),
 ('gosec', 'gosec', 'Go security checker', ARRAY['go'], 'github', 'gosec', 'securego/gosec', '2.18.0', ARRAY['security'], 'gosec -fmt json {files}', 'json'),
 ('staticcheck', 'staticcheck', 'Go static analyzer', ARRAY['go'], 'github', 'staticcheck', 'dominikh/go-tools', '2023.1.6', ARRAY['bugs', 'code_quality'], 'staticcheck -f json {files}', 'json'),
-('semgrep-go', 'Semgrep (Go)', 'Security scanner for Go', ARRAY['go'], 'github', 'semgrep', '1.45.0', ARRAY['security'], 'semgrep scan --config auto --lang go --json {files}', 'json');
+('semgrep-go', 'Semgrep (Go)', 'Security scanner for Go', ARRAY['go'], 'github', 'semgrep', 'semgrep/semgrep', '1.45.0', ARRAY['security'], 'semgrep scan --config auto --lang go --json {files}', 'json');
 
 -- Rust Validators
 INSERT INTO validator_tools (tool_id, name, description, languages, registry, package_name, github_repo, current_version, categories, command_template, output_format)
 VALUES
 ('clippy', 'Clippy', 'Rust linter', ARRAY['rust'], 'github', 'rust-clippy', 'rust-lang/rust-clippy', '0.1.75', ARRAY['style', 'code_quality', 'bugs', 'performance'], 'cargo clippy --message-format json', 'json'),
 ('cargo-audit', 'cargo-audit', 'Rust dependency auditor', ARRAY['rust'], 'github', 'cargo-audit', 'rustsec/rustsec', '0.18.0', ARRAY['security', 'dependencies'], 'cargo audit --json', 'json'),
-('semgrep-rust', 'Semgrep (Rust)', 'Security scanner for Rust', ARRAY['rust'], 'github', 'semgrep', '1.45.0', ARRAY['security'], 'semgrep scan --config auto --lang rust --json {files}', 'json');
+('semgrep-rust', 'Semgrep (Rust)', 'Security scanner for Rust', ARRAY['rust'], 'github', 'semgrep', 'semgrep/semgrep', '1.45.0', ARRAY['security'], 'semgrep scan --config auto --lang rust --json {files}', 'json');
 
 -- ============================================================================
 -- FIXER TOOLS
@@ -96,14 +96,14 @@ VALUES
 ('gofmt', 'gofmt', 'Go code formatter', ARRAY['go'], 'binary', 'gofmt', NULL, 'builtin', 'native', 'gofmt -w {files}', 99, true, false, ARRAY['formatting'], 'fast'),
 ('goimports', 'goimports', 'Go import formatter', ARRAY['go'], 'github', 'goimports', 'golang/tools', 'latest', 'native', 'goimports -w {files}', 98, true, false, ARRAY['imports', 'formatting'], 'fast'),
 ('golangci-lint-fix', 'golangci-lint --fix', 'golangci-lint autofix', ARRAY['go'], 'github', 'golangci-lint', 'golangci/golangci-lint', '1.55.0', 'native', 'golangci-lint run --fix {files}', 85, true, false, ARRAY['style', 'code_quality'], 'medium'),
-('semgrep-fix-go', 'Semgrep Autofix (Go)', 'Semgrep autofix for Go', ARRAY['go'], 'github', 'semgrep', '1.45.0', 'native', 'semgrep scan --config auto --lang go --autofix {files}', 75, false, true, ARRAY['security'], 'slow');
+('semgrep-fix-go', 'Semgrep Autofix (Go)', 'Semgrep autofix for Go', ARRAY['go'], 'github', 'semgrep', 'semgrep/semgrep', '1.45.0', 'native', 'semgrep scan --config auto --lang go --autofix {files}', 75, false, true, ARRAY['security'], 'slow');
 
 -- Rust Fixers
 INSERT INTO fixer_tools (tool_id, name, description, languages, registry, package_name, github_repo, current_version, fix_type, fix_command, base_confidence, safe_for_auto_apply, requires_review, categories, execution_speed)
 VALUES
 ('rustfmt', 'rustfmt', 'Rust code formatter', ARRAY['rust'], 'binary', 'rustfmt', NULL, 'builtin', 'native', 'rustfmt {files}', 99, true, false, ARRAY['formatting'], 'fast'),
 ('clippy-fix', 'Clippy --fix', 'Clippy autofix', ARRAY['rust'], 'github', 'rust-clippy', 'rust-lang/rust-clippy', '0.1.75', 'native', 'cargo clippy --fix --allow-dirty', 80, false, true, ARRAY['style', 'code_quality', 'bugs'], 'slow'),
-('semgrep-fix-rust', 'Semgrep Autofix (Rust)', 'Semgrep autofix for Rust', ARRAY['rust'], 'github', 'semgrep', '1.45.0', 'native', 'semgrep scan --config auto --lang rust --autofix {files}', 75, false, true, ARRAY['security'], 'slow');
+('semgrep-fix-rust', 'Semgrep Autofix (Rust)', 'Semgrep autofix for Rust', ARRAY['rust'], 'github', 'semgrep', 'semgrep/semgrep', '1.45.0', 'native', 'semgrep scan --config auto --lang rust --autofix {files}', 75, false, true, ARRAY['security'], 'slow');
 
 -- AI Fixer (Universal fallback)
 INSERT INTO fixer_tools (tool_id, name, description, languages, registry, package_name, current_version, fix_type, fix_command, base_confidence, safe_for_auto_apply, requires_review, categories, execution_speed)

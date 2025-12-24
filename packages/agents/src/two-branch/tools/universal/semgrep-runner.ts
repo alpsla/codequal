@@ -222,9 +222,20 @@ export class UniversalSemgrepRunner extends UniversalToolBase {
         }
       }
       
-      // Log errors if any
+      // Log errors if any (with details for debugging)
       if (semgrepData.errors && semgrepData.errors.length > 0) {
         console.warn(`[Universal Semgrep] ⚠️ ${semgrepData.errors.length} parse errors`);
+        // Log details in verbose mode (first 3 errors only to avoid log spam)
+        if (process.env.VERBOSE_LOGGING === 'true') {
+          semgrepData.errors.slice(0, 3).forEach((err: any, i: number) => {
+            const path = err.path || err.location?.path || 'unknown';
+            const msg = err.message || err.short_msg || 'Parse error';
+            console.warn(`[Universal Semgrep]   ${i + 1}. ${path}: ${msg}`);
+          });
+          if (semgrepData.errors.length > 3) {
+            console.warn(`[Universal Semgrep]   ... and ${semgrepData.errors.length - 3} more`);
+          }
+        }
       }
       
     } catch (error: any) {

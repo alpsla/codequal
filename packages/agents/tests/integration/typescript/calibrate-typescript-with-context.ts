@@ -65,6 +65,7 @@ let globalRepoPath = '';
 
 /**
  * Extract code snippet from file (10 lines around the issue)
+ * Handles macOS /private prefix, relative paths, Docker /workspace paths
  */
 function extractCodeSnippet(filePath: string, line: number): string {
   try {
@@ -74,6 +75,11 @@ function extractCodeSnippet(filePath: string, line: number): string {
       filePath.replace(/^\/private/, ''),
       path.join(globalRepoPath, filePath),
       path.join(globalRepoPath, filePath.replace(/^\.\//, '')),
+      // Handle Docker /workspace/ prefix (ESLint, TSC may run in Docker)
+      path.join(globalRepoPath, filePath.replace(/^\/workspace\//, '')),
+      path.join(globalRepoPath, filePath.replace(/^\/workspace/, '')),
+      filePath.replace(/^\/workspace\//, globalRepoPath + '/'),
+      filePath.replace(/^\/workspace/, globalRepoPath),
     ];
 
     let actualPath = '';

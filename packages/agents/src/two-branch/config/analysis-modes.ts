@@ -38,7 +38,66 @@ export enum ToolCategory {
   ADVANCED = 'advanced',
 
   /** Deep security analysis with CodeQL (PRO tier, opt-in only) */
-  DEEP_SECURITY = 'deep_security'
+  DEEP_SECURITY = 'deep_security',
+
+  // ============================================
+  // P0/P1/P2 Tool Categories (Session 59)
+  // ============================================
+
+  /** P0: Secret detection (gitleaks, trufflehog) */
+  SECRETS = 'secrets',
+
+  /** P0: Infrastructure as Code security (checkov) */
+  IAC_SECURITY = 'iac_security',
+
+  /** P0: Container/image security (trivy, grype) */
+  CONTAINER_SECURITY = 'container_security',
+
+  /** P1: API schema validation (spectral) */
+  API_DESIGN = 'api_design',
+
+  /** P1: GraphQL security (graphql-cop) */
+  GRAPHQL_SECURITY = 'graphql_security',
+
+  /** P2: Architecture analysis (madge, dependency-cruiser, jdepend, etc.) */
+  ARCHITECTURE = 'architecture',
+
+  // ============================================
+  // Cloud API Tool Categories (Session 60)
+  // ============================================
+
+  /** Cloud API fixer tools (Corgea, etc.) - PRO tier only */
+  CLOUD_FIXER = 'cloud_fixer'
+}
+
+/**
+ * Tool Purpose Classification (Session 57 Part 3)
+ * Distinguishes between scanning and fixing tools
+ */
+export enum ToolPurpose {
+  /** Scanner: Detects issues only, no auto-fix capability */
+  SCANNER = 'scanner',
+
+  /** Fixer: Fixes/formats code, no detection */
+  FIXER = 'fixer',
+
+  /** Dual: Can both detect AND auto-fix issues */
+  DUAL = 'dual'
+}
+
+/**
+ * Tool metadata including purpose and fix tier
+ */
+export interface ToolMetadata {
+  id: string;
+  name: string;
+  category: ToolCategory;
+  purpose: ToolPurpose;
+  fixTier: 1 | 2 | 3;
+  hasNativeFix: boolean;
+  fixCommand?: string;
+  confidence: number;
+  safeForAutoApply: boolean;
 }
 
 /**
@@ -50,6 +109,7 @@ export interface AnalysisModeConfig {
   description: string;
   estimatedTime: string;
   toolCategories: {
+    // Core categories (original)
     codeQuality: boolean;
     security: boolean;
     dependencyScan: boolean;
@@ -57,9 +117,30 @@ export interface AnalysisModeConfig {
     advanced: boolean;
     /** CodeQL deep security - NOT controlled by mode, opt-in only */
     deepSecurity?: boolean;
+
+    // P0/P1/P2 categories (Session 59)
+    /** P0: Secret detection - ALWAYS enabled for security */
+    secrets: boolean;
+    /** P0: IaC security scanning (Terraform, K8s, Docker) */
+    iacSecurity: boolean;
+    /** P0: Container vulnerability scanning */
+    containerSecurity: boolean;
+    /** P1: API schema validation */
+    apiDesign: boolean;
+    /** P1: GraphQL security scanning */
+    graphqlSecurity: boolean;
+    /** P2: Architecture analysis (circular deps, layering) */
+    architecture: boolean;
   };
   includeStyleIssues: boolean;
   requiresCompilation: boolean;
+  /**
+   * Whether cloud fixers (Corgea) are recommended for this mode
+   * Cloud fixers are most valuable in thorough/complete modes
+   * Note: Cloud fixers are FIXERS not scanners, controlled by subscription tier
+   * @since Session 60
+   */
+  cloudFixerEligible: boolean;
 }
 
 /**
@@ -72,56 +153,92 @@ export const UNIVERSAL_ANALYSIS_MODES: Record<AnalysisMode, AnalysisModeConfig> 
     description: 'Critical & High issues only (fastest)',
     estimatedTime: '~2 minutes',
     toolCategories: {
+      // Core categories
       codeQuality: true,
       security: true,
       dependencyScan: false,
       styleLint: false,
-      advanced: false
+      advanced: false,
+      // P0/P1/P2 categories (Session 60 fix)
+      secrets: true,         // P0: Always scan for secrets
+      iacSecurity: false,    // Skip IaC in fast mode
+      containerSecurity: false,
+      apiDesign: false,
+      graphqlSecurity: false,
+      architecture: false
     },
     includeStyleIssues: false,
-    requiresCompilation: false
+    requiresCompilation: false,
+    cloudFixerEligible: false  // Fast mode prioritizes speed over fix coverage
   },
   standard: {
     mode: 'standard',
     description: 'Security + CVE scanning (recommended)',
     estimatedTime: '~4 minutes',
     toolCategories: {
+      // Core categories
       codeQuality: true,
       security: true,
       dependencyScan: true,
       styleLint: false,
-      advanced: false
+      advanced: false,
+      // P0/P1/P2 categories (Session 60 fix)
+      secrets: true,         // P0: Always scan for secrets
+      iacSecurity: true,     // P0: Scan IaC files if present
+      containerSecurity: true, // P0: Scan containers if present
+      apiDesign: false,      // P1: Skip API design in standard mode
+      graphqlSecurity: false, // P1: Skip GraphQL in standard mode
+      architecture: false    // P2: Skip architecture in standard mode
     },
     includeStyleIssues: false,
-    requiresCompilation: false
+    requiresCompilation: false,
+    cloudFixerEligible: true  // Standard mode can benefit from cloud fixers for security issues
   },
   thorough: {
     mode: 'thorough',
-    description: 'Security + Style issues (comprehensive)',
+    description: 'Security + Style + API checks (comprehensive)',
     estimatedTime: '~6 minutes',
     toolCategories: {
+      // Core categories
       codeQuality: true,
       security: true,
       dependencyScan: true,
       styleLint: true,
-      advanced: false
+      advanced: false,
+      // P0/P1/P2 categories (Session 60 fix)
+      secrets: true,         // P0: Always scan for secrets
+      iacSecurity: true,     // P0: Scan IaC files
+      containerSecurity: true, // P0: Scan containers
+      apiDesign: true,       // P1: Check API schemas
+      graphqlSecurity: true, // P1: Check GraphQL security
+      architecture: false    // P2: Skip architecture (requires more time)
     },
     includeStyleIssues: true,
-    requiresCompilation: false
+    requiresCompilation: false,
+    cloudFixerEligible: true  // Thorough mode is recommended for cloud fixers
   },
   complete: {
     mode: 'complete',
-    description: 'All tools including advanced analysis',
+    description: 'All tools including advanced + architecture analysis',
     estimatedTime: '~15 minutes',
     toolCategories: {
+      // Core categories
       codeQuality: true,
       security: true,
       dependencyScan: true,
       styleLint: true,
-      advanced: true
+      advanced: true,
+      // P0/P1/P2 categories (Session 60 fix)
+      secrets: true,         // P0: Always scan for secrets
+      iacSecurity: true,     // P0: Scan IaC files
+      containerSecurity: true, // P0: Scan containers
+      apiDesign: true,       // P1: Check API schemas
+      graphqlSecurity: true, // P1: Check GraphQL security
+      architecture: true     // P2: Full architecture analysis
     },
     includeStyleIssues: true,
-    requiresCompilation: true
+    requiresCompilation: true,
+    cloudFixerEligible: true  // Complete mode maximizes value from cloud fixers
   }
 };
 
@@ -138,6 +255,15 @@ export interface LanguageToolMapping {
     [ToolCategory.STYLE_LINT]: string[];        // e.g., Java: ['checkstyle'], Python: ['flake8']
     [ToolCategory.ADVANCED]: string[];          // e.g., Java: ['spotbugs'], Python: ['mypy']
     [ToolCategory.DEEP_SECURITY]?: string[];    // CodeQL (PRO tier, opt-in only)
+    // P0/P1/P2 Tool Categories (Session 59)
+    [ToolCategory.SECRETS]?: string[];          // P0: gitleaks, trufflehog
+    [ToolCategory.IAC_SECURITY]?: string[];     // P0: checkov
+    [ToolCategory.CONTAINER_SECURITY]?: string[]; // P0: trivy, grype
+    [ToolCategory.API_DESIGN]?: string[];       // P1: spectral
+    [ToolCategory.GRAPHQL_SECURITY]?: string[]; // P1: graphql-cop
+    [ToolCategory.ARCHITECTURE]?: string[];     // P2: madge, jdepend, etc.
+    // Cloud API Tools (Session 60)
+    [ToolCategory.CLOUD_FIXER]?: string[];      // PRO tier: corgea
   };
 }
 
@@ -154,7 +280,16 @@ export const LANGUAGE_TOOL_MAPPINGS: Record<string, LanguageToolMapping> = {
       [ToolCategory.DEPENDENCY_SCAN]: ['dependency-check'],
       [ToolCategory.STYLE_LINT]: ['checkstyle'],
       [ToolCategory.ADVANCED]: ['spotbugs'],
-      [ToolCategory.DEEP_SECURITY]: ['codeql']
+      [ToolCategory.DEEP_SECURITY]: ['codeql'],
+      // P0/P1/P2 Tools (Session 59)
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.API_DESIGN]: ['spectral'],
+      [ToolCategory.GRAPHQL_SECURITY]: ['graphql-cop'],
+      [ToolCategory.ARCHITECTURE]: ['jdepend'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
     }
   },
   python: {
@@ -165,7 +300,16 @@ export const LANGUAGE_TOOL_MAPPINGS: Record<string, LanguageToolMapping> = {
       [ToolCategory.DEPENDENCY_SCAN]: ['safety', 'pip-audit'],
       [ToolCategory.STYLE_LINT]: ['flake8', 'black'],
       [ToolCategory.ADVANCED]: ['mypy'],
-      [ToolCategory.DEEP_SECURITY]: ['codeql']
+      [ToolCategory.DEEP_SECURITY]: ['codeql'],
+      // P0/P1/P2 Tools (Session 59)
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.API_DESIGN]: ['spectral'],
+      [ToolCategory.GRAPHQL_SECURITY]: ['graphql-cop'],
+      [ToolCategory.ARCHITECTURE]: ['pydeps', 'import-linter'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
     }
   },
   javascript: {
@@ -176,7 +320,16 @@ export const LANGUAGE_TOOL_MAPPINGS: Record<string, LanguageToolMapping> = {
       [ToolCategory.DEPENDENCY_SCAN]: ['npm-audit', 'snyk'],
       [ToolCategory.STYLE_LINT]: ['prettier', 'eslint'],
       [ToolCategory.ADVANCED]: ['typescript-compiler'],
-      [ToolCategory.DEEP_SECURITY]: ['codeql']
+      [ToolCategory.DEEP_SECURITY]: ['codeql'],
+      // P0/P1/P2 Tools (Session 59)
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.API_DESIGN]: ['spectral'],
+      [ToolCategory.GRAPHQL_SECURITY]: ['graphql-cop'],
+      [ToolCategory.ARCHITECTURE]: ['madge', 'dependency-cruiser'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
     }
   },
   typescript: {
@@ -187,7 +340,16 @@ export const LANGUAGE_TOOL_MAPPINGS: Record<string, LanguageToolMapping> = {
       [ToolCategory.DEPENDENCY_SCAN]: ['npm-audit', 'snyk'],
       [ToolCategory.STYLE_LINT]: ['prettier', 'eslint'],
       [ToolCategory.ADVANCED]: ['typescript-compiler'],
-      [ToolCategory.DEEP_SECURITY]: ['codeql']
+      [ToolCategory.DEEP_SECURITY]: ['codeql'],
+      // P0/P1/P2 Tools (Session 59)
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.API_DESIGN]: ['spectral'],
+      [ToolCategory.GRAPHQL_SECURITY]: ['graphql-cop'],
+      [ToolCategory.ARCHITECTURE]: ['madge', 'dependency-cruiser', 'ts-unused-exports'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
     }
   },
   go: {
@@ -198,7 +360,76 @@ export const LANGUAGE_TOOL_MAPPINGS: Record<string, LanguageToolMapping> = {
       [ToolCategory.DEPENDENCY_SCAN]: ['govulncheck'],
       [ToolCategory.STYLE_LINT]: ['gofmt', 'golangci-lint'],
       [ToolCategory.ADVANCED]: ['staticcheck'],
-      [ToolCategory.DEEP_SECURITY]: ['codeql']
+      [ToolCategory.DEEP_SECURITY]: ['codeql'],
+      // P0/P1/P2 Tools (Session 59)
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.API_DESIGN]: ['spectral'],
+      [ToolCategory.GRAPHQL_SECURITY]: ['graphql-cop'],
+      [ToolCategory.ARCHITECTURE]: ['go-arch-lint'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
+    }
+  },
+  // Additional languages (Session 59)
+  rust: {
+    language: 'rust',
+    toolsByCategory: {
+      [ToolCategory.CODE_QUALITY]: ['clippy'],
+      [ToolCategory.SECURITY]: ['semgrep'],
+      [ToolCategory.DEPENDENCY_SCAN]: ['cargo-audit', 'cargo-deny'],
+      [ToolCategory.STYLE_LINT]: ['rustfmt'],
+      [ToolCategory.ADVANCED]: [],
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.ARCHITECTURE]: ['cargo-modules']
+    }
+  },
+  ruby: {
+    language: 'ruby',
+    toolsByCategory: {
+      [ToolCategory.CODE_QUALITY]: ['rubocop'],
+      [ToolCategory.SECURITY]: ['brakeman', 'semgrep'],
+      [ToolCategory.DEPENDENCY_SCAN]: ['bundler-audit'],
+      [ToolCategory.STYLE_LINT]: ['rubocop'],
+      [ToolCategory.ADVANCED]: [],
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.ARCHITECTURE]: ['packwerk'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
+    }
+  },
+  php: {
+    language: 'php',
+    toolsByCategory: {
+      [ToolCategory.CODE_QUALITY]: ['phpstan', 'psalm', 'phpcs'],
+      [ToolCategory.SECURITY]: ['semgrep'],
+      [ToolCategory.DEPENDENCY_SCAN]: ['composer-audit'],
+      [ToolCategory.STYLE_LINT]: ['phpcs'],
+      [ToolCategory.ADVANCED]: [],
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      [ToolCategory.ARCHITECTURE]: ['deptrac']
+    }
+  },
+  csharp: {
+    language: 'csharp',
+    toolsByCategory: {
+      [ToolCategory.CODE_QUALITY]: ['dotnet-format'],
+      [ToolCategory.SECURITY]: ['security-code-scan', 'semgrep'],
+      [ToolCategory.DEPENDENCY_SCAN]: ['dotnet-outdated'],
+      [ToolCategory.STYLE_LINT]: ['dotnet-format'],
+      [ToolCategory.ADVANCED]: [],
+      [ToolCategory.SECRETS]: ['gitleaks', 'trufflehog'],
+      [ToolCategory.IAC_SECURITY]: ['checkov'],
+      [ToolCategory.CONTAINER_SECURITY]: ['trivy', 'grype'],
+      // Cloud API Tools (Session 60) - PRO tier only
+      [ToolCategory.CLOUD_FIXER]: ['corgea']
     }
   }
 };

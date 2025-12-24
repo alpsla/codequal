@@ -335,6 +335,65 @@ else
 fi
 
 # ==========================================
+# PHASE 1 SECURITY SCANNERS (Session 58)
+# Secret Detection, IaC Security, Container Security
+# ==========================================
+echo -e "\n${YELLOW}🔐 Installing Phase 1 Security Scanners...${NC}"
+
+# Install Gitleaks (Secret Detection)
+if ! command_exists gitleaks; then
+    echo "Installing Gitleaks..."
+    GITLEAKS_VERSION="8.18.1"
+    wget -q https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -O /tmp/gitleaks.tar.gz
+    tar -xzf /tmp/gitleaks.tar.gz -C /tmp/
+    sudo mv /tmp/gitleaks /usr/local/bin/
+    rm /tmp/gitleaks.tar.gz
+    print_status $? "Gitleaks"
+else
+    echo -e "${GREEN}✅ Gitleaks already installed${NC}"
+fi
+
+# Install TruffleHog (Secret Detection with Verification)
+if ! command_exists trufflehog; then
+    echo "Installing TruffleHog..."
+    pip3 install trufflehog
+    print_status $? "TruffleHog"
+else
+    echo -e "${GREEN}✅ TruffleHog already installed${NC}"
+fi
+
+# Install Checkov (IaC Security)
+if ! command_exists checkov; then
+    echo "Installing Checkov..."
+    pip3 install checkov
+    print_status $? "Checkov"
+else
+    echo -e "${GREEN}✅ Checkov already installed${NC}"
+fi
+
+# Install Trivy (Container + IaC Security)
+if ! command_exists trivy; then
+    echo "Installing Trivy..."
+    sudo apt-get install -y wget gnupg
+    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+    sudo apt-get update
+    sudo apt-get install -y trivy
+    print_status $? "Trivy"
+else
+    echo -e "${GREEN}✅ Trivy already installed${NC}"
+fi
+
+# Install Grype (SBOM-based Vulnerability Scanning)
+if ! command_exists grype; then
+    echo "Installing Grype..."
+    curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin
+    print_status $? "Grype"
+else
+    echo -e "${GREEN}✅ Grype already installed${NC}"
+fi
+
+# ==========================================
 # VERIFICATION
 # ==========================================
 echo -e "\n${YELLOW}🔍 Verifying installations...${NC}"
@@ -370,6 +429,11 @@ tools=(
     "bundle-audit:bundler-audit"
     "eslint:ESLint"
     "semgrep:Semgrep"
+    "gitleaks:Gitleaks"
+    "trufflehog:TruffleHog"
+    "checkov:Checkov"
+    "trivy:Trivy"
+    "grype:Grype"
 )
 
 echo "Tool Status:"

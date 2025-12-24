@@ -4,7 +4,7 @@
   "rule": "python.lang.security.audit.insecure-file-permissions.insecure-file-permissions",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "To mitigate this issue, adjust the file permissions to restrict write and execute access for users other than the owner. This can be achieved by using the `os.chmod()` function in Python to set the permissions to `0o644`, which grants read and write permissions to the owner, and read-only permissions to group members and others. This configuration ensures that only the owner can modify or execute the file, enhancing security. For more details, refer to the Datadog security documentation on file write permissions. ([docs.datadoghq.com](https://docs.datadoghq.com/security/code_security/static_analysis/static_analysis_rules/python-security/file-write-others/?utm_source=openai))",
+  "description": "AI-generated fix pattern for python.lang.security.audit.insecure-file-permissions.insecure-file-permissions",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "import os\n\n# Set file permissions to 0o644\nos.chmod('path_to_file', 0o644)"
+      "after": "(test_script_path, 'w') as f:\n        f.write(test_script_content)\n    \n    # Make it executable\n    os.chmod(test_script_path, 0o644)\n    \n    logger.info(f\"Created test script at {test_script_path}\")\n    return True"
     },
-    "instructions": "To mitigate this issue, adjust the file permissions to restrict write and execute access for users other than the owner. This can be achieved by using the `os.chmod()` function in Python to set the permissions to `0o644`, which grants read and write permissions to the owner, and read-only permissions to group members and others. This configuration ensures that only the owner can modify or execute the file, enhancing security. For more details, refer to the Datadog security documentation on file write permissions. ([docs.datadoghq.com](https://docs.datadoghq.com/security/code_security/static_analysis/static_analysis_rules/python-security/file-write-others/?utm_source=openai))"
+    "instructions": "AI-generated fix pattern for python.lang.security.audit.insecure-file-permissions.insecure-file-permissions"
   },
   "locations": [
     {
