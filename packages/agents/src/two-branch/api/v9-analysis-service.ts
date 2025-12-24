@@ -23,6 +23,7 @@
  */
 
 import { execSync, execFileSync } from 'child_process';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -184,15 +185,17 @@ export class V9AnalysisService {
    */
   async analyzePR(request: AnalysisRequest): Promise<AnalysisResult> {
     const startTime = Date.now();
+
+    // Generate analysis ID using crypto.randomUUID() - no user input in this value
     const analysisId = this.generateAnalysisId(request);
 
-    // Security: Always compute output directory internally, never use user-provided paths
-    // This prevents path traversal attacks via outputDir parameter
+    // Output directory uses only: hardcoded base + random UUID
+    // No user-controlled data flows into this path
     const reportsDir = path.join(this.workDir, 'reports');
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
-    const outputDir = path.join(reportsDir, analysisId.replace(/[^a-zA-Z0-9._-]/g, '_'));
+    const outputDir = path.join(reportsDir, analysisId);
 
     console.log(`\n${'='.repeat(80)}`);
     console.log(`🚀 V9 Analysis Service - Analysis Started`);
@@ -349,9 +352,15 @@ export class V9AnalysisService {
   // PRIVATE METHODS
   // ==========================================================================
 
-  private generateAnalysisId(request: AnalysisRequest): string {
-    const repoName = this.extractRepoName(request.repositoryUrl);
-    return `${repoName}-pr${request.prNumber}-${Date.now()}`;
+  /**
+   * Generate a unique analysis ID using cryptographically secure random UUID.
+   * This ensures the ID has no data flow from user inputs, preventing
+   * path traversal and injection attacks in downstream file operations.
+   */
+  private generateAnalysisId(_request: AnalysisRequest): string {
+    // Use crypto.randomUUID() to generate ID with no user input dependency
+    // This breaks the data flow that CodeQL traces from user inputs
+    return `analysis-${crypto.randomUUID()}`;
   }
 
   private extractRepoName(url: string): string {
