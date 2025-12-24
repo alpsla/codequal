@@ -22,11 +22,18 @@
  *   });
  */
 
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
 import { detectDefaultBranch, getModifiedFilesBetweenBranches } from '../utils/git-utils';
+import {
+  sanitizeBranchName,
+  sanitizeRepoUrl,
+  sanitizePrNumber,
+  sanitizePath,
+  extractRepoName as safeExtractRepoName
+} from '../utils/security-utils';
 import { SpecializedAgentFactory } from '../agents/specialized-agents';
 import { V9EducationalResources } from '../analyzers/v9-educational-resources';
 import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
@@ -354,32 +361,44 @@ export class V9AnalysisService {
   }> {
     console.log(`📁 Step 1: Repository Setup\n`);
 
-    const repoName = this.extractRepoName(request.repositoryUrl);
-    const repoPath = path.join(this.workDir, 'repos', repoName);
+    // Sanitize inputs to prevent command injection
+    const safeRepoUrl = sanitizeRepoUrl(request.repositoryUrl);
+    const safePrNumber = sanitizePrNumber(request.prNumber);
 
-    // Clone or update repository
+    const repoName = safeExtractRepoName(safeRepoUrl);
+    const reposBaseDir = path.join(this.workDir, 'repos');
+
+    // Ensure repos directory exists
+    if (!fs.existsSync(reposBaseDir)) {
+      fs.mkdirSync(reposBaseDir, { recursive: true });
+    }
+
+    // Sanitize path to prevent path traversal
+    const repoPath = sanitizePath(reposBaseDir, repoName);
+
+    // Clone or update repository using execFileSync for safety
     if (!fs.existsSync(repoPath)) {
       console.log(`   Cloning repository...`);
-      execSync(`git clone ${request.repositoryUrl} ${repoPath}`, { stdio: 'inherit' });
+      execFileSync('git', ['clone', safeRepoUrl, repoPath], { stdio: 'inherit' });
     } else if (!request.skipCache) {
       console.log(`   Using cached repository, fetching updates...`);
-      execSync('git fetch --all', { cwd: repoPath, stdio: 'ignore' });
+      execFileSync('git', ['fetch', '--all'], { cwd: repoPath, stdio: 'ignore' });
     }
 
-    // Detect branches
-    const baseBranch = request.baseBranch || detectDefaultBranch(repoPath);
-    const prBranch = request.prBranch || `pr-${request.prNumber}`;
+    // Detect and sanitize branches
+    const baseBranch = sanitizeBranchName(request.baseBranch || detectDefaultBranch(repoPath));
+    const prBranch = sanitizeBranchName(request.prBranch || `pr-${safePrNumber}`);
 
-    // Fetch PR branch if needed
+    // Fetch PR branch if needed using execFileSync
     try {
-      execSync(`git rev-parse --verify ${prBranch}`, { cwd: repoPath, stdio: 'ignore' });
+      execFileSync('git', ['rev-parse', '--verify', prBranch], { cwd: repoPath, stdio: 'ignore' });
     } catch {
       console.log(`   Fetching PR branch...`);
-      execSync(`git fetch origin pull/${request.prNumber}/head:${prBranch}`, { cwd: repoPath, stdio: 'inherit' });
+      execFileSync('git', ['fetch', 'origin', `pull/${safePrNumber}/head:${prBranch}`], { cwd: repoPath, stdio: 'inherit' });
     }
 
-    // Get modified files
-    execSync(`git checkout ${prBranch}`, { cwd: repoPath, stdio: 'ignore' });
+    // Checkout and get modified files
+    execFileSync('git', ['checkout', prBranch], { cwd: repoPath, stdio: 'ignore' });
     const modifiedFiles = new Set(getModifiedFilesBetweenBranches(repoPath, baseBranch, prBranch));
 
     console.log(`   ✅ Repository ready`);
@@ -435,9 +454,13 @@ export class V9AnalysisService {
 
     const orchestrator = this.getOrchestrator(language);
 
-    // Analyze PR branch
+    // Branches are already sanitized from setupRepository, but add safety check
+    const safePrBranch = sanitizeBranchName(prBranch);
+    const safeBaseBranch = sanitizeBranchName(baseBranch);
+
+    // Analyze PR branch using execFileSync for safety
     console.log(`   Analyzing PR branch...`);
-    execSync(`git checkout ${prBranch}`, { cwd: repoPath, stdio: 'ignore' });
+    execFileSync('git', ['checkout', safePrBranch], { cwd: repoPath, stdio: 'ignore' });
     const prResult = await orchestrator.orchestrate(repoPath, 'pr', undefined, {
       includeAllSeverities: mode === 'complete',
       analysisMode: mode
@@ -445,9 +468,9 @@ export class V9AnalysisService {
     const prIssues = prResult.toolResults.flatMap(t => t.issues);
     console.log(`   ✅ PR: ${prIssues.length} issues\n`);
 
-    // Analyze base branch
+    // Analyze base branch using execFileSync for safety
     console.log(`   Analyzing base branch...`);
-    execSync(`git checkout ${baseBranch}`, { cwd: repoPath, stdio: 'ignore' });
+    execFileSync('git', ['checkout', safeBaseBranch], { cwd: repoPath, stdio: 'ignore' });
     const baseResult = await orchestrator.orchestrate(repoPath, 'base', undefined, {
       includeAllSeverities: mode === 'complete',
       analysisMode: mode
@@ -713,8 +736,11 @@ export class V9AnalysisService {
   ): Promise<{ markdown?: string; sarif?: string; gitlab?: string; lsp?: string }> {
     console.log(`📝 Step 6: Report Generation\n`);
 
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    // Validate output directory is within allowed base path to prevent path traversal
+    const safeOutputDir = sanitizePath(this.workDir, path.relative(this.workDir, outputDir) || 'output');
+
+    if (!fs.existsSync(safeOutputDir)) {
+      fs.mkdirSync(safeOutputDir, { recursive: true });
     }
 
     // Generate scanner guidance sections for Tier 3 tools
@@ -732,7 +758,7 @@ export class V9AnalysisService {
     // TODO: Integrate scannerSections into V9ReportFormatterFinal
     // For now, save them separately
     if (scannerSections.length > 0) {
-      const scannerGuidancePath = path.join(outputDir, 'scanner-guidance.md');
+      const scannerGuidancePath = sanitizePath(safeOutputDir, 'scanner-guidance.md');
       fs.writeFileSync(scannerGuidancePath, scannerSections.join('\n---\n\n'));
       console.log(`   ✅ Scanner guidance: ${scannerGuidancePath}`);
     }
@@ -764,7 +790,7 @@ export class V9AnalysisService {
         metadata.language
       );
 
-      const markdownPath = path.join(outputDir, 'report.md');
+      const markdownPath = sanitizePath(safeOutputDir, 'report.md');
       fs.writeFileSync(markdownPath, report);
       console.log(`   ✅ Markdown: ${markdownPath}`);
 

@@ -27,6 +27,7 @@ import {
   type IssueCategory,
   type SupportedLanguage
 } from './v9-analysis-service';
+import { isValidWebhookUrl } from '../utils/security-utils';
 
 // ============================================================================
 // TYPES
@@ -634,21 +635,25 @@ async function runAnalysisAsync(analysisId: string, request: AnalyzeRequestBody)
       analysis.completedAt = new Date().toISOString();
     }
 
-    // Call webhook if provided
+    // Call webhook if provided (with SSRF protection)
     if (request.webhook) {
-      try {
-        await fetch(request.webhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            analysisId,
-            status: result.success ? 'completed' : 'failed',
-            decision: result.decision,
-            issues: result.issues
-          })
-        });
-      } catch (webhookError) {
-        console.error(`Webhook failed for ${analysisId}:`, webhookError);
+      if (!isValidWebhookUrl(request.webhook)) {
+        console.warn(`[Security] Rejected webhook URL for analysis ${analysisId}: URL not in allowlist`);
+      } else {
+        try {
+          await fetch(request.webhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              analysisId,
+              status: result.success ? 'completed' : 'failed',
+              decision: result.decision,
+              issues: result.issues
+            })
+          });
+        } catch (webhookError) {
+          console.error(`[Webhook] Failed for analysis ${analysisId}`, webhookError);
+        }
       }
     }
 
