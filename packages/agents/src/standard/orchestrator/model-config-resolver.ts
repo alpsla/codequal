@@ -875,11 +875,13 @@ export class ModelConfigResolver {
     if (this.logger) {
       this.logger[level]?.(message, data);
     } else {
-      const prefix = `[ModelConfigResolver] [${level.toUpperCase()}]`;
-      if (data) {
-        console.log(`${prefix} ${message}`, data);
+      // Use array-style logging to avoid format string interpretation
+      const prefix = '[ModelConfigResolver]';
+      const levelTag = `[${level.toUpperCase()}]`;
+      if (data !== undefined) {
+        console.log(prefix, levelTag, message, data);
       } else {
-        console.log(`${prefix} ${message}`);
+        console.log(prefix, levelTag, message);
       }
     }
   }

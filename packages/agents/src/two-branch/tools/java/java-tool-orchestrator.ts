@@ -27,12 +27,18 @@ import { logger } from '../../utils/logger';
 import { determineCodeQualSeverity } from '../../utils/severity-mapper';
 
 // Import base orchestrator
-import { 
-  BaseToolOrchestrator, 
-  ToolResult, 
+import {
+  BaseToolOrchestrator,
+  ToolResult,
   RawIssue,
-  OrchestrationOptions 
+  OrchestrationOptions
 } from '../base-tool-orchestrator';
+
+// Import parser validation wrapper (Session 57)
+import {
+  ParserValidationWrapper,
+  createParserValidationWrapper
+} from '../../parsers/parser-validation-wrapper';
 
 // Import universal analysis modes
 import type { AnalysisMode } from '../../config/analysis-modes';
@@ -84,7 +90,19 @@ export interface JavaToolConfig {
       location: string;
     };
   };
-  
+
+  // SESSION 57 Part 5: Architecture analysis tools
+  jdepend?: {
+    enabled: boolean;
+    outputFormat: 'xml' | 'text';
+  };
+
+  // SESSION 58: Performance static analysis
+  performance?: {
+    enabled: boolean;
+    complexityThreshold?: number;  // Default: 10
+  };
+
   // DOCKER CONFIG
   docker: {
     mountPath: string;
@@ -124,6 +142,16 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
       location: process.env.DEPENDENCY_CHECK_CACHE || `${process.env.HOME}/.dependency-check-cache`
     }
   },
+  // SESSION 57 Part 5: JDepend for architecture analysis (complete mode only)
+  jdepend: {
+    enabled: true,
+    outputFormat: 'xml'
+  },
+  // SESSION 58: Performance static analysis (complete mode only)
+  performance: {
+    enabled: true,
+    complexityThreshold: 10
+  },
   docker: {
     mountPath: '/workspace',
     buildTools: ['gradle', 'maven'],
@@ -133,13 +161,17 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
 
 /**
  * Java tool category mapping
+ * SESSION 57 Part 5: Added jdepend for architecture analysis
+ * SESSION 58: Added performance static analysis
  */
 const JAVA_TOOL_CATEGORIES = {
   pmd: ToolCategory.CODE_QUALITY,
   semgrep: ToolCategory.SECURITY,
   'dependency-check': ToolCategory.DEPENDENCY_SCAN,
   checkstyle: ToolCategory.STYLE_LINT,
-  spotbugs: ToolCategory.ADVANCED
+  spotbugs: ToolCategory.ADVANCED,
+  jdepend: ToolCategory.ADVANCED,  // Architecture analysis
+  performance: ToolCategory.ADVANCED  // Static performance analysis
 };
 
 /**
@@ -180,15 +212,35 @@ function shouldJavaToolRun(toolName: string, mode: AnalysisMode): boolean {
 export class JavaToolOrchestrator extends BaseToolOrchestrator {
   private config: JavaToolConfig;
 
+  // Parser validation wrapper for shadow mode (Session 57)
+  private parserValidator: ParserValidationWrapper;
+
   constructor(
     config: Partial<JavaToolConfig> = {},
     dockerImage = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm'
   ) {
     // Call base constructor
     super(dockerImage, '/workspace');
-    
+
     // Merge with defaults
     this.config = { ...DEFAULT_JAVA_CONFIG, ...config };
+
+    // Initialize parser validation (Session 57 Part 2 - Migration Phase 2)
+    // Now uses enhanced parser for verified tools (100% match rate)
+    // Enable validation logging via PARSER_VALIDATION=true environment variable
+    this.parserValidator = createParserValidationWrapper({
+      language: 'java',
+      enabled: true,  // Always enabled for Phase 2 migration
+      logResults: process.env.PARSER_VALIDATION === 'true',
+      // Phase 2: Use enhanced parser for all tools with complete implementations
+      forceEnhancedTools: ['checkstyle', 'semgrep', 'pmd', 'spotbugs', 'dependency-check'],
+      switchThreshold: 0.95,
+      onValidation: (result) => {
+        if (!result.passed && process.env.PARSER_VALIDATION === 'true') {
+          logger.warn(`[ParserValidation] ${result.tool}: ${result.differences} differences (${(result.matchRate * 100).toFixed(1)}% match)`);
+        }
+      }
+    });
   }
 
   // ============================================================
@@ -246,6 +298,16 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       tools.push('spotbugs');
     }
 
+    // SESSION 57 Part 5: JDepend - Architecture analysis (complete mode)
+    if (this.config.jdepend?.enabled && shouldJavaToolRun('jdepend', mode)) {
+      tools.push('jdepend');
+    }
+
+    // SESSION 58: Performance static analysis (complete mode)
+    if (this.config.performance?.enabled && shouldJavaToolRun('performance', mode)) {
+      tools.push('performance');
+    }
+
     return tools;
   }
 
@@ -281,10 +343,30 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       
       case 'spotbugs':
         return this.runSpotBugs(repoPath, branch);
-      
+
+      case 'jdepend':
+        return this.runJDepend(repoPath, branch);
+
+      case 'performance':
+        return this.runPerformanceAnalysis(repoPath, branch);
+
       default:
         throw new Error(`Unknown Java tool: ${toolName}`);
     }
+  }
+
+  /**
+   * SESSION 57 Part 5: Override to include JDepend under Architecture
+   */
+  protected getAgentToolCategories(): Record<string, string[]> {
+    return {
+      'Security': ['semgrep', 'dependency-check', 'spotbugs'],  // SpotBugs can find security issues
+      'Code Quality': ['pmd', 'checkstyle', 'spotbugs'],
+      // SESSION 58: Added static performance analysis
+      'Performance': ['performance'],  // PMD perf rules, memory patterns, complexity
+      'Architecture': ['jdepend'],  // SESSION 57 Part 5: JDepend for architecture analysis
+      'Dependencies': ['dependency-check']
+    };
   }
 
   // ============================================================
@@ -362,68 +444,7 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     }
   }
 
-  /**
-   * Run Semgrep security analysis
-   */
-  private async runSemgrep(
-    repoPath: string,
-    branch: 'base' | 'pr'
-  ): Promise<ToolResult> {
-    const startTime = Date.now();
-    const outputFileName = `semgrep-results-${branch}.json`;
-    const outputFile = path.join(repoPath, outputFileName);
-    const containerOutputPath = `${this.workspaceDir}/${outputFileName}`;
-
-    try {
-      logger.info(`🔒 Running Semgrep security analysis...`);
-
-      // Semgrep: Use entrypoint bash -c
-      const dockerCommand = `docker run --rm \
-        -v "${repoPath}:${this.workspaceDir}" \
-        ${this.dockerImage} \
-        -c 'semgrep --config=${this.config.semgrep.config} --json --output=${containerOutputPath} ${this.workspaceDir} || true'`;
-
-      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
-
-      // Parse results
-      const resultContent = await fs.readFile(outputFile, 'utf-8');
-      const semgrepResult = JSON.parse(resultContent);
-      
-      const issues: RawIssue[] = [];
-      
-      if (semgrepResult.results) {
-        for (const result of semgrepResult.results) {
-          issues.push({
-            tool: 'semgrep',
-            file: result.path.replace(this.workspaceDir + '/', ''),
-            line: result.start.line || 1,
-            column: result.start.col,
-            severity: this.mapSemgrepSeverity(result.extra?.severity),
-            message: result.extra?.message || 'Security issue detected',
-            rule: result.check_id || 'Unknown',
-            category: 'Security',
-            cwe: Array.isArray(result.extra?.metadata?.cwe) ? result.extra.metadata.cwe.join(', ') : result.extra?.metadata?.cwe || '',
-            autoFixable: result.extra?.fix !== undefined
-          });
-        }
-      }
-
-      const duration = Date.now() - startTime;
-      logger.info(`✅ Semgrep complete: ${issues.length} issues found in ${duration}ms`);
-
-      return {
-        tool: 'semgrep',
-        success: true,
-        duration,
-        issues,
-        metadata: this.calculateMetadata(issues)
-      };
-
-    } catch (error: any) {
-      logger.error(`❌ Semgrep failed: ${error.message}`);
-      return this.createFailedResult('semgrep', error.message);
-    }
-  }
+  // NOTE: runSemgrep removed - Semgrep is a universal tool, routed via executeUniversalTool()
 
   /**
    * Run Checkstyle code style analysis
@@ -558,18 +579,36 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       const spotbugsResult = await parseStringPromise(resultContent);
       
       const issues: RawIssue[] = [];
+      let skippedCount = 0;  // Track skipped issues to reduce log spam
+      
+      // Patterns to exclude (Gradle/Maven wrapper, libraries without source)
+      const EXCLUDED_PATTERNS = [
+        /^org\.gradle\./,           // Gradle wrapper classes
+        /^org\.apache\.maven\./,    // Maven wrapper classes
+        /^org\/gradle\//,           // Gradle path format
+        /^org\/apache\/maven\//,    // Maven path format
+        /SourceFile$/,              // Generic "SourceFile" means no real source
+      ];
+      
       if (spotbugsResult.BugCollection?.BugInstance) {
         const bugInstances = Array.isArray(spotbugsResult.BugCollection.BugInstance) 
           ? spotbugsResult.BugCollection.BugInstance 
           : [spotbugsResult.BugCollection.BugInstance];
         
         for (const bug of bugInstances) {
-          const file = bug.SourceLine?.SourcePath?.replace(this.workspaceDir + '/', '') || 'unknown';
-          const line = parseInt(bug.SourceLine?.Start || '1');
+          const className = bug.Class?.['$']?.classname || bug.Class?.classname || '';
+          const sourcePath = bug.SourceLine?.['$']?.sourcepath || bug.SourceLine?.SourcePath || '';
+          const file = sourcePath?.replace(this.workspaceDir + '/', '') || 'unknown';
+          const line = parseInt(bug.SourceLine?.['$']?.start || bug.SourceLine?.Start || '1');
           
-          // SESSION 25 FIX: Filter out invalid issues (unknown file or line 1 with no real location)
-          if (file === 'unknown' || (line === 1 && !bug.SourceLine?.SourcePath)) {
-            logger.warn(`⚠️  Skipping SpotBugs issue with invalid location: file=${file}, line=${line}`);
+          // Skip Gradle/Maven wrapper and issues without valid source files
+          const isExcluded = EXCLUDED_PATTERNS.some(pattern => 
+            pattern.test(className) || pattern.test(sourcePath) || pattern.test(file)
+          );
+          
+          // SESSION 25 FIX: Filter out invalid issues (unknown file, line 1 with no path, or excluded patterns)
+          if (file === 'unknown' || isExcluded || (line === 1 && !sourcePath)) {
+            skippedCount++;
             continue;
           }
           
@@ -577,14 +616,19 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
             tool: 'spotbugs',
             file,
             line,
-            column: parseInt(bug.SourceLine?.Start || '1'),
-            severity: this.mapSpotBugsSeverity(bug.Priority),
-            message: bug.LongMessage || bug.ShortMessage || 'SpotBugs issue detected',
-            rule: bug.Type || 'Unknown',
+            column: parseInt(bug.SourceLine?.['$']?.start || bug.SourceLine?.Start || '1'),
+            severity: this.mapSpotBugsSeverity(bug.Priority || bug['$']?.priority),
+            message: bug.LongMessage?.[0] || bug.LongMessage || bug.ShortMessage?.[0] || bug.ShortMessage || 'SpotBugs issue detected',
+            rule: bug['$']?.type || bug.Type || 'Unknown',
             category: 'Performance',  // SESSION 22 FIX: Match agent category (was 'Quality')
             autoFixable: false
           });
         }
+      }
+      
+      // Log skipped count once (not per-issue) to reduce log spam
+      if (skippedCount > 0) {
+        logger.info(`ℹ️  SpotBugs: Filtered ${skippedCount} issues from Gradle/Maven wrapper or missing source files`);
       }
 
       const duration = Date.now() - startTime;
@@ -614,155 +658,14 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     }
   }
 
-  /**
-   * Run Dependency-Check CVE scanning
-   */
-  private async runDependencyCheck(
-    repoPath: string,
-    branch: 'base' | 'pr'
-  ): Promise<ToolResult> {
-    const startTime = Date.now();
-    const outputFileName = `dependency-check-${branch}.json`;
-    const outputFile = path.join(repoPath, outputFileName);
-    const containerOutputPath = `${this.workspaceDir}/${outputFileName}`;
-
-    try {
-      logger.info(`🔐 Running Dependency-Check CVE scanning...`);
-
-      // Dependency-Check: Use entrypoint bash -c and output to directory
-      const dockerCommand = `docker run --rm \
-        -v "${repoPath}:${this.workspaceDir}" \
-        -v "${this.config.dependencyCheck!.caching.location}:/cache" \
-        ${this.dockerImage} \
-        -c '/opt/dependency-check/bin/dependency-check.sh --scan ${this.workspaceDir} --format JSON --out ${this.workspaceDir} --data /cache --failOnCVSS ${this.config.dependencyCheck!.failOnCVSS} || true'`;
-
-      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
-
-      // Dependency-Check always outputs to dependency-check-report.json
-      const defaultOutputFile = path.join(repoPath, 'dependency-check-report.json');
-      
-      // Read from default location
-      const resultContent = await fs.readFile(defaultOutputFile, 'utf-8');
-      const depCheckResult = JSON.parse(resultContent);
-      
-      // Rename to our expected filename for consistency
-      await fs.rename(defaultOutputFile, outputFile);
-      
-      const issues: RawIssue[] = [];
-      
-      if (depCheckResult.dependencies) {
-        for (const dep of depCheckResult.dependencies) {
-          if (dep.vulnerabilities) {
-            for (const vuln of dep.vulnerabilities) {
-              issues.push({
-                tool: 'dependency-check',
-                file: dep.fileName || 'dependencies',
-                line: 1,
-                severity: this.mapCVSSSeverity(vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0),
-                message: vuln.description || `CVE: ${vuln.name}`,
-                rule: vuln.name,
-                category: 'Dependency',
-                cwe: vuln.cwes?.join(', '),
-                autoFixable: false
-              });
-            }
-          }
-        }
-      }
-
-      const duration = Date.now() - startTime;
-      logger.info(`✅ Dependency-Check complete: ${issues.length} CVEs found in ${duration}ms`);
-
-      // BUG #4 FIX: Count actual dependencies scanned, not just files with issues
-      // dependency-check scans ALL dependencies regardless of whether CVEs are found
-      // Using dependencies.length gives accurate count of scanned files
-      const filesScanned = depCheckResult.dependencies?.length || 0;
-      
-      const severity = {
-        critical: issues.filter(i => i.severity === 'critical').length,
-        high: issues.filter(i => i.severity === 'high').length,
-        medium: issues.filter(i => i.severity === 'medium').length,
-        low: issues.filter(i => i.severity === 'low').length
-      };
-
-      return {
-        tool: 'dependency-check',
-        success: true,
-        duration,
-        issues,
-        metadata: {
-          filesScanned,
-          issuesFound: issues.length,
-          severity
-        }
-      };
-
-    } catch (error: any) {
-      const failureContext = {
-        tool: 'dependency-check',
-        reason: 'execution_failed',
-        error: error.message,
-        stack: error.stack,
-        dockerImage: this.dockerImage,
-        cacheLocation: this.config.dependencyCheck!.caching.location,
-        duration: Date.now() - startTime,
-        repoPath,
-        // Common failure modes to check:
-        possibleCauses: [
-          'Docker mount denied (cache path not shared)',
-          'CVE database not updated (check daily cron)',
-          'NVD API rate limit exceeded',
-          'Network connectivity issue'
-        ]
-      };
-      logger.error(`❌ DEPENDENCY-CHECK FAILURE: Execution failed`, failureContext);
-      logger.error(`❌ Dependency-Check failed: ${error.message}`);
-      return this.createFailedResult('dependency-check', error.message);
-    }
-  }
+  // NOTE: runDependencyCheck removed - dependency-check is a universal tool, routed via executeUniversalTool()
 
   // ============================================================
   // HELPER METHODS (Java-specific)
   // ============================================================
 
-  private mapSemgrepSeverity(severity?: string): 'critical' | 'high' | 'medium' | 'low' {
-    switch (severity?.toLowerCase()) {
-      case 'error':
-        return 'critical';
-      case 'warning':
-        return 'high';
-      case 'info':
-        return 'medium';
-      default:
-        return 'low';
-    }
-  }
-
-  /**
-   * Map Checkstyle severity to CodeQual severity
-   *
-   * CRITICAL FIX: Checkstyle is a style/formatting linter (line length, naming, Javadoc)
-   * ALL Checkstyle issues should be 'low' severity - they have NO runtime impact
-   *
-   * Previous mapping (WRONG):
-   * - error → high (caused 1000+ issues to show as "High Priority" blocking PRs)
-   * - warning → medium
-   *
-   * Correct mapping:
-   * - ALL → low (style/formatting only, no functional impact)
-   *
-   * Rationale:
-   * - Checkstyle checks code style (line length, Javadoc, naming conventions)
-   * - These issues don't cause crashes, data loss, or security vulnerabilities
-   * - They improve maintainability but are not critical/high priority
-   * - Users expect style issues to be low severity and hidden by default
-   *
-   * User feedback: "LineLengthCheck showing as High Priority - this is wrong"
-   */
-  private mapCheckstyleSeverity(severity?: string): 'critical' | 'high' | 'medium' | 'low' {
-    // ALL Checkstyle issues are style/formatting → always 'low'
-    return 'low';
-  }
+  // NOTE: mapSemgrepSeverity removed - Semgrep is a universal tool
+  // NOTE: mapCheckstyleSeverity removed - Checkstyle now uses EnhancedUniversalToolParser via parserValidator
 
   private mapSpotBugsSeverity(priority?: string): 'critical' | 'high' | 'medium' | 'low' {
     switch (priority?.toLowerCase()) {
@@ -777,59 +680,391 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     }
   }
 
-  private mapCVSSSeverity(score: number): 'critical' | 'high' | 'medium' | 'low' {
-    if (score >= 9.0) return 'critical';
-    if (score >= 7.0) return 'high';
-    if (score >= 4.0) return 'medium';
-    return 'low';
-  }
+  // NOTE: mapCVSSSeverity removed - dependency-check is a universal tool
 
   private async parseCheckstyleXML(filePath: string): Promise<RawIssue[]> {
     try {
       const xmlContent = await fs.readFile(filePath, 'utf-8');
-      const issues: RawIssue[] = [];
-      
-      // Simple XML parsing for Checkstyle output
-      // Look for <error> tags within <file> tags
-      const fileMatches = xmlContent.match(/<file name="([^"]+)">([\s\S]*?)<\/file>/g);
-      
-      if (fileMatches) {
-        for (const fileMatch of fileMatches) {
-          const fileNameMatch = fileMatch.match(/<file name="([^"]+)">/);
-          if (!fileNameMatch) continue;
-          
-          const fileName = fileNameMatch[1].replace(this.workspaceDir + '/', '');
-          
-          // Extract error tags from this file
-          const errorMatches = fileMatch.match(/<error[^>]*>/g);
-          if (errorMatches) {
-            for (const errorTag of errorMatches) {
-              const lineMatch = errorTag.match(/line="(\d+)"/);
-              const columnMatch = errorTag.match(/column="(\d+)"/);
-              const severityMatch = errorTag.match(/severity="([^"]+)"/);
-              const messageMatch = errorTag.match(/message="([^"]+)"/);
-              const sourceMatch = errorTag.match(/source="([^"]+)"/);
-              
+
+      // Phase 3: Parse directly with EnhancedUniversalToolParser via ParserValidationWrapper
+      // Legacy inline XML parsing removed - enhanced parser handles Checkstyle XML
+      return this.parserValidator.validate('checkstyle', xmlContent, []);
+    } catch (error) {
+      logger.error(`Failed to parse Checkstyle XML: ${error}`);
+      return [];
+    }
+  }
+
+  // ============================================================
+  // SESSION 57 Part 5: JDepend Architecture Analysis
+  // ============================================================
+
+  /**
+   * Run JDepend for Java package architecture analysis
+   *
+   * JDepend generates design quality metrics for each Java package:
+   * - Ca/Ce: Afferent/Efferent coupling
+   * - A/I/D: Abstractness, Instability, Distance from main sequence
+   * - Cyclic: Package dependency cycles
+   *
+   * Requires: jdepend.jar in the Docker image or installed locally
+   */
+  private async runJDepend(
+    repoPath: string,
+    branch: 'base' | 'pr'
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info(`🔍 Running JDepend on ${branch} branch...`);
+
+      // Find compiled classes directory (target/classes for Maven, build/classes for Gradle)
+      const classesDir = await this.findJavaClassesDir(repoPath);
+
+      if (!classesDir) {
+        logger.warn('⚠️ No compiled Java classes found. JDepend requires compiled .class files.');
+        logger.warn('   Run: mvn compile (Maven) or gradle build (Gradle) first.');
+        return {
+          tool: 'jdepend',
+          success: true,
+          duration: Date.now() - startTime,
+          issues: [],
+          rawOutput: 'No compiled classes found. JDepend requires compiled .class files.',
+          metadata: this.calculateMetadata([])
+        };
+      }
+
+      // Run JDepend in XML mode
+      const outputFileName = `jdepend-results-${branch}.xml`;
+      const outputFile = path.join(repoPath, outputFileName);
+
+      // Try running jdepend via java command
+      const cmd = `cd ${repoPath} && java jdepend.xmlui.JDepend -file ${outputFileName} ${classesDir} 2>&1 || true`;
+
+      const { stdout, stderr } = await execAsync(cmd, {
+        timeout: 180000, // 3 minute timeout
+        maxBuffer: 50 * 1024 * 1024 // 50MB buffer
+      });
+
+      const rawOutput = stdout + (stderr ? `\nSTDERR:\n${stderr}` : '');
+
+      // Check if output file was created
+      let issues: RawIssue[] = [];
+      if (existsSync(outputFile)) {
+        const xmlContent = await fs.readFile(outputFile, 'utf-8');
+        issues = this.parseJDependXml(xmlContent, repoPath);
+      } else {
+        // Try parsing text output if XML wasn't generated
+        issues = this.parseJDependText(rawOutput, repoPath);
+      }
+
+      const duration = Date.now() - startTime;
+      logger.info(`✅ JDepend completed: ${issues.length} architecture issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'jdepend',
+        success: true,
+        duration,
+        issues,
+        rawOutput,
+        metadata: this.calculateMetadata(issues)
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+
+      // JDepend might not be installed
+      if (error.message.includes('ClassNotFoundException') ||
+          error.message.includes('command not found') ||
+          error.message.includes('jdepend')) {
+        logger.warn('⚠️ JDepend not available. Install with: mvn dependency:copy or download jdepend.jar');
+        return {
+          tool: 'jdepend',
+          success: false,
+          duration,
+          issues: [],
+          rawOutput: 'JDepend not installed. Add jdepend to classpath.',
+          metadata: this.calculateMetadata([]),
+          error: 'JDepend not installed'
+        };
+      }
+
+      logger.error(`❌ JDepend failed: ${error.message}`);
+      return this.createFailedResult('jdepend', error.message);
+    }
+  }
+
+  /**
+   * Find directory containing compiled Java classes
+   */
+  private async findJavaClassesDir(repoPath: string): Promise<string | null> {
+    // Check Maven target/classes
+    const mavenClasses = path.join(repoPath, 'target', 'classes');
+    if (existsSync(mavenClasses)) {
+      return mavenClasses;
+    }
+
+    // Check Gradle build/classes/java/main
+    const gradleClasses = path.join(repoPath, 'build', 'classes', 'java', 'main');
+    if (existsSync(gradleClasses)) {
+      return gradleClasses;
+    }
+
+    // Check Gradle build/classes (older structure)
+    const gradleClassesOld = path.join(repoPath, 'build', 'classes');
+    if (existsSync(gradleClassesOld)) {
+      return gradleClassesOld;
+    }
+
+    // Try to find any classes directory
+    try {
+      const { stdout } = await execAsync(
+        `find ${repoPath} -type d -name "classes" -path "*/target/*" -o -name "classes" -path "*/build/*" | head -1`,
+        { timeout: 10000 }
+      );
+      const foundDir = stdout.trim();
+      if (foundDir && existsSync(foundDir)) {
+        return foundDir;
+      }
+    } catch {
+      // Ignore find errors
+    }
+
+    return null;
+  }
+
+  /**
+   * Parse JDepend XML output
+   *
+   * XML format:
+   * <JDepend>
+   *   <Packages>
+   *     <Package name="com.example">
+   *       <Stats>
+   *         <TotalClasses>10</TotalClasses>
+   *         <ConcreteClasses>8</ConcreteClasses>
+   *         <AbstractClasses>2</AbstractClasses>
+   *         <Ca>5</Ca>
+   *         <Ce>3</Ce>
+   *         <A>0.2</A>
+   *         <I>0.375</I>
+   *         <D>0.425</D>
+   *         <V>1</V>
+   *       </Stats>
+   *       <DependsUpon>...</DependsUpon>
+   *       <UsedBy>...</UsedBy>
+   *     </Package>
+   *   </Packages>
+   *   <Cycles>
+   *     <Package Name="com.example.a">
+   *       <Package>com.example.b</Package>
+   *       <Package>com.example.a</Package>
+   *     </Package>
+   *   </Cycles>
+   * </JDepend>
+   */
+  private parseJDependXml(xmlContent: string, repoPath: string): RawIssue[] {
+    const issues: RawIssue[] = [];
+
+    try {
+      // Parse Cycles section
+      const cyclesMatch = xmlContent.match(/<Cycles>([\s\S]*?)<\/Cycles>/);
+      if (cyclesMatch) {
+        const cyclesContent = cyclesMatch[1];
+
+        // Extract packages in cycles
+        const packageCycles = cyclesContent.match(/<Package Name="([^"]+)">([\s\S]*?)<\/Package>/g);
+        if (packageCycles) {
+          for (const cycleMatch of packageCycles) {
+            const packageNameMatch = cycleMatch.match(/<Package Name="([^"]+)">/);
+            const packageName = packageNameMatch?.[1] || 'unknown';
+
+            // Extract cycle participants
+            const participants = cycleMatch.match(/<Package>([^<]+)<\/Package>/g);
+            const participantNames = participants?.map(p =>
+              p.replace(/<\/?Package>/g, '').trim()
+            ) || [];
+
+            issues.push({
+              tool: 'jdepend',
+              file: packageName.replace(/\./g, '/'),
+              line: 1,
+              severity: 'high',
+              message: `Package cycle detected: ${packageName} → ${participantNames.join(' → ')}`,
+              rule: 'package-cycle',
+              category: 'architecture'
+            });
+          }
+        }
+      }
+
+      // Parse Packages section for design quality issues
+      const packagesMatch = xmlContent.match(/<Packages>([\s\S]*?)<\/Packages>/);
+      if (packagesMatch) {
+        const packagesContent = packagesMatch[1];
+
+        // Find packages with poor design metrics
+        const packageMatches = packagesContent.match(/<Package name="([^"]+)">([\s\S]*?)<\/Package>/g);
+        if (packageMatches) {
+          for (const pkgMatch of packageMatches) {
+            const nameMatch = pkgMatch.match(/<Package name="([^"]+)">/);
+            const packageName = nameMatch?.[1] || 'unknown';
+
+            // Extract metrics
+            const dMatch = pkgMatch.match(/<D>([^<]+)<\/D>/);
+            const aMatch = pkgMatch.match(/<A>([^<]+)<\/A>/);
+            const iMatch = pkgMatch.match(/<I>([^<]+)<\/I>/);
+            const ceMatch = pkgMatch.match(/<Ce>([^<]+)<\/Ce>/);
+
+            const distance = parseFloat(dMatch?.[1] || '0');
+            const abstractness = parseFloat(aMatch?.[1] || '0');
+            const instability = parseFloat(iMatch?.[1] || '0');
+            const efferentCoupling = parseInt(ceMatch?.[1] || '0');
+
+            // Flag packages with high distance from main sequence (> 0.7)
+            if (distance > 0.7) {
               issues.push({
-                tool: 'checkstyle',
-                file: fileName,
-                line: parseInt(lineMatch?.[1] || '1'),
-                column: parseInt(columnMatch?.[1] || '1'),
-                severity: this.mapCheckstyleSeverity(severityMatch?.[1]),
-                message: messageMatch?.[1] || 'Checkstyle issue detected',
-                rule: sourceMatch?.[1] || 'Unknown',
-                category: 'Code Quality',  // SESSION 19 FIX: Match agent category name
-                autoFixable: false
+                tool: 'jdepend',
+                file: packageName.replace(/\./g, '/'),
+                line: 1,
+                severity: 'medium',
+                message: `Poor design metric: Distance from main sequence = ${distance.toFixed(2)} (should be < 0.7). A=${abstractness.toFixed(2)}, I=${instability.toFixed(2)}`,
+                rule: 'distance-from-main-sequence',
+                category: 'architecture'
+              });
+            }
+
+            // Flag packages with very high efferent coupling (> 20)
+            if (efferentCoupling > 20) {
+              issues.push({
+                tool: 'jdepend',
+                file: packageName.replace(/\./g, '/'),
+                line: 1,
+                severity: 'medium',
+                message: `High efferent coupling: Ce = ${efferentCoupling} (depends on ${efferentCoupling} other packages). Consider reducing dependencies.`,
+                rule: 'high-efferent-coupling',
+                category: 'architecture'
               });
             }
           }
         }
       }
-      
-      return issues;
+
     } catch (error) {
-      logger.error(`Failed to parse Checkstyle XML: ${error}`);
-      return [];
+      logger.warn(`⚠️ Could not parse JDepend XML: ${error}`);
+    }
+
+    return issues;
+  }
+
+  /**
+   * Parse JDepend text output (fallback if XML not available)
+   */
+  private parseJDependText(output: string, repoPath: string): RawIssue[] {
+    const issues: RawIssue[] = [];
+
+    try {
+      // Look for cycle mentions
+      if (output.toLowerCase().includes('cycle')) {
+        const cyclePattern = /cycle[^:]*:\s*([^\n]+)/gi;
+        let match;
+        while ((match = cyclePattern.exec(output)) !== null) {
+          issues.push({
+            tool: 'jdepend',
+            file: 'unknown',
+            line: 1,
+            severity: 'high',
+            message: `Package cycle detected: ${match[1].trim()}`,
+            rule: 'package-cycle',
+            category: 'architecture'
+          });
+        }
+      }
+
+      // Look for "contains cycles" mentions
+      const containsCycles = output.match(/(\S+)\s+contains?\s+cycle/gi);
+      if (containsCycles) {
+        for (const cycleMatch of containsCycles) {
+          const pkgMatch = cycleMatch.match(/(\S+)\s+contains?/);
+          if (pkgMatch) {
+            issues.push({
+              tool: 'jdepend',
+              file: pkgMatch[1].replace(/\./g, '/'),
+              line: 1,
+              severity: 'high',
+              message: `Package contains dependency cycle: ${pkgMatch[1]}`,
+              rule: 'package-cycle',
+              category: 'architecture'
+            });
+          }
+        }
+      }
+
+    } catch (error) {
+      logger.warn(`⚠️ Could not parse JDepend text output: ${error}`);
+    }
+
+    return issues;
+  }
+
+  // ============================================================
+  // SESSION 58: PERFORMANCE STATIC ANALYSIS
+  // ============================================================
+
+  /**
+   * Run static performance analysis using:
+   * - PMD Performance rules: Performance anti-patterns
+   * - SpotBugs Performance: Performance-related bugs (if compiled)
+   * - Memory pattern detection: Common memory leak patterns
+   *
+   * NOTE: Runtime profilers (JMH, VisualVM, JProfiler) are NOT included
+   * because they require actual code execution.
+   */
+  private async runPerformanceAnalysis(
+    repoPath: string,
+    branch: 'base' | 'pr'
+  ): Promise<ToolResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info(`🚀 Running Java performance analysis on ${branch} branch...`);
+
+      // Dynamically import the performance runner
+      const { JavaPerformanceRunner } = await import('./performance-runner');
+      const runner = new JavaPerformanceRunner();
+
+      // Run all performance analysis tools
+      const perfIssues = await runner.runAll(repoPath);
+
+      // Convert to RawIssue format
+      const rawIssues: RawIssue[] = perfIssues.map(issue => ({
+        tool: issue.tool,
+        file: issue.file,
+        line: issue.line,
+        severity: issue.severity,
+        message: issue.message,
+        rule: issue.rule,
+        category: 'performance',
+        autoFixable: false
+      }));
+
+      const duration = Date.now() - startTime;
+      const metadata = this.calculateMetadata(rawIssues);
+
+      logger.info(`✅ Performance analysis completed: ${rawIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
+
+      return {
+        tool: 'performance',
+        success: true,
+        duration,
+        issues: rawIssues,
+        metadata
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      logger.error(`❌ Performance analysis failed: ${error.message}`);
+      return this.createFailedResult('performance', error.message);
     }
   }
 }

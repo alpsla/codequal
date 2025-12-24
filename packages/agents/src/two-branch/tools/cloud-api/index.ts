@@ -70,3 +70,27 @@ export {
   AnalyticsDashboard,
   Alert
 } from './corgea-analytics';
+
+// Cost management and intelligent routing (Session 63)
+export {
+  FixCostManager,
+  getFixCostManager,
+  FixSource,
+  FixCostRecord,
+  CostCeiling,
+  RoutingDecision,
+  CostComparison,
+  ProfitabilityAnalysis,
+  // Routing mode management
+  RoutingMode,
+  RoutingConfig,
+  SupabaseCostComparison
+} from './fix-cost-manager';
+
+export {
+  IntelligentFixRouter,
+  getIntelligentFixRouter,
+  FixRequest,
+  FixResult,
+  BatchFixResult
+} from './intelligent-fix-router';

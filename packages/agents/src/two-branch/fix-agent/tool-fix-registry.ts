@@ -222,6 +222,19 @@ export const TIER1_NATIVE_FIXERS: ToolFixCapability[] = [
     categories: ['security'],
     safeForAutoApply: false, // Security fixes should be reviewed
   },
+
+  // Performance - Ruff (Python) supports fix for PERF rules
+  {
+    toolId: 'ruff-perf',
+    name: 'Ruff (PERF rules)',
+    language: ['python'],
+    tier: 1,
+    hasNativeFix: true,
+    fixCommand: 'ruff check --fix --select PERF',
+    confidence: 90,
+    categories: ['performance'],
+    safeForAutoApply: true,
+  },
 ];
 
 // ============================================================================
@@ -359,6 +372,97 @@ export const TIER2_DEDICATED_FIXERS: ToolFixCapability[] = [
     categories: ['security', 'dependencies'],
     safeForAutoApply: false,
   },
+
+  // ============================================================================
+  // INFRASTRUCTURE AS CODE (IaC) TOOLS - Tier 2
+  // ============================================================================
+  {
+    toolId: 'checkov',
+    name: 'Checkov',
+    language: ['terraform', 'kubernetes', 'cloudformation', 'dockerfile', 'helm', 'ansible'],
+    tier: 2,
+    hasNativeFix: true,  // Partial - supports --fix for ~30% of checks
+    fixCommand: 'checkov --fix',
+    confidence: 70,
+    categories: ['iac_security', 'infrastructure', 'cloud_security'],
+    safeForAutoApply: false,  // IaC changes should always be reviewed
+  },
+
+  // ============================================================================
+  // PERFORMANCE TOOLS (Tier 2 - Dedicated Fixers)
+  // ============================================================================
+
+  // Python Performance
+  {
+    toolId: 'radon',
+    name: 'Radon',
+    language: ['python'],
+    tier: 2,
+    hasNativeFix: false,
+    fixerTool: 'refactoring-ai', // Uses AI-based refactoring for complexity
+    confidence: 60,
+    categories: ['performance', 'complexity'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'memory-pattern-python',
+    name: 'Python Memory Pattern Detector',
+    language: ['python'],
+    tier: 2,
+    hasNativeFix: false,
+    fixerTool: 'ruff', // Many memory patterns can be fixed by ruff rules
+    confidence: 75,
+    categories: ['performance', 'memory'],
+    safeForAutoApply: false,
+  },
+
+  // Java Performance
+  {
+    toolId: 'pmd-perf',
+    name: 'PMD Performance Rules',
+    language: ['java'],
+    tier: 2,
+    hasNativeFix: false,
+    fixerTool: 'sorald', // Sorald can fix some PMD performance issues
+    confidence: 65,
+    categories: ['performance', 'code_quality'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'memory-pattern-java',
+    name: 'Java Memory Pattern Detector',
+    language: ['java'],
+    tier: 2,
+    hasNativeFix: false,
+    fixerTool: 'sorald',
+    confidence: 60,
+    categories: ['performance', 'memory'],
+    safeForAutoApply: false,
+  },
+
+  // Go Performance
+  {
+    toolId: 'staticcheck-perf',
+    name: 'staticcheck Performance Rules',
+    language: ['go'],
+    tier: 2,
+    hasNativeFix: false,
+    fixerTool: 'golangci-lint', // golangci-lint can fix some staticcheck issues
+    confidence: 70,
+    categories: ['performance'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'memory-pattern-go',
+    name: 'Go Memory Pattern Detector',
+    language: ['go'],
+    tier: 2,
+    hasNativeFix: false,
+    fixerTool: 'golangci-lint',
+    confidence: 65,
+    categories: ['performance', 'memory'],
+    safeForAutoApply: false,
+  },
 ];
 
 // ============================================================================
@@ -366,6 +470,61 @@ export const TIER2_DEDICATED_FIXERS: ToolFixCapability[] = [
 // ============================================================================
 
 export const TIER3_AI_REQUIRED: ToolFixCapability[] = [
+  // ============================================================================
+  // SECRET DETECTION TOOLS (Phase 1 Integration - Session 58)
+  // These tools detect secrets but CANNOT auto-fix - secrets must be rotated
+  // ============================================================================
+  {
+    toolId: 'gitleaks',
+    name: 'Gitleaks',
+    language: ['*'],  // Language-agnostic - scans all files
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 0,  // Cannot auto-fix secrets - they must be rotated manually
+    categories: ['secrets', 'security', 'credentials'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'trufflehog',
+    name: 'TruffleHog',
+    language: ['*'],  // Language-agnostic - scans all files
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 0,  // Cannot auto-fix secrets - they must be rotated manually
+    categories: ['secrets', 'security', 'credentials'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // CONTAINER SECURITY TOOLS (Phase 1 Integration - Session 58)
+  // These detect vulnerabilities but fixes require dependency updates
+  // ============================================================================
+  {
+    toolId: 'trivy',
+    name: 'Trivy',
+    language: ['dockerfile', 'kubernetes', 'terraform', '*'],
+    tier: 3,
+    hasNativeFix: false,
+    fixerTool: 'renovate',  // Dependency updates can be handled by Renovate
+    confidence: 40,  // Medium-low - updating dependencies can break things
+    categories: ['container_security', 'iac_security', 'dependencies', 'vulnerabilities'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'grype',
+    name: 'Grype',
+    language: ['*'],  // Scans SBOMs and container images
+    tier: 3,
+    hasNativeFix: false,
+    fixerTool: 'renovate',  // Dependency updates can be handled by Renovate
+    confidence: 40,  // Medium-low - updating dependencies can break things
+    categories: ['container_security', 'sbom', 'dependencies', 'vulnerabilities'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // SECURITY TOOLS (Session 57)
+  // ============================================================================
   {
     toolId: 'bandit',
     name: 'Bandit',
@@ -405,6 +564,171 @@ export const TIER3_AI_REQUIRED: ToolFixCapability[] = [
     hasNativeFix: false,
     confidence: 40,
     categories: ['security', 'dependencies'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // PERFORMANCE TOOLS (Session 57 Part 3)
+  // These are scanners/metrics tools - no auto-fix capability
+  // ============================================================================
+  {
+    toolId: 'lighthouse',
+    name: 'Lighthouse',
+    language: ['javascript', 'typescript'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 30, // Low confidence - performance fixes are context-dependent
+    categories: ['performance', 'web_vitals'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'bundle-analyzer',
+    name: 'Webpack Bundle Analyzer',
+    language: ['javascript', 'typescript'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 25, // Very low - bundle optimization is complex
+    categories: ['performance', 'bundle_size'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'eslint-perf',
+    name: 'ESLint Performance Plugin',
+    language: ['javascript', 'typescript'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 50, // Medium - some patterns have clear fixes
+    categories: ['performance', 'code_patterns'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // ARCHITECTURE TOOLS (Session 57 Part 3)
+  // These are analysis/detection tools - fixes require code restructuring
+  // ============================================================================
+  {
+    toolId: 'madge',
+    name: 'Madge',
+    language: ['javascript', 'typescript'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 20, // Very low - circular deps require architectural changes
+    categories: ['architecture', 'circular_dependency'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'dependency-cruiser',
+    name: 'Dependency Cruiser',
+    language: ['javascript', 'typescript'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 25, // Low - architecture rule violations need design changes
+    categories: ['architecture', 'dependency_rules'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'ts-unused-exports',
+    name: 'ts-unused-exports',
+    language: ['typescript'],
+    tier: 3,
+    hasNativeFix: false,
+    fixerTool: 'eslint', // ESLint can sometimes help with unused exports
+    confidence: 60, // Medium-high - dead code removal is relatively safe
+    categories: ['architecture', 'dead_code'],
+    safeForAutoApply: false, // Still needs review - might break external consumers
+  },
+
+  // ============================================================================
+  // JAVA ARCHITECTURE TOOLS (Session 57 Part 5)
+  // ============================================================================
+  {
+    toolId: 'jdepend',
+    name: 'JDepend',
+    language: ['java'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 20, // Very low - package cycles require architectural refactoring
+    categories: ['architecture', 'package_cycle', 'coupling', 'design_metrics'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // PYTHON ARCHITECTURE TOOLS (Session 57 Part 4 & 5)
+  // ============================================================================
+  {
+    toolId: 'pydeps',
+    name: 'pydeps',
+    language: ['python'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 25, // Low - circular dependencies require architectural changes
+    categories: ['architecture', 'circular_dependency', 'dependency_analysis'],
+    safeForAutoApply: false,
+  },
+  {
+    toolId: 'import-linter',
+    name: 'Import Linter',
+    language: ['python'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 20, // Very low - layer violations require architectural refactoring
+    categories: ['architecture', 'layer_violation', 'independence_violation'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // GO ARCHITECTURE TOOLS (Session 57 Part 5)
+  // ============================================================================
+  {
+    toolId: 'go-arch-lint',
+    name: 'go-arch-lint',
+    language: ['go'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 20, // Very low - architecture violations require design changes
+    categories: ['architecture', 'dependency_rules', 'layer_violation'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // RUST ARCHITECTURE TOOLS (Session 57 Part 5)
+  // ============================================================================
+  {
+    toolId: 'cargo-modules',
+    name: 'cargo-modules',
+    language: ['rust'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 25, // Low - circular dependencies require module restructuring
+    categories: ['architecture', 'circular_dependency', 'orphan_module'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // RUBY ARCHITECTURE TOOLS (Session 57 Part 5)
+  // ============================================================================
+  {
+    toolId: 'packwerk',
+    name: 'Packwerk',
+    language: ['ruby'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 30, // Low - boundary violations require package restructuring
+    categories: ['architecture', 'dependency_violation', 'privacy_violation'],
+    safeForAutoApply: false,
+  },
+
+  // ============================================================================
+  // PHP ARCHITECTURE TOOLS (Session 57 Part 5)
+  // ============================================================================
+  {
+    toolId: 'deptrac',
+    name: 'Deptrac',
+    language: ['php'],
+    tier: 3,
+    hasNativeFix: false,
+    confidence: 25, // Low - layer violations require architecture refactoring
+    categories: ['architecture', 'layer_violation', 'uncovered_dependency'],
     safeForAutoApply: false,
   },
 ];

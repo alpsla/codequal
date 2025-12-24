@@ -79,6 +79,58 @@ export function determineCodeQualSeverity(
     return mapCVSSSeverity(toolPriority as number);
   }
 
+  // Go tools
+  if (toolName.toLowerCase() === 'golangci-lint') {
+    return mapGolangciLintSeverity(toolPriority as string, normalizedCategory, normalizedRule);
+  }
+  if (toolName.toLowerCase() === 'staticcheck') {
+    return mapStaticcheckSeverity(normalizedRule);
+  }
+  if (toolName.toLowerCase() === 'govulncheck') {
+    return mapCVSSSeverity(toolPriority as number); // Uses CVSS
+  }
+
+  // Rust tools
+  if (toolName.toLowerCase() === 'clippy') {
+    return mapClippySeverity(toolPriority as string, normalizedRule);
+  }
+  if (toolName.toLowerCase() === 'cargo-audit' || toolName.toLowerCase() === 'cargo-deny') {
+    return mapCVSSSeverity(toolPriority as number); // Uses CVSS
+  }
+
+  // C#/.NET tools
+  if (toolName.toLowerCase() === 'dotnet-format') {
+    return mapDotnetFormatSeverity(toolPriority as string);
+  }
+  if (toolName.toLowerCase() === 'security-code-scan') {
+    return mapSecurityCodeScanSeverity(normalizedRule);
+  }
+
+  // Ruby tools
+  if (toolName.toLowerCase() === 'rubocop') {
+    return mapRubocopSeverity(toolPriority as string, normalizedCategory);
+  }
+  if (toolName.toLowerCase() === 'brakeman') {
+    return mapBrakemanSeverity(toolPriority as string);
+  }
+  if (toolName.toLowerCase() === 'bundler-audit') {
+    return mapCVSSSeverity(toolPriority as number); // Uses CVSS
+  }
+
+  // PHP tools
+  if (toolName.toLowerCase() === 'phpstan') {
+    return mapPHPStanSeverity(toolPriority as number);
+  }
+  if (toolName.toLowerCase() === 'psalm') {
+    return mapPsalmSeverity(normalizedRule, normalizedCategory);
+  }
+  if (toolName.toLowerCase() === 'phpcs') {
+    return mapPHPCSSeverity(toolPriority as string);
+  }
+  if (toolName.toLowerCase() === 'composer-audit') {
+    return mapCVSSSeverity(toolPriority as number); // Uses CVSS
+  }
+
   // Default fallback
   return 'medium';
 }
@@ -407,4 +459,357 @@ export function mapPMDSeverityEnhanced(
   description?: string
 ): CodeQualSeverity {
   return determineCodeQualSeverity('PMD', priority, category, ruleId, description);
+}
+
+// ============================================================
+// GO SEVERITY MAPPERS
+// ============================================================
+
+/**
+ * Map golangci-lint severity
+ *
+ * golangci-lint aggregates 50+ linters, each with different severity levels.
+ * Key linters and their severity implications:
+ * - gosec: Security issues (HIGH/CRITICAL)
+ * - gocritic: Code quality (MEDIUM)
+ * - errcheck: Error handling (MEDIUM/HIGH)
+ * - staticcheck: Static analysis (MEDIUM/HIGH)
+ * - ineffassign: Unused assignments (LOW)
+ * - deadcode: Dead code (LOW)
+ */
+function mapGolangciLintSeverity(
+  severity: string,
+  category: string,
+  ruleId: string
+): CodeQualSeverity {
+  const normalizedSeverity = (severity || '').toLowerCase();
+  const linter = ruleId.split('/')[0] || '';
+
+  // Security linters → HIGH/CRITICAL
+  const securityLinters = ['gosec', 'gocritic'];
+  if (securityLinters.includes(linter)) {
+    return normalizedSeverity === 'error' ? 'critical' : 'high';
+  }
+
+  // Error handling → HIGH (unhandled errors cause issues)
+  if (linter === 'errcheck') {
+    return 'high';
+  }
+
+  // Static analysis issues → MEDIUM/HIGH based on severity
+  if (linter === 'staticcheck') {
+    return normalizedSeverity === 'error' ? 'high' : 'medium';
+  }
+
+  // Code quality linters → MEDIUM
+  const qualityLinters = ['govet', 'revive', 'gofmt', 'goimports'];
+  if (qualityLinters.includes(linter)) {
+    return 'medium';
+  }
+
+  // Dead code and unused → LOW
+  const lowLinters = ['deadcode', 'unused', 'ineffassign', 'varcheck', 'structcheck'];
+  if (lowLinters.includes(linter)) {
+    return 'low';
+  }
+
+  // Default based on severity level
+  if (normalizedSeverity === 'error') return 'medium';
+  if (normalizedSeverity === 'warning') return 'low';
+  return 'low';
+}
+
+/**
+ * Map staticcheck severity
+ *
+ * Staticcheck codes:
+ * - SA* (staticanalysis): Bugs, correctness issues → MEDIUM/HIGH
+ * - S* (simple): Simplification suggestions → LOW
+ * - ST* (stylecheck): Style issues → LOW
+ * - QF* (quickfix): Quick fixes available → LOW
+ */
+function mapStaticcheckSeverity(ruleId: string): CodeQualSeverity {
+  const code = ruleId.toUpperCase();
+
+  // SA codes are static analysis (bugs, correctness)
+  if (code.startsWith('SA')) {
+    // SA1xxx - Various issues (range by severity)
+    if (code.startsWith('SA1')) return 'medium';
+    // SA2xxx - Concurrency issues
+    if (code.startsWith('SA2')) return 'high';
+    // SA3xxx - Testing issues
+    if (code.startsWith('SA3')) return 'medium';
+    // SA4xxx - Useless code
+    if (code.startsWith('SA4')) return 'low';
+    // SA5xxx - Correctness issues
+    if (code.startsWith('SA5')) return 'high';
+    // SA6xxx - Performance issues
+    if (code.startsWith('SA6')) return 'medium';
+    // SA9xxx - Dubious constructs
+    if (code.startsWith('SA9')) return 'medium';
+    return 'medium';
+  }
+
+  // S codes are simplification suggestions
+  if (code.startsWith('S1')) return 'low';
+
+  // ST codes are style checks
+  if (code.startsWith('ST')) return 'low';
+
+  // QF codes are quickfixes
+  if (code.startsWith('QF')) return 'low';
+
+  return 'medium';
+}
+
+// ============================================================
+// RUST SEVERITY MAPPERS
+// ============================================================
+
+/**
+ * Map Clippy lint severity
+ *
+ * Clippy categories:
+ * - clippy::correctness - Always MEDIUM/HIGH
+ * - clippy::suspicious - MEDIUM/HIGH
+ * - clippy::complexity - MEDIUM
+ * - clippy::perf - MEDIUM
+ * - clippy::style - LOW
+ * - clippy::pedantic - LOW
+ * - clippy::nursery - LOW
+ */
+function mapClippySeverity(severity: string, ruleId: string): CodeQualSeverity {
+  const normalizedSeverity = (severity || '').toLowerCase();
+  const rule = ruleId.toLowerCase();
+
+  // Security-related rules
+  if (rule.includes('unsafe') || rule.includes('security')) {
+    return 'high';
+  }
+
+  // Correctness issues
+  if (rule.includes('correctness') || rule.includes('suspicious')) {
+    return normalizedSeverity === 'error' ? 'high' : 'medium';
+  }
+
+  // Performance issues
+  if (rule.includes('perf')) {
+    return 'medium';
+  }
+
+  // Complexity issues
+  if (rule.includes('complexity')) {
+    return 'medium';
+  }
+
+  // Style and pedantic issues
+  if (rule.includes('style') || rule.includes('pedantic') || rule.includes('nursery')) {
+    return 'low';
+  }
+
+  // Based on lint level
+  if (normalizedSeverity === 'deny' || normalizedSeverity === 'error') return 'high';
+  if (normalizedSeverity === 'warn' || normalizedSeverity === 'warning') return 'medium';
+  return 'low';
+}
+
+// ============================================================
+// C#/.NET SEVERITY MAPPERS
+// ============================================================
+
+/**
+ * Map dotnet format severity
+ */
+function mapDotnetFormatSeverity(severity: string): CodeQualSeverity {
+  const normalizedSeverity = (severity || '').toLowerCase();
+
+  if (normalizedSeverity === 'error') return 'medium';
+  if (normalizedSeverity === 'warning') return 'low';
+  return 'low';
+}
+
+/**
+ * Map Security Code Scan severity
+ *
+ * SCS codes are security-focused:
+ * - SCS0001-SCS0002: SQL Injection → CRITICAL
+ * - SCS0003, SCS0007: XXE → CRITICAL
+ * - SCS0005-SCS0006, SCS0010, SCS0013: Weak Crypto → HIGH
+ * - SCS0008-SCS0009, SCS0012, SCS0031: Command Injection → CRITICAL
+ * - SCS0016: CSRF → HIGH
+ * - SCS0017: Open Redirect → HIGH
+ * - SCS0018: Path Traversal → CRITICAL
+ * - SCS0019, SCS0027-SCS0028: Deserialization → CRITICAL
+ * - SCS0023-SCS0024, SCS0029: XSS → HIGH
+ */
+function mapSecurityCodeScanSeverity(ruleId: string): CodeQualSeverity {
+  const code = ruleId.toUpperCase();
+
+  // Critical vulnerabilities
+  const criticalCodes = [
+    'SCS0001', 'SCS0002', 'SCS0003', 'SCS0007', // SQL Injection, XXE
+    'SCS0008', 'SCS0009', 'SCS0012', 'SCS0031', // Command Injection
+    'SCS0018', // Path Traversal
+    'SCS0019', 'SCS0027', 'SCS0028', // Deserialization
+    'SCS0020', // LDAP Injection
+    'SCS0014', 'SCS0025', 'SCS0026', // More SQL Injection
+  ];
+
+  if (criticalCodes.some(c => code.includes(c))) {
+    return 'critical';
+  }
+
+  // High severity vulnerabilities
+  const highCodes = [
+    'SCS0005', 'SCS0006', 'SCS0010', 'SCS0013', // Weak Crypto
+    'SCS0016', // CSRF
+    'SCS0017', // Open Redirect
+    'SCS0021', 'SCS0022', // Certificate Validation
+    'SCS0023', 'SCS0024', 'SCS0029', // XSS
+  ];
+
+  if (highCodes.some(c => code.includes(c))) {
+    return 'high';
+  }
+
+  // Medium severity (secure cookies, weak random, etc.)
+  const mediumCodes = [
+    'SCS0032', 'SCS0033', 'SCS0034',
+  ];
+
+  if (mediumCodes.some(c => code.includes(c))) {
+    return 'medium';
+  }
+
+  // Default for unknown SCS codes → HIGH (security-focused tool)
+  return 'high';
+}
+
+// ============================================================
+// RUBY SEVERITY MAPPERS
+// ============================================================
+
+/**
+ * Map RuboCop severity
+ *
+ * RuboCop severities:
+ * - fatal: CRITICAL
+ * - error: HIGH
+ * - warning: MEDIUM
+ * - convention: LOW
+ * - refactor: LOW
+ */
+function mapRubocopSeverity(severity: string, category: string): CodeQualSeverity {
+  const normalizedSeverity = (severity || '').toLowerCase();
+
+  // Security department → elevate severity
+  if (category.includes('security')) {
+    if (normalizedSeverity === 'fatal' || normalizedSeverity === 'error') {
+      return 'critical';
+    }
+    return 'high';
+  }
+
+  // Rails-specific issues are generally MEDIUM
+  if (category.includes('rails')) {
+    if (normalizedSeverity === 'error') return 'high';
+    return 'medium';
+  }
+
+  // Standard severity mapping
+  if (normalizedSeverity === 'fatal') return 'critical';
+  if (normalizedSeverity === 'error') return 'high';
+  if (normalizedSeverity === 'warning') return 'medium';
+  if (normalizedSeverity === 'convention') return 'low';
+  if (normalizedSeverity === 'refactor') return 'low';
+
+  return 'low';
+}
+
+/**
+ * Map Brakeman severity
+ *
+ * Brakeman confidence levels:
+ * - High confidence + High impact → CRITICAL
+ * - High confidence → HIGH
+ * - Medium confidence → MEDIUM
+ * - Weak/Low confidence → LOW
+ */
+function mapBrakemanSeverity(confidence: string): CodeQualSeverity {
+  const normalizedConfidence = (confidence || '').toLowerCase();
+
+  if (normalizedConfidence === 'high') return 'critical';
+  if (normalizedConfidence === 'medium') return 'high';
+  if (normalizedConfidence === 'weak' || normalizedConfidence === 'low') return 'medium';
+
+  return 'medium';
+}
+
+// ============================================================
+// PHP SEVERITY MAPPERS
+// ============================================================
+
+/**
+ * Map PHPStan severity by level
+ *
+ * PHPStan levels 0-9:
+ * - Level 0-2: Basic issues → LOW
+ * - Level 3-5: Medium issues → MEDIUM
+ * - Level 6-7: Strict issues → MEDIUM/HIGH
+ * - Level 8-9: Very strict → HIGH
+ */
+function mapPHPStanSeverity(level: number): CodeQualSeverity {
+  if (level >= 8) return 'high';
+  if (level >= 6) return 'medium';
+  if (level >= 3) return 'medium';
+  return 'low';
+}
+
+/**
+ * Map Psalm severity
+ *
+ * Psalm issue types:
+ * - TaintedX: Security issues → CRITICAL
+ * - PossiblyNull/PossiblyUndefined: Type safety → MEDIUM
+ * - UnusedX: Dead code → LOW
+ * - DocblockX: Documentation → LOW
+ */
+function mapPsalmSeverity(issueType: string, category: string): CodeQualSeverity {
+  const type = issueType.toLowerCase();
+
+  // Taint analysis (security) → CRITICAL
+  if (type.includes('tainted') || type.includes('sql') || type.includes('injection')) {
+    return 'critical';
+  }
+
+  // Null/undefined safety → MEDIUM (can cause runtime errors)
+  if (type.includes('null') || type.includes('undefined') || type.includes('invalid')) {
+    return 'medium';
+  }
+
+  // Type errors → MEDIUM
+  if (type.includes('type') || type.includes('argument') || type.includes('return')) {
+    return 'medium';
+  }
+
+  // Unused/deprecated → LOW
+  if (type.includes('unused') || type.includes('deprecated') || type.includes('docblock')) {
+    return 'low';
+  }
+
+  return 'medium';
+}
+
+/**
+ * Map PHP_CodeSniffer severity
+ *
+ * PHPCS types:
+ * - ERROR: MEDIUM (code style errors)
+ * - WARNING: LOW (code style warnings)
+ */
+function mapPHPCSSeverity(type: string): CodeQualSeverity {
+  const normalizedType = (type || '').toLowerCase();
+
+  if (normalizedType === 'error') return 'medium';
+  return 'low';
 }

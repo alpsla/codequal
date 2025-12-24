@@ -4,7 +4,7 @@
   "rule": "javascript.express.open-redirect-deepsemgrep.open-redirect-deepsemgrep",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Implement strict input validation by allowing redirects only to a predefined list of trusted domains. Notify users when they are being redirected to an external site, and provide them with the option to accept or decline the redirect. This approach mitigates the risk of open redirects and enhances user trust.",
+  "description": "The application builds a URL using user-controlled input which can lead to an open redirect vulnerability. An attacker can manipulate the URL and redirect users to an arbitrary domain. Open redirect vulnerabilities can lead to issues such as Cross-site scripting (XSS) or redirecting to a malicious domain for activities such as phishing to capture users' credentials. To prevent this vulnerability perform strict input validation of the domain against an allowlist of approved domains. Notify a user",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "const allowedDomains = ['trusted.com', 'secure.org'];\nconst redirectTo = req.query.redirectTo;\nif (allowedDomains.includes(new URL(redirectTo).hostname)) {\n  res.redirect(redirectTo);\n} else {\n  res.status(400).send('Invalid redirect destination');\n}"
+      "after": "  // Validate redirect URL against allowlist\n  const allowedDomains = ['/', '/dashboard', '/profile', '/settings'];\n  const referrer = req.get('Referrer') || '/';\n  let redirectUrl = '/';\n  \n  try {\n    const refUrl = new URL(referrer, `${req.protocol}://${req.get('host')}`);\n    const currentHost = req.get('host');\n    \n    // Only allow same-origin redirects or paths in allowlist\n    if (refUrl.host === currentHost && allowedDomains.includes(refUrl.pathname)) {\n      redirectUrl = refUrl.pathname;\n    }\n  } catch (e) {\n    // If URL parsing fails, check if it's a safe relative path\n    if (allowedDomains.includes(referrer)) {\n      redirectUrl = referrer;\n    }\n  }\n  \n  res.redirect(redirectUrl);"
     },
-    "instructions": "Implement strict input validation by allowing redirects only to a predefined list of trusted domains. Notify users when they are being redirected to an external site, and provide them with the option to accept or decline the redirect. This approach mitigates the risk of open redirects and enhances user trust."
+    "instructions": "The application builds a URL using user-controlled input which can lead to an open redirect vulnerability. An attacker can manipulate the URL and redirect users to an arbitrary domain. Open redirect vulnerabilities can lead to issues such as Cross-site scripting (XSS) or redirecting to a malicious domain for activities such as phishing to capture users' credentials. To prevent this vulnerability perform strict input validation of the domain against an allowlist of approved domains. Notify a user"
   },
   "locations": [
     {

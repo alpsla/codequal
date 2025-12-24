@@ -261,7 +261,8 @@ export class ReportOutputService {
     const sarifReport = this.converter.generateSARIFReport(issues, groups, {
       repository: config.repository,
       version: '9.0.0',
-      analyzedAt: new Date().toISOString()
+      analyzedAt: new Date().toISOString(),
+      workspaceRoot: config.workspaceRoot  // Use relative paths in SARIF output
     });
 
     return this.writeOutput({

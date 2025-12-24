@@ -87,6 +87,16 @@ import {
   calculateSimplifiedScore,
   getScoreInterpretation
 } from '../report/score-calculator';
+import {
+  generateAchievementsSection,
+  calculateLevel,
+  generateXpProgressBar,
+  UnlockedAchievement
+} from '../report/achievements';
+import {
+  generateCommunityImpactSection,
+  CommunityImpactSummary
+} from '../report/community-impact';
 
 // ================================================================
 // Types for Grouped Report
@@ -345,7 +355,7 @@ export class V9GroupedReportFormatter {
    */
   private cleanCorrectedCode(code: string | undefined): string {
     if (!code) return '';
-    
+
     // Check if code contains any template patterns
     for (const pattern of V9GroupedReportFormatter.TEMPLATE_PATTERNS) {
       if (pattern.test(code)) {
@@ -353,31 +363,31 @@ export class V9GroupedReportFormatter {
         return '';  // Return empty to indicate no valid fix
       }
     }
-    
+
     // SESSION 26: Strip license headers - users have their own
     // This handles Apache, MIT, GPL, and other common licenses
     let cleaned = code.trim();
-    
+
     // Remove license block comments at the start (/* ... */) - allow leading whitespace
     const licenseBlockPattern = /^\s*\/\*[\s\S]*?(Copyright|License|Apache|MIT|GPL|BSD|Mozilla|Creative Commons)[\s\S]*?\*\/\s*/i;
     if (licenseBlockPattern.test(cleaned)) {
       cleaned = cleaned.replace(licenseBlockPattern, '').trim();
     }
-    
+
     // Also try matching license headers line by line (for multi-line /* */ patterns)
     const lines = cleaned.split('\n');
     let licenseStartLine = -1;
     let licenseEndLine = -1;
-    
+
     // Find license block: starts with /* and contains Copyright/License within first 30 lines
     for (let i = 0; i < Math.min(lines.length, 30); i++) {
       const line = lines[i].trim();
-      
+
       // Track where the comment block starts
       if (line.startsWith('/*') && licenseStartLine === -1) {
         licenseStartLine = i;
       }
-      
+
       // If we're in a comment block and find license-related content
       if (licenseStartLine !== -1 && (line.includes('Copyright') || line.includes('Licensed') || line.includes('Apache License'))) {
         // Find the end of this license block
@@ -389,7 +399,7 @@ export class V9GroupedReportFormatter {
         }
         break;
       }
-      
+
       // If comment block ended without finding license content, reset
       if (line.includes('*/') && licenseStartLine !== -1 && licenseEndLine === -1) {
         // Check if this comment had no license content
@@ -399,24 +409,24 @@ export class V9GroupedReportFormatter {
         }
       }
     }
-    
+
     if (licenseEndLine > 0 && licenseStartLine >= 0) {
       console.log(`[V9Formatter] Stripping license header from lines ${licenseStartLine}-${licenseEndLine}`);
       cleaned = lines.slice(licenseEndLine + 1).join('\n').trim();
     }
-    
+
     // If remaining code is too long (likely full file), truncate to relevant portion
     const codeLines = cleaned.split('\n');
     if (codeLines.length > 50) {
       // Find the first non-import, non-package line (likely the actual code)
-      const firstCodeLine = codeLines.findIndex((line, idx) => 
-        idx > 0 && 
-        !line.trim().startsWith('import ') && 
+      const firstCodeLine = codeLines.findIndex((line, idx) =>
+        idx > 0 &&
+        !line.trim().startsWith('import ') &&
         !line.trim().startsWith('package ') &&
         !line.trim().startsWith('//') &&
         line.trim().length > 0
       );
-      
+
       if (firstCodeLine > 5) {
         // Keep package/imports summary + first 30 lines of actual code
         const packageLine = codeLines.find(l => l.trim().startsWith('package ')) || '';
@@ -425,7 +435,7 @@ export class V9GroupedReportFormatter {
         cleaned = [packageLine, importSummary, '', ...relevantCode, '\n// ... rest of file ...'].join('\n');
       }
     }
-    
+
     return cleaned.trim();
   }
 
@@ -1180,6 +1190,20 @@ export class V9GroupedReportFormatter {
     // Skills Tracking (developer progress and ranking)
     markdown.push(await this.generateSkillsTracking(enrichedIssues, metadata));
     markdown.push('');
+
+    // XP Progress and Achievements (from Supabase)
+    const xpAndAchievements = await this.generateXPAndAchievements(metadata.prAuthorEmail);
+    if (xpAndAchievements) {
+      markdown.push(xpAndAchievements);
+      markdown.push('');
+    }
+
+    // Community Impact (pattern contributions from Supabase)
+    const communityImpact = await this.generateCommunityImpact(metadata.prAuthorEmail);
+    if (communityImpact) {
+      markdown.push(communityImpact);
+      markdown.push('');
+    }
 
     // Analysis Metadata (performance metrics)
     markdown.push(this.generateAnalysisMetadata(metadata));
@@ -2052,16 +2076,22 @@ ${errorMessage || 'Unknown error - check tool orchestrator logs for details'}
     const autoFixableGroups = groups.filter(g => this.canAutoFix(g));
     // Tier 2: Safe auto-apply (safe subset) = 51%
     const safeAutoApplyGroups = groups.filter(g => this.isSafeToAutoApply(g));
-    const autoFixableIssues = issues.filter(i =>
+
+    // BUG FIX: Exclude RESOLVED issues from auto-fix calculations
+    // RESOLVED issues don't need fixing - they were already fixed by the PR
+    const issuesNeedingFixes = issues.filter(i => i.category !== 'RESOLVED');
+
+    const autoFixableIssues = issuesNeedingFixes.filter(i =>
       safeAutoApplyGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
     );
 
     // BUG-083 FIX: Calculate ALL technically auto-fixable issues (Tier 1 + Tier 2)
     // This includes both safe auto-apply and those requiring review
-    const technicallyAutoFixableIssues = issues.filter(i =>
+    const technicallyAutoFixableIssues = issuesNeedingFixes.filter(i =>
       autoFixableGroups.some(g => g.rule === i.rule && g.tool === i.tool && g.severity === i.severity)
     );
-    const fixCoverage = issues.length > 0 ? (autoFixableIssues.length / issues.length * 100) : 0;
+    // Fix coverage based on issues that actually need fixes (excluding RESOLVED)
+    const fixCoverage = issuesNeedingFixes.length > 0 ? (autoFixableIssues.length / issuesNeedingFixes.length * 100) : 0;
 
     return `## 📊 Executive Summary
 
@@ -2225,9 +2255,9 @@ ${(() => {
 - ${blockingIssues.length} blocking issues (NEW or EXISTING_MODIFIED with critical/high severity)
 - ${metadata.decision === 'APPROVED' ? '✅ **PR CAN BE MERGED**' : '⛔ **PR REQUIRES FIXES BEFORE MERGE**'}
 
-${this.SHOW_FIX_COVERAGE ? `**Fix Coverage**:
+${this.SHOW_FIX_COVERAGE ? `**Fix Coverage** (excluding ${issues.length - issuesNeedingFixes.length} already-resolved issues):
 - **${autoFixableGroups.length}/${groups.length} issue groups** support auto-fix (${((autoFixableGroups.length / groups.length) * 100).toFixed(1)}%)
-- **${autoFixableIssues.length.toLocaleString()}/${issues.length.toLocaleString()} issues** can be fixed automatically (${fixCoverage.toFixed(1)}%)` : ''}
+- **${autoFixableIssues.length.toLocaleString()}/${issuesNeedingFixes.length.toLocaleString()} issues** can be fixed automatically (${fixCoverage.toFixed(1)}%)` : ''}
 
 **Analysis Results**:
 - AI-analyzed groups: ${groups.length}
@@ -3856,10 +3886,10 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       const year = cveMatch ? cveMatch[1] : 'unknown';
       const toolDescription = toolLowerForDeps === 'pip-audit' ? 'Python package'
         : toolLowerForDeps === 'safety' ? 'Python dependency'
-        : toolLowerForDeps === 'npm-audit' ? 'Node.js package'
-        : toolLowerForDeps === 'yarn-audit' ? 'Yarn package'
-        : toolLowerForDeps === 'bundler-audit' ? 'Ruby gem'
-        : 'dependency';
+          : toolLowerForDeps === 'npm-audit' ? 'Node.js package'
+            : toolLowerForDeps === 'yarn-audit' ? 'Yarn package'
+              : toolLowerForDeps === 'bundler-audit' ? 'Ruby gem'
+                : 'dependency';
 
       // BUG-099 FIX: Extract specific vulnerability details from message
       let whatText: string;
@@ -4851,7 +4881,7 @@ mvn spotless:check  # Verify (use in CI)
           repository: metadata.repository || 'unknown',
           version: metadata.analyzerVersion || '9.0.0',
           analyzedAt: metadata.analyzedAt || new Date().toISOString(),
-          workspaceRoot: workspaceRoot  // Use relative paths in SARIF output
+          workspaceRoot  // Use relative paths in SARIF output
         })),
         // Generate GitLab Code Quality Report
         Promise.resolve(gitlabConverter.generateGitLabCodeQualityReport(enrichedIssues, this.repoPath))
@@ -5051,10 +5081,10 @@ mvn spotless:check  # Verify (use in CI)
 
       // Standard Tier 1/2 fix
       const cleanedCode = this.cleanCorrectedCode(fix?.correctedCode);
-      
+
       // BUG-LSP-001: If fix was rejected (empty after cleaning), mark as manual review
       const requiresManualReview = !cleanedCode && fix?.correctedCode;
-      
+
       return {
         type: requiresManualReview ? 'manual-review' : 'template',
         fixTier: classification.fixTier,
@@ -5083,7 +5113,7 @@ mvn spotless:check  # Verify (use in CI)
       ruleId: group.rule,
       tool: group.tool,
       message: representative.message || group.rule,
-      category: issueCategory,
+      category: issueCategory as IssueContext['category'],
       severity: (group.severity || 'medium') as 'critical' | 'high' | 'medium' | 'low',
       filePath: representative.file || '',
       lineNumber: representative.line || 0,
@@ -5097,10 +5127,10 @@ mvn spotless:check  # Verify (use in CI)
 
     // All Tier 3 issues get AI-generated fixes with dynamic prompts
     const cleanedTier3Code = this.cleanCorrectedCode(fix?.correctedCode);
-    
+
     // BUG-LSP-001: If fix was rejected (empty after cleaning), mark as manual review
     const requiresManualReview = !cleanedTier3Code && fix?.correctedCode;
-    
+
     return {
       type: requiresManualReview ? 'manual-review' : 'ai-generated',
       fixTier: 3,
@@ -5403,9 +5433,9 @@ mvn spotless:check  # Verify (use in CI)
 
     // OpenSSL advisory links often indicate DoS vulnerabilities
     if (msg.includes('openssl') && (
-        msg.includes('secadv') ||  // OpenSSL security advisory
-        msg.includes('advisory') ||
-        msg.includes('security issue'))) {
+      msg.includes('secadv') ||  // OpenSSL security advisory
+      msg.includes('advisory') ||
+      msg.includes('security issue'))) {
       // Most OpenSSL vulnerabilities are DoS (crashes, hangs, memory issues)
       // Very few are RCE (would be explicitly stated)
       return 'dos';
@@ -5413,75 +5443,75 @@ mvn spotless:check  # Verify (use in CI)
 
     // Denial of Service patterns
     if (msg.includes('denial of service') || msg.includes('dos') ||
-        msg.includes('resource exhaustion') || msg.includes('infinite loop') ||
-        msg.includes('memory exhaustion') || msg.includes('cpu exhaustion') ||
-        msg.includes('quadratic') || msg.includes('exponential') ||
-        msg.includes('performance degradation') || msg.includes('slow') ||
-        msg.includes('hang') || msg.includes('freeze') || msg.includes('unresponsive') ||
-        msg.includes('crash') || msg.includes('out of memory') ||
-        msg.includes('stack overflow') || msg.includes('recursion') ||
-        msg.includes('null pointer') || msg.includes('null dereference') ||
-        msg.includes('use after free') || msg.includes('use-after-free') ||
-        msg.includes('double free') || msg.includes('buffer overread') ||
-        msg.includes('assertion failure') || msg.includes('uncontrolled resource')) {
+      msg.includes('resource exhaustion') || msg.includes('infinite loop') ||
+      msg.includes('memory exhaustion') || msg.includes('cpu exhaustion') ||
+      msg.includes('quadratic') || msg.includes('exponential') ||
+      msg.includes('performance degradation') || msg.includes('slow') ||
+      msg.includes('hang') || msg.includes('freeze') || msg.includes('unresponsive') ||
+      msg.includes('crash') || msg.includes('out of memory') ||
+      msg.includes('stack overflow') || msg.includes('recursion') ||
+      msg.includes('null pointer') || msg.includes('null dereference') ||
+      msg.includes('use after free') || msg.includes('use-after-free') ||
+      msg.includes('double free') || msg.includes('buffer overread') ||
+      msg.includes('assertion failure') || msg.includes('uncontrolled resource')) {
       return 'dos';
     }
 
     // Remote Code Execution patterns
     if (msg.includes('remote code execution') || msg.includes('rce') ||
-        msg.includes('arbitrary code') || msg.includes('code execution') ||
-        msg.includes('command execution') || msg.includes('shell injection') ||
-        msg.includes('code injection') || msg.includes('execute arbitrary')) {
+      msg.includes('arbitrary code') || msg.includes('code execution') ||
+      msg.includes('command execution') || msg.includes('shell injection') ||
+      msg.includes('code injection') || msg.includes('execute arbitrary')) {
       return 'rce';
     }
 
     // Data Breach / Information Disclosure patterns
     if (msg.includes('information disclosure') || msg.includes('data leak') ||
-        msg.includes('sensitive data') || msg.includes('data exposure') ||
-        msg.includes('credential') || msg.includes('password') ||
-        msg.includes('private key') || msg.includes('secret') ||
-        msg.includes('token leak') || msg.includes('session') ||
-        msg.includes('memory disclosure') || msg.includes('heap disclosure')) {
+      msg.includes('sensitive data') || msg.includes('data exposure') ||
+      msg.includes('credential') || msg.includes('password') ||
+      msg.includes('private key') || msg.includes('secret') ||
+      msg.includes('token leak') || msg.includes('session') ||
+      msg.includes('memory disclosure') || msg.includes('heap disclosure')) {
       return 'data_breach';
     }
 
     // Authentication/Authorization Bypass patterns
     if (msg.includes('authentication bypass') || msg.includes('auth bypass') ||
-        msg.includes('authorization bypass') || msg.includes('privilege escalation') ||
-        msg.includes('access control') || msg.includes('permission') ||
-        msg.includes('impersonation') || msg.includes('spoofing')) {
+      msg.includes('authorization bypass') || msg.includes('privilege escalation') ||
+      msg.includes('access control') || msg.includes('permission') ||
+      msg.includes('impersonation') || msg.includes('spoofing')) {
       return 'auth_bypass';
     }
 
     // SQL/NoSQL Injection patterns
     if (msg.includes('sql injection') || msg.includes('nosql injection') ||
-        msg.includes('ldap injection') || msg.includes('xpath injection') ||
-        msg.includes('query injection')) {
+      msg.includes('ldap injection') || msg.includes('xpath injection') ||
+      msg.includes('query injection')) {
       return 'injection';
     }
 
     // XSS patterns
     if (msg.includes('cross-site scripting') || msg.includes('xss') ||
-        msg.includes('script injection') || msg.includes('html injection')) {
+      msg.includes('script injection') || msg.includes('html injection')) {
       return 'xss';
     }
 
     // SSRF patterns
     if (msg.includes('server-side request forgery') || msg.includes('ssrf') ||
-        msg.includes('url validation') || msg.includes('redirect')) {
+      msg.includes('url validation') || msg.includes('redirect')) {
       return 'ssrf';
     }
 
     // Path Traversal patterns
     if (msg.includes('path traversal') || msg.includes('directory traversal') ||
-        msg.includes('local file inclusion') || msg.includes('lfi') ||
-        msg.includes('arbitrary file')) {
+      msg.includes('local file inclusion') || msg.includes('lfi') ||
+      msg.includes('arbitrary file')) {
       return 'path_traversal';
     }
 
     // Deserialization patterns
     if (msg.includes('deserialization') || msg.includes('pickle') ||
-        msg.includes('yaml.load') || msg.includes('unsafe load')) {
+      msg.includes('yaml.load') || msg.includes('unsafe load')) {
       return 'deserialization';
     }
 
@@ -5878,18 +5908,19 @@ ${blocking.length > 0
   - ${securityIssues.length > 0 ? `Security vulnerabilities (${securityIssues.length}) pose ongoing risk` : 'Security posture is acceptable'}
 
 ### Risk Matrix by Category
-| Category | Blocking | Backlog | Total Issues | Risk Level |
-|----------|----------|---------|--------------|------------|
-| **Security** | ${securityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${securityIssues.length - securityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${securityIssues.length} | ${this.getRiskImpactLevel(securityIssues)} |
-| **Performance** | ${performanceIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${performanceIssues.length - performanceIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${performanceIssues.length} | ${this.getRiskImpactLevel(performanceIssues)} |
-| **Architecture** | ${architectureIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${architectureIssues.length - architectureIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${architectureIssues.length} | ${this.getRiskImpactLevel(architectureIssues)} |
-| **Dependencies** | ${dependencyIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${dependencyIssues.length - dependencyIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${dependencyIssues.length} | ${this.getRiskImpactLevel(dependencyIssues)} |
-| **Code Quality** | ${codeQualityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${codeQualityIssues.length - codeQualityIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') && (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')).length} | ${codeQualityIssues.length} | ${this.getRiskImpactLevel(codeQualityIssues)} |
+| Category | This PR | Pre-existing | Auto-fixable | Action Required |
+|----------|---------|--------------|--------------|-----------------|
+| **Security** | ${securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${securityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${securityIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Performance** | ${performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${performanceIssues.filter(i => i.category === 'EXISTING_REST').length} | ${performanceIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Architecture** | ${architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${architectureIssues.filter(i => i.category === 'EXISTING_REST').length} | ${architectureIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Dependencies** | ${dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${dependencyIssues.filter(i => i.category === 'EXISTING_REST').length} | ${dependencyIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Code Quality** | ${codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${codeQualityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${codeQualityIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
 
 **Legend:**
-- **Blocking:** Critical/High severity issues in NEW or EXISTING_MODIFIED files (must fix before merge)
-- **Backlog:** Medium/Low severity or pre-existing issues (can be addressed later)
-- **Risk Level:** Overall impact assessment based on severity distribution
+- **This PR:** Issues in files modified by this PR (NEW + EXISTING_MODIFIED)
+- **Pre-existing:** Issues in files NOT touched by this PR (EXISTING_REST)
+- **Auto-fixable:** Issues with available 1-click fixes
+- **Action Required:** Priority based on severity of issues introduced/modified by this PR
 
 ### Recommendations
 ${(() => {
@@ -6546,11 +6577,11 @@ Continue following best practices and consider integrating static analysis into 
       content += `### Category Breakdown\n\n`;
       content += `| Category | Your Score | Team Avg | Status |\n`;
       content += `|----------|------------|----------|--------|\n`;
-      content += `| 🔒 Security | ${categoryScores.security}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.security, teamAvg)} |\n`;
-      content += `| ⚡ Performance | ${categoryScores.performance}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.performance, teamAvg)} |\n`;
-      content += `| 🏗️  Architecture | ${categoryScores.architecture}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.architecture, teamAvg)} |\n`;
-      content += `| 📦 Dependencies | ${categoryScores.dependencies}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.dependencies, teamAvg)} |\n`;
-      content += `| ✨ Code Quality | ${categoryScores.codeQuality}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.codeQuality, teamAvg)} |\n\n`;
+      content += `| 🔒 Security | ${categoryScores.security}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.security, teamAvg, totalDevelopers)} |\n`;
+      content += `| ⚡ Performance | ${categoryScores.performance}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.performance, teamAvg, totalDevelopers)} |\n`;
+      content += `| 🏗️  Architecture | ${categoryScores.architecture}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.architecture, teamAvg, totalDevelopers)} |\n`;
+      content += `| 📦 Dependencies | ${categoryScores.dependencies}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.dependencies, teamAvg, totalDevelopers)} |\n`;
+      content += `| ✨ Code Quality | ${categoryScores.codeQuality}/100 | ${teamAvg}/100 | ${this.getStatusEmoji(categoryScores.codeQuality, teamAvg, totalDevelopers)} |\n\n`;
 
       // BUG #3 FIX (Session 30): Clarify this is developer's OWN performance trend (not team comparison)
       // Shows "Your Performance Trend" even for solo developers (tracks personal improvement)
@@ -6781,11 +6812,233 @@ Continue following best practices and consider integrating static analysis into 
     }
   }
 
-  private getStatusEmoji(yourScore: number, teamAvg: number): string {
+  private getStatusEmoji(yourScore: number, teamAvg: number, teamSize = 1): string {
+    // Solo developer - no comparison needed
+    if (teamSize === 1) return '👤 Solo Developer';
+
+    // Team comparison
     if (yourScore >= teamAvg + 10) return '🌟 Excellent';
-    if (yourScore >= teamAvg) return '✅ Above Average';
-    if (yourScore >= teamAvg - 10) return '➡️ Average';
+    if (yourScore > teamAvg) return '✅ Above Average';
+    if (yourScore === teamAvg) return '➡️ Average';
+    if (yourScore >= teamAvg - 10) return '⚠️ Average';
     return '⚠️ Below Average';
+  }
+
+  /**
+   * Generate XP Progress and Achievements Section
+   * Fetches user's XP and achievements from Supabase and generates markdown
+   * Session 66: Integrated for tier differentiation
+   */
+  private async generateXPAndAchievements(userEmail?: string): Promise<string> {
+    if (!userEmail || !this.supabase) {
+      return '';
+    }
+
+    try {
+      // Try to get user achievements from Supabase
+      // First, check if the user has any skill score history (proxy for "has used the system")
+      const { data: skillHistory, error: skillError } = await this.supabase
+        .from('skill_scores')
+        .select('overall_score, created_at')
+        .eq('developer_email', userEmail)
+        .order('created_at', { ascending: true })
+        .limit(10);
+
+      if (skillError) {
+        console.log(`[XP/Achievements] Error fetching skill history: ${skillError.message}`);
+      }
+
+      // Calculate XP based on skill history and analysis activity
+      // Each analysis = 25 XP, each high score (80+) = bonus 15 XP
+      const analysisCount = skillHistory?.length || 0;
+      let totalXp = analysisCount * 25;
+
+      // Bonus XP for high scores
+      const highScores = (skillHistory || []).filter((s: any) => s.overall_score >= 80).length;
+      totalXp += highScores * 15;
+
+      // Calculate level from XP
+      const levelInfo = calculateLevel(totalXp);
+      const progressBar = generateXpProgressBar(totalXp, levelInfo.nextLevelXp);
+
+      // Build achievements based on activity
+      const achievements: UnlockedAchievement[] = [];
+
+      // Early Adopter - completed first analysis
+      if (analysisCount >= 1) {
+        achievements.push({
+          id: 'early-adopter',
+          name: 'Early Adopter',
+          description: 'Completed your first code analysis',
+          category: 'milestone',
+          tier: 'common',
+          unlockedAt: new Date(skillHistory![0]?.created_at || Date.now()),
+          xpValue: 10
+        });
+      }
+
+      // Quality Champion - 5+ high scores
+      if (highScores >= 5) {
+        achievements.push({
+          id: 'quality-champion',
+          name: 'Quality Champion',
+          description: 'Achieved 80+ score on 5 PRs',
+          category: 'quality',
+          tier: 'rare',
+          unlockedAt: new Date(),
+          xpValue: 100
+        });
+      }
+
+      // Centurion - 10+ analyses (simplified from 100 for early users)
+      if (analysisCount >= 10) {
+        achievements.push({
+          id: 'dedicated-developer',
+          name: 'Dedicated Developer',
+          description: `Completed ${Math.max(10, analysisCount)} code analyses`,
+          category: 'milestone',
+          tier: 'rare',
+          unlockedAt: new Date(),
+          xpValue: 75
+        });
+      }
+
+      // Get user's achievement style preference (default to professional)
+      let achievementStyle: 'professional' | 'gamified' = 'professional';
+      try {
+        const { data: prefs } = await this.supabase
+          .from('user_preferences')
+          .select('achievement_style')
+          .eq('user_email', userEmail)
+          .single();
+
+        if (prefs?.achievement_style === 'gamified') {
+          achievementStyle = 'gamified';
+        }
+      } catch {
+        // Use default professional style
+      }
+
+      // Generate the section
+      let content = `## 🎮 XP Progress & Achievements\n\n`;
+
+      // XP Progress Bar
+      content += `### Level ${levelInfo.level}: ${levelInfo.title}\n\n`;
+
+      // Breakdown of XP
+      content += `**Total XP:** ${totalXp.toLocaleString()}\n`;
+      content += `> 📊 **Breakdown:** ${analysisCount} analyses (${analysisCount * 25} XP) + ${highScores} high scores (${highScores * 15} XP)\n\n`;
+
+      content += `${progressBar}\n\n`;
+
+      // Achievement counts
+      const tierCounts = {
+        legendary: achievements.filter(a => a.tier === 'legendary').length,
+        epic: achievements.filter(a => a.tier === 'epic').length,
+        rare: achievements.filter(a => a.tier === 'rare').length,
+        common: achievements.filter(a => a.tier === 'common').length
+      };
+
+      content += `### Achievement Collection\n\n`;
+      content += `| Tier | Unlocked |\n`;
+      content += `|------|----------|\n`;
+      content += `| 🏆 Legendary | ${tierCounts.legendary} |\n`;
+      content += `| 💜 Epic | ${tierCounts.epic} |\n`;
+      content += `| 💙 Rare | ${tierCounts.rare} |\n`;
+      content += `| ⚪ Common | ${tierCounts.common} |\n\n`;
+
+      // Show achievements using the imported function
+      if (achievements.length > 0) {
+        content += generateAchievementsSection(achievements, achievementStyle, 3);
+      } else {
+        content += `### Start Your Journey!\n\n`;
+        content += `Complete code analyses to earn achievements and level up.\n\n`;
+        content += `**Next Achievements:**\n`;
+        content += `- 🎯 **Early Adopter** — Complete your first analysis (+10 XP)\n`;
+        content += `- ⭐ **Quality Champion** — Get 80+ score on 5 PRs (+100 XP)\n`;
+        content += `- 🏅 **Dedicated Developer** — Complete 10 analyses (+75 XP)\n`;
+      }
+
+      return content;
+    } catch (error) {
+      console.error('[V9GroupedReportFormatter] Error generating XP/Achievements:', error);
+      return ''; // Silent fail - optional section
+    }
+  }
+
+  /**
+   * Generate Community Impact Section
+   * Shows how user's pattern contributions have helped other developers
+   * Session 66: Integrated for tier differentiation
+   */
+  private async generateCommunityImpact(userEmail?: string): Promise<string> {
+    if (!userEmail || !this.supabase) {
+      return '';
+    }
+
+    try {
+      // First try: Check pattern_contributions table (new schema - may not exist yet)
+      let totalPatterns = 0;
+      let totalUsageCount = 0;
+      let topPatterns: any[] = [];
+
+      // Try querying pattern_contributions table (if migrations have been applied)
+      const { data: contributions, error: contribError } = await this.supabase
+        .from('pattern_contributions')
+        .select(`
+          pattern_id,
+          contributed_at,
+          fix_patterns!inner(id, name, rule_id, apply_count, status)
+        `)
+        .eq('contributor_email', userEmail)
+        .limit(10);
+
+      if (!contribError && contributions && contributions.length > 0) {
+        // Use pattern contributions data
+        topPatterns = contributions
+          .filter((c: any) => c.fix_patterns?.status === 'active')
+          .map((c: any) => ({
+            patternId: c.pattern_id,
+            patternName: c.fix_patterns?.name || c.fix_patterns?.rule_id,
+            ruleId: c.fix_patterns?.rule_id,
+            language: 'java', // Default for now
+            contributedAt: new Date(c.contributed_at),
+            usageCount: c.fix_patterns?.apply_count || 0,
+            usersHelped: Math.max(1, Math.floor((c.fix_patterns?.apply_count || 0) / 3)),
+            timeSavedMinutes: (c.fix_patterns?.apply_count || 0) * 5
+          }));
+
+        totalPatterns = topPatterns.length;
+        totalUsageCount = topPatterns.reduce((sum: number, p: any) => sum + p.usageCount, 0);
+      } else {
+        // Fallback: pattern_contributions table doesn't exist yet
+        // Generate the "Start Contributing" section to encourage future contributions
+        console.log(`[CommunityImpact] Contribution tracking not yet available: ${contribError?.message || 'no data'}`);
+      }
+
+      // Calculate community impact metrics
+      const usersHelped = totalUsageCount > 0 ? Math.max(1, Math.floor(totalUsageCount / 3)) : 0;
+      const timeSavedHours = (totalUsageCount * 5) / 60;
+
+      // Build community impact summary
+      const impact: CommunityImpactSummary = {
+        totalPatternsContributed: totalPatterns,
+        totalUsersHelped: usersHelped,
+        totalTimeSavedHours: timeSavedHours,
+        totalUsageCount: totalUsageCount,
+        topPatterns: topPatterns.slice(0, 5),
+        percentileRank: totalPatterns > 10 ? 10 : totalPatterns > 5 ? 25 : totalPatterns > 0 ? 50 : undefined
+      };
+
+      // Default privacy preferences (user_preferences table may not exist yet)
+      const privacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false };
+
+      // Generate the section using imported function
+      return generateCommunityImpactSection(impact, privacyPrefs);
+    } catch (error) {
+      console.error('[V9GroupedReportFormatter] Error generating Community Impact:', error);
+      return ''; // Silent fail - optional section
+    }
   }
 
   /**
@@ -6837,35 +7090,35 @@ Continue following best practices and consider integrating static analysis into 
 |-------|-------|----------------|--------------|------|------|
 `;
         activeAgents.forEach((agent: any) => {
-        const issues = agent.issuesFound || agent.issues || 0;
-        const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
-        const costValue = agent.cost || 0;
-        // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
-        const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
+          const issues = agent.issuesFound || agent.issues || 0;
+          const time = agent.duration ? (agent.duration / 1000).toFixed(1) + 's' : 'N/A';
+          const costValue = agent.cost || 0;
+          // Check for zero cost (including 0, 0.0, 0.00, etc.) or very small values
+          const cost = (costValue === 0 || costValue < 0.0001) ? 'FREE' : '$' + costValue.toFixed(4);
 
-        // BUG #6 FIX: Lookup model dynamically if not provided in metadata
-        let model = agent.model || 'N/A';
-        if (model === 'N/A' && this.modelConfigResolver) {
-          // Extract role from agent name (e.g., "Security Agent" → "security")
-          const agentName = (agent.name || agent.agent || '').toLowerCase();
-          let role = 'code_quality';  // default
-          if (agentName.includes('security')) role = 'security';
-          else if (agentName.includes('performance')) role = 'performance';
-          else if (agentName.includes('architecture')) role = 'architecture';
-          else if (agentName.includes('dependencies') || agentName.includes('dependency')) role = 'dependency';
+          // BUG #6 FIX: Lookup model dynamically if not provided in metadata
+          let model = agent.model || 'N/A';
+          if (model === 'N/A' && this.modelConfigResolver) {
+            // Extract role from agent name (e.g., "Security Agent" → "security")
+            const agentName = (agent.name || agent.agent || '').toLowerCase();
+            let role = 'code_quality';  // default
+            if (agentName.includes('security')) role = 'security';
+            else if (agentName.includes('performance')) role = 'performance';
+            else if (agentName.includes('architecture')) role = 'architecture';
+            else if (agentName.includes('dependencies') || agentName.includes('dependency')) role = 'dependency';
 
-          try {
-            // Synchronously get cached model config (avoid await in forEach)
-            const modelConfig = this.modelConfigResolver.getCachedConfiguration?.(role, this.detectedLanguage, this.detectedRepoSize);
-            if (modelConfig?.primary_model) {
-              model = modelConfig.primary_model;
+            try {
+              // Synchronously get cached model config (avoid await in forEach)
+              const modelConfig = this.modelConfigResolver.getCachedConfiguration?.(role, this.detectedLanguage, this.detectedRepoSize);
+              if (modelConfig?.primary_model) {
+                model = modelConfig.primary_model;
+              }
+            } catch (e) {
+              // Silently fall back to N/A if lookup fails
             }
-          } catch (e) {
-            // Silently fall back to N/A if lookup fails
           }
-        }
 
-        content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
+          content += `| ${agent.name || agent.agent} | ${model} | ${agent.filesAnalyzed || agent.files || 'N/A'} | ${issues} | ${time} | ${cost} |\n`;
         });
       } // End of activeAgents.length > 0 check
     }

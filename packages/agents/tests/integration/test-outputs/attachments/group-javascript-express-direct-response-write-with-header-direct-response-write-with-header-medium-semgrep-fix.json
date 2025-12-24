@@ -4,7 +4,7 @@
   "rule": "javascript.express.direct-response-write-with-header.direct-response-write-with-header",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "To mitigate this vulnerability, implement input validation and output encoding: 1. Validate user input to ensure it conforms to expected formats and reject any input that doesn't meet these criteria. 2. Use output encoding functions to safely render user input in the response, preventing the execution of malicious scripts. For Express.js applications, consider using libraries like 'express-validator' for input validation and 'xss-filters' for output encoding. These practices are recommended by Semgrep's 'javascript.express.security.audit.xss.direct-response-write.direct-response-write' rule to prevent XSS vulnerabilities.",
+  "description": "This issue was detected by semgrep as a security concern. Rule: javascript.express.direct-response-write-with-header.direct-response-write-with-header",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "const xssFilters = require('xss-filters');\n\napp.get('/some-route', (req, res) => {\n  const userInput = req.query.userInput;\n  const sanitizedInput = xssFilters.inHTMLData(userInput);\n  res.send(sanitizedInput);\n});"
+      "after": ""
     },
-    "instructions": "To mitigate this vulnerability, implement input validation and output encoding: 1. Validate user input to ensure it conforms to expected formats and reject any input that doesn't meet these criteria. 2. Use output encoding functions to safely render user input in the response, preventing the execution of malicious scripts. For Express.js applications, consider using libraries like 'express-validator' for input validation and 'xss-filters' for output encoding. These practices are recommended by Semgrep's 'javascript.express.security.audit.xss.direct-response-write.direct-response-write' rule to prevent XSS vulnerabilities."
+    "instructions": "Run `semgrep --config auto <file>` for auto-fix suggestions. See Semgrep rules at https://semgrep.dev/r/javascript.express.direct-response-write-with-header.direct-response-write-with-header"
   },
   "locations": [
     {

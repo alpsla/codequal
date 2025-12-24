@@ -7,6 +7,7 @@
  * Tiers:
  * - Tier 1: Native tool fix (eslint --fix, ruff --fix, etc.)
  * - Tier 2: Dedicated fixer tool (Sorald for PMD, pyupgrade, etc.)
+ * - Tier 2.5: Cloud API Fixers (Corgea, etc.) - PRO tier only (Session 60)
  * - Tier 3: AI generation (fallback when no tool support)
  */
 
@@ -54,16 +55,51 @@ export interface FixBatch {
 export interface RoutingResult {
   tier1: FixBatch[];
   tier2: FixBatch[];
+  tier2_5: FixBatch[];  // Cloud API Fixers (Session 60)
   tier3: FixBatch[];
   summary: {
     total: number;
     tier1Count: number;
     tier2Count: number;
+    tier2_5Count: number;  // Cloud API Fixers (Session 60)
     tier3Count: number;
     safeForAutoApply: number;
     estimatedCost: number;
+    cloudFixerEligible: number;  // Issues eligible for cloud fixers
   };
 }
+
+/**
+ * Subscription tier for cloud fixer access (Session 60)
+ */
+export type SubscriptionTier = 'basic' | 'pro' | 'enterprise';
+
+/**
+ * Categories that Corgea can handle effectively (Session 60)
+ * Based on Corgea's specialization in security and code quality issues
+ */
+export const CLOUD_FIXER_CATEGORIES = [
+  'security',
+  'code_quality',
+  'bugs',
+  'best_practices',
+  'vulnerability',
+] as const;
+
+/**
+ * Tools whose issues Corgea can fix (Session 60)
+ * These tools output findings that Corgea understands well
+ */
+export const CLOUD_FIXER_COMPATIBLE_TOOLS = [
+  'semgrep',
+  'bandit',
+  'gosec',
+  'pmd',
+  'eslint',
+  'spotbugs',
+  'pylint',
+  'brakeman',
+] as const;
 
 // ============================================================================
 // EXECUTION TIME CATEGORIES
@@ -101,6 +137,10 @@ const FIXER_SPEED: Record<string, 'fast' | 'medium' | 'slow'> = {
 
   // AI is considered slow
   ai: 'slow',
+
+  // Cloud API Fixers (Session 60) - slow due to async API calls
+  corgea: 'slow',
+  'cloud-api': 'slow',
 };
 
 // ============================================================================
@@ -108,6 +148,33 @@ const FIXER_SPEED: Record<string, 'fast' | 'medium' | 'slow'> = {
 // ============================================================================
 
 export class FixRouter {
+  /**
+   * Check if an issue is eligible for cloud fixer processing (Session 60)
+   *
+   * Cloud fixers (Corgea) work best with:
+   * - Security issues from compatible tools
+   * - Code quality issues from compatible tools
+   * - Medium to critical severity (skip low to save API calls)
+   */
+  isCloudFixerEligible(issue: IssueToFix): boolean {
+    // Check tool compatibility
+    const toolId = issue.toolId.toLowerCase();
+    const isCompatibleTool = CLOUD_FIXER_COMPATIBLE_TOOLS.some(
+      tool => toolId.includes(tool)
+    );
+
+    if (!isCompatibleTool) {
+      return false;
+    }
+
+    // Skip low severity to optimize API usage
+    if (issue.severity === 'low') {
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    * Route a single issue to the appropriate fixer
    */
@@ -139,8 +206,14 @@ export class FixRouter {
 
   /**
    * Route multiple issues and batch by fixer
+   *
+   * @param issues - Issues to route
+   * @param options - Optional routing options including subscription tier
    */
-  routeAndBatch(issues: IssueToFix[]): RoutingResult {
+  routeAndBatch(
+    issues: IssueToFix[],
+    options?: { tier?: SubscriptionTier }
+  ): RoutingResult {
     // Route all issues
     const routes = issues.map(issue => this.routeIssue(issue));
 
@@ -149,28 +222,85 @@ export class FixRouter {
     const tier2Routes = routes.filter(r => r.tier === 2);
     const tier3Routes = routes.filter(r => r.tier === 3);
 
+    // SESSION 60: Identify cloud fixer eligible issues from tier 3
+    // Cloud fixers (Tier 2.5) can handle some tier 3 issues before AI fallback
+    const cloudFixerEligible = tier3Routes.filter(r =>
+      this.isCloudFixerEligible(r.issue)
+    );
+
+    // Determine if cloud fixers should be used based on subscription tier
+    const userTier = options?.tier || 'basic';
+    const canUseCloudFixers = userTier !== 'basic';
+
+    // If PRO/ENTERPRISE tier, move eligible issues to tier 2.5
+    let tier2_5Routes: FixRoute[] = [];
+    let remainingTier3Routes = tier3Routes;
+
+    if (canUseCloudFixers && cloudFixerEligible.length > 0) {
+      tier2_5Routes = cloudFixerEligible.map(route => ({
+        ...route,
+        fixer: 'corgea',
+        tier: 2.5 as any,  // Special tier for cloud fixers
+        estimatedTime: 'slow' as const,
+        requiresContext: true,
+      }));
+
+      // Remove cloud fixer eligible issues from tier 3
+      const cloudFixerIssueIds = new Set(cloudFixerEligible.map(r => r.issue.id));
+      remainingTier3Routes = tier3Routes.filter(r => !cloudFixerIssueIds.has(r.issue.id));
+    }
+
     // Create batches for each tier
     const tier1Batches = this.createBatches(tier1Routes, 1);
     const tier2Batches = this.createBatches(tier2Routes, 2);
-    const tier3Batches = this.createBatches(tier3Routes, 3);
+    const tier2_5Batches = canUseCloudFixers
+      ? this.createCloudFixerBatches(tier2_5Routes)
+      : [];
+    const tier3Batches = this.createBatches(remainingTier3Routes, 3);
 
     // Calculate summary
     const safeCount = routes.filter(r => r.safeForAutoApply).length;
-    const estimatedCost = this.estimateAICost(tier3Routes.length);
+    const estimatedCost = this.estimateAICost(remainingTier3Routes.length);
 
     return {
       tier1: tier1Batches,
       tier2: tier2Batches,
+      tier2_5: tier2_5Batches,
       tier3: tier3Batches,
       summary: {
         total: routes.length,
         tier1Count: tier1Routes.length,
         tier2Count: tier2Routes.length,
-        tier3Count: tier3Routes.length,
+        tier2_5Count: tier2_5Routes.length,
+        tier3Count: remainingTier3Routes.length,
         safeForAutoApply: safeCount,
         estimatedCost,
+        cloudFixerEligible: cloudFixerEligible.length,
       },
     };
+  }
+
+  /**
+   * Create batches for cloud API fixers (Session 60)
+   *
+   * Cloud fixers are batched by language for optimal API efficiency
+   */
+  private createCloudFixerBatches(routes: FixRoute[]): FixBatch[] {
+    if (routes.length === 0) return [];
+
+    // For cloud fixers, create a single batch per language
+    // Corgea processes all issues in one API call
+    const files = [...new Set(routes.map(r => r.issue.file))];
+
+    return [{
+      fixer: 'corgea',
+      tier: 2.5 as any,
+      command: undefined,  // Cloud API, no local command
+      issues: routes,
+      files,
+      estimatedTime: 'slow',
+      safeForAutoApply: false,  // Always needs review
+    }];
   }
 
   /**
@@ -291,7 +421,8 @@ export class FixRouter {
     // 4. Fast Tier 2 tools (parallel)
     // 5. Medium Tier 2 tools (limited parallel)
     // 6. Slow Tier 2 tools (sequential)
-    // 7. AI fixes (batched by file for context)
+    // 7. Tier 2.5 Cloud API fixers (Corgea) - PRO tier only (Session 60)
+    // 8. AI fixes (batched by file for context)
 
     const plan: FixBatch[] = [];
 
@@ -304,6 +435,9 @@ export class FixRouter {
     plan.push(...routingResult.tier2.filter(b => b.estimatedTime === 'fast'));
     plan.push(...routingResult.tier2.filter(b => b.estimatedTime === 'medium'));
     plan.push(...routingResult.tier2.filter(b => b.estimatedTime === 'slow'));
+
+    // Tier 2.5: Cloud API fixers (Session 60)
+    plan.push(...routingResult.tier2_5);
 
     // Tier 3 (AI)
     plan.push(...routingResult.tier3);
@@ -336,11 +470,13 @@ export class FixRouter {
     console.log(`   Total issues: ${result.summary.total}`);
     console.log('');
     console.log('   By Tier:');
-    console.log(`     Tier 1 (Native fix): ${result.summary.tier1Count} (${this.percent(result.summary.tier1Count, result.summary.total)}%)`);
-    console.log(`     Tier 2 (Fixer tool): ${result.summary.tier2Count} (${this.percent(result.summary.tier2Count, result.summary.total)}%)`);
-    console.log(`     Tier 3 (AI needed):  ${result.summary.tier3Count} (${this.percent(result.summary.tier3Count, result.summary.total)}%)`);
+    console.log(`     Tier 1 (Native fix):     ${result.summary.tier1Count} (${this.percent(result.summary.tier1Count, result.summary.total)}%)`);
+    console.log(`     Tier 2 (Fixer tool):     ${result.summary.tier2Count} (${this.percent(result.summary.tier2Count, result.summary.total)}%)`);
+    console.log(`     Tier 2.5 (Cloud API):    ${result.summary.tier2_5Count} (${this.percent(result.summary.tier2_5Count, result.summary.total)}%)`);
+    console.log(`     Tier 3 (AI needed):      ${result.summary.tier3Count} (${this.percent(result.summary.tier3Count, result.summary.total)}%)`);
     console.log('');
     console.log(`   Safe for auto-apply: ${result.summary.safeForAutoApply} (${this.percent(result.summary.safeForAutoApply, result.summary.total)}%)`);
+    console.log(`   Cloud fixer eligible: ${result.summary.cloudFixerEligible} issues`);
     console.log(`   Estimated AI cost:   $${result.summary.estimatedCost.toFixed(2)}`);
     console.log('');
 
@@ -353,6 +489,14 @@ export class FixRouter {
     console.log('   Tier 2 Batches:');
     for (const batch of result.tier2) {
       console.log(`     - ${batch.fixer}: ${batch.issues.length} issues, ${batch.files.length} files (${batch.estimatedTime})`);
+    }
+
+    // Session 60: Print Tier 2.5 cloud fixer batches
+    if (result.tier2_5.length > 0) {
+      console.log('   Tier 2.5 Batches (Cloud API - PRO tier):');
+      for (const batch of result.tier2_5) {
+        console.log(`     - ${batch.fixer}: ${batch.issues.length} issues, ${batch.files.length} files (async API)`);
+      }
     }
 
     console.log('   Tier 3 Batches:');

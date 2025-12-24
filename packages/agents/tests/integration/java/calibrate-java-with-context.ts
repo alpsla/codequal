@@ -4,8 +4,14 @@
  * Properly reads code snippets from files before sending to AI fixer.
  * This ensures patterns have actual code, not "please provide code" errors.
  *
+ * LARGE REPO SUPPORT (>10,000 files):
+ * - Automatically detects large repos and uses 'fast' analysis mode
+ * - Uses SmartFileSelector to pick ~500 representative files
+ * - Reduces Semgrep timeout issues on massive codebases
+ *
  * Usage:
  *   JAVA_TEST_REPO=spring-projects/spring-petclinic MAX_ISSUES=50 npx ts-node tests/integration/java/calibrate-java-with-context.ts
+ *   JAVA_TEST_REPO=elastic/elasticsearch MAX_ISSUES=150 npx ts-node tests/integration/java/calibrate-java-with-context.ts
  */
 
 import dotenv from 'dotenv';
@@ -22,6 +28,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const TEST_REPO = process.env.JAVA_TEST_REPO || 'spring-projects/spring-petclinic';
 const MAX_ISSUES = parseInt(process.env.MAX_ISSUES || '50', 10);
+const LARGE_REPO_THRESHOLD = 10000; // Files count threshold for "large repo" mode
 
 // Dynamic model configuration - retrieved from Supabase
 let calibrationModel: string | null = null;
@@ -64,8 +71,39 @@ interface IssueWithContext {
 let globalRepoPath = '';
 
 /**
+ * Count Java files in a repository to determine if it's a "large repo"
+ */
+function countJavaFiles(repoPath: string): number {
+  try {
+    const output = execSync(
+      `find "${repoPath}" -name "*.java" -type f | wc -l`,
+      { encoding: 'utf8', timeout: 60000 }
+    );
+    return parseInt(output.trim(), 10) || 0;
+  } catch (error) {
+    console.warn('   ⚠️ Could not count files, assuming large repo');
+    return LARGE_REPO_THRESHOLD + 1; // Assume large if we can't count
+  }
+}
+
+/**
+ * Get repository size in MB
+ */
+function getRepoSizeMB(repoPath: string): number {
+  try {
+    const output = execSync(
+      `du -sm "${repoPath}" | cut -f1`,
+      { encoding: 'utf8', timeout: 30000 }
+    );
+    return parseInt(output.trim(), 10) || 0;
+  } catch (error) {
+    return 0;
+  }
+}
+
+/**
  * Extract code snippet from file (10 lines around the issue)
- * Handles macOS /private prefix, relative paths, and other variations
+ * Handles macOS /private prefix, relative paths, Docker /workspace paths, and other variations
  */
 function extractCodeSnippet(filePath: string, line: number): string {
   try {
@@ -77,6 +115,12 @@ function extractCodeSnippet(filePath: string, line: number): string {
       // Handle relative paths (./file.java or file.java)
       path.join(globalRepoPath, filePath),
       path.join(globalRepoPath, filePath.replace(/^\.\//, '')),
+      // Handle Docker /workspace/ prefix (Checkstyle, PMD run in Docker)
+      path.join(globalRepoPath, filePath.replace(/^\/workspace\//, '')),
+      path.join(globalRepoPath, filePath.replace(/^\/workspace/, '')),
+      // Handle /workspace without trailing slash
+      filePath.replace(/^\/workspace\//, globalRepoPath + '/'),
+      filePath.replace(/^\/workspace/, globalRepoPath),
     ];
 
     let actualPath = '';
@@ -274,10 +318,11 @@ async function calibrate() {
 
   console.log(`
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║          JAVA PATTERN CALIBRATION WITH CODE CONTEXT                          ║
+║       JAVA PATTERN CALIBRATION (Large Repo Support Enabled)                  ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  Repository: ${TEST_REPO.padEnd(62)}║
-║  Max Issues: ${MAX_ISSUES.toString().padEnd(62)}║
+║  Repository:     ${TEST_REPO.padEnd(58)}║
+║  Max Issues:     ${MAX_ISSUES.toString().padEnd(58)}║
+║  Large Repo:     >${LARGE_REPO_THRESHOLD.toLocaleString()} files → 'fast' mode${' '.repeat(35)}║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 `);
 
@@ -298,10 +343,28 @@ async function calibrate() {
     globalRepoPath = repoPath;
     console.log('   ✅ Repository cloned\n');
 
+    // Step 1.5: Detect large repository
+    console.log('📊 Step 1.5: Analyzing repository size...');
+    const javaFileCount = countJavaFiles(repoPath);
+    const repoSizeMB = getRepoSizeMB(repoPath);
+    const isLargeRepo = javaFileCount > LARGE_REPO_THRESHOLD || repoSizeMB > 500;
+
+    console.log(`   📁 Java files: ${javaFileCount.toLocaleString()}`);
+    console.log(`   💾 Repository size: ${repoSizeMB} MB`);
+
+    // Determine analysis mode based on repo size
+    const analysisMode = isLargeRepo ? 'fast' : 'complete';
+    if (isLargeRepo) {
+      console.log(`   🚀 LARGE REPO DETECTED - Using '${analysisMode}' mode (skip style checks, shorter timeouts)`);
+      console.log(`      This prevents Semgrep/Checkstyle timeouts on massive codebases\n`);
+    } else {
+      console.log(`   ✅ Normal repo size - Using '${analysisMode}' mode\n`);
+    }
+
     // Run Java tools
     console.log('🔍 Step 2: Running Java security analysis...');
     const orchestrator = new JavaToolOrchestrator();
-    const scanResults = await orchestrator.orchestrate(repoPath, 'base', { analysisMode: 'complete' });
+    const scanResults = await orchestrator.orchestrate(repoPath, 'base', { analysisMode });
 
     const allIssues = scanResults.toolResults?.flatMap(tr => tr.issues || []) || [];
     console.log(`   ✅ Found ${allIssues.length} issues\n`);
@@ -380,11 +443,14 @@ async function calibrate() {
     }
 
     const duration = (Date.now() - startTime) / 1000;
+    const modeLabel = isLargeRepo ? 'fast (large repo)' : 'complete';
     console.log(`
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                         CALIBRATION COMPLETE                                  ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  Repository:       ${TEST_REPO.padEnd(56)}║
+║  Java Files:       ${javaFileCount.toLocaleString().padEnd(56)}║
+║  Analysis Mode:    ${modeLabel.padEnd(56)}║
 ║  Unique Rules:     ${uniqueIssues.length.toString().padEnd(56)}║
 ║  With Context:     ${withContext.length.toString().padEnd(56)}║
 ║  Patterns Created: ${successCount.toString().padEnd(56)}║

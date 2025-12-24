@@ -40,8 +40,8 @@ export interface LSPWorkspaceEdit {
 
 // Enhanced metadata for IDE AI generation (hybrid approach)
 export interface LSPCodeActionData {
-  // Issue context
-  issue: {
+  // Issue context (optional for batch actions)
+  issue?: {
     type: 'code_quality' | 'security' | 'performance' | 'architecture' | 'dependency';
     rule: string;
     severity: 'critical' | 'high' | 'medium' | 'low';
@@ -54,15 +54,15 @@ export interface LSPCodeActionData {
     };
   };
 
-  // Fix recommendation
-  fix: {
+  // Fix recommendation (optional for batch actions)
+  fix?: {
     recommendation: string;      // How to fix the issue
     bestPractices: string[];     // Best practices to follow
     correctedCode: string;        // The actual fixed code
   };
 
-  // Code context for AI
-  context: {
+  // Code context for AI (optional for batch actions)
+  context?: {
     originalCode: string;
     surroundingLines?: string[];
     fileType: string;
@@ -73,10 +73,10 @@ export interface LSPCodeActionData {
   // AI prompt (if IDE wants to use it)
   aiPrompt?: string;
 
-  // Validation metadata
-  codequalFix: {
+  // Validation metadata (optional for batch actions)
+  codequalFix?: {
     confidence: number;      // 0.0 - 1.0
-    source: 'ai_generated' | 'rule_based' | 'template';
+    source: 'ai_generated' | 'rule_based' | 'template' | 'ai_needed';  // ai_needed = IDE AI should generate
     verified: boolean;       // Has this type of fix been validated?
   };
 
@@ -97,16 +97,34 @@ export interface LSPCodeActionData {
     toolName: string;
     issueCount: number;      // How many issues of this type in the PR
   };
+
+  // Batch action metadata (only for "Fix All" actions)
+  batchSummary?: {
+    totalIssues: number;
+    filesAffected: number;
+    byCategory: { security: number; quality: number; performance: number; style: number };
+    bySeverity: { critical: number; high: number; medium: number; low: number };
+  };
+  topIssueTypes?: { rule: string; count: number; severity: string }[];
+  fixTierBreakdown?: { tier1: number; tier2: number; tier3: number; unfixable: number };
 }
 
 export interface LSPCodeAction {
   title: string;
   kind: 'quickfix' | 'refactor' | 'source';
-  edit: LSPWorkspaceEdit;
+  edit?: LSPWorkspaceEdit;  // Optional: omitted for AI-needed actions where IDE generates the fix
   diagnostics?: LSPDiagnostic[];
 
   // NEW: Enhanced metadata for IDE AI (hybrid approach)
   data?: LSPCodeActionData;
+}
+
+export interface LSPDiagnosticRelatedInformation {
+  location: {
+    uri: string;
+    range: LSPRange;
+  };
+  message: string;
 }
 
 export interface LSPDiagnostic {
@@ -115,6 +133,7 @@ export interface LSPDiagnostic {
   code: string;
   source: string;
   message: string;
+  relatedInformation?: LSPDiagnosticRelatedInformation[];
 }
 
 // ============================================================================
@@ -201,11 +220,55 @@ export class LSPSARIFConverter {
   /**
    * BUG-072 FIX: Clean correctedCode to remove problematic AI patterns
    * Strips "// Should be changed to:" comments and before/after comparison text
+   * 
+   * BUG-LSP-001 FIX: Also handles template patterns embedded in code like:
+   * "public static void main(String[] args) {\n\nshould be:\n\n..."
    */
-  private cleanCorrectedCode(code: string): string {
+  /**
+   * Clean and validate correctedCode before applying
+   * BUG-LSP-004: Added file context validation to prevent mismatched fixes
+   */
+  private cleanCorrectedCode(code: string, targetFile?: string): string {
     if (!code) return code;
 
     let cleaned = code;
+
+    // BUG-LSP-001 FIX: Check for template patterns embedded in code (not comments)
+    // Pattern: "X should be: Y" or "X\n\nshould be:\n\nY"
+    const templatePatterns = [
+      /\n\nshould be:\n\n/i,
+      /\n\nchange to:\n\n/i,
+      /\n\nreplace with:\n\n/i,
+      /\n\ninstead of:\n\n/i,
+    ];
+
+    for (const pattern of templatePatterns) {
+      if (pattern.test(cleaned)) {
+        // Split on the pattern and take the "after" part
+        const parts = cleaned.split(pattern);
+        if (parts.length >= 2) {
+          // Take the last part (the "after" code)
+          cleaned = parts[parts.length - 1].trim();
+          // If the "after" part still looks like template text, return empty
+          if (cleaned.includes('should be:') || cleaned.includes('}}')) {
+            console.warn('[LSP-SARIF] Detected template text in correctedCode, rejecting fix');
+            return ''; // Reject this fix entirely
+          }
+        }
+      }
+    }
+
+    // BUG-LSP-004 FIX: Validate fix matches target file context
+    if (targetFile && !this.isFixAppropriateForFile(cleaned, targetFile)) {
+      console.warn(`[LSP-SARIF] Fix content doesn't match target file ${targetFile}, rejecting`);
+      return ''; // Reject mismatched fix
+    }
+
+    // If code contains "should be:" anywhere (not in comments), it's likely template text
+    if (/(?<!\/\/.*)\bshould be:/i.test(cleaned)) {
+      console.warn('[LSP-SARIF] Detected "should be:" in code, rejecting fix');
+      return ''; // Reject this fix entirely
+    }
 
     // Remove "// Should be changed to:" and similar comment patterns
     cleaned = cleaned.replace(/\/\/\s*Should be changed to:?\s*\n?/gi, '');
@@ -262,6 +325,68 @@ export class LSPSARIFConverter {
 
     // If >60% of keywords match, they're probably before/after versions
     return matchCount / minLength > 0.6;
+  }
+
+  /**
+   * BUG-LSP-004 FIX: Validate that fix content is appropriate for the target file
+   * Prevents applying Pet.java code to MavenWrapperDownloader.java
+   */
+  private isFixAppropriateForFile(fixContent: string, targetFile: string): boolean {
+    if (!fixContent || !targetFile) return true; // No validation possible
+
+    const fileName = targetFile.split('/').pop()?.toLowerCase() || '';
+    const fixLower = fixContent.toLowerCase();
+
+    // Extract class name from file (e.g., "Pet.java" -> "pet")
+    const targetClassName = fileName.replace(/\.(java|ts|js|py|kt|scala)$/i, '');
+
+    // Check for obvious mismatches - fix contains class definitions for different classes
+    const classDefPattern = /\b(class|interface|enum)\s+(\w+)/gi;
+    const matches = [...fixContent.matchAll(classDefPattern)];
+
+    for (const match of matches) {
+      const definedClass = match[2].toLowerCase();
+      // If fix defines a class that doesn't match target file name, it's likely wrong
+      if (definedClass !== targetClassName &&
+          !targetClassName.includes(definedClass) &&
+          !definedClass.includes(targetClassName)) {
+        // Exception: Test files can contain test classes
+        if (!fileName.includes('test') && !definedClass.includes('test')) {
+          console.warn(`[LSP-SARIF] Fix defines class '${definedClass}' but target is '${targetClassName}'`);
+          return false;
+        }
+      }
+    }
+
+    // Check for method signatures that reference completely different entities
+    // e.g., "public Pet getPet(" in a non-Pet file
+    const methodPatterns = [
+      /\bpublic\s+(\w+)\s+get(\w+)\s*\(/gi,  // getter methods
+      /\bpublic\s+void\s+set(\w+)\s*\(/gi,   // setter methods
+    ];
+
+    for (const pattern of methodPatterns) {
+      const methodMatches = [...fixContent.matchAll(pattern)];
+      for (const match of methodMatches) {
+        const entityName = (match[1] || match[2] || '').toLowerCase();
+        // If method references an entity not related to target file
+        if (entityName.length > 3 && // Ignore short names like "int", "Pet"
+            !targetClassName.includes(entityName) &&
+            !entityName.includes(targetClassName) &&
+            !['void', 'string', 'int', 'long', 'list', 'set', 'map', 'boolean'].includes(entityName)) {
+
+          // Check if file might be a utility/wrapper that could legitimately contain this
+          if (!fileName.includes('util') && !fileName.includes('helper') && !fileName.includes('wrapper')) {
+            console.warn(`[LSP-SARIF] Fix contains '${entityName}' method but target is '${targetClassName}'`);
+            return false;
+          }
+        }
+      }
+    }
+
+    // Generic fixes (imports, simple refactors) should pass through
+    // Only reject fixes that clearly belong to a different context
+    return true;
   }
 
   /**
@@ -338,18 +463,165 @@ export class LSPSARIFConverter {
     // INDIVIDUAL ACTIONS (Per-issue fixes) - For granular control
     // ========================================================================
 
-    // Group issues by file for efficient processing
-    const issuesByFile = this.groupIssuesByFile(fixableIssues);
+    // Group issues by file for efficient processing - NOW INCLUDES ALL ISSUES
+    const allIssuesByFile = this.groupIssuesByFile(issues);
 
-    for (const [file, fileIssues] of Object.entries(issuesByFile)) {
+    for (const [file, fileIssues] of Object.entries(allIssuesByFile)) {
       for (const issue of fileIssues) {
         const fileUri = this.toFileUri(file, workspaceRoot);
-        const codeAction = this.createLSPCodeAction(issue, fileUri);
-        if (codeAction) codeActions.push(codeAction);
+        const hasFix = !!issue.fixSuggestion?.correctedCode;
+
+        if (hasFix) {
+          // Issue has pre-generated fix - create full Code Action with edit
+          const codeAction = this.createLSPCodeAction(issue, fileUri);
+          if (codeAction) codeActions.push(codeAction);
+        } else {
+          // Issue WITHOUT fix - create diagnostic action with rich metadata for IDE AI
+          const diagnosticAction = this.createLSPDiagnosticAction(issue, fileUri);
+          if (diagnosticAction) codeActions.push(diagnosticAction);
+        }
       }
     }
 
     return codeActions;
+  }
+
+  /**
+   * Create LSP Code Action for issues WITHOUT pre-generated fixes
+   * Includes rich metadata so IDE AIs (Cursor, Copilot) can generate fixes on-demand
+   */
+  private createLSPDiagnosticAction(
+    issue: EnrichedIssue,
+    fileUri: string
+  ): LSPCodeAction | null {
+    if (!issue.file || !issue.line) return null;
+
+    const line = (issue.line || 1) - 1; // Convert to 0-based
+    const issueType = this.determineIssueType(issue);
+    const fileExtension = fileUri.split('.').pop() || '';
+    const language = this.getLanguageFromExtension(fileExtension);
+
+    // Generate comprehensive explanation for IDE AI
+    const explanation = {
+      what: issue.fixSuggestion?.issueDescription?.what ||
+        issue.message ||
+        this.generateDefaultWhat(issue),
+      why: issue.fixSuggestion?.issueDescription?.why ||
+        this.generateDefaultWhy(issue),
+      impact: issue.fixSuggestion?.issueDescription?.impact ||
+        this.generateDefaultImpact(issue.severity, issue.category)
+    };
+
+    return {
+      title: `[AI Fix Needed] ${this.getTitleFromRule(issue.rule)}`,
+      kind: 'quickfix',  // Standard quickfix kind - metadata indicates AI needed
+      diagnostics: [{
+        range: {
+          start: { line, character: 0 },
+          end: { line: line + 1, character: 0 }
+        },
+        severity: this.mapSeverityToLSP(issue.severity),
+        code: issue.rule,
+        source: `codequal-${issue.tool}`,
+        message: issue.message
+      }],
+
+      // Rich metadata for IDE AI to generate fix
+      data: {
+        issue: {
+          type: issueType,
+          rule: issue.rule,
+          severity: issue.severity,
+          category: issue.category || 'code_quality',
+          description: issue.message || this.generateDefaultWhat(issue),
+          explanation
+        },
+        fix: {
+          recommendation: issue.fixSuggestion?.fix ||
+            issue.fixSuggestion?.explanation ||
+            this.generateFixRecommendation(issue),
+          bestPractices: issue.fixSuggestion?.bestPractices ||
+            this.generateBestPractices(issue),
+          correctedCode: null  // No pre-generated fix - IDE AI should generate
+        },
+        context: {
+          originalCode: issue.snippet || '',
+          surroundingLines: this.getSurroundingLines(issue),
+          fileType: fileExtension,
+          framework: this.detectFramework(issue.file),
+          language
+        },
+        aiPrompt: this.generateAIPrompt(issue, language),
+        codequalFix: {
+          confidence: 0,      // No fix yet
+          source: 'ai_needed' as const,  // Indicates AI generation required
+          verified: false
+        },
+        fixTier: {
+          tier: 3 as const,   // Tier 3 = AI fix required
+          fixer: 'ide-ai',
+          issueType: issueType as any,
+          fixable: true,      // Can be fixed by IDE AI
+          batchable: false
+        },
+        telemetry: {
+          ruleId: issue.rule,
+          toolName: issue.tool || 'unknown',
+          issueCount: 1
+        }
+      }
+    };
+  }
+
+  /**
+   * Generate fix recommendation for issues without pre-generated fixes
+   */
+  private generateFixRecommendation(issue: EnrichedIssue): string {
+    const rule = issue.rule || '';
+    const message = issue.message || '';
+
+    // Generate contextual recommendation based on issue type
+    if (rule.includes('security') || rule.includes('injection') || rule.includes('xss')) {
+      return `Security issue detected: ${message}. Sanitize user input, use parameterized queries, or apply proper encoding.`;
+    }
+    if (rule.includes('performance') || rule.includes('complexity')) {
+      return `Performance issue detected: ${message}. Consider optimizing the code path or reducing complexity.`;
+    }
+    if (rule.includes('deprecated')) {
+      return `Deprecated API usage: ${message}. Update to use the recommended modern alternative.`;
+    }
+
+    return `Issue detected: ${message}. Review the code and apply the appropriate fix based on best practices.`;
+  }
+
+  /**
+   * Generate best practices for issues without pre-generated fixes
+   */
+  private generateBestPractices(issue: EnrichedIssue): string[] {
+    const practices: string[] = [];
+    const rule = issue.rule || '';
+
+    if (rule.includes('security')) {
+      practices.push('Always validate and sanitize user input');
+      practices.push('Use parameterized queries for database operations');
+      practices.push('Apply principle of least privilege');
+    }
+    if (rule.includes('error') || rule.includes('exception')) {
+      practices.push('Handle errors gracefully with proper error messages');
+      practices.push('Log errors for debugging but avoid exposing sensitive info');
+    }
+    if (rule.includes('performance')) {
+      practices.push('Avoid unnecessary computations in loops');
+      practices.push('Use caching where appropriate');
+    }
+
+    if (practices.length === 0) {
+      practices.push('Follow language-specific coding standards');
+      practices.push('Write self-documenting code');
+      practices.push('Consider edge cases and error handling');
+    }
+
+    return practices;
   }
 
   /**
@@ -363,6 +635,7 @@ export class LSPSARIFConverter {
       repository: string;
       version: string;
       analyzedAt: string;
+      workspaceRoot?: string;  // Optional: for converting absolute paths to relative
     }
   ): SARIFReport {
     return {
@@ -370,7 +643,7 @@ export class LSPSARIFConverter {
       $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
       runs: [{
         tool: this.createSARIFTool(groups, metadata),
-        results: this.createSARIFResults(issues)
+        results: this.createSARIFResults(issues, metadata.workspaceRoot)
       }]
     };
   }
@@ -397,16 +670,21 @@ export class LSPSARIFConverter {
     for (const issue of issues) {
       if (!issue.fixSuggestion?.correctedCode || !issue.file) continue;
 
+      // BUG-LSP-001 FIX: Clean the code and skip if it returns empty (rejected template text)
+      // BUG-LSP-004 FIX: Also validate fix matches target file context
+      const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode, issue.file);
+      if (!cleanedCode) continue; // Skip issues with template/invalid/mismatched fixes
+
       const fileUri = this.toFileUri(issue.file, workspaceRoot);
       const line = (issue.line || 1) - 1; // Convert to 0-based
-      const endLine = line + this.countLines(issue.fixSuggestion.correctedCode);
+      const endLine = line + this.countLines(cleanedCode);
 
       const newEdit: LSPTextEdit = {
         range: {
           start: { line, character: 0 },
           end: { line: endLine, character: 0 }
         },
-        newText: this.cleanCorrectedCode(issue.fixSuggestion.correctedCode)
+        newText: cleanedCode
       };
 
       // BUG FIX: Check for overlapping ranges (not just same start line)
@@ -448,7 +726,18 @@ export class LSPSARIFConverter {
           severity: this.mapSeverityToLSP(issue.severity),
           code: issue.rule,
           source: `codequal-${issue.tool}`,
-          message: issue.message
+          message: issue.message,
+          // BUG-LSP-002 FIX: Include file path in diagnostic
+          relatedInformation: [{
+            location: {
+              uri: fileUri,
+              range: {
+                start: { line, character: 0 },
+                end: { line: line + 1, character: 0 }
+              }
+            },
+            message: `Issue in ${issue.file} (fix skipped - overlapping with another fix)`
+          }]
         });
         continue;
       }
@@ -456,7 +745,7 @@ export class LSPSARIFConverter {
       // Add non-overlapping edit
       changesByFile[fileUri].push(newEdit);
 
-      // Add diagnostic for this issue
+      // Add diagnostic for this issue with file reference
       diagnostics.push({
         range: {
           start: { line, character: 0 },
@@ -465,11 +754,26 @@ export class LSPSARIFConverter {
         severity: this.mapSeverityToLSP(issue.severity),
         code: issue.rule,
         source: `codequal-${issue.tool}`,
-        message: issue.message
+        message: issue.message,
+        // BUG-LSP-002 FIX: Include file path in diagnostic for IDE navigation
+        relatedInformation: [{
+          location: {
+            uri: fileUri,
+            range: {
+              start: { line, character: 0 },
+              end: { line: line + 1, character: 0 }
+            }
+          },
+          message: `Issue in ${issue.file}`
+        }]
       });
     }
 
     if (Object.keys(changesByFile).length === 0) return null;
+
+    // BUG-LSP-003 FIX: Build summary metadata for batch action
+    const issuesByCategory = this.categorizeIssues(issues);
+    const issuesBySeverity = this.groupIssuesBySeverity(issues);
 
     return {
       title,
@@ -477,8 +781,109 @@ export class LSPSARIFConverter {
       edit: {
         changes: changesByFile
       },
-      diagnostics
+      diagnostics,
+      // BUG-LSP-003 FIX: Add rich metadata to batch actions
+      data: {
+        batchSummary: {
+          totalIssues: issues.length,
+          filesAffected: Object.keys(changesByFile).length,
+          byCategory: {
+            security: issuesByCategory.security?.length || 0,
+            quality: issuesByCategory.quality?.length || 0,
+            performance: issuesByCategory.performance?.length || 0,
+            style: issuesByCategory.style?.length || 0
+          },
+          bySeverity: {
+            critical: issuesBySeverity.critical.length,
+            high: issuesBySeverity.high.length,
+            medium: issuesBySeverity.medium.length,
+            low: issuesBySeverity.low.length
+          }
+        },
+        // Include top 5 issue types for quick reference
+        topIssueTypes: this.getTopIssueTypes(issues, 5),
+        // Fix tier breakdown
+        fixTierBreakdown: this.getFixTierBreakdown(issues)
+      }
     };
+  }
+
+  /**
+   * Categorize issues by type (security, quality, performance, style)
+   */
+  private categorizeIssues(issues: EnrichedIssue[]): Record<string, EnrichedIssue[]> {
+    const categories: Record<string, EnrichedIssue[]> = {
+      security: [],
+      quality: [],
+      performance: [],
+      style: []
+    };
+
+    for (const issue of issues) {
+      const category = (issue.detectedCategory || issue.category || 'quality').toLowerCase();
+      if (category.includes('security')) {
+        categories.security.push(issue);
+      } else if (category.includes('performance')) {
+        categories.performance.push(issue);
+      } else if (category.includes('style') || category.includes('lint')) {
+        categories.style.push(issue);
+      } else {
+        categories.quality.push(issue);
+      }
+    }
+
+    return categories;
+  }
+
+  /**
+   * Get top N issue types by frequency
+   */
+  private getTopIssueTypes(issues: EnrichedIssue[], limit: number): Array<{ rule: string; count: number; severity: string }> {
+    const counts: Record<string, { count: number; severity: string }> = {};
+
+    for (const issue of issues) {
+      if (!counts[issue.rule]) {
+        counts[issue.rule] = { count: 0, severity: issue.severity };
+      }
+      counts[issue.rule].count++;
+    }
+
+    return Object.entries(counts)
+      .map(([rule, data]) => ({ rule, ...data }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+  }
+
+  /**
+   * Get fix tier breakdown (Tier 1: native tools, Tier 2: dedicated fixers, Tier 3: AI)
+   * Infers tier from tool type and fix availability
+   */
+  private getFixTierBreakdown(issues: EnrichedIssue[]): { tier1: number; tier2: number; tier3: number; unfixable: number } {
+    const breakdown = { tier1: 0, tier2: 0, tier3: 0, unfixable: 0 };
+
+    // Tier 1 tools: native formatters/linters with --fix
+    const tier1Tools = ['eslint', 'prettier', 'stylelint', 'ruff', 'black', 'isort', 'gofmt', 'rustfmt'];
+    // Tier 2 tools: dedicated security/quality fixers
+    const tier2Tools = ['semgrep', 'sorald', 'spotbugs', 'checkstyle', 'pmd', 'bandit'];
+
+    for (const issue of issues) {
+      if (!issue.fixSuggestion?.correctedCode) {
+        breakdown.unfixable++;
+        continue;
+      }
+
+      const toolLower = (issue.tool || '').toLowerCase();
+      if (tier1Tools.some(t => toolLower.includes(t))) {
+        breakdown.tier1++;
+      } else if (tier2Tools.some(t => toolLower.includes(t))) {
+        breakdown.tier2++;
+      } else {
+        // AI-generated fixes or unknown tools
+        breakdown.tier3++;
+      }
+    }
+
+    return breakdown;
   }
 
   private createLSPCodeAction(
@@ -508,6 +913,10 @@ export class LSPSARIFConverter {
         this.generateDefaultImpact(issue.severity, issue.category)
     };
 
+    // BUG-LSP-004 FIX: Validate fix matches target file before creating action
+    const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode, issue.file);
+    if (!cleanedCode) return null; // Fix rejected - doesn't match file context
+
     return {
       title: `Fix: ${this.getTitleFromRule(issue.rule)}`,
       kind: 'quickfix',
@@ -518,7 +927,7 @@ export class LSPSARIFConverter {
               start: { line, character: 0 },
               end: { line: endLine, character: 0 }
             },
-            newText: this.cleanCorrectedCode(issue.fixSuggestion.correctedCode)
+            newText: cleanedCode
           }]
         }
       },
@@ -683,20 +1092,25 @@ export class LSPSARIFConverter {
     };
   }
 
-  private createSARIFResults(issues: EnrichedIssue[]): SARIFResult[] {
+  private createSARIFResults(issues: EnrichedIssue[], workspaceRoot?: string): SARIFResult[] {
     return issues
       .filter(issue => issue.file && issue.line)
-      .map(issue => this.createSARIFResult(issue));
+      .map(issue => this.createSARIFResult(issue, workspaceRoot));
   }
 
-  private createSARIFResult(issue: EnrichedIssue): SARIFResult {
+  private createSARIFResult(issue: EnrichedIssue, workspaceRoot?: string): SARIFResult {
+    // Convert file path to relative if workspaceRoot is provided
+    const filePath = workspaceRoot
+      ? this.toRelativePath(issue.file, workspaceRoot)
+      : issue.file;
+
     const result: SARIFResult = {
       ruleId: issue.rule,
       level: this.mapSeverityToSARIF(issue.severity),
       message: { text: issue.message },
       locations: [{
         physicalLocation: {
-          artifactLocation: { uri: issue.file },
+          artifactLocation: { uri: filePath },
           region: {
             startLine: issue.line || 1,
             startColumn: issue.column,
@@ -706,24 +1120,28 @@ export class LSPSARIFConverter {
       }]
     };
 
-    // Add fix if available
+    // Add fix if available and valid for this file
     if (issue.fixSuggestion?.correctedCode) {
-      result.fixes = [{
-        description: {
-          text: issue.fixSuggestion.explanation || 'Apply suggested fix'
-        },
-        artifactChanges: [{
-          artifactLocation: { uri: issue.file },
-          replacements: [{
-            deletedRegion: {
-              startLine: issue.line || 1,
-              startColumn: issue.column,
-              endLine: (issue.line || 1) + this.countLines(issue.fixSuggestion.correctedCode)
-            },
-            insertedContent: { text: this.cleanCorrectedCode(issue.fixSuggestion.correctedCode) }
+      // BUG-LSP-004 FIX: Validate fix matches target file context
+      const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode, issue.file);
+      if (cleanedCode) {
+        result.fixes = [{
+          description: {
+            text: issue.fixSuggestion.explanation || 'Apply suggested fix'
+          },
+          artifactChanges: [{
+            artifactLocation: { uri: filePath },
+            replacements: [{
+              deletedRegion: {
+                startLine: issue.line || 1,
+                startColumn: issue.column,
+                endLine: (issue.line || 1) + this.countLines(cleanedCode)
+              },
+              insertedContent: { text: cleanedCode }
+            }]
           }]
-        }]
-      }];
+        }];
+      }
     }
 
     return result;
@@ -782,23 +1200,34 @@ export class LSPSARIFConverter {
     return grouped;
   }
 
-  private toFileUri(file: string, workspaceRoot: string): string {
+  /**
+   * Convert absolute file path to relative path by removing workspace root
+   * Used by both LSP (with file:// prefix) and SARIF (without prefix)
+   */
+  private toRelativePath(file: string, workspaceRoot: string): string {
     // Normalize path separators
     const normalizedFile = file.replace(/\\/g, '/');
-    const normalizedRoot = workspaceRoot.replace(/\\/g, '/');
+    const normalizedRoot = workspaceRoot.replace(/\\/g, '/').replace(/\/$/, '');
 
-    // Remove workspace root if present
+    // Remove workspace root if present to get relative path
     let relativePath = normalizedFile;
     if (normalizedFile.startsWith(normalizedRoot)) {
       relativePath = normalizedFile.substring(normalizedRoot.length);
     }
 
-    // Ensure leading slash
-    if (!relativePath.startsWith('/')) {
-      relativePath = '/' + relativePath;
+    // Remove leading slash for relative path
+    if (relativePath.startsWith('/')) {
+      relativePath = relativePath.substring(1);
     }
 
-    return `file://${normalizedRoot}${relativePath}`;
+    return relativePath;
+  }
+
+  private toFileUri(file: string, workspaceRoot: string): string {
+    const relativePath = this.toRelativePath(file, workspaceRoot);
+    // Return relative file URI - IDE will resolve relative to workspace
+    // This ensures portability across different machines/environments
+    return `file://${relativePath}`;
   }
 
   private getTitleFromRule(rule: string): string {

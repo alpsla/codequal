@@ -405,15 +405,57 @@ export class GitLabCodeQualityConverter {
       parts.push('');
     }
 
-    // Add corrected code if available
+    // Add corrected code if available (cleaned of template text)
     if (issue.fixSuggestion.correctedCode) {
-      parts.push('**Suggested Fix:**');
-      parts.push('```');
-      parts.push(issue.fixSuggestion.correctedCode);
-      parts.push('```');
+      const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode);
+      if (cleanedCode) {
+        parts.push('**Suggested Fix:**');
+        parts.push('```');
+        parts.push(cleanedCode);
+        parts.push('```');
+      }
     }
 
     return parts.length > 0 ? { body: parts.join('\n') } : undefined;
+  }
+
+  /**
+   * BUG-LSP-001 FIX: Clean correctedCode to remove template patterns
+   * Handles patterns like "X should be: Y" that slip through from pattern storage
+   */
+  private cleanCorrectedCode(code: string): string {
+    if (!code) return code;
+
+    let cleaned = code;
+
+    // Check for template patterns embedded in code (not comments)
+    const templatePatterns = [
+      /\n\nshould be:\n\n/i,
+      /\n\nchange to:\n\n/i,
+      /\n\nreplace with:\n\n/i,
+      /\n\ninstead of:\n\n/i,
+    ];
+
+    for (const pattern of templatePatterns) {
+      if (pattern.test(cleaned)) {
+        // Split on the pattern and take the "after" part
+        const parts = cleaned.split(pattern);
+        if (parts.length >= 2) {
+          cleaned = parts[parts.length - 1].trim();
+          // If the "after" part still looks like template text, return empty
+          if (cleaned.includes('should be:') || cleaned.includes('}}')) {
+            return ''; // Reject this fix entirely
+          }
+        }
+      }
+    }
+
+    // If code contains "should be:" anywhere (not in comments), reject it
+    if (/(?<!\/\/.*)\bshould be:/i.test(cleaned)) {
+      return ''; // Reject this fix entirely
+    }
+
+    return cleaned.trim();
   }
 
   // ==========================================================================

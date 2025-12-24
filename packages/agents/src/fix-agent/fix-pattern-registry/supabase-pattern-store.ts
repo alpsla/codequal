@@ -244,6 +244,41 @@ export class SupabasePatternStore {
       return false; // Reject empty patterns to prevent "poisoned" patterns in database
     }
 
+    // SESSION 49 FIX: Validate that pattern is not corrupted (AI asking for context instead of providing fix)
+    // These phrases indicate the AI failed to generate a proper fix and asked for more information
+    const CORRUPTED_PHRASES = [
+      'could you please provide',
+      'i need to see',
+      'please provide the',
+      'can you share',
+      'i would need',
+      'the complete code',
+      'the actual code',
+      'provide the complete',
+      'share the code',
+      'need more context',
+      'without seeing',
+      'cannot provide a fix',
+      'unable to provide',
+      'need to see the',
+      'please share',
+      'can you provide'
+    ];
+
+    // Check both template and examples for corrupted content
+    const templateContent = (pattern.fixTemplate?.template || '').toLowerCase();
+    const exampleContent = pattern.examples?.map(ex => (ex.after || '').toLowerCase()).join(' ') || '';
+    const allContent = `${templateContent} ${exampleContent}`;
+
+    const corruptedPhrase = CORRUPTED_PHRASES.find(phrase => allContent.includes(phrase));
+    if (corruptedPhrase) {
+      console.warn(
+        `[SupabasePatternStore] REJECTED corrupted pattern ${pattern.id?.substring(0, 8) || 'new'} for ${pattern.ruleId}: ` +
+        `contains "${corruptedPhrase}" - AI failed to generate proper fix`
+      );
+      return false; // Reject corrupted patterns
+    }
+
     try {
       // DUPLICATE PREVENTION: Check if pattern already exists for this rule_id + tool
       const { data: existing, error: lookupError } = await this.client

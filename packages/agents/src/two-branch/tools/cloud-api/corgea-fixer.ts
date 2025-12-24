@@ -41,7 +41,7 @@ export interface CorgeaConfig extends Omit<CloudAPIConfig, 'name' | 'baseUrl'> {
   /** Corgea API key */
   apiKey: string;
 
-  /** Optional: Override base URL (default: https://api.corgea.app) */
+  /** Optional: Override base URL (default: https://www.corgea.app/api/v1) */
   baseUrl?: string;
 
   /** Maximum time to wait for fixes in ms (default: 120000 = 2 min) */

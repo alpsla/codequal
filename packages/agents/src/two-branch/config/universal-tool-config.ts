@@ -125,7 +125,18 @@ export const UNIVERSAL_TOOL_REGISTRY: ToolDefinition[] = [
     requiresCompilation: false,
     runOnBothBranches: false // Only run on PR branch to save time
   },
-  
+  // Session 59 P2: Java Architecture Tools
+  {
+    name: 'jdepend',
+    displayName: 'JDepend',
+    category: ToolCategory.ADVANCED,
+    languages: ['java'],
+    priority: 5,  // Lower priority - run after quality/security tools
+    estimatedDuration: 20000,
+    requiresCompilation: false,  // Can use source-based analysis fallback
+    runOnBothBranches: true
+  },
+
   // Python Tools
   {
     name: 'pylint',
@@ -167,7 +178,49 @@ export const UNIVERSAL_TOOL_REGISTRY: ToolDefinition[] = [
     requiresCompilation: false,
     runOnBothBranches: true
   },
-  
+  // Session 51: Updated Python tools
+  {
+    name: 'ruff',
+    displayName: 'Ruff',
+    category: ToolCategory.CODE_QUALITY,
+    languages: ['python'],
+    priority: 10,
+    estimatedDuration: 5000,  // Ruff is 10-100x faster than Pylint
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'pip-audit',
+    displayName: 'pip-audit',
+    category: ToolCategory.DEPENDENCY_SCAN,
+    languages: ['python'],
+    priority: 8,
+    estimatedDuration: 8000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+  // Session 59 P2: Python Architecture Tools
+  {
+    name: 'pydeps',
+    displayName: 'pydeps',
+    category: ToolCategory.ADVANCED,
+    languages: ['python'],
+    priority: 5,  // Lower priority - run after quality/security tools
+    estimatedDuration: 15000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'import-linter',
+    displayName: 'import-linter',
+    category: ToolCategory.ADVANCED,
+    languages: ['python'],
+    priority: 5,
+    estimatedDuration: 10000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+
   // JavaScript/TypeScript Tools
   {
     name: 'eslint',
@@ -202,16 +255,58 @@ export const UNIVERSAL_TOOL_REGISTRY: ToolDefinition[] = [
     runOnBothBranches: true
   },
   {
-    name: 'gosec',
-    displayName: 'Gosec',
-    category: ToolCategory.SECURITY,
+    name: 'staticcheck',
+    displayName: 'Staticcheck',
+    category: ToolCategory.CODE_QUALITY,
     languages: ['go'],
-    priority: 10,
-    estimatedDuration: 10000,
+    priority: 9,
+    estimatedDuration: 12000,
     requiresCompilation: false,
     runOnBothBranches: true
   },
-  
+  {
+    name: 'govulncheck',
+    displayName: 'govulncheck',
+    category: ToolCategory.DEPENDENCY_SCAN,
+    languages: ['go'],
+    priority: 8,
+    estimatedDuration: 10000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+
+  // Rust Tools
+  {
+    name: 'clippy',
+    displayName: 'Clippy',
+    category: ToolCategory.CODE_QUALITY,
+    languages: ['rust'],
+    priority: 10,
+    estimatedDuration: 30000,
+    requiresCompilation: true,
+    runOnBothBranches: true
+  },
+  {
+    name: 'cargo-audit',
+    displayName: 'cargo-audit',
+    category: ToolCategory.DEPENDENCY_SCAN,
+    languages: ['rust'],
+    priority: 9,
+    estimatedDuration: 5000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+  {
+    name: 'cargo-deny',
+    displayName: 'cargo-deny',
+    category: ToolCategory.DEPENDENCY_SCAN,
+    languages: ['rust'],
+    priority: 8,
+    estimatedDuration: 10000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+
   // Ruby Tools
   {
     name: 'rubocop',
@@ -242,6 +337,168 @@ export const UNIVERSAL_TOOL_REGISTRY: ToolDefinition[] = [
     estimatedDuration: 5000,
     requiresCompilation: false,
     runOnBothBranches: false
+  },
+
+  // C#/.NET Tools
+  {
+    name: 'dotnet-format',
+    displayName: 'dotnet format',
+    category: ToolCategory.CODE_QUALITY,
+    languages: ['csharp'],
+    priority: 10,
+    estimatedDuration: 15000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'security-code-scan',
+    displayName: 'Security Code Scan',
+    category: ToolCategory.SECURITY,
+    languages: ['csharp'],
+    priority: 10,
+    estimatedDuration: 30000,
+    requiresCompilation: true,
+    runOnBothBranches: true
+  },
+  {
+    name: 'dotnet-outdated',
+    displayName: 'dotnet-outdated',
+    category: ToolCategory.DEPENDENCY_SCAN,
+    languages: ['csharp'],
+    priority: 8,
+    estimatedDuration: 10000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+
+  // PHP Tools
+  {
+    name: 'phpstan',
+    displayName: 'PHPStan',
+    category: ToolCategory.CODE_QUALITY,
+    languages: ['php'],
+    priority: 10,
+    estimatedDuration: 20000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'psalm',
+    displayName: 'Psalm',
+    category: ToolCategory.CODE_QUALITY,
+    languages: ['php'],
+    priority: 9,
+    estimatedDuration: 25000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'phpcs',
+    displayName: 'PHP_CodeSniffer',
+    category: ToolCategory.STYLE_LINT,
+    languages: ['php'],
+    priority: 7,
+    estimatedDuration: 10000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'composer-audit',
+    displayName: 'composer audit',
+    category: ToolCategory.DEPENDENCY_SCAN,
+    languages: ['php'],
+    priority: 8,
+    estimatedDuration: 5000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+
+  // ============================================================
+  // P0 SECURITY TOOLS (Session 59) - Universal
+  // ============================================================
+
+  // Secret Detection Tools
+  {
+    name: 'gitleaks',
+    displayName: 'Gitleaks',
+    category: ToolCategory.SECURITY,
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    priority: 10,  // High priority - secrets are critical
+    estimatedDuration: 10000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+  {
+    name: 'trufflehog',
+    displayName: 'TruffleHog',
+    category: ToolCategory.SECURITY,
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    priority: 10,
+    estimatedDuration: 15000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+
+  // IaC Security Tools
+  {
+    name: 'checkov',
+    displayName: 'Checkov',
+    category: ToolCategory.SECURITY,
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    priority: 9,
+    estimatedDuration: 30000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+
+  // Container Security Tools
+  {
+    name: 'trivy',
+    displayName: 'Trivy',
+    category: ToolCategory.SECURITY,
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    priority: 9,
+    estimatedDuration: 20000,
+    requiresCompilation: false,
+    runOnBothBranches: false  // Usually scan final images
+  },
+  {
+    name: 'grype',
+    displayName: 'Grype',
+    category: ToolCategory.SECURITY,
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    priority: 8,
+    estimatedDuration: 15000,
+    requiresCompilation: false,
+    runOnBothBranches: false
+  },
+
+  // ============================================================
+  // P1 TOOLS (Session 59)
+  // ============================================================
+
+  // API Design Tools
+  {
+    name: 'spectral',
+    displayName: 'Spectral',
+    category: ToolCategory.STYLE_LINT,  // API schema linting
+    languages: ['java', 'python', 'javascript', 'typescript', 'go', 'ruby', 'php', 'csharp', 'rust'],
+    priority: 6,
+    estimatedDuration: 5000,
+    requiresCompilation: false,
+    runOnBothBranches: true
+  },
+
+  // GraphQL Security Tools
+  {
+    name: 'graphql-cop',
+    displayName: 'GraphQL Cop',
+    category: ToolCategory.SECURITY,
+    languages: ['javascript', 'typescript', 'python', 'ruby', 'java', 'go'],
+    priority: 7,
+    estimatedDuration: 8000,
+    requiresCompilation: false,
+    runOnBothBranches: true
   }
 ];
 
@@ -253,23 +510,24 @@ export const UNIVERSAL_TOOL_REGISTRY: ToolDefinition[] = [
  * Maps frameworks to their recommended tools
  */
 export const FRAMEWORK_TOOL_MAPPINGS: Record<Framework, string[]> = {
-  // Java Frameworks
-  'spring-boot': ['pmd', 'semgrep', 'dependency-check', 'checkstyle'],
-  'spring': ['pmd', 'semgrep', 'dependency-check', 'checkstyle'],
-  'quarkus': ['pmd', 'semgrep', 'dependency-check'],
-  'micronaut': ['pmd', 'semgrep', 'dependency-check'],
-  'dropwizard': ['pmd', 'semgrep', 'dependency-check'],
-  'helidon': ['pmd', 'semgrep', 'dependency-check'],
-  'vertx': ['pmd', 'semgrep', 'dependency-check'],
-  'play': ['pmd', 'semgrep', 'dependency-check'],
-  
-  // Python Frameworks
-  'django': ['pylint', 'bandit', 'safety', 'semgrep'],
-  'flask': ['pylint', 'bandit', 'safety', 'semgrep'],
-  'fastapi': ['pylint', 'bandit', 'safety', 'semgrep', 'mypy'],
-  'tornado': ['pylint', 'bandit', 'safety'],
-  'pyramid': ['pylint', 'bandit', 'safety'],
-  'bottle': ['pylint', 'bandit', 'safety'],
+  // Java Frameworks (Session 59: Added jdepend for architecture analysis)
+  'spring-boot': ['pmd', 'semgrep', 'dependency-check', 'checkstyle', 'jdepend'],
+  'spring': ['pmd', 'semgrep', 'dependency-check', 'checkstyle', 'jdepend'],
+  'quarkus': ['pmd', 'semgrep', 'dependency-check', 'jdepend'],
+  'micronaut': ['pmd', 'semgrep', 'dependency-check', 'jdepend'],
+  'dropwizard': ['pmd', 'semgrep', 'dependency-check', 'jdepend'],
+  'helidon': ['pmd', 'semgrep', 'dependency-check', 'jdepend'],
+  'vertx': ['pmd', 'semgrep', 'dependency-check', 'jdepend'],
+  'play': ['pmd', 'semgrep', 'dependency-check', 'jdepend'],
+
+  // Python Frameworks (Session 51: ruff/pip-audit replace pylint/safety)
+  // (Session 59: Added pydeps/import-linter for architecture analysis)
+  'django': ['ruff', 'bandit', 'pip-audit', 'semgrep', 'pydeps', 'import-linter'],
+  'flask': ['ruff', 'bandit', 'pip-audit', 'semgrep', 'pydeps', 'import-linter'],
+  'fastapi': ['ruff', 'bandit', 'pip-audit', 'semgrep', 'mypy', 'pydeps', 'import-linter'],
+  'tornado': ['ruff', 'bandit', 'pip-audit', 'pydeps'],
+  'pyramid': ['ruff', 'bandit', 'pip-audit', 'pydeps'],
+  'bottle': ['ruff', 'bandit', 'pip-audit', 'pydeps'],
   
   // JavaScript/TypeScript Frameworks
   'express': ['eslint', 'semgrep', 'npm-audit'],
@@ -281,11 +539,11 @@ export const FRAMEWORK_TOOL_MAPPINGS: Record<Framework, string[]> = {
   'svelte': ['eslint', 'semgrep', 'npm-audit'],
   
   // Go Frameworks
-  'gin': ['golangci-lint', 'gosec', 'semgrep'],
-  'echo': ['golangci-lint', 'gosec', 'semgrep'],
-  'fiber': ['golangci-lint', 'gosec', 'semgrep'],
-  'chi': ['golangci-lint', 'gosec', 'semgrep'],
-  'beego': ['golangci-lint', 'gosec', 'semgrep'],
+  'gin': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+  'echo': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+  'fiber': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+  'chi': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
+  'beego': ['golangci-lint', 'staticcheck', 'govulncheck', 'semgrep'],
   
   // Ruby Frameworks
   'rails': ['rubocop', 'brakeman', 'bundler-audit', 'semgrep'],
@@ -293,19 +551,19 @@ export const FRAMEWORK_TOOL_MAPPINGS: Record<Framework, string[]> = {
   'hanami': ['rubocop', 'brakeman', 'bundler-audit'],
   
   // PHP Frameworks
-  'laravel': ['phpcs', 'psalm', 'composer-audit'],
-  'symfony': ['phpcs', 'psalm', 'composer-audit'],
-  'codeigniter': ['phpcs', 'psalm'],
-  'slim': ['phpcs', 'psalm'],
-  
+  'laravel': ['phpstan', 'psalm', 'phpcs', 'composer-audit', 'semgrep'],
+  'symfony': ['phpstan', 'psalm', 'phpcs', 'composer-audit', 'semgrep'],
+  'codeigniter': ['phpstan', 'psalm', 'phpcs', 'composer-audit'],
+  'slim': ['phpstan', 'psalm', 'phpcs', 'composer-audit'],
+
   // .NET Frameworks
-  'aspnet': ['dotnet-format', 'security-code-scan'],
-  'aspnet-core': ['dotnet-format', 'security-code-scan'],
-  
+  'aspnet': ['dotnet-format', 'security-code-scan', 'dotnet-outdated', 'semgrep'],
+  'aspnet-core': ['dotnet-format', 'security-code-scan', 'dotnet-outdated', 'semgrep'],
+
   // Rust Frameworks
-  'actix': ['clippy', 'cargo-audit'],
-  'rocket': ['clippy', 'cargo-audit'],
-  'warp': ['clippy', 'cargo-audit'],
+  'actix': ['clippy', 'cargo-audit', 'cargo-deny', 'semgrep'],
+  'rocket': ['clippy', 'cargo-audit', 'cargo-deny', 'semgrep'],
+  'warp': ['clippy', 'cargo-audit', 'cargo-deny', 'semgrep'],
   
   // Kotlin Frameworks
   'ktor': ['detekt', 'ktlint'],
@@ -349,9 +607,11 @@ export class UniversalToolConfigResolver {
     const filteredTools = frameworkTools.filter(toolName => {
       const tool = this.toolRegistry.get(toolName);
       if (!tool) return false;
-      
+
       // Check if tool category is enabled in this mode
+      // Session 60 fix: Handle ALL categories including P0/P1/P2
       switch (tool.category) {
+        // Core categories
         case ToolCategory.CODE_QUALITY:
           return modeConfig.toolCategories.codeQuality;
         case ToolCategory.SECURITY:
@@ -362,7 +622,36 @@ export class UniversalToolConfigResolver {
           return modeConfig.toolCategories.styleLint;
         case ToolCategory.ADVANCED:
           return modeConfig.toolCategories.advanced;
+
+        // P0 categories - Critical security (Session 59/60)
+        case ToolCategory.SECRETS:
+          return modeConfig.toolCategories.secrets;
+        case ToolCategory.IAC_SECURITY:
+          return modeConfig.toolCategories.iacSecurity;
+        case ToolCategory.CONTAINER_SECURITY:
+          return modeConfig.toolCategories.containerSecurity;
+
+        // P1 categories - API security (Session 59/60)
+        case ToolCategory.API_DESIGN:
+          return modeConfig.toolCategories.apiDesign;
+        case ToolCategory.GRAPHQL_SECURITY:
+          return modeConfig.toolCategories.graphqlSecurity;
+
+        // P2 categories - Architecture (Session 59/60)
+        case ToolCategory.ARCHITECTURE:
+          return modeConfig.toolCategories.architecture;
+
+        // Cloud fixers are NOT controlled by mode - controlled by subscription tier
+        // They run in the FIX phase, not SCAN phase
+        case ToolCategory.CLOUD_FIXER:
+          return false; // Cloud fixers should not be in scanner tool list
+
+        // Deep security is opt-in only, not controlled by mode
+        case ToolCategory.DEEP_SECURITY:
+          return modeConfig.toolCategories.deepSecurity === true;
+
         default:
+          logger.warn(`Unknown tool category: ${tool.category} for tool ${toolName}`);
           return false;
       }
     });
@@ -525,6 +814,114 @@ export class UniversalToolConfigResolver {
       valid: errors.length === 0,
       errors
     };
+  }
+
+  // ============================================================
+  // CLOUD FIXER SUPPORT (Session 60)
+  // ============================================================
+
+  /**
+   * Check cloud fixer availability based on subscription tier
+   *
+   * Cloud fixers (Corgea) are only available for PRO and ENTERPRISE tiers.
+   *
+   * @param tier - User's subscription tier
+   * @returns Availability status with available tools and reason
+   *
+   * @example
+   * ```typescript
+   * const resolver = new UniversalToolConfigResolver();
+   * const availability = resolver.getCloudFixerAvailability('pro');
+   * // Returns: { available: true, tools: ['corgea'], reason: 'Cloud fixers enabled' }
+   * ```
+   */
+  getCloudFixerAvailability(tier: 'basic' | 'pro' | 'enterprise'): {
+    available: boolean;
+    tools: string[];
+    reason: string;
+    limits?: {
+      maxIssuesPerRequest: number;
+      maxRequestsPerMonth: number;
+    };
+  } {
+    switch (tier) {
+      case 'basic':
+        return {
+          available: false,
+          tools: [],
+          reason: 'Cloud fixers require PRO subscription. Upgrade to access AI-powered fixes from Corgea.'
+        };
+      case 'pro':
+        return {
+          available: true,
+          tools: ['corgea'],
+          reason: 'Cloud fixers enabled for PRO tier',
+          limits: {
+            maxIssuesPerRequest: 50,
+            maxRequestsPerMonth: 100
+          }
+        };
+      case 'enterprise':
+        return {
+          available: true,
+          tools: ['corgea'],
+          reason: 'Cloud fixers enabled for ENTERPRISE tier (unlimited)',
+          limits: {
+            maxIssuesPerRequest: Infinity,
+            maxRequestsPerMonth: Infinity
+          }
+        };
+    }
+  }
+
+  /**
+   * Check if cloud fixers are beneficial for a given mode
+   *
+   * Cloud fixers are most beneficial in thorough and complete modes
+   * where more issues are detected that need AI-powered fixes.
+   *
+   * @param mode - Analysis mode
+   * @returns Whether cloud fixers are recommended for this mode
+   */
+  isCloudFixerRecommended(mode: AnalysisMode): boolean {
+    // Cloud fixers are most valuable in modes with more detected issues
+    const recommendedModes: AnalysisMode[] = ['thorough', 'complete'];
+    return recommendedModes.includes(mode);
+  }
+
+  /**
+   * Get cloud fixer recommendations for UI display
+   */
+  getCloudFixerRecommendations(
+    mode: AnalysisMode,
+    tier: 'basic' | 'pro' | 'enterprise',
+    issueCount: number
+  ): string[] {
+    const recommendations: string[] = [];
+    const availability = this.getCloudFixerAvailability(tier);
+
+    if (!availability.available) {
+      if (issueCount > 10) {
+        recommendations.push(
+          `${issueCount} issues detected. Upgrade to PRO for AI-powered fixes from Corgea.`
+        );
+      }
+      return recommendations;
+    }
+
+    if (this.isCloudFixerRecommended(mode)) {
+      recommendations.push(
+        'Cloud fixers (Corgea) recommended for this analysis mode to maximize fix coverage.'
+      );
+    }
+
+    if (issueCount > 20 && tier === 'pro') {
+      recommendations.push(
+        `Large issue count (${issueCount}). Consider ENTERPRISE tier for unlimited cloud fixes.`
+      );
+    }
+
+    return recommendations;
   }
 }
 

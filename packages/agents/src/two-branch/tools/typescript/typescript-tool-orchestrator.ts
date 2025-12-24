@@ -35,6 +35,12 @@ import {
 // Import existing TypeScript parser
 import { TypeScriptToolParser, TypeScriptIssue } from '../../parsers/typescript-tool-parser';
 
+// Import parser validation wrapper (Session 57)
+import {
+  ParserValidationWrapper,
+  createParserValidationWrapper
+} from '../../parsers/parser-validation-wrapper';
+
 // Import universal analysis modes
 import type { AnalysisMode } from '../../config/analysis-modes';
 import {
@@ -51,6 +57,9 @@ import {
   runCodeQLFast,
   isCodeQLAvailable
 } from '../universal/codeql-runner';
+
+// Performance and Architecture runners are handled by BaseToolOrchestrator
+// (Session 57 Part 3 - integration via executePerformanceTools/executeArchitectureTools in base class)
 
 const execAsync = promisify(exec);
 
@@ -207,6 +216,12 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   private config: TypeScriptToolConfig;
   private parser: TypeScriptToolParser;
 
+  // Parser validation wrapper for shadow mode (Session 57)
+  private parserValidator: ParserValidationWrapper;
+
+  // Note: Performance and Architecture tools are handled by BaseToolOrchestrator
+  // via executePerformanceTools() and executeArchitectureTools() methods (Session 57 Part 3)
+
   constructor(
     config: Partial<TypeScriptToolConfig> = {},
     dockerImage = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-typescript-v4.6-arm'
@@ -219,6 +234,22 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
 
     // Initialize parser
     this.parser = new TypeScriptToolParser();
+
+    // Initialize parser validation (Session 57 Part 2 - Migration Phase 2)
+    // Now uses enhanced parser for verified tools (100% match rate)
+    this.parserValidator = createParserValidationWrapper({
+      language: 'typescript',
+      enabled: true,  // Always enabled for Phase 2 migration
+      logResults: process.env.PARSER_VALIDATION === 'true',
+      // Phase 2: Use enhanced parser for all tools with complete implementations
+      forceEnhancedTools: ['eslint', 'semgrep', 'tsc', 'typescript', 'npm-audit'],
+      switchThreshold: 0.95,
+      onValidation: (result) => {
+        if (!result.passed && process.env.PARSER_VALIDATION === 'true') {
+          logger.warn(`[ParserValidation] ${result.tool}: ${result.differences} differences (${(result.matchRate * 100).toFixed(1)}% match)`);
+        }
+      }
+    });
   }
 
   // ============================================================
@@ -461,8 +492,8 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       case 'npm-audit':
         return this.runNpmAudit(repoPath, branch);
 
-      case 'dependency-check':
-        return this.runDependencyCheck(repoPath, branch);
+      // NOTE: dependency-check is a universal tool - routed via isUniversalTool() check above
+      // Local runDependencyCheck method removed as it's never reached
 
       case 'performance': {
         // Get all TypeScript/JavaScript files for performance analysis
@@ -510,17 +541,20 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       // Convert TypeScriptIssue[] to RawIssue[]
       const rawIssues: RawIssue[] = result.issues.map(this.convertTypeScriptIssueToRaw.bind(this));
 
+      // Validate with shadow mode (Session 57)
+      const validatedIssues = this.parserValidator.validate('eslint', result.rawOutput, rawIssues);
+
       const duration = Date.now() - startTime;
 
-      logger.info(`✅ ESLint completed: ${rawIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
+      logger.info(`✅ ESLint completed: ${validatedIssues.length} issues in ${(duration / 1000).toFixed(1)}s`);
 
       return {
         tool: 'eslint',
         success: true,
         duration,
-        issues: rawIssues,
+        issues: validatedIssues,
         rawOutput: result.rawOutput,
-        metadata: this.calculateMetadata(rawIssues)
+        metadata: this.calculateMetadata(validatedIssues)
       };
 
     } catch (error: any) {
@@ -562,17 +596,20 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       // Convert TypeScriptIssue[] to RawIssue[]
       const rawIssues: RawIssue[] = result.issues.map(this.convertTypeScriptIssueToRaw.bind(this));
 
+      // Validate with shadow mode (Session 57)
+      const validatedIssues = this.parserValidator.validate('tsc', result.rawOutput, rawIssues);
+
       const duration = Date.now() - startTime;
 
-      logger.info(`✅ TypeScript completed: ${rawIssues.length} type errors in ${(duration / 1000).toFixed(1)}s`);
+      logger.info(`✅ TypeScript completed: ${validatedIssues.length} type errors in ${(duration / 1000).toFixed(1)}s`);
 
       return {
         tool: 'typescript',
         success: true,
         duration,
-        issues: rawIssues,
+        issues: validatedIssues,
         rawOutput: result.rawOutput,
-        metadata: this.calculateMetadata(rawIssues)
+        metadata: this.calculateMetadata(validatedIssues)
       };
 
     } catch (error: any) {
@@ -614,17 +651,20 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
       // Convert TypeScriptIssue[] to RawIssue[]
       const rawIssues: RawIssue[] = result.issues.map(this.convertTypeScriptIssueToRaw.bind(this));
 
+      // Validate with shadow mode (Session 57)
+      const validatedIssues = this.parserValidator.validate('npm-audit', result.rawOutput, rawIssues);
+
       const duration = Date.now() - startTime;
 
-      logger.info(`✅ npm audit completed: ${rawIssues.length} vulnerabilities in ${(duration / 1000).toFixed(1)}s`);
+      logger.info(`✅ npm audit completed: ${validatedIssues.length} vulnerabilities in ${(duration / 1000).toFixed(1)}s`);
 
       return {
         tool: 'npm-audit',
         success: true,
         duration,
-        issues: rawIssues,
+        issues: validatedIssues,
         rawOutput: result.rawOutput,
-        metadata: this.calculateMetadata(rawIssues)
+        metadata: this.calculateMetadata(validatedIssues)
       };
 
     } catch (error: any) {
@@ -649,111 +689,7 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   }
 
   // runSemgrep() removed - Semgrep now handled by base class executeUniversalTool()
-  // See executeTool() method which routes universal tools to the base class
-
-  /**
-   * Run OWASP Dependency-Check for CVE scanning
-   * Uses shared PostgreSQL/NVD database infrastructure (updated daily at 2am)
-   * Same fast performance as Java (<10s) via shared cache
-   */
-  private async runDependencyCheck(
-    repoPath: string,
-    branch: 'base' | 'pr'
-  ): Promise<ToolResult> {
-    const startTime = Date.now();
-    const outputFileName = `dependency-check-${branch}.json`;
-    const outputFile = path.join(repoPath, outputFileName);
-
-    try {
-      logger.info(`🔐 Running Dependency-Check CVE scanning on ${branch} branch...`);
-
-      // Dependency-Check: Use entrypoint bash -c and output to directory
-      // Same infrastructure as Java - shared PostgreSQL/NVD cache
-      const dockerCommand = `docker run --rm \
-        -v "${repoPath}:${this.workspaceDir}" \
-        -v "${this.config.dependencyCheck!.caching.location}:/cache" \
-        ${this.dockerImage} \
-        -c '/opt/dependency-check/bin/dependency-check.sh --scan ${this.workspaceDir} --format JSON --out ${this.workspaceDir} --data /cache --failOnCVSS ${this.config.dependencyCheck!.failOnCVSS} || true'`;
-
-      await execAsync(dockerCommand, { maxBuffer: 50 * 1024 * 1024 });
-
-      // Dependency-Check always outputs to dependency-check-report.json
-      const defaultOutputFile = path.join(repoPath, 'dependency-check-report.json');
-
-      // Read from default location
-      const resultContent = await fs.readFile(defaultOutputFile, 'utf-8');
-      const depCheckResult = JSON.parse(resultContent);
-
-      // Rename to our expected filename for consistency
-      await fs.rename(defaultOutputFile, outputFile);
-
-      const issues: RawIssue[] = [];
-
-      if (depCheckResult.dependencies) {
-        for (const dep of depCheckResult.dependencies) {
-          if (dep.vulnerabilities) {
-            for (const vuln of dep.vulnerabilities) {
-              issues.push({
-                tool: 'dependency-check',
-                file: dep.fileName || 'dependencies',
-                line: 1,
-                severity: this.mapCVSSSeverity(vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0),
-                message: vuln.description || `CVE: ${vuln.name}`,
-                rule: vuln.name,
-                category: 'Dependency',
-                cwe: vuln.cwes?.join(', '),
-                autoFixable: false
-              });
-            }
-          }
-        }
-      }
-
-      const duration = Date.now() - startTime;
-      logger.info(`✅ Dependency-Check complete: ${issues.length} CVEs found in ${(duration / 1000).toFixed(1)}s`);
-
-      // Count actual dependencies scanned, not just files with issues
-      const filesScanned = depCheckResult.dependencies?.length || 0;
-
-      const severity = {
-        critical: issues.filter(i => i.severity === 'critical').length,
-        high: issues.filter(i => i.severity === 'high').length,
-        medium: issues.filter(i => i.severity === 'medium').length,
-        low: issues.filter(i => i.severity === 'low').length
-      };
-
-      return {
-        tool: 'dependency-check',
-        success: true,
-        duration,
-        issues,
-        metadata: {
-          filesScanned,
-          issuesFound: issues.length,
-          severity
-        }
-      };
-
-    } catch (error: any) {
-      const duration = Date.now() - startTime;
-      logger.error(`❌ Dependency-Check failed: ${error.message}`);
-
-      return {
-        tool: 'dependency-check',
-        success: false,
-        duration,
-        issues: [],
-        error: error.message,
-        metadata: {
-          filesScanned: 0,
-          issuesFound: 0,
-          severity: { critical: 0, high: 0, medium: 0, low: 0 },
-          skipped: true,
-          skipReason: `Failed: ${error.message}`
-        }
-      };
-    }
-  }
+  // runDependencyCheck() removed - dependency-check is a universal tool, routed via executeUniversalTool()
 
   // ============================================================
   // HELPER METHODS
@@ -794,47 +730,8 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
     return mapping[type] || 'code-quality';
   }
 
-  /**
-   * Map TypeScript-specific severity descriptors
-   */
-  private mapTypeScriptSeverity(tsType: string, message: string): 'critical' | 'high' | 'medium' | 'low' {
-    // Security issues get higher severity
-    if (tsType === 'security') {
-      if (message.toLowerCase().includes('injection') || message.toLowerCase().includes('xss')) {
-        return 'critical';
-      }
-      return 'high';
-    }
-
-    // Type errors
-    if (tsType === 'type-error') {
-      return 'high';
-    }
-
-    // Bugs
-    if (tsType === 'bug') {
-      return 'high';
-    }
-
-    // Performance issues
-    if (tsType === 'performance') {
-      return 'medium';
-    }
-
-    // Style and quality
-    return 'low';
-  }
-
-  /**
-   * Map CVSS score to CodeQual severity
-   * Same mapping as Java for consistency
-   */
-  private mapCVSSSeverity(score: number): 'critical' | 'high' | 'medium' | 'low' {
-    if (score >= 9.0) return 'critical';
-    if (score >= 7.0) return 'high';
-    if (score >= 4.0) return 'medium';
-    return 'low';
-  }
+  // NOTE: mapTypeScriptSeverity removed - was never used
+  // NOTE: mapCVSSSeverity removed - dependency-check is a universal tool
 
   // ============================================================
   // CODEQL DEEP SECURITY ANALYSIS (PRO TIER ONLY)

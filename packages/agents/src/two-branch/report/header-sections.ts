@@ -9,6 +9,7 @@ import { EnrichedIssue } from './types';
 import { IssueGroup } from '../utils/issue-grouping';
 import { formatDate, formatDuration, getUserFriendlyTitle } from './formatter-utils';
 import { getRuleDescription, guessLanguage } from '../config/rule-descriptions';
+import { getScannerToolGuidance } from './fix-capability-utils';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -320,7 +321,67 @@ export function generateQuickWins(
   });
   
   content += `> 💡 **Tip**: Use Cursor IDE integration to apply all fixes with one click!`;
-  
+
   return content;
+}
+
+/**
+ * Generate scanner tool guidance section for Tier 3 (scanner-only) tools
+ * This shows users what they get even without auto-fix capabilities
+ *
+ * Session 57 Part 7: Integrated into report generation
+ */
+export function generateScannerGuidanceSection(issues: EnrichedIssue[]): string {
+  // Group issues by tool
+  const toolCounts = new Map<string, number>();
+  for (const issue of issues) {
+    toolCounts.set(issue.tool, (toolCounts.get(issue.tool) || 0) + 1);
+  }
+
+  // Get scanner guidance for each tool
+  const scannerTools: Array<{ tool: string; count: number; guidance: ReturnType<typeof getScannerToolGuidance> }> = [];
+  for (const [tool, count] of toolCounts.entries()) {
+    const guidance = getScannerToolGuidance(tool);
+    if (guidance) {
+      scannerTools.push({ tool, count, guidance });
+    }
+  }
+
+  if (scannerTools.length === 0) {
+    return '';
+  }
+
+  let section = '## 🔍 Scanner Tool Insights\n\n';
+  section += '*These tools provide valuable analysis even without auto-fix capabilities. ';
+  section += 'Review the findings and apply fixes manually using the guidance below.*\n\n';
+
+  for (const { tool, count, guidance } of scannerTools) {
+    if (!guidance) continue;
+
+    section += `### ${guidance.tool} (${count} issues)\n\n`;
+    section += `**Category:** ${guidance.category}\n\n`;
+
+    section += `**What You Get:**\n`;
+    for (const item of guidance.whatYouGet) {
+      section += `- ✓ ${item}\n`;
+    }
+    section += '\n';
+
+    section += `**How to Fix:**\n`;
+    for (const item of guidance.howToFix) {
+      section += `- ${item}\n`;
+    }
+    section += '\n';
+
+    if (guidance.resources && guidance.resources.length > 0) {
+      section += `**Resources:**\n`;
+      for (const resource of guidance.resources) {
+        section += `- ${resource}\n`;
+      }
+      section += '\n';
+    }
+  }
+
+  return section;
 }
 

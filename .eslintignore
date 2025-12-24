@@ -6,6 +6,8 @@
 # Ignore test output
 **/.next/**
 **/coverage/**
+packages/agents/test-outputs/
+docs/logs.txt
 
 # Ignore generated files
 **/*.d.ts

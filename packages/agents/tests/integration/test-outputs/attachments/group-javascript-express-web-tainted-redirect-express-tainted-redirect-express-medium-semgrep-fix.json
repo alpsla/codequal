@@ -4,7 +4,7 @@
   "rule": "javascript.express.web.tainted-redirect-express.tainted-redirect-express",
   "tool": "semgrep",
   "severity": "medium",
-  "description": "Implement strict input validation by allowing redirects only to a predefined list of trusted domains. Notify users when they are being redirected to an external site, and provide an option to accept or deny the redirect. This approach mitigates the risk of open redirect vulnerabilities and enhances user trust.",
+  "description": "The application builds a URL using user-controlled input which can lead to an open redirect vulnerability. An attacker can manipulate the URL and redirect users to an arbitrary domain. Open redirect vulnerabilities can lead to issues such as Cross-site scripting (XSS) or redirecting to a malicious domain for activities such as phishing to capture users' credentials. To prevent this vulnerability perform strict input validation of the domain against an allowlist of approved domains. Notify a user",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "const allowedDomains = ['trusted.com', 'secure.org'];\nconst redirectUrl = req.query.redirect;\nconst parsedUrl = new URL(redirectUrl);\nif (allowedDomains.includes(parsedUrl.hostname)) {\n  res.redirect(redirectUrl);\n} else {\n  res.status(400).send('Invalid redirect URL');\n}"
+      "after": "        const allowedDomains = ['/', '/restricted', '/logout'];\n        const referrer = req.get('Referrer') || '/';\n        const redirectUrl = allowedDomains.includes(referrer) ? referrer : '/';\n        res.redirect(redirectUrl);"
     },
-    "instructions": "Implement strict input validation by allowing redirects only to a predefined list of trusted domains. Notify users when they are being redirected to an external site, and provide an option to accept or deny the redirect. This approach mitigates the risk of open redirect vulnerabilities and enhances user trust."
+    "instructions": "The application builds a URL using user-controlled input which can lead to an open redirect vulnerability. An attacker can manipulate the URL and redirect users to an arbitrary domain. Open redirect vulnerabilities can lead to issues such as Cross-site scripting (XSS) or redirecting to a malicious domain for activities such as phishing to capture users' credentials. To prevent this vulnerability perform strict input validation of the domain against an allowlist of approved domains. Notify a user"
   },
   "locations": [
     {

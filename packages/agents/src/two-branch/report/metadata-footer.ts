@@ -77,7 +77,7 @@ export function generateAnalysisMetadata(
   const cloneTime = Math.max(metadata.cloneTime || 0, 0);
   const analysisTime = Math.max(metadata.analysisTime || 0, 0);
   const reportTime = Math.max(metadata.reportGenerationTime || 0, 0);
-  
+
   const cachedNote = (cloneTime === 0) ? ' (cached)' : '';
   // BUG FIX #17: Removed duplicate "Performance Metrics" section (already shown at top of report)
   let content = `## 📊 Analysis Metadata
@@ -121,25 +121,22 @@ export function generateAnalysisMetadata(
 
   // Add Tool Performance if available (optional)
   // USER FEEDBACK (2025-12-14): Filter out tools that didn't actually run (0 issues AND 0 duration)
+  // FIX (2025-12-15): Only show tools that found issues - filter out 0-issue tools entirely
   if (showToolPerformance && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-    // Filter out tools that didn't run (0 issues AND <= 100ms duration) or are skipped tools
+    // Filter out tools that didn't find issues OR didn't run
     const skippedTools = ['performance']; // Tools we skip in first iteration
     const actuallyRanTools = metadata.toolPerformance.filter((tool: any) => {
-      const issues = tool.issuesFound || tool.issues || 0;
+      const issues = tool.issuesFound || tool.issues || tool.issueCount || 0;
       const duration = tool.duration || 0;
       const toolName = (tool.tool || tool.name || '').toLowerCase();
 
-      // Skip tools that are in the skipped list and have 0 results
-      if (skippedTools.includes(toolName) && issues === 0 && duration < 100) {
+      // Skip tools that are in the skipped list
+      if (skippedTools.includes(toolName)) {
         return false;
       }
 
-      // Skip tools that clearly didn't run (0 issues AND very short duration < 100ms)
-      if (issues === 0 && duration < 100) {
-        return false;
-      }
-
-      return true;
+      // Only include tools that found issues AND actually ran
+      return issues > 0 && duration > 0;
     });
 
     if (actuallyRanTools.length > 0) {
@@ -149,7 +146,8 @@ export function generateAnalysisMetadata(
 `;
       actuallyRanTools.forEach((tool: any) => {
         const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
-        content += `| ${tool.tool || tool.name} | ${tool.issuesFound || tool.issues || 0} | ${duration} |\n`;
+        const issues = tool.issuesFound || tool.issues || tool.issueCount || 0;
+        content += `| ${tool.tool || tool.name} | ${issues} | ${duration} |\n`;
       });
     }
   }
@@ -165,7 +163,7 @@ export function generateAnalysisMetadata(
 
     content += `\n### Cost Analysis
 - **Total Analysis Cost:** $${totalCost.toFixed(4)}${totalCost === 0 ? ' (tool-based analysis)' : ''}
-- **Analysis Duration:** ${totalTime > 0 ? (totalTime / 1000).toFixed(1) + 's' : 'N/A'}
+- **Active Tool Runtime:** ${totalTime > 0 ? (totalTime / 1000).toFixed(1) + 's' : 'N/A'} (Billing Metric)
 `;
   }
 
@@ -192,7 +190,7 @@ export function generateAnalysisMetadata(
 - **Report Format:** Grouped (Compact with 99.8% cost reduction)
 - **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types`;
   }
-  
+
   return content;
 }
 
@@ -232,18 +230,18 @@ function getPersonalizedEncouragement(blockingCount: number, resolvedCount: numb
  * Creates a ready-to-paste comment for pull requests
  */
 export function generatePRComment(issues: EnrichedIssue[], groups: IssueGroup[], metadata: any): string {
-  const blocking = issues.filter(i => 
-    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') && 
+  const blocking = issues.filter(i =>
+    (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
     (i.severity === 'critical' || i.severity === 'high')
   );
   const resolved = issues.filter(i => i.category === 'RESOLVED');
-  
+
   const emoji = metadata.decision === 'APPROVED' ? '✅' : '⛔';
   const decision = metadata.decision || 'PENDING';
-  
+
   const greeting = getPersonalizedGreeting(metadata.prAuthor);
   const encouragement = getPersonalizedEncouragement(blocking.length, resolved.length);
-  
+
   return `## 💬 PR Comment Template
 
 **Ready-to-paste comment for your pull request:**
@@ -293,12 +291,12 @@ export function generateFooter(
   // ENHANCEMENT #3: Removed Issue Groups Mapping (not useful for end users)
   // BUG FIX #70: Don't show empty "Attachments" header - combine with IDE Fix Files section
   let footer = '';
-  
+
   if (ideFixFiles.length > 0) {
     // SESSION 24: Extract manifest public URL
     const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
     const manifestUrl = manifestFile ? (manifestFile as any).publicUrl : null;
-    
+
     // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
     const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
     const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
@@ -312,14 +310,14 @@ export function generateFooter(
       ) as number);
     }
     const totalCount = totalFixable; // Total count remains all fixable issues
-    
+
     // BUG FIX: Calculate LSP batch action counts from individual issues (not manifest groups)
     // LSP groups by individual issues, not by manifest groups, so counts must match LSP file
     let criticalCount = 0;
     let highCount = 0;
     let mediumCount = 0;
     let lowCount = 0;
-    
+
     if (enrichedIssues && enrichedIssues.length > 0) {
       // Count individual issues with fixes (matches LSP structure)
       const fixableIssues = enrichedIssues.filter(issue => issue.fixSuggestion?.correctedCode);
@@ -334,7 +332,7 @@ export function generateFooter(
       mediumCount = issueFiles.filter(f => f.content.severity === 'medium').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
       lowCount = issueFiles.filter(f => f.content.severity === 'low').reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
     }
-    
+
     footer += `## 🛠️ How to Apply Fixes\n\n`;
 
     // Add disclaimer about recommendations
@@ -527,17 +525,17 @@ export function generateFooter(
       footer += `- **Use with**: AI assistants (Cursor Chat, GitHub Copilot) if LSP doesn't work in your IDE\n`;
       footer += `- **Difference from LSP**: Manifest uses lazy loading by severity; LSP has all fixes in one file\n\n`;
     }
-    
+
     // Add manual review disclaimer for critical/high severity issues
     if (criticalCount > 0 || highCount > 0) {
       footer += `> ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.\n\n`;
     }
   }
-  
+
   footer += `\n---\n\n`;
   footer += `*Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  \n`;
   footer += `*${new Date().toISOString()}*`;
-  
+
   return footer;
 }
 

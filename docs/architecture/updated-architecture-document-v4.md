@@ -1,12 +1,19 @@
 # CodeQual Architecture v4: Two-Branch Full Repository Analysis
 
-*Version: 4.2*  
-*Date: November 7, 2025*  
-*Status: Production Service Architecture + Universal Tools*
+*Version: 4.3*
+*Date: December 19, 2025*
+*Status: Production Service Architecture + Fix Verification Pipeline*
 
 ## Executive Summary
 
 This document describes the production-ready architecture for CodeQual V9, featuring a service-based design with universal tool infrastructure that provides real, actionable code analysis results through a reusable V9PRAnalyzer service. The architecture supports multi-language analysis (Java, TypeScript, Python, Go) with shared tool runners for consistency and performance, and can be deployed via API, CLI, webhooks, or direct service integration.
+
+**Key V9 Features:**
+- Full two-branch analysis (main + PR branch)
+- 4-tier fix system (Native → Dedicated → Cloud API → AI)
+- Post-fix verification with regression detection
+- Unfixed issue communication with author guidance
+- Pattern-based fix reuse for cost optimization
 
 ## Core Problem Statement
 
@@ -24,7 +31,111 @@ This document describes the production-ready architecture for CodeQual V9, featu
 - **Language-Agnostic**: Easy to add TypeScript, Python, Go (1 method update)
 - **LLM Enhancement**: Use AI for synthesis and recommendations, not raw analysis
 
-## Recent Updates (2025-11-07)
+## Recent Updates (2025-12-19)
+
+### Fix Verification & Unfixed Issue Handler (Session 61) ✅ COMPLETE
+
+**What Changed:**
+1. ✅ **Fix Verifier** → Re-scans fixed code to confirm fixes work
+2. ✅ **Unfixed Issue Handler** → Communicates failures with author guidance
+3. ✅ **Orchestrator Integration** → Complete verification pipeline
+4. ✅ **Cloud API Type Fixes** → Fixed TypeScript errors in SARIF converter
+
+**New Components:**
+| Component | File | Purpose |
+|-----------|------|---------|
+| **FixVerifier** | `fix-branch/fix-verifier.ts` | Re-scans with same tool, checks regression |
+| **UnfixedIssueHandler** | `fix-branch/unfixed-issue-handler.ts` | Records reasons, generates author guidance |
+
+**Unfixed Issue Reasons:**
+| Reason | Description |
+|--------|-------------|
+| `no_pattern_match` | No fix pattern exists in registry |
+| `cloud_api_failed` | Corgea couldn't generate a fix |
+| `ai_generation_failed` | AI couldn't generate reliable fix |
+| `verification_failed` | Fix applied but didn't resolve issue |
+| `regression_introduced` | Fix created new issues (rolled back) |
+| `code_context_insufficient` | Not enough context to fix safely |
+| `complex_refactoring` | Requires architectural changes |
+
+**Author Action Types:**
+- `review_and_fix`: Simple manual fix required
+- `investigate`: Need to understand root cause
+- `refactor`: Code restructuring needed
+- `upgrade_dependency`: Update external library
+- `add_configuration`: Missing config/env setup
+- `accept_risk`: Document and proceed (low-risk)
+
+---
+
+### Cloud API Fixer Integration (Session 60) ✅ COMPLETE
+
+**What Changed:**
+1. ✅ **Corgea AI Fixer** → Cloud-based fix generation for PRO tier
+2. ✅ **SARIF Converter** → Issue to SARIF 2.1.0 conversion
+3. ✅ **Tier 2.5 Routing** → Pattern FIRST, then Cloud API
+4. ✅ **Subscription Gating** → PRO/Enterprise only for cloud fixers
+
+**Key Files:**
+- `src/two-branch/tools/cloud-api/corgea-fixer.ts` - Corgea integration
+- `src/two-branch/tools/cloud-api/sarif-converter.ts` - SARIF conversion
+- `src/two-branch/tools/cloud-api/api-tool-orchestrator.ts` - Async execution
+
+---
+
+### Security Infrastructure Tools (Session 59) ✅ COMPLETE
+
+**What Changed:**
+1. ✅ **Secrets Detection** → Gitleaks + TruffleHog integration
+2. ✅ **IaC Security** → Checkov for Terraform, CloudFormation, Kubernetes, Helm
+3. ✅ **Container Security** → Trivy + Grype for vulnerability scanning
+4. ✅ **Infrastructure Detection** → Auto-detect Docker, Kubernetes, Terraform in repos
+5. ✅ **Security Blocker Logic** → Secrets ALWAYS block PR, critical security blocks regardless of code location
+
+**New Tool Categories:**
+| Category | Tools | Output Type | Blocking Behavior |
+|----------|-------|-------------|-------------------|
+| **Secrets** | Gitleaks, TruffleHog | Recommendation-only | ALWAYS blocks (any severity) |
+| **IaC Security** | Checkov | Hybrid (some auto-fix) | Critical/High blocks |
+| **Container** | Trivy, Grype | Recommendation-only | Critical blocks (CVE with exploits) |
+
+**Infrastructure Detection:**
+```typescript
+// Auto-detects infrastructure from file patterns
+const infraTypes = ['docker', 'kubernetes', 'terraform', 'cloudformation',
+                    'helm', 'ansible', 'pulumi', 'openapi', 'graphql'];
+
+// Orchestrator automatically enables security scans based on detection
+const securityConfig = await getSecurityScanConfig(repoPath);
+// Returns: { enableSecrets: true, enableIaC: true, enableContainer: false, ... }
+```
+
+**Blocker Logic (smart-issue-filter.ts):**
+- **Secrets**: ALWAYS block regardless of severity or code location
+- **Security (critical)**: Block regardless of code location when `securityCriticalAlwaysBlocks=true`
+- **Security (high)**: Block only in NEW or EXISTING_MODIFIED code
+- **Standard issues**: Block only if critical AND in NEW/EXISTING_MODIFIED code
+
+**Subscription Tier Tool Availability:**
+| Tool | BASIC (Free) | PRO ($8-10/mo) |
+|------|--------------|----------------|
+| Gitleaks | ✅ | ✅ |
+| TruffleHog | ✅ | ✅ |
+| Checkov | ✅ | ✅ |
+| Trivy | ✅ | ✅ |
+| Grype | ✅ | ✅ |
+| CodeQL | ❌ | ✅ |
+
+**Key Files:**
+- `src/two-branch/tools/universal/secret-scanner.ts` - Gitleaks/TruffleHog
+- `src/two-branch/tools/universal/iac-scanner.ts` - Checkov/Trivy IaC
+- `src/two-branch/tools/universal/container-scanner.ts` - Trivy/Grype containers
+- `src/two-branch/utils/smart-issue-filter.ts` - Blocker logic
+- `src/two-branch/utils/framework-detector.ts` - Infrastructure detection
+
+---
+
+## Previous Updates (2025-11-07)
 
 ### Universal Tools Architecture ✅ COMPLETE
 
@@ -259,6 +370,231 @@ node ./dist/tests/integration/test-file.js
 - ✅ Java enterprise tools fully installed (PMD, Checkstyle, OWASP DC)
 - ✅ Comprehensive validation scripts created
 - ⚠️ Cloud pod deployment pending (tools installed locally)
+
+## Complete V9 Data Flow (Session 61 - Current)
+
+This section documents the complete data flow from PR submission to final report delivery.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           CODEQUAL V9 COMPLETE DATA FLOW                                 │
+│                        (Issue Detection → Fix → Report to User)                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────────────────┐
+                              │   PR SUBMITTED       │
+                              │   (GitHub/GitLab)    │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                          PHASE 1: REPOSITORY PREPARATION                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  V9RepositoryManager → Clone BOTH Branches → SmartFileSelector                          │
+│  • Clone main (baseline) and PR branch                                                   │
+│  • <10k files: 100% coverage | >10k files: smart selection (~500 files)                 │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                          PHASE 2: TOOL SCANNING (V9ToolOrchestrator)                     │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  Analysis Mode determines tools:                                                         │
+│  • fast     → semgrep, pmd                                                              │
+│  • standard → + dependency-check, eslint                                                │
+│  • thorough → + checkstyle, bandit                                                      │
+│  • complete → + spotbugs, jdepend, trivy, gitleaks, checkov                            │
+│                                                                                          │
+│  Tool Categories: Security | Quality | Dependency | P0 Critical (secrets, IaC, CVE)    │
+│  Output: RawIssue[] per tool (JSON/SARIF format)                                        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                          PHASE 3: ISSUE PROCESSING & CLASSIFICATION                      │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  EnhancedUniversalParser → IssueGroupingService → Two-Branch Comparison → Deduplication │
+│                                                                                          │
+│  Classification:                                                                         │
+│  • NEW issues (in PR only) - can block                                                  │
+│  • EXISTING (in baseline) - context only                                                │
+│  • RESOLVED (fixed by PR) - positive credit                                             │
+│                                                                                          │
+│  Output: Issue[] with { id, category, severity, status, file, line, tool, description } │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                          PHASE 4: FIX ROUTING (FixRouter)                                │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  Issue[] → FixRouter.routeAndBatch(issues, { tier: subscriptionTier })                  │
+│                                                                                          │
+│  Routing Result:                                                                         │
+│  ├── tier1:   FixBatch[] (Native --fix: eslint, prettier, ruff, gofmt, rustfmt)        │
+│  ├── tier2:   FixBatch[] (Dedicated fixers: Sorald, pyupgrade, semgrep --autofix)      │
+│  ├── tier2_5: FixBatch[] (Cloud API: Corgea - PRO tier only)                           │
+│  └── tier3:   FixBatch[] (AI generation / manual review)                               │
+│                                                                                          │
+│  Summary: { total, safeForAutoApply, estimatedCost, cloudFixerEligible }               │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 5: FIX EXECUTION (FixBranchOrchestrator)                        │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  TIER 1: Native --fix (95-100% confidence, auto-apply safe)                             │
+│  └── eslint --fix, prettier, ruff, black, gofmt, rustfmt, rubocop -a                   │
+│                           │                                                              │
+│                           ▼                                                              │
+│  TIER 2: Dedicated Fixer Tools (85-95% confidence)                                      │
+│  └── Sorald (PMD), pyupgrade, semgrep --autofix, npm audit fix                         │
+│                           │                                                              │
+│                           ▼                                                              │
+│  TIER 2.5A: Pattern Registry - CHECK FIRST (instant, free)                             │
+│  └── Query Supabase for known fix patterns from previous Corgea/AI fixes               │
+│                           │ (unmatched issues only)                                      │
+│                           ▼                                                              │
+│  TIER 2.5B: Cloud API Fixers - PRO/ENTERPRISE ONLY (70-85% confidence)                 │
+│  └── Corgea AI Fixer: SARIF → context-aware fixes → save as patterns                   │
+│                           │                                                              │
+│                           ▼                                                              │
+│  TIER 3: AI Generation (50-80% confidence, requires review)                            │
+│  └── Claude/GPT generates fix → save successful fixes as patterns                      │
+│                                                                                          │
+│  Output: CategorizedFix[] with { file, line, originalCode, fixedCode, tier, confidence }│
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 6: FIX APPLICATION (FixApplicator)                              │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  For each CategorizedFix:                                                                │
+│  1. Read original file → 2. Locate code at line → 3. Apply fix → 4. Write file         │
+│                                                                                          │
+│  Output: ApplyResult { applied[], failed[], modifiedFiles[], summary }                  │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    PHASE 7: FIX VERIFICATION (FixVerifier) - SESSION 61                  │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  For each applied fix:                                                                   │
+│  1. Re-scan fixed file with SAME TOOL that found the issue                              │
+│  2. Check: Is original issue still present? (allow ±2 line drift)                       │
+│  3. Check: Are there NEW issues nearby? (regression check)                              │
+│  4. Result: verified (pass) OR failed (issue not resolved OR regression)               │
+│                                                                                          │
+│  ┌────────────────────────────┐              ┌─────────────────────────────────────┐    │
+│  │      ✅ VERIFIED           │              │        ❌ FAILED                     │    │
+│  │  • Issue resolved          │              │  • Issue still present               │    │
+│  │  • No regressions          │              │  • OR new issues introduced          │    │
+│  │  • Keep fix in branch      │              │  • Rollback fix → UnfixedIssueHandler│    │
+│  └────────────────────────────┘              └─────────────────────────────────────┘    │
+│                                                                                          │
+│  Output: BatchVerificationResult { passed, failed, regressions, verifiedFixes[] }       │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│              PHASE 8: UNFIXED ISSUE HANDLING (UnfixedIssueHandler) - SESSION 61          │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  Collects ALL issues that couldn't be automatically fixed:                               │
+│  • No pattern match | Cloud API failed | AI generation failed                          │
+│  • Verification failed | Regression introduced | Cost limit exceeded | Timeout         │
+│                                                                                          │
+│  For each unfixed issue generates:                                                       │
+│  • reason: why it couldn't be fixed                                                     │
+│  • explanation: human-readable message                                                  │
+│  • authorAction: { type, description, steps[], blocksMerge }                           │
+│  • reviewPriority: critical | high | medium | low                                       │
+│  • estimatedEffort: trivial | minor | moderate | significant                           │
+│  • suggestedApproach + documentationLinks                                               │
+│                                                                                          │
+│  Output: UnfixedSummary { total, byReason, byPriority, mergeBlockers, markdown }        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                PHASE 9: FIX BRANCH GENERATION (FixBranchGenerator)                       │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  1. Create new branch: codequal/fixes-pr-{prNumber}                                     │
+│  2. Apply all verified fixes to files                                                   │
+│  3. Commit changes with detailed message                                                │
+│  4. Generate CODEQUAL_FIXES.md review document                                          │
+│  5. Push branch (if autoPush enabled)                                                   │
+│                                                                                          │
+│  Output: FixBranchResult { branchName, applyResult, reviewDocument, gitOperations }     │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                PHASE 10: REPORT GENERATION (V9GroupedReportFormatter)                    │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  34-Section Report:                                                                      │
+│  📊 Header (Score, Summary, Key Findings)                                               │
+│  🔴 Critical Blockers (must fix before merge)                                           │
+│  ⚡ Quick Wins (auto-fixed or easy fixes)                                               │
+│  ✅ Auto-Fixed Issues (by CodeQual)                                                     │
+│  ⚠️ Issues Requiring Author Review (couldn't auto-fix + guidance)                       │
+│  📈 Business Impact, Risk Matrix, Educational Resources                                │
+│  📋 Metadata, Performance, Cost Analysis, Footer                                        │
+│                                                                                          │
+│  Output Formats: Markdown | SARIF (IDE) | GitLab Code Quality | JSON attachments       │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                          PHASE 11: DELIVERY TO USER                                      │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐   ┌─────────────────────┐   ┌─────────────────────────────┐    │
+│  │   PR COMMENT        │   │   FIX BRANCH        │   │   IDE INTEGRATION           │    │
+│  │ • Summary score     │   │ • codequal/fixes-   │   │ • SARIF with fixes          │    │
+│  │ • Critical issues   │   │   pr-{number}       │   │ • One-click apply all       │    │
+│  │ • Link to report    │   │ • CODEQUAL_FIXES.md │   │ • Navigate to issues        │    │
+│  └─────────────────────┘   └─────────────────────┘   └─────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Data Types Flow
+
+```
+Raw Tool Output (JSON/SARIF)
+        │
+        ▼
+RawIssue { ruleId, file, line, message, severity, tool }
+        │
+        ▼
+Issue { id, category, severity, status, title, description, file, line, tool, agent, ... }
+        │
+        ▼
+IssueToFix { id, ruleId, toolId, file, line, message, severity, codeContext? }
+        │
+        ▼
+FixRoute { issue, tier, fixer, confidence, safeForAutoApply }
+        │
+        ▼
+CategorizedFix { id, file, line, originalCode, fixedCode, tier, confidence, ... }
+        │
+        ▼
+FixVerificationResult { fix, verified, issueResolved, regressionsFound }
+        │
+        ▼
+UnfixedIssue { issue, reason, explanation, authorAction, reviewPriority, ... }
+        │
+        ▼
+Final Report (Markdown + SARIF + GitLab Code Quality)
+```
+
+### Subscription Tier Impact
+
+| Tier | Tier 1 Native | Tier 2 Dedicated | Tier 2.5 Cloud API | Tier 3 AI |
+|------|---------------|------------------|-------------------|-----------|
+| **BASIC** | ✅ | ✅ | ❌ | Limited |
+| **PRO** | ✅ | ✅ | ✅ Corgea | ✅ |
+| **ENTERPRISE** | ✅ | ✅ | ✅ Corgea | ✅ Unlimited |
+
+---
 
 ## Architecture Overview
 

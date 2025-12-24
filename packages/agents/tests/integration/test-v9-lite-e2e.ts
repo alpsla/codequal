@@ -31,7 +31,7 @@ import { PythonToolOrchestrator } from '../../src/two-branch/tools/python/python
 import { createFrameworkDetector } from '../../src/two-branch/utils/framework-detector';
 import { createToolConfigResolver } from '../../src/two-branch/config/universal-tool-config';
 import { V9GroupedReportFormatter } from '../../src/two-branch/analyzers/v9-grouped-report-formatter';
-import { ModelConfigResolver } from '../../src/standard/orchestrator/model-config-resolver';
+// SESSION 49: Removed ModelConfigResolver - using patterns + rule descriptions instead of AI enrichment
 import { groupIssues } from '../../src/two-branch/utils/issue-grouping';
 import { V9TemplateValidator } from '../../src/two-branch/validators/v9-template-validator';
 import { execSync } from 'child_process';
@@ -93,22 +93,22 @@ const TEST_SCENARIOS: TestScenario[] = [
   // SESSION 34: Use USER_TIER env var to test BASIC vs PRO tier
   // BASIC tier: Classify issues only (no fixes executed) - generates LSP/SARIF for IDE
   // PRO tier: Execute fixes automatically (default)
-  {
-    name: 'CodeQual PR #69 - V9 Footer Fixes',
-    repoUrl: 'https://github.com/alpsla/codequal',
-    testMode: 'pr-review',
-    prNumber: 69,
-    language: 'typescript',
-    expectedFramework: 'next',
-    expectedToolCount: 3,  // eslint, semgrep, npm-audit
-    userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // Default to PRO
-    // SESSION 41: Enable CodeQL deep security analysis with ENV var
-    // Set ENABLE_CODEQL=true and CODEQL_PACK=security|security-extended to enable
-    codeql: process.env.ENABLE_CODEQL === 'true' ? {
-      enabled: true,
-      queryPack: (process.env.CODEQL_PACK as 'security' | 'security-extended') || 'security'
-    } : undefined,
-  },
+  // {
+  //   name: 'CodeQual PR #69 - V9 Footer Fixes',
+  //   repoUrl: 'https://github.com/alpsla/codequal',
+  //   testMode: 'pr-review',
+  //   prNumber: 69,
+  //   language: 'typescript',
+  //   expectedFramework: 'next',
+  //   expectedToolCount: 3,  // eslint, semgrep, npm-audit
+  //   userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // Default to PRO
+  //   // SESSION 41: Enable CodeQL deep security analysis with ENV var
+  //   // Set ENABLE_CODEQL=true and CODEQL_PACK=security|security-extended to enable
+  //   codeql: process.env.ENABLE_CODEQL === 'true' ? {
+  //     enabled: true,
+  //     queryPack: (process.env.CODEQL_PACK as 'security' | 'security-extended') || 'security'
+  //   } : undefined,
+  // },
 
   // Other TypeScript frameworks: Local branch testing (full autofix validation)
   // SESSION 27: Can test autofix on ANY public repo by creating local branches!
@@ -145,16 +145,16 @@ const TEST_SCENARIOS: TestScenario[] = [
   // ========================================================================
 
   // Uncomment to run Java calibration:
-  // {
-  //   name: 'Spring PetClinic PR #950 - Java Pattern Calibration',
-  //   repoUrl: 'https://github.com/spring-projects/spring-petclinic',
-  //   testMode: 'pr-review',
-  //   prNumber: 950,
-  //   language: 'java',
-  //   expectedFramework: 'spring',
-  //   expectedToolCount: 5,
-  //   userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // PRO for pattern learning
-  // },
+  {
+    name: 'Spring PetClinic PR #950 - Java Pattern Calibration',
+    repoUrl: 'https://github.com/spring-projects/spring-petclinic',
+    testMode: 'pr-review',
+    prNumber: 950,
+    language: 'java',
+    expectedFramework: 'spring',
+    expectedToolCount: 5,
+    userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // PRO for pattern learning
+  },
 
   // ========================================================================
   // OTHER LANGUAGES - Baseline Mode (Report Generation Validation)
@@ -1094,12 +1094,13 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
     // ========================================================================
     console.log('\n📝 Step 6: Generating report...');
 
-    // Initialize ModelConfigResolver - let errors surface (no mock fallback)
-    const modelConfigResolver = new ModelConfigResolver();
-    console.log('   ✅ Using Supabase model configuration');
+    // SESSION 49: Disable AI enrichment - use Supabase patterns + rule descriptions only
+    // This saves $0.15+ per report by avoiding redundant AI calls
+    // Patterns (586) + rule descriptions provide all needed fix recommendations
+    console.log('   ✅ Using Supabase patterns + rule descriptions (no AI enrichment)');
 
     const formatter = new V9GroupedReportFormatter(
-      modelConfigResolver,
+      null,  // null = patterns + rule descriptions only, no AI calls
       scenario.language,
       'medium'
     );

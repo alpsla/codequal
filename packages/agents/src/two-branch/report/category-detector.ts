@@ -24,6 +24,34 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   const toolLower = tool?.toLowerCase() || '';
 
   // ================================================================
+  // P0 CRITICAL SECURITY TOOLS (Session 59)
+  // ================================================================
+  // Secret Detection Tools
+  if (toolLower === 'gitleaks' || toolLower === 'trufflehog') {
+    return 'Security';  // Note: These return 'secrets' category in determineIssueCategory
+  }
+  // IaC Security Tools
+  if (toolLower === 'checkov') {
+    return 'Security';  // Note: Returns 'iac_security' category in determineIssueCategory
+  }
+  // Container Security Tools
+  if (toolLower === 'trivy' || toolLower === 'grype') {
+    return 'Security';  // Note: Returns 'container_security' category in determineIssueCategory
+  }
+
+  // ================================================================
+  // P1 API/GRAPHQL TOOLS (Session 59)
+  // ================================================================
+  // API Schema Tools
+  if (toolLower === 'spectral') {
+    return 'Code Quality';  // API schema linting is quality-focused
+  }
+  // GraphQL Security Tools
+  if (toolLower === 'graphql-cop' || toolLower === 'graphql-scanner') {
+    return 'Security';  // Note: Returns 'graphql_security' category in determineIssueCategory
+  }
+
+  // ================================================================
   // SECURITY PATTERNS
   // ================================================================
   // Java tools
@@ -44,6 +72,10 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   }
   // Ruby security tools
   if (toolLower === 'brakeman') {
+    return 'Security';
+  }
+  // C#/.NET security tools (Session 57)
+  if (toolLower === 'security-code-scan' || toolLower === 'securitycodescan') {
     return 'Security';
   }
   // General security patterns in rule/message
@@ -83,7 +115,64 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   if (toolLower === 'bundler-audit') {
     return 'Dependencies';
   }
-  // General dependency patterns
+  // Rust dependency tools (Session 57)
+  if (toolLower === 'cargo-audit' || toolLower === 'cargo-deny') {
+    return 'Dependencies';
+  }
+  // Go dependency tools (Session 57)
+  if (toolLower === 'govulncheck') {
+    return 'Dependencies';
+  }
+  // PHP dependency tools (Session 57)
+  if (toolLower === 'composer-audit' || toolLower === 'composer audit') {
+    return 'Dependencies';
+  }
+  // C#/.NET dependency tools (Session 57)
+  if (toolLower === 'dotnet-outdated') {
+    return 'Dependencies';
+  }
+
+  // ================================================================
+  // PERFORMANCE PATTERNS (Must come before general dependency patterns)
+  // ================================================================
+  // TypeScript Performance Tools (Session 57 Part 3)
+  if (toolLower === 'lighthouse' || toolLower === 'bundle-analyzer' || toolLower === 'eslint-perf') {
+    return 'Performance';
+  }
+
+  // ================================================================
+  // ARCHITECTURE PATTERNS (Must come before general dependency patterns)
+  // ================================================================
+  // TypeScript Architecture Tools (Session 57 Part 3) - Check by TOOL FIRST
+  if (toolLower === 'madge' || toolLower === 'dependency-cruiser' || toolLower === 'ts-unused-exports') {
+    return 'Architecture';
+  }
+  // Python Architecture Tools (Session 57 Part 4 & 5)
+  if (toolLower === 'pydeps' || toolLower === 'import-linter') {
+    return 'Architecture';
+  }
+  // Java Architecture Tools (Session 57 Part 5)
+  if (toolLower === 'jdepend') {
+    return 'Architecture';
+  }
+  // Go Architecture Tools (Session 57 Part 5)
+  if (toolLower === 'go-arch-lint') {
+    return 'Architecture';
+  }
+  // Rust Architecture Tools (Session 57 Part 5)
+  if (toolLower === 'cargo-modules') {
+    return 'Architecture';
+  }
+  // Ruby Architecture Tools (Session 57 Part 5)
+  if (toolLower === 'packwerk') {
+    return 'Architecture';
+  }
+  // PHP Architecture Tools (Session 57 Part 5)
+  if (toolLower === 'deptrac') {
+    return 'Architecture';
+  }
+
+  // General dependency patterns (AFTER architecture tools check to avoid "circular-dependency" matching)
   if (
     ruleLower.includes('dependency') ||
     ruleLower.includes('cve') ||
@@ -92,10 +181,6 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   ) {
     return 'Dependencies';
   }
-
-  // ================================================================
-  // PERFORMANCE PATTERNS
-  // ================================================================
   // Python performance patterns (pylint, ruff rules)
   if (
     ruleLower.includes('perf') ||
@@ -124,7 +209,8 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   }
 
   // ================================================================
-  // ARCHITECTURE PATTERNS
+  // ARCHITECTURE PATTERNS (continued - general patterns)
+  // Note: Tool-based checks moved earlier to avoid "circular-dependency" matching Dependencies
   // ================================================================
   // Python architecture patterns
   if (
@@ -172,6 +258,22 @@ export function detectCategory(rule: string | null | undefined, tool: string, me
   }
   // Ruby code quality
   if (toolLower === 'rubocop') {
+    return 'Code Quality';
+  }
+  // Rust code quality (Session 57)
+  if (toolLower === 'clippy') {
+    return 'Code Quality';
+  }
+  // PHP code quality (Session 57)
+  if (toolLower === 'phpstan' || toolLower === 'psalm' || toolLower === 'phpcs' || toolLower === 'php_codesniffer') {
+    return 'Code Quality';
+  }
+  // C#/.NET code quality (Session 57)
+  if (toolLower === 'dotnet-format' || toolLower === 'dotnet format') {
+    return 'Code Quality';
+  }
+  // staticcheck (Go) - code quality
+  if (toolLower === 'staticcheck') {
     return 'Code Quality';
   }
   // General code quality patterns

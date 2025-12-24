@@ -4,7 +4,7 @@
   "rule": "javascript.lang.security.detect-child-process.detect-child-process",
   "tool": "semgrep",
   "severity": "high",
-  "description": "To mitigate this vulnerability, follow these steps:\n\n1. **Avoid Using `child_process.exec`**: This function spawns a shell and is vulnerable to command injection if user input is included in the command string. Instead, use `child_process.execFile` or `child_process.spawn`, which do not invoke the shell and are safer for executing commands with user input. ([nodejs-security.com](https://www.nodejs-security.com/blog/secure-javascript-coding-practices-against-command-injection-vulnerabilities?utm_source=openai))\n\n2. **Sanitize User Input**: Implement strict input validation and sanitization to ensure that user input does not contain malicious code. This can involve using allowlists to permit only known safe characters and patterns. ([nodejs-security.com](https://www.nodejs-security.com/blog/secure-javascript-coding-practices-against-command-injection-vulnerabilities?utm_source=openai))\n\n3. **Use Parameterized Commands**: When possible, use parameterized commands that separate the command from its arguments, reducing the risk of injection. For example, when using `spawn`, pass the command and its arguments as separate elements in an array. ([nodejs-security.com](https://www.nodejs-security.com/blog/secure-javascript-coding-practices-against-command-injection-vulnerabilities?utm_source=openai))\n\n4. **Keep Dependencies Updated**: Regularly update Node.js and its dependencies to incorporate security patches and improvements. This practice helps in mitigating known vulnerabilities and enhances the overall security posture of the application. ([nodejs.org](https://nodejs.org/es/blog/vulnerability/april-2024-security-releases-2?utm_source=openai))\n\n5. **Implement Least Privilege Principle**: Ensure that the application runs with the minimum necessary privileges to limit the potential impact of a successful attack. This includes restricting file system access and network permissions to only what is essential for the application's functionality. ([securecodingpractices.com](https://securecodingpractices.com/prevent-command-injection-node-js-child-process/?utm_source=openai))\n\nBy following these steps, you can significantly reduce the risk of command injection vulnerabilities in your Node.js application.",
+  "description": "AI-generated fix pattern for javascript.lang.security.detect-child-process.detect-child-process",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": ""
+      "after": "const cp = require('child_process');\nconst util = require('util');\n\nfunction execHelper(command, options, streamStdout = false) {\n  // Validate and sanitize command input\n  if (typeof command !== 'string' || command.trim() === '') {\n    return Promise.reject(new Error('Invalid command'));\n  }\n  \n  // Use execFile with array of arguments instead of exec to prevent injection\n  // Or if exec is required, use shell escaping\n  const shellEscape = require('shell-quote').quote;\n  \n  return new Promise((resolve, reject) => {\n    // Split command into program and args for safer execution\n    const args = command.split(' ');\n    const program = args.shift();\n    \n    const proc = cp.execFile(program, args, options, (error, stdout) =>\n      error ? reject(error) : resolve(stdout.trim())\n    );\n    if (streamStdout) {\n      proc.stdout.pipe(process.stdout);\n    }\n  });\n}"
     },
-    "instructions": "To mitigate this vulnerability, follow these steps:\n\n1. **Avoid Using `child_process.exec`**: This function spawns a shell and is vulnerable to command injection if user input is included in the command string. Instead, use `child_process.execFile` or `child_process.spawn`, which do not invoke the shell and are safer for executing commands with user input. ([nodejs-security.com](https://www.nodejs-security.com/blog/secure-javascript-coding-practices-against-command-injection-vulnerabilities?utm_source=openai))\n\n2. **Sanitize User Input**: Implement strict input validation and sanitization to ensure that user input does not contain malicious code. This can involve using allowlists to permit only known safe characters and patterns. ([nodejs-security.com](https://www.nodejs-security.com/blog/secure-javascript-coding-practices-against-command-injection-vulnerabilities?utm_source=openai))\n\n3. **Use Parameterized Commands**: When possible, use parameterized commands that separate the command from its arguments, reducing the risk of injection. For example, when using `spawn`, pass the command and its arguments as separate elements in an array. ([nodejs-security.com](https://www.nodejs-security.com/blog/secure-javascript-coding-practices-against-command-injection-vulnerabilities?utm_source=openai))\n\n4. **Keep Dependencies Updated**: Regularly update Node.js and its dependencies to incorporate security patches and improvements. This practice helps in mitigating known vulnerabilities and enhances the overall security posture of the application. ([nodejs.org](https://nodejs.org/es/blog/vulnerability/april-2024-security-releases-2?utm_source=openai))\n\n5. **Implement Least Privilege Principle**: Ensure that the application runs with the minimum necessary privileges to limit the potential impact of a successful attack. This includes restricting file system access and network permissions to only what is essential for the application's functionality. ([securecodingpractices.com](https://securecodingpractices.com/prevent-command-injection-node-js-child-process/?utm_source=openai))\n\nBy following these steps, you can significantly reduce the risk of command injection vulnerabilities in your Node.js application."
+    "instructions": "AI-generated fix pattern for javascript.lang.security.detect-child-process.detect-child-process"
   },
   "locations": [
     {
@@ -43,9 +43,69 @@
       "category": "NEW"
     },
     {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 97,
+      "snippet": "    94 | \n    95 |     try {\n    96 |       const cloneCmd = `git clone --depth ${depth} \"${repoUrl}\" \"${localPath}\"`;\n>   97 |       execSync(cloneCmd, {\n    98 |         stdio: 'pipe',\n    99 |         timeout: timeout * 1000,\n   100 |         maxBuffer: 50 * 1024 * 1024 // 50 MB",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 138,
+      "snippet": "   135 |     for (const branch of branchesToCheck) {\n   136 |       try {\n   137 |         // Try to checkout the branch\n>  138 |         execSync(`git checkout ${branch}`, {\n   139 |           cwd: localPath,\n   140 |           stdio: 'pipe'\n   141 |         });",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 146,
+      "snippet": "   143 |       } catch (error) {\n   144 |         // If checkout fails, try to fetch the branch\n   145 |         try {\n>  146 |           execSync(`git fetch origin ${branch}:${branch}`, {\n   147 |             cwd: localPath,\n   148 |             stdio: 'pipe'\n   149 |           });",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 163,
+      "snippet": "   160 |    */\n   161 |   getModifiedFiles(localPath: string, baseBranch: string, prBranch: string): string[] {\n   162 |     try {\n>  163 |       const result = execSync(`git diff --name-only ${baseBranch}...${prBranch}`, {\n   164 |         cwd: localPath,\n   165 |         encoding: 'utf-8',\n   166 |         stdio: 'pipe'",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 179,
+      "snippet": "   176 |    */\n   177 |   checkoutBranch(localPath: string, branch: string): void {\n   178 |     try {\n>  179 |       execSync(`git checkout ${branch}`, {\n   180 |         cwd: localPath,\n   181 |         stdio: 'pipe'\n   182 |       });",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 233,
+      "snippet": "   230 |     try {\n   231 |       // Method 2: Try with sudo (Linux/macOS only)\n   232 |       if (process.platform !== 'win32') {\n>  233 |         execSync(`sudo rm -rf \"${localPath}\"`, {\n   234 |           stdio: 'pipe',\n   235 |           timeout: 30000\n   236 |         });",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 247,
+      "snippet": "   244 |     try {\n   245 |       // Method 3: Try Git removal (if it's a Git repo)\n   246 |       if (fs.existsSync(path.join(localPath, '.git'))) {\n>  247 |         execSync(`git clean -fdx && rm -rf \"${localPath}\"`, {\n   248 |           cwd: path.dirname(localPath),\n   249 |           stdio: 'pipe',\n   250 |           timeout: 30000",
+      "category": "NEW"
+    },
+    {
       "file": "packages/agents/src/two-branch/utils/git-patch-generator.ts",
       "line": 235,
       "snippet": "   232 |     // Run git apply --check\n   233 | \n   234 |     try {\n>  235 |       execSync(`git apply --check ${tempPatchPath}`, {\n   236 |         cwd: repositoryPath,\n   237 |         stdio: 'pipe'\n   238 |       });",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 66,
+      "snippet": "    63 |     const startTime = Date.now();\n    64 | \n    65 |     // Get current commit\n>   66 |     const commit = execSync(`cd ${repoPath} && git rev-parse HEAD`, { encoding: 'utf8' }).trim();\n    67 | \n    68 |     // Check if we already have this index\n    69 |     const cacheKey = this.getCacheKey(repoUrl, branch, commit);",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 246,
+      "snippet": "   243 |     console.log('📝 Getting diff files for PR analysis...');\n   244 | \n   245 |     const command = `cd ${repoPath} && git diff --name-only ${baseBranch}...${prBranch} | grep -E \"\\\\.(java|kt|scala|groovy)$\" || true`;\n>  246 |     const output = execSync(command, { encoding: 'utf8' });\n   247 | \n   248 |     const files = output.trim().split('\\n').filter(f => f.length > 0);\n   249 |     console.log(`   Found ${files.length} changed files in PR`);",
+      "category": "NEW"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 397,
+      "snippet": "   394 |   private async findFiles(repoPath: string, pattern: string): Promise<string[]> {\n   395 |     try {\n   396 |       const output = execSync(\n>  397 |         `find ${repoPath} -name \"${pattern}\" -type f 2>/dev/null | head -10000`,\n   398 |         { encoding: 'utf8' }\n   399 |       );\n   400 |       return output.trim().split('\\n').filter(f => f.length > 0);",
       "category": "NEW"
     },
     {
@@ -241,48 +301,6 @@
       "category": "EXISTING_REST"
     },
     {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 97,
-      "snippet": "    94 | \n    95 |     try {\n    96 |       const cloneCmd = `git clone --depth ${depth} \"${repoUrl}\" \"${localPath}\"`;\n>   97 |       execSync(cloneCmd, {\n    98 |         stdio: 'pipe',\n    99 |         timeout: timeout * 1000,\n   100 |         maxBuffer: 50 * 1024 * 1024 // 50 MB",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 138,
-      "snippet": "   135 |     for (const branch of branchesToCheck) {\n   136 |       try {\n   137 |         // Try to checkout the branch\n>  138 |         execSync(`git checkout ${branch}`, {\n   139 |           cwd: localPath,\n   140 |           stdio: 'pipe'\n   141 |         });",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 146,
-      "snippet": "   143 |       } catch (error) {\n   144 |         // If checkout fails, try to fetch the branch\n   145 |         try {\n>  146 |           execSync(`git fetch origin ${branch}:${branch}`, {\n   147 |             cwd: localPath,\n   148 |             stdio: 'pipe'\n   149 |           });",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 163,
-      "snippet": "   160 |    */\n   161 |   getModifiedFiles(localPath: string, baseBranch: string, prBranch: string): string[] {\n   162 |     try {\n>  163 |       const result = execSync(`git diff --name-only ${baseBranch}...${prBranch}`, {\n   164 |         cwd: localPath,\n   165 |         encoding: 'utf-8',\n   166 |         stdio: 'pipe'",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 179,
-      "snippet": "   176 |    */\n   177 |   checkoutBranch(localPath: string, branch: string): void {\n   178 |     try {\n>  179 |       execSync(`git checkout ${branch}`, {\n   180 |         cwd: localPath,\n   181 |         stdio: 'pipe'\n   182 |       });",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 233,
-      "snippet": "   230 |     try {\n   231 |       // Method 2: Try with sudo (Linux/macOS only)\n   232 |       if (process.platform !== 'win32') {\n>  233 |         execSync(`sudo rm -rf \"${localPath}\"`, {\n   234 |           stdio: 'pipe',\n   235 |           timeout: 30000\n   236 |         });",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
-      "line": 247,
-      "snippet": "   244 |     try {\n   245 |       // Method 3: Try Git removal (if it's a Git repo)\n   246 |       if (fs.existsSync(path.join(localPath, '.git'))) {\n>  247 |         execSync(`git clean -fdx && rm -rf \"${localPath}\"`, {\n   248 |           cwd: path.dirname(localPath),\n   249 |           stdio: 'pipe',\n   250 |           timeout: 30000",
-      "category": "EXISTING_REST"
-    },
-    {
       "file": "packages/agents/src/two-branch/utils/git-utils.ts",
       "line": 72,
       "snippet": "    69 |   // Try three-dot diff first (merge base approach)\n    70 |   try {\n    71 |     const diffOutput = execSync(\n>   72 |       `git diff --name-only --find-renames ${baseBranch}...${compareBranch}`,\n    73 |       { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }\n    74 |     );\n    75 | ",
@@ -298,24 +316,6 @@
       "file": "packages/agents/src/two-branch/utils/git-utils.ts",
       "line": 118,
       "snippet": "   115 |  */\n   116 | export function branchExists(repoPath: string, branchName: string): boolean {\n   117 |   try {\n>  118 |     execSync(`git rev-parse --verify ${branchName}`, {\n   119 |       cwd: repoPath,\n   120 |       stdio: 'ignore'\n   121 |     });",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
-      "line": 66,
-      "snippet": "    63 |     const startTime = Date.now();\n    64 | \n    65 |     // Get current commit\n>   66 |     const commit = execSync(`cd ${repoPath} && git rev-parse HEAD`, { encoding: 'utf8' }).trim();\n    67 | \n    68 |     // Check if we already have this index\n    69 |     const cacheKey = this.getCacheKey(repoUrl, branch, commit);",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
-      "line": 246,
-      "snippet": "   243 |     console.log('📝 Getting diff files for PR analysis...');\n   244 | \n   245 |     const command = `cd ${repoPath} && git diff --name-only ${baseBranch}...${prBranch} | grep -E \"\\\\.(java|kt|scala|groovy)$\" || true`;\n>  246 |     const output = execSync(command, { encoding: 'utf8' });\n   247 | \n   248 |     const files = output.trim().split('\\n').filter(f => f.length > 0);\n   249 |     console.log(`   Found ${files.length} changed files in PR`);",
-      "category": "EXISTING_REST"
-    },
-    {
-      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
-      "line": 397,
-      "snippet": "   394 |   private async findFiles(repoPath: string, pattern: string): Promise<string[]> {\n   395 |     try {\n   396 |       const output = execSync(\n>  397 |         `find ${repoPath} -name \"${pattern}\" -type f 2>/dev/null | head -10000`,\n   398 |         { encoding: 'utf8' }\n   399 |       );\n   400 |       return output.trim().split('\\n').filter(f => f.length > 0);",
       "category": "EXISTING_REST"
     },
     {
@@ -356,8 +356,74 @@
     },
     {
       "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
-      "line": 1064,
-      "snippet": "  1061 |       return this.deduplicateLocations(locations);\n  1062 |     }\n  1063 | \n> 1064 |     const { CodeSnippetExtractor } = await import('../utils/code-snippet-extractor');\n  1065 |     const path = await import('path');\n  1066 | \n  1067 |     // BUG FIX #33: Increased snippet limit per group (was 100 globally, now 1000 per group)",
+      "line": 1104,
+      "snippet": "  1101 |             snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';\n  1102 |           } else {\n  1103 |             snippet = '';\n> 1104 |           }\n  1105 |         } catch (error) {\n  1106 |           // Extraction failed - use empty snippet\n  1107 |           snippet = '';",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 6024,
+      "snippet": "// Line 6024 in v9-grouped-report-formatter.ts\n// (empty line or configuration file - no code to display)",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 6032,
+      "snippet": "// Line 6032 in v9-grouped-report-formatter.ts\n// (empty line or configuration file - no code to display)",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts",
+      "line": 6053,
+      "snippet": "// Line 6053 in v9-grouped-report-formatter.ts\n// (empty line or configuration file - no code to display)",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 110,
+      "snippet": "   107 | \n   108 |   /**\n   109 |    * Detect default branch (main/master)\n>  110 |    */\n   111 |   private detectDefaultBranch(localPath: string): string {\n   112 |     try {\n   113 |       const result = execSync('git remote show origin', {",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 151,
+      "snippet": "   148 |             stdio: 'pipe'\n   149 |           });\n   150 |           console.log(`   ✅ Fetched branch '${branch}'`);\n>  151 |         } catch (fetchError: any) {\n   152 |           throw new Error(`Branch '${branch}' not found: ${fetchError.message}`);\n   153 |         }\n   154 |       }",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 159,
+      "snippet": "   156 |   }\n   157 | \n   158 |   /**\n>  159 |    * Get modified files between two branches\n   160 |    */\n   161 |   getModifiedFiles(localPath: string, baseBranch: string, prBranch: string): string[] {\n   162 |     try {",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 176,
+      "snippet": "   173 | \n   174 |   /**\n   175 |    * Checkout a specific branch\n>  176 |    */\n   177 |   checkoutBranch(localPath: string, branch: string): void {\n   178 |     try {\n   179 |       execSync(`git checkout ${branch}`, {",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 192,
+      "snippet": "   189 |   /**\n   190 |    * Get current branch name\n   191 |    */\n>  192 |   getCurrentBranch(localPath: string): string {\n   193 |     try {\n   194 |       const result = execSync('git rev-parse --abbrev-ref HEAD', {\n   195 |         cwd: localPath,",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 230,
+      "snippet": "   227 |       console.log(`   ⚠️  Standard cleanup failed: ${error.message}`);\n   228 |     }\n   229 | \n>  230 |     try {\n   231 |       // Method 2: Try with sudo (Linux/macOS only)\n   232 |       if (process.platform !== 'win32') {\n   233 |         execSync(`sudo rm -rf \"${localPath}\"`, {",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 287,
+      "snippet": "   284 |   }\n   285 | \n   286 |   /**\n>  287 |    * Get repository size information\n   288 |    */\n   289 |   getRepositorySize(localPath: string): { files: number; sizeBytes: number } {\n   290 |     let fileCount = 0;",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/services/v9-repository-manager.ts",
+      "line": 301,
+      "snippet": "   298 | \n   299 |         if (stat.isDirectory()) {\n   300 |           if (!file.startsWith('.')) {\n>  301 |             walk(filePath);\n   302 |           }\n   303 |         } else {\n   304 |           fileCount++;",
       "category": "RESOLVED"
     },
     {
@@ -365,12 +431,30 @@
       "line": 234,
       "snippet": "   231 | \n   232 |     // Run git apply --check\n   233 | \n>  234 |     try {\n   235 |       execSync(`git apply --check ${tempPatchPath}`, {\n   236 |         cwd: repositoryPath,\n   237 |         stdio: 'pipe'",
       "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 99,
+      "snippet": "    96 |     }\n    97 | \n    98 |     // Process other JVM language files\n>   99 |     for (const file of kotlinFiles) {\n   100 |       const node = await this.createFileNode(file, 'kotlin');\n   101 |       fileTree.push(node);\n   102 |       totalSize += node.size;",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 279,
+      "snippet": "   276 |       critical.forEach(f => selected.add(f));\n   277 |       console.log(`   Critical paths: ${critical.length}`);\n   278 |     }\n>  279 | \n   280 |     console.log(`✅ Selected ${selected.size} files for analysis`);\n   281 |     return Array.from(selected);\n   282 |   }",
+      "category": "RESOLVED"
+    },
+    {
+      "file": "packages/agents/src/two-branch/utils/indexed-repo-cache.ts",
+      "line": 430,
+      "snippet": "   427 | \n   428 | // Export convenience functions\n   429 | export async function createIndexedCache(redisUrl?: string): Promise<IndexedRepoCache> {\n>  430 |   return new IndexedRepoCache(redisUrl);\n   431 | }\n   432 | \n   433 | export async function testIndexing(): Promise<void> {",
+      "category": "RESOLVED"
     }
   ],
   "metadata": {
-    "total_occurrences": 96,
+    "total_occurrences": 117,
     "confidence": "medium",
     "safe_auto_apply": false,
-    "estimated_time_seconds": 48
+    "estimated_time_seconds": 59
   }
 }

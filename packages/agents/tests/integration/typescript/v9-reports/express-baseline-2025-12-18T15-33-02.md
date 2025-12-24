@@ -1,0 +1,1449 @@
+# 🔍 Code Quality Analysis Report
+
+## Repository Information
+
+**Repository:** [expressjs/express](https://github.com/expressjs/express)  
+**Pull Request:** #0 - Baseline Analysis  
+**Author:** baseline-test (test@codequal.local)  
+**Organization:** expressjs  
+**Source Branch:** main  
+**Target Branch:** main  
+**Analysis Date:** December 18, 2025 at 10:32 AM EST  
+**Repository Size:** 218 files  
+**Analyzer Version:** 9.0.0
+
+## PR Impact
+
+**Files Modified:** 13  
+**Lines Added:** +0  
+**Lines Deleted:** -0  
+**Net Change:** 0 lines  
+
+## Analysis Performance
+
+**Total Duration:** 25s  
+
+## Quality Decision
+
+**Result:** ✅ **APPROVED**
+
+---
+
+## 📊 Executive Summary
+
+### Quality Score
+
+❌ **52.0/100** (Grade: **F**) - Critical
+
+> Significant quality issues require immediate action
+
+**Score Breakdown**:
+
+**Category Scores** (Repository Health):
+- 🔒 Security: 52/100
+
+**Overall Scores**:
+- 📱 **APP Score**: 52/100 (MIN of categories - "weakest link")
+- 👨‍💻 **Skill Score**: 50/100 (AVG of categories)
+
+> Scores saved to Supabase for tracking trends over time
+
+
+> 🚀 **Fix Coverage**: 50 issues (100%) have pattern-based fixes available
+> See **AI Fix Recommendations** section below for BASIC vs PRO tier details.
+
+
+
+
+---
+
+### Issue Summary
+
+**Total Issues**: 50 (13 unique types)
+
+
+
+**By Severity**:
+- 🔴 Critical: 0 (0.0%)
+- 🟠 High: 0 (0.0%)
+- 🟡 Medium: 47 (94.0%)
+- 🟢 Low: 3 (6.0%)
+
+**By Category & Severity**:
+
+| Category | Critical | High | Medium | Low | Total |
+|----------|----------|------|--------|-----|-------|
+| 🆕 NEW | 0 | 0 | 0 | 0 | **0** |
+| ⚠️ EXISTING_MODIFIED | 0 | 0 | 0 | 0 | **0** |
+| ✅ RESOLVED | 0 | 0 | 0 | 0 | **0** |
+| 📝 EXISTING_REST | 0 | 0 | 47 | 3 | **50** |
+| **TOTAL** | **0** | **0** | **47** | **3** | **50** |
+
+**App Health Score by Category**:
+
+| Category | Critical | High | Medium | Low | Total | Score |
+|----------|----------|------|--------|-----|-------|-------|
+| 🔒 Security | 0 | 0 | 47 | 3 | **50** | **52/100** |
+| ⚡ Performance | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| 🏗️ Architecture | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| 📦 Dependencies | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| ✨ Code Quality | 0 | 0 | 0 | 0 | **0** | **100/100** |
+| **TOTAL** | **0** | **0** | **47** | **3** | **50** | - |
+
+> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
+
+---
+
+### Decision & Actions
+
+**Blocking Decision**:
+- 0 blocking issues (NEW or EXISTING_MODIFIED with critical/high severity)
+- ✅ **PR CAN BE MERGED**
+
+
+
+**Analysis Results**:
+- AI-analyzed groups: 13
+- Cost-optimized analysis: 74.0% reduction
+- Coverage: 100% of detected issues
+- Duration: 25s
+
+---
+
+### 🤖 AI Fix Recommendations & Auto-Fix Capability
+
+**BASIC vs PRO Tier Fix System**:
+
+CodeQual offers two subscription tiers with different fix capabilities:
+
+**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
+- 📚 **Pattern Fixes**: 50 issues (100.0%) - Pre-learned fixes from 500+ patterns in Supabase
+- 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
+- 📖 **Actionable Guidance**: Clear instructions for 0 issues needing manual attention
+
+**⭐ PRO Tier** (Full AI-Powered Analysis):
+- 🤖 **AI Auto-Fix**: All 50 issues analyzed with contextual AI fixes
+- 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
+- ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
+- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
+
+**Pattern Reuse Efficiency** (Cost Savings):
+- Pattern library contains 50+ learned fixes
+- Each pattern reuse = FREE (no AI API call needed)
+- Estimated savings: 60-80% reduction in AI calls for recurring issues
+
+> 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
+>
+> **All issues have guidance** - you're never left wondering how to fix something.
+
+---
+
+### 🔑 Key Findings
+
+- 👍 **Good Quality**: Only 0 new issues introduced, manageable to fix
+- 🔒 **Security**: 50 security issues identified (review recommended)
+- 🔧 **Auto-Fix Available**: 50 issues can be fixed automatically (see IDE integration files)
+
+---
+
+### ⚡ Critical Blockers
+
+✅ **No critical blockers** - PR can be merged once reviewed
+
+All identified issues are either low/medium severity or in unchanged code.
+
+---
+
+
+
+### 📈 Trends & Recommendations
+
+<!-- NOTE: This section will be enhanced later when API service and CI/CD integration is complete -->
+<!-- For now, keeping minimal recommendations only -->
+1. **Quality Status**: No blocking issues - PR meets baseline quality standards
+2. **Security Training**: Consider security training for the team (50 security issues found)
+4. **Automation Opportunity**: 100% of issues auto-fixable - consider pre-commit hooks
+
+
+## 🟡 Medium Priority Issues
+
+### 🟡 Javascript Express Security Audit Xss Direct Response Write
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 7 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+User input is rendered in HTML without proper encoding (Rule: javascript.express.security.audit.xss.direct-response-write.direct-response-write), allowing cross-site scripting (XSS) attacks.
+
+#### 🎯 Why does it matter?
+
+Attackers can inject malicious JavaScript that executes in victims' browsers, stealing session cookies, credentials, or performing actions on behalf of users.
+
+#### 🔍 Common causes:
+
+- Not escaping user input before rendering
+- Using dangerous HTML manipulation methods (innerHTML, etc.)
+- Client-side template injection
+- Trusting user-generated content
+
+#### ⚠️ Impact if not fixed:
+
+Session hijacking, credential theft, malware distribution, defacement, and phishing attacks. OWASP Top 10 A03:2021 (Injection).
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/params/index.js` (Line 67)
+
+**Code**:
+
+```javascript
+    64 |   var from = req.params.from;
+    65 |   var to = req.params.to;
+    66 |   var names = users.map(function(user){ return user.name; });
+>   67 |   res.send('users ' + names.slice(from, to + 1).join(', '));
+    68 | });
+    69 | 
+    70 | /* istanbul ignore next */
+```
+
+#### 🔧 How to Fix
+
+AI-generated fix pattern for javascript.express.security.audit.xss.direct-response-write.direct-response-write
+
+**Recommended Code**:
+
+```javascript
+app.get('/users/:from-:to', function (req, res) {
+  var from = req.params.from;
+  var to = req.params.to;
+  var names = users.map(function(user){ return user.name; });
+  res.render('users', { userList: names.slice(from, to + 1).join(', ') });
+});
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **7 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Cookie Settings Express Cookie Session Default Name
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.security.audit.express-cookie-settings.express-cookie-session-default-name
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 22)
+
+**Code**:
+
+```javascript
+    19 | // middleware
+    20 | 
+    21 | app.use(express.urlencoded())
+>   22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+    25 |   secret: 'shhhh, very secret'
+```
+
+#### 🔧 How to Fix
+
+Don’t use the default session cookie name Using the default session cookie name can open your app to attacks. The security issue posed is similar to X-Powered-By: a potential attacker can use it to fingerprint the server and target attacks accordingly.
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  name: 'sessionId',
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: 'shhhh, very secret'
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Cookie Settings Express Cookie Session No Domain
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.security.audit.express-cookie-settings.express-cookie-session-no-domain
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 22)
+
+**Code**:
+
+```javascript
+    19 | // middleware
+    20 | 
+    21 | app.use(express.urlencoded())
+>   22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+    25 |   secret: 'shhhh, very secret'
+```
+
+#### 🔧 How to Fix
+
+Default session middleware settings: `domain` not set. It indicates the domain of the cookie; use it to compare against the domain of the server in which the URL is being requested. If they match, then check the path attribute next.
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: 'shhhh, very secret',
+  cookie: {
+    domain: process.env.COOKIE_DOMAIN || 'localhost',
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'strict'
+  }
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Cookie Settings Express Cookie Session No Expires
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.security.audit.express-cookie-settings.express-cookie-session-no-expires
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 22)
+
+**Code**:
+
+```javascript
+    19 | // middleware
+    20 | 
+    21 | app.use(express.urlencoded())
+>   22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+    25 |   secret: 'shhhh, very secret'
+```
+
+#### 🔧 How to Fix
+
+Default session middleware settings: `expires` not set. Use it to set expiration date for persistent cookies.
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: 'shhhh, very secret',
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  }
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Cookie Settings Express Cookie Session No Httponly
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.security.audit.express-cookie-settings.express-cookie-session-no-httponly
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 22)
+
+**Code**:
+
+```javascript
+    19 | // middleware
+    20 | 
+    21 | app.use(express.urlencoded())
+>   22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+    25 |   secret: 'shhhh, very secret'
+```
+
+#### 🔧 How to Fix
+
+Default session middleware settings: `httpOnly` not set. It ensures the cookie is sent only over HTTP(S), not client JavaScript, helping to protect against cross-site scripting attacks.
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: 'shhhh, very secret',
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Cookie Settings Express Cookie Session No Path
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+File paths are constructed using unsanitized user input (Rule: javascript.express.security.audit.express-cookie-settings.express-cookie-session-no-path), enabling directory traversal attacks.
+
+#### 🎯 Why does it matter?
+
+Attackers can access files outside the intended directory using "../" sequences to read sensitive configuration files, credentials, or source code.
+
+#### 🔍 Common causes:
+
+- Direct concatenation of user input into file paths
+- Missing path canonicalization
+- No whitelist validation of allowed paths
+- Trusting client-provided filenames
+
+#### ⚠️ Impact if not fixed:
+
+Exposure of sensitive files (/etc/passwd, database credentials, API keys), source code leaks, and potential remote code execution when combined with file upload.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 22)
+
+**Code**:
+
+```javascript
+    19 | // middleware
+    20 | 
+    21 | app.use(express.urlencoded())
+>   22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+    25 |   secret: 'shhhh, very secret'
+```
+
+#### 🔧 How to Fix
+
+Default session middleware settings: `path` not set. It indicates the path of the cookie; use it to compare against the request path. If this and domain match, then send the cookie in the request.
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: 'shhhh, very secret',
+  cookie: {
+    path: '/'
+  }
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Cookie Settings Express Cookie Session No Secure
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.security.audit.express-cookie-settings.express-cookie-session-no-secure
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 22)
+
+**Code**:
+
+```javascript
+    19 | // middleware
+    20 | 
+    21 | app.use(express.urlencoded())
+>   22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+    25 |   secret: 'shhhh, very secret'
+```
+
+#### 🔧 How to Fix
+
+Default session middleware settings: `secure` not set. It ensures the browser only sends the cookie over HTTPS.
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: 'shhhh, very secret',
+  cookie: {
+    secure: true,
+    httpOnly: true,
+    sameSite: 'strict'
+  }
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Web Tainted Redirect Express
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 5 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.web.tainted-redirect-express.tainted-redirect-express
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 119)
+
+**Code**:
+
+```javascript
+   116 |         req.session.success = 'Authenticated as ' + user.name
+   117 |           + ' click to <a href="/logout">logout</a>. '
+   118 |           + ' You may now access <a href="/restricted">/restricted</a>.';
+>  119 |         res.redirect(req.get('Referrer') || '/');
+   120 |       });
+   121 |     } else {
+   122 |       req.session.error = 'Authentication failed, please check your '
+```
+
+#### 🔧 How to Fix
+
+The application builds a URL using user-controlled input which can lead to an open redirect vulnerability. An attacker can manipulate the URL and redirect users to an arbitrary domain. Open redirect vulnerabilities can lead to issues such as Cross-site scripting (XSS) or redirecting to a malicious domain for activities such as phishing to capture users' credentials. To prevent this vulnerability perform strict input validation of the domain against an allowlist of approved domains. Notify a user
+
+**Recommended Code**:
+
+```javascript
+// Validate redirect URL against allowlist
+        const referrer = req.get('Referrer') || '/';
+        const allowedPaths = ['/', '/restricted', '/logout'];
+        let redirectPath = '/';
+        
+        try {
+          const referrerUrl = new URL(referrer, `${req.protocol}://${req.get('host')}`);
+          // Only allow same-origin redirects
+          if (referrerUrl.origin === `${req.protocol}://${req.get('host')}`) {
+            // Check if path is in allowlist or starts with allowed prefix
+            if (allowedPaths.some(path => referrerUrl.pathname === path || referrerUrl.pathname.startsWith(path + '/'))) {
+              redirectPath = referrerUrl.pathname;
+            }
+          }
+        } catch (e) {
+          // Invalid URL, use default
+          redirectPath = '/';
+        }
+        
+        res.redirect(redirectPath);
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **5 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Security Audit Express Session Hardcoded Secret
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 4 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+Hardcoded credentials or secrets detected (Rule: javascript.express.security.audit.express-session-hardcoded-secret.express-session-hardcoded-secret). Secrets should not be in source code.
+
+#### 🎯 Why does it matter?
+
+Hardcoded credentials are exposed in version control, code reviews, and can be extracted from binaries.
+
+#### 🔍 Common causes:
+
+- Development shortcuts
+- Quick testing with real credentials
+- Not using environment variables
+- Lack of secrets management
+
+#### ⚠️ Impact if not fixed:
+
+Credential theft, unauthorized access, data breaches. Use environment variables or secret managers.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/auth/index.js` (Line 25)
+
+**Code**:
+
+```javascript
+    22 | app.use(session({
+    23 |   resave: false, // don't save session if unmodified
+    24 |   saveUninitialized: false, // don't create session until something stored
+>   25 |   secret: 'shhhh, very secret'
+    26 | }));
+    27 | 
+    28 | // Session-persisted message middleware
+```
+
+#### 🔧 How to Fix
+
+A hard-coded credential was detected. It is not recommended to store credentials in source-code, as this risks secrets being leaked and used by either an internal or external malicious adversary. It is recommended to use environment variables to securely provide credentials or retrieve credentials from a secure vault or HSM (Hardware Security Module).
+
+**Recommended Code**:
+
+```javascript
+app.use(session({
+  resave: false, // don't save session if unmodified
+  saveUninitialized: false, // don't create session until something stored
+  secret: process.env.SESSION_SECRET || (() => { throw new Error('SESSION_SECRET environment variable is required'); })()
+}));
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **4 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟡 Javascript Express Open Redirect Deepsemgrep
+
+**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 1 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a medium severity problem. Rule: javascript.express.open-redirect-deepsemgrep.open-redirect-deepsemgrep
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### 📊 Risk Assessment
+
+**Overall Risk**: 🟡 **MODERATE RISK**
+
+Should be addressed - may impact system quality or maintainability
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/route-separation/user.js` (Line 46)
+
+**Code**:
+
+```javascript
+    43 |   var user = req.body.user;
+    44 |   req.user.name = user.name;
+    45 |   req.user.email = user.email;
+>   46 |   res.redirect(req.get('Referrer') || '/');
+    47 | };
+    48 | 
+```
+
+#### 🔧 How to Fix
+
+The application builds a URL using user-controlled input which can lead to an open redirect vulnerability. An attacker can manipulate the URL and redirect users to an arbitrary domain. Open redirect vulnerabilities can lead to issues such as Cross-site scripting (XSS) or redirecting to a malicious domain for activities such as phishing to capture users' credentials. To prevent this vulnerability perform strict input validation of the domain against an allowlist of approved domains. Notify a user
+
+**Recommended Code**:
+
+```javascript
+// Validate redirect URL against allowlist
+  const allowedDomains = ['/', '/dashboard', '/profile', '/settings'];
+  const referrer = req.get('Referrer') || '/';
+  let redirectUrl = '/';
+  
+  try {
+    const refererUrl = new URL(referrer, `${req.protocol}://${req.get('host')}`);
+    const currentHost = req.get('host');
+    
+    // Only allow same-origin redirects or paths in allowlist
+    if (refererUrl.host === currentHost && allowedDomains.includes(refererUrl.pathname)) {
+      redirectUrl = refererUrl.pathname;
+    }
+  } catch (e) {
+    // If URL parsing fails, check if it's a relative path in allowlist
+    if (allowedDomains.includes(referrer)) {
+      redirectUrl = referrer;
+    }
+  }
+  
+  res.redirect(redirectUrl);
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **1 file** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+
+## 🟢 Low Priority Issues
+
+### 🟢 Javascript Express Web Cookies Httponly Missing Express
+
+**Severity**: LOW | **Tool**: semgrep | **Found in**: 1 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a low severity problem. Rule: javascript.express.web.cookies-httponly-missing-express.cookies-httponly-missing-express
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### ✨ Risk Assessment
+
+**Overall Risk**: 🟢 **LOW RISK**
+
+Nice to fix - improves code quality and developer experience
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/cookies/index.js` (Line 43)
+
+**Code**:
+
+```javascript
+    40 |   var minute = 60000;
+    41 | 
+    42 |   if (req.body && req.body.remember) {
+>   43 |     res.cookie('remember', 1, { maxAge: minute })
+    44 |   }
+    45 | 
+    46 |   res.redirect(req.get('Referrer') || '/');
+```
+
+#### 🔧 How to Fix
+
+Detected a cookie where the `HttpOnly` flag is either missing or disabled. The `HttpOnly` cookie flag instructs the browser to forbid client-side JavaScript to read the cookie. If JavaScript interaction is required, you can ignore this finding. However, set the `HttpOnly` flag to `true` in all other cases. If this wasn't intentional, it's recommended to set the HttpOnly flag to true by adding `httpOnly: true` to the cookie options, so the cookie will not be accessible through client-side scripts
+
+**Recommended Code**:
+
+```javascript
+res.cookie('remember', 1, { maxAge: minute, httpOnly: true })
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **1 file** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟢 Javascript Express Web Cookies Samesite Missing Express
+
+**Severity**: LOW | **Tool**: semgrep | **Found in**: 1 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a low severity problem. Rule: javascript.express.web.cookies-samesite-missing-express.cookies-samesite-missing-express
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### ✨ Risk Assessment
+
+**Overall Risk**: 🟢 **LOW RISK**
+
+Nice to fix - improves code quality and developer experience
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/cookies/index.js` (Line 43)
+
+**Code**:
+
+```javascript
+    40 |   var minute = 60000;
+    41 | 
+    42 |   if (req.body && req.body.remember) {
+>   43 |     res.cookie('remember', 1, { maxAge: minute })
+    44 |   }
+    45 | 
+    46 |   res.redirect(req.get('Referrer') || '/');
+```
+
+#### 🔧 How to Fix
+
+Detected a cookie options with the `SameSite` flag set to "None". This is a potential security risk that arises from the way web browsers manage cookies. In a typical web application, cookies are used to store and transmit session-related data between a client and a server. To enhance security, cookies can be marked with the "SameSite" attribute, which restricts their usage based on the origin of the page that set them. This attribute can have three values: "Strict," "Lax," or "None". Make sure
+
+**Recommended Code**:
+
+```javascript
+res.cookie('remember', 1, { maxAge: minute, sameSite: 'lax', secure: true, httpOnly: true })
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **1 file** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟢 Javascript Express Web Cookies Secure Missing Express
+
+**Severity**: LOW | **Tool**: semgrep | **Found in**: 1 files | **Category**: EXISTING_REST
+
+---
+
+#### 📋 What is this issue?
+
+This issue was detected by semgrep as a low severity problem. Rule: javascript.express.web.cookies-secure-missing-express.cookies-secure-missing-express
+
+#### 🎯 Why does it matter?
+
+This pattern can lead to technical debt or maintenance issues.
+
+#### 🔍 Common causes:
+
+- Code pattern flagged by semgrep
+- May need refactoring or review
+
+#### ⚠️ Impact if not fixed:
+
+Consider addressing to improve code quality.
+
+#### ✨ Risk Assessment
+
+**Overall Risk**: 🟢 **LOW RISK**
+
+Nice to fix - improves code quality and developer experience
+
+**Category**: Security  
+**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
+
+#### 📍 Representative Example
+
+**Location**: `examples/cookies/index.js` (Line 43)
+
+**Code**:
+
+```javascript
+    40 |   var minute = 60000;
+    41 | 
+    42 |   if (req.body && req.body.remember) {
+>   43 |     res.cookie('remember', 1, { maxAge: minute })
+    44 |   }
+    45 | 
+    46 |   res.redirect(req.get('Referrer') || '/');
+```
+
+#### 🔧 How to Fix
+
+Detected a cookie where the `Secure` flag is either missing or disabled. The `Secure` cookie flag instructs the browser to forbid sending the cookie over an insecure HTTP request. Set the `Secure` flag to `true` so the cookie will only be sent over HTTPS. If this wasn't intentional, it's recommended to set the Secure flag to true by adding `secure: true` to the cookie options, so the cookie will always be sent over HTTPS.
+
+**Recommended Code**:
+
+```javascript
+res.cookie('remember', 1, { maxAge: minute, secure: true, httpOnly: true, sameSite: 'strict' })
+```
+
+#### 📎 All Occurrences
+
+This issue appears in **1 file** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+
+## 💼 Business Impact Analysis
+
+### Executive Summary
+✅ **Acceptable quality:** Issues identified are manageable and can be addressed systematically through normal development cycles.
+
+### Financial Impact
+**💚 Low Financial Risk**
+No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
+
+**Cost to fix:** Minimal - most issues are auto-fixable via IDE tools or linters.
+**Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
+**Recommendation:** Address during regular refactoring cycles or enable pre-commit hooks (ESLint, Prettier).
+
+**🎁 Quick Win:** 50 of 50 issues (100%) can be auto-fixed in ~1 minutes with linter `--fix` commands.
+
+### Risk Assessment
+- **Immediate Risk:** 🟢 Low
+  - 0 blocking issues require attention before deployment
+  - 0 critical issues need urgent resolution
+  - 0 high-severity issues should be prioritized
+  
+- **Future Risk:** 🟡 Medium
+  - Technical debt will compound if 50 backlog issues are not addressed
+  - Code maintainability may decrease over time
+  - Security vulnerabilities (50) pose ongoing risk
+
+### Risk Matrix by Category
+| Category | Blocking | Backlog | Total Issues | Risk Level |
+|----------|----------|---------|--------------|------------|
+| **Security** | 0 | 50 | 50 | 🟡 Medium |
+| **Performance** | 0 | 0 | 0 | ⚪ None |
+| **Architecture** | 0 | 0 | 0 | ⚪ None |
+| **Dependencies** | 0 | 0 | 0 | ⚪ None |
+| **Code Quality** | 0 | 0 | 0 | ⚪ None |
+
+**Legend:**
+- **Blocking:** Critical/High severity issues in NEW or EXISTING_MODIFIED files (must fix before merge)
+- **Backlog:** Medium/Low severity or pre-existing issues (can be addressed later)
+- **Risk Level:** Overall impact assessment based on severity distribution
+
+### Recommendations
+
+1. **Maintain Quality:** Continue current development practices
+2. **Address Backlog:** Systematically reduce 50 identified issues
+3. **Prevention:** Integrate static analysis into CI/CD pipeline
+
+
+**Note:** Each issue group section above includes detailed business impact analysis specific to that issue type.
+
+## 📚 Educational Resources
+
+✅ **No critical or high-priority issues found.**
+
+Continue following best practices and consider integrating static analysis into your CI/CD pipeline to maintain this standard.
+
+### General Resources
+- [📚 Clean Code Principles](https://www.oreilly.com/library/view/clean-code-a/9780136083238/)
+- [📚 Effective TypeScript](https://effectivetypescript.com/)
+- [📚 Software Architecture Fundamentals](https://www.oreilly.com/library/view/software-architecture-fundamentals/9781491998991/)
+
+
+## 👥 Skills Tracking
+
+### baseline-test's Performance
+
+**Overall Score:** 50/100
+**Team Average:** 50/100
+
+### Category Breakdown
+
+| Category | Your Score | Team Avg | Status |
+|----------|------------|----------|--------|
+| 🔒 Security | 50/100 | 50/100 | ✅ Above Average |
+| ⚡ Performance | 50/100 | 50/100 | ✅ Above Average |
+| 🏗️  Architecture | 50/100 | 50/100 | ✅ Above Average |
+| 📦 Dependencies | 50/100 | 50/100 | ✅ Above Average |
+| ✨ Code Quality | 50/100 | 50/100 | ✅ Above Average |
+
+### 🏆 Top Performers
+
+| Rank | Developer | Score | PRs Analyzed |
+|------|-----------|-------|-------------|
+| 1 | **baseline-test** | **50/100** | **1** |
+
+> 💡 **Note:** Scores are based on code quality in your PRs. Higher scores mean fewer issues introduced!
+
+## 📊 Analysis Metadata
+
+### Analysis Coverage
+| Metric | Value |
+|--------|-------|
+| Total Repository Files | 218 |
+| Lines of Code | 0 |
+| Files Modified | 13 |
+| Note | Files Modified is clamped to Total Repository Files to avoid overcount (renames/moves) |
+| Lines Changed | 0 (+0/-0) |
+
+### Agent Performance
+| Agent | Model | Issues Found | Time | Cost |
+|-------|-------|--------------|------|------|
+| Security Agent | N/A | 50 | 32.0s | FREE |
+| Code Quality Agent | N/A | 0 | 2.6s | FREE |
+| Dependencies Agent | N/A | 0 | 9.2s | FREE |
+
+### Tool Performance
+| Tool | Issues Found | Duration |
+|------|--------------|----------|
+| semgrep | 50 | 22.8s |
+
+### Cost Analysis
+- **Total Analysis Cost:** $0.0000 (tool-based analysis)
+- **Analysis Duration:** 43.7s
+
+
+## 💬 PR Comment Template
+
+**Ready-to-paste comment for your pull request:**
+
+```markdown
+## ✅ Code Quality Analysis: APPROVED
+
+Hi @baseline-test! I've completed a comprehensive analysis of your PR.
+
+✅ Great job! No blocking issues found. Clean PR!
+
+### Summary
+- **Total Issues:** 50 (13 unique types)
+- **Blocking Issues:** 0 ✅
+- **Resolved Issues:** 0 
+- **Analysis Time:** 20.1s
+
+### ✅ No Blocking Issues
+This PR can be merged once approved by reviewers.
+
+### 💡 Quick Stats
+- Auto-fixable: 50/50 issues (13/13 types)
+- Critical: 0
+- High: 0
+- Medium: 47
+- Low: 3
+
+> 💡 **Note**: Auto-fixable count is based on IDE capabilities. See manifest file for exact fixable status per issue.
+```
+
+> 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.
+
+## 🛠️ How to Apply Fixes
+
+> ⚠️ **RECOMMENDATIONS ONLY**: CodeQual provides fix suggestions based on AI analysis. You control whether to apply them. Review all changes before applying to production code.
+
+**Quick Decision Guide**:
+- 🎯 **Using an IDE (Cursor, VSCode, IntelliJ)?** → Use **Method 1: LSP** (fastest, 1-click fixes)
+- 🏆 **Using GitHub Code Scanning or CI/CD?** → Use **Method 2: SARIF** (industry standard)
+- 🦊 **Using GitLab?** → Use **Method 3: GitLab** (native integration)
+
+### 🎯 Method 1: LSP Batch Actions (Best for IDEs) ⚡
+
+**✨ Best for IDEs**: Apply ALL 50 fixes with 1 click!
+
+**Download**: `codequal-lsp-actions.json`
+- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/express-pr0-1766071970465/codequal-lsp-actions.json)
+- Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE
+
+**How LSP Works**:
+- 📦 **Single file**: All 50 fixes in one JSON file (no lazy loading)
+- ⚡ **Parallel editing**: Batch actions apply fixes to multiple files simultaneously
+- 🎯 **Grouped by severity**: Batch actions organized by severity for easy filtering
+- 🔄 **IDE-native**: Uses LSP protocol for instant, reliable fixes
+
+**Steps**:
+1. Download `codequal-lsp-actions.json`
+2. Load file in your IDE (method varies by IDE)
+3. Open any file with issues
+4. Press `Cmd+.` (or `Ctrl+.`) to open Quick Fix menu
+5. Select **"Apply All Fixes (50 issues)"** at top of menu
+6. All fixes applied across all files in < 1 second! ✅
+
+**Batch Actions Available**:
+- 🔥 **"Apply All Fixes"** - All 50 issues across all files in one click
+- 🟡 **"Apply Medium Severity Fixes"** - 47 issues
+- 🟢 **"Apply Low Severity Fixes"** - 3 issues
+- 📝 Individual fixes available for granular control
+
+> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. When you click "Apply All", your IDE applies all 50 fixes across multiple files simultaneously (parallel editing)! All fixes are in one file - no lazy loading needed.
+
+**Three Ways to Use Batch Actions**:
+
+1. **🚀 Apply All (Fastest)** - 1 click for all 50 fixes (~5 seconds)
+2. **🎯 Severity Batches** - E.g., "Apply All Low Severity" for safe bulk fixes
+3. **👁️ Individual Review** - Review each fix before applying (50 clicks)
+
+---
+
+### 🔄 How CodeQual Fixes Work (Two-Tier System)
+
+**Two Fix Tiers for Maximum Coverage**:
+
+**📚 BASIC Tier (Pattern Library) - FREE**
+- Covers 50-60% of common issues with validated patterns
+- Speed: Instant (< 1ms per fix)
+- Cost: FREE - included in all plans
+- Languages: Java, TypeScript, Python, Go, Ruby
+- Patterns from: Checkstyle, PMD, ESLint, Ruff, Pylint, RuboCop
+
+**🤖 PRO Tier (AI-Generated) - PREMIUM**
+- Covers 100% of issues with AI-generated code
+- Speed: 2-5 seconds per fix (real-time generation)
+- Cost: Usage-based (AI API calls)
+- Contextual: Adapts to your code style and patterns
+- Smart: Handles complex refactoring, security fixes
+
+**How Application Works (IDE Integration)**:
+```
+When you click "Apply Fix" in your IDE:
+
+1. Code unchanged since analysis?
+   → Apply pre-generated fix instantly (BASIC or PRO)
+
+2. Code changed after analysis?
+   → IDE AI adapts the fix to your changes
+   → Ensures fix still applies correctly
+```
+
+**Why Trust Batch Apply?**
+✅ All fixes tested against your actual code
+✅ Only safe, non-breaking changes included
+✅ IDE AI fallback handles code changes automatically
+✅ Can undo with Cmd+Z if needed
+
+> 💡 **Tip**: BASIC tier fixes are instant and free. PRO tier adds AI coverage for 100% of issues.
+
+---
+
+### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)
+
+**Download**: `codequal-sarif-report.json`
+- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/express-pr0-1766071970465/codequal-sarif-report.json)
+- Works with: GitHub Code Scanning, CI/CD pipelines, VSCode/Cursor (with extension)
+
+**For GitHub Code Scanning**:
+1. Upload `codequal-sarif-report.json` to GitHub Actions
+2. GitHub automatically displays issues in Security tab
+3. Issues appear in PR checks and can block merges
+
+**For VSCode/Cursor (Alternative to LSP)**:
+1. Install SARIF Viewer extension from marketplace
+2. Open Command Palette (`Cmd+Shift+P`)
+3. Run: "SARIF: Open SARIF File"
+4. Select `codequal-sarif-report.json`
+5. View all issues in Problems panel
+
+> 🏆 **Best for**: GitHub Code Scanning, CI/CD pipelines, permanent diagnostic records
+
+---
+
+### 🦊 Method 3: Code Climate / GitLab Code Quality
+
+**Download**: `codequal-gitlab-codequality.json`
+- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/express-pr0-1766071970465/codequal-gitlab-codequality.json)
+- Works with: GitLab CI/CD, GitHub Actions (via Code Climate), Jenkins, CircleCI
+- Format: Code Climate (industry standard)
+
+**GitHub Actions Integration** (via Code Climate):
+
+```yaml
+# .github/workflows/code-quality.yml
+- name: Upload Code Quality Report
+  uses: actions/upload-artifact@v4
+  with:
+    name: code-quality-report
+    path: codequal-gitlab-codequality.json
+```
+
+**What you get**:
+- 📊 Code Quality metrics in CI/CD pipeline
+- 📈 Quality degradation/improvement tracking
+- 🚫 Optional quality gates (block merge on critical issues)
+- 📋 Standardized issue format for any CI tool
+
+**Features**:
+- All 50 issues in Code Climate format
+- Severity mapping: Critical→Blocker, High→Critical, Medium→Major, Low→Minor
+- File paths, line numbers, and fix suggestions included
+- Automatic issue tracking across commits (fingerprints)
+
+> 🎯 **Perfect for**: CI/CD automation, quality gates, multi-platform teams
+
+---
+
+## 🔗 Additional Files
+
+📦 **Manifest file** (for AI assistants with lazy loading): [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/express-pr0-1766071970465/all-issues-manifest.json)
+- Contains: All 50 auto-fixable issues with fix patterns
+- **Lazy loading**: Critical issues embedded (instant), high/medium/low lazy loaded in background
+- **Use with**: AI assistants (Cursor Chat, GitHub Copilot) if LSP doesn't work in your IDE
+- **Difference from LSP**: Manifest uses lazy loading by severity; LSP has all fixes in one file
+
+
+---
+
+*Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  
+*2025-12-18T15:33:02.537Z*

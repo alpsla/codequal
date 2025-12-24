@@ -161,9 +161,9 @@ export class CorgeaSmartBatcher {
   private createFingerprint(issue: Issue): string {
     // Include file, rule, and normalized code snippet
     const parts = [
-      issue.file || issue.path || '',
-      issue.rule || issue.ruleId || '',
-      this.normalizeSnippet(issue.snippet || issue.message || '')
+      issue.file || '',
+      issue.rule || '',
+      this.normalizeSnippet(issue.codeSnippet || issue.description || '')
     ];
 
     return createHash('md5').update(parts.join('|')).digest('hex');
@@ -198,7 +198,7 @@ export class CorgeaSmartBatcher {
     const byFile = new Map<string, Issue[]>();
 
     for (const issue of issues) {
-      const file = issue.file || issue.path || 'unknown';
+      const file = issue.file || 'unknown';
       const fileIssues = byFile.get(file) || [];
       fileIssues.push(issue);
       byFile.set(file, fileIssues);
@@ -231,7 +231,7 @@ export class CorgeaSmartBatcher {
 
         // Calculate fingerprint for the batch
         const fingerprint = createHash('md5')
-          .update(batchIssues.map(i => i.id || i.ruleId).join('|'))
+          .update(batchIssues.map(i => i.id || i.rule).join('|'))
           .digest('hex');
 
         // Estimate cost (10 cents per issue)
@@ -268,7 +268,7 @@ export class CorgeaSmartBatcher {
     let potentialDuplicates = 0;
 
     for (const issue of issues) {
-      const file = issue.file || issue.path || 'unknown';
+      const file = issue.file || 'unknown';
       files.add(file);
 
       const severity = issue.severity?.toLowerCase() || 'unknown';

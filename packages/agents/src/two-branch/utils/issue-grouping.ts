@@ -23,25 +23,38 @@ export interface IssueGroup {
   rule: string;                  // e.g., "AvoidThrowingRawExceptionTypes"
   tool: string;                  // e.g., "pmd", "semgrep"
   severity: string;              // e.g., "critical", "high", "medium", "low"
-  
+
   // Metadata
   description: string;           // Rule description
   category: string;              // e.g., "Design", "Security"
   detectedCategory?: string;     // e.g., "Security", "Performance", "Architecture", "Dependencies", "Code Quality"
-  
+
   // Occurrences
   count: number;                 // Total instances of this issue type
   examples: IssueExample[];      // Sample locations (max 5)
-  
-  // AI Analysis (filled after analysis)
+
+  // Fix capability flags (Phase 1 Security Tools - Session 59)
+  isRecommendationOnly: boolean; // true for secrets/container - no code fix possible
+  hasNativeFix: boolean;         // true for Tier 1 tools (eslint --fix, ruff --fix)
+  fixTier: 1 | 2 | 3 | 'recommendation';  // 1=native, 2=dedicated fixer, 3=AI, recommendation=no fix
+
+  // AI Analysis (filled after analysis) - ONLY for Tier 3
   fixSuggestion?: {
     fix: string;
     correctedCode: string;
     explanation: string;
     bestPractices?: string[];
   };
+
+  // Recommendation (for recommendation-only issues)
+  recommendation?: {
+    summary: string;              // Brief action summary
+    steps: string[];              // Actionable steps
+    urgency: 'immediate' | 'soon' | 'scheduled';
+  };
+
   educationalLinks?: string[];
-  
+
   // Cost tracking
   aiAnalyzed: boolean;           // Whether AI analysis was performed
   costSaved: number;             // Money saved by not analyzing each instance
@@ -63,14 +76,107 @@ export interface GroupingResult {
  */
 /**
  * Helper: Infer detectedCategory from tool name
+ * Updated to support Phase 1 security tools (Session 59)
  */
 function inferCategoryFromTool(tool: string): string {
   const t = tool.toLowerCase();
+
+  // Security tools (code-level)
   if (t === 'semgrep') return 'Security';
-  if (t === 'dependency-check') return 'Dependencies';
-  if (t === 'spotbugs') return 'Code Quality';
-  if (t === 'checkstyle' || t === 'pmd') return 'Code Quality';
+
+  // Secret detection tools (recommendation-only)
+  if (t === 'gitleaks' || t === 'trufflehog') return 'Secrets';
+
+  // IaC security tools (recommendation + partial fix)
+  if (t === 'checkov' || t === 'trivy-iac') return 'Infrastructure';
+
+  // Container security tools (recommendation-only)
+  if (t === 'trivy' || t === 'grype' || t === 'trivy-container') return 'Container Security';
+
+  // API Schema/GraphQL tools (Session 59 - P1)
+  if (t === 'spectral') return 'API Design';
+  if (t === 'graphql-cop' || t === 'graphql-scanner' || t === 'graphql-static') return 'GraphQL Security';
+
+  // Dependency/SCA tools
+  if (t === 'dependency-check' || t === 'npm-audit' || t === 'safety' ||
+      t === 'bundler-audit' || t === 'cargo-audit' || t === 'govulncheck') return 'Dependencies';
+
+  // Code quality tools
+  if (t === 'spotbugs' || t === 'checkstyle' || t === 'pmd' ||
+      t === 'eslint' || t === 'pylint' || t === 'rubocop' ||
+      t === 'phpstan' || t === 'clippy' || t === 'golangci-lint') return 'Code Quality';
+
+  // Style tools
+  if (t === 'prettier' || t === 'black' || t === 'gofmt' || t === 'rustfmt') return 'Style';
+
   return 'Architecture';
+}
+
+/**
+ * Helper: Check if a tool produces recommendation-only issues (no code fix possible)
+ * These issues should NOT go through AI fix generation
+ */
+export function isRecommendationOnlyTool(tool: string): boolean {
+  const recommendationTools = [
+    // Secret scanners - secrets need rotation, not code changes
+    'gitleaks',
+    'trufflehog',
+    // Container scanners - need image updates, not code changes
+    'trivy',
+    'grype',
+    'trivy-container',
+    // Some IaC issues (though Checkov has partial --fix support)
+    'trivy-iac',
+  ];
+  return recommendationTools.includes(tool.toLowerCase());
+}
+
+/**
+ * Helper: Check if a tool has native --fix support (Tier 1)
+ */
+export function hasNativeFixSupport(tool: string): boolean {
+  const tier1Tools = [
+    // JavaScript/TypeScript
+    'eslint',
+    'prettier',
+    'biome',
+    // Python
+    'ruff',
+    'black',
+    'autopep8',
+    'isort',
+    // Java
+    'sorald',
+    'checkstyle',
+    // Go
+    'gofmt',
+    'goimports',
+    // Rust
+    'rustfmt',
+    'clippy',
+    // IaC (partial support)
+    'checkov',
+  ];
+  return tier1Tools.includes(tool.toLowerCase());
+}
+
+/**
+ * Helper: Determine fix tier for a tool
+ */
+function determineFixTier(tool: string): 1 | 2 | 3 | 'recommendation' {
+  if (isRecommendationOnlyTool(tool)) {
+    return 'recommendation';
+  }
+  if (hasNativeFixSupport(tool)) {
+    return 1;
+  }
+  // Tier 2: Tools with dedicated fixers (sorald for PMD, etc.)
+  const tier2Tools = ['pmd', 'spotbugs'];
+  if (tier2Tools.includes(tool.toLowerCase())) {
+    return 2;
+  }
+  // Default to Tier 3 (AI-generated)
+  return 3;
 }
 
 export function groupIssues<T extends {
@@ -85,20 +191,25 @@ export function groupIssues<T extends {
   column?: number;
   snippet?: string;
 }>(issues: T[], maxExamplesPerGroup = 5): GroupingResult {
-  
+
   const groupMap = new Map<string, IssueGroup>();
-  
+
   // Group issues by rule + tool + severity
   for (const issue of issues) {
     const key = `${issue.tool}|${issue.rule}|${issue.severity}`;
-    
+
     // Debug: Log npm-audit grouping to diagnose duplication
     if (issue.tool === 'npm-audit') {
       console.log(`[DEBUG grouping] npm-audit issue - key: ${key}, rule: ${issue.rule}, severity: ${issue.severity}, message: ${issue.message.substring(0, 60)}`);
     }
-    
+
     let group = groupMap.get(key);
     if (!group) {
+      // Determine fix capabilities for this tool
+      const isRecommendation = isRecommendationOnlyTool(issue.tool);
+      const nativeFix = hasNativeFixSupport(issue.tool);
+      const fixTier = determineFixTier(issue.tool);
+
       group = {
         rule: issue.rule,
         tool: issue.tool,
@@ -108,6 +219,10 @@ export function groupIssues<T extends {
         detectedCategory: issue.detectedCategory || inferCategoryFromTool(issue.tool),  // BUG FIX: Preserve detectedCategory
         count: 0,
         examples: [],
+        // Fix capability flags (Session 59)
+        isRecommendationOnly: isRecommendation,
+        hasNativeFix: nativeFix,
+        fixTier: fixTier,
         aiAnalyzed: false,
         costSaved: 0
       };
@@ -215,52 +330,81 @@ export function groupIssues<T extends {
 /**
  * Filter groups to prioritize which ones get AI analysis
  * Strategy: Analyze high-impact groups first
+ *
+ * Updated (Session 59): Separates recommendation-only groups that should NOT go through AI fix generation
  */
 export function prioritizeGroups(
   groups: IssueGroup[],
   maxGroups = 20
 ): {
-  analyzed: IssueGroup[];
-  deferred: IssueGroup[];
+  analyzed: IssueGroup[];            // Groups that need AI fix generation (Tier 3)
+  deferred: IssueGroup[];            // Groups deferred due to maxGroups limit
+  recommendationOnly: IssueGroup[];  // Groups that only need recommendations (secrets, containers)
+  tier1Native: IssueGroup[];         // Groups with native --fix support (no AI needed)
+  tier2Dedicated: IssueGroup[];      // Groups with dedicated fixers (Sorald for PMD)
   reasoning: string;
 } {
-  
-  // Priority scoring:
+
+  // Separate groups by fix tier
+  const recommendationOnly: IssueGroup[] = [];
+  const tier1Native: IssueGroup[] = [];
+  const tier2Dedicated: IssueGroup[] = [];
+  const needsAIAnalysis: IssueGroup[] = [];
+
+  for (const group of groups) {
+    if (group.isRecommendationOnly || group.fixTier === 'recommendation') {
+      recommendationOnly.push(group);
+    } else if (group.fixTier === 1 || group.hasNativeFix) {
+      tier1Native.push(group);
+    } else if (group.fixTier === 2) {
+      tier2Dedicated.push(group);
+    } else {
+      needsAIAnalysis.push(group);
+    }
+  }
+
+  // Priority scoring ONLY for groups that need AI analysis (Tier 3):
   // 1. Critical severity: +1000 points
   // 2. High severity: +500 points
   // 3. Many occurrences: +count points
   // 4. Security/Error Prone categories: +200 points
-  
-  const scoredGroups = groups.map(group => {
+
+  const scoredGroups = needsAIAnalysis.map(group => {
     let score = group.count; // Base score = occurrence count
-    
+
     if (group.severity === 'critical') score += 1000;
     else if (group.severity === 'high') score += 500;
     else if (group.severity === 'medium') score += 100;
-    
+
     const catLower = group.category.toLowerCase();
     if (catLower.includes('security') || catLower.includes('error prone')) {
       score += 200;
     }
-    
+
     return { group, score };
   });
-  
+
   // Sort by score (highest first)
   scoredGroups.sort((a, b) => b.score - a.score);
-  
+
   const analyzed = scoredGroups.slice(0, maxGroups).map(s => s.group);
   const deferred = scoredGroups.slice(maxGroups).map(s => s.group);
-  
+
   const totalCoverage = analyzed.reduce((sum, g) => sum + g.count, 0);
   const totalIssues = groups.reduce((sum, g) => sum + g.count, 0);
   const coveragePercent = totalIssues > 0 ? (totalCoverage / totalIssues * 100).toFixed(1) : '0';
-  
-  const reasoning = `Analyzing top ${analyzed.length} groups covers ${totalCoverage} of ${totalIssues} issues (${coveragePercent}%)`;
-  
+
+  const reasoning = [
+    `Analyzing top ${analyzed.length} groups covers ${totalCoverage} of ${totalIssues} issues (${coveragePercent}%)`,
+    `Tier breakdown: ${tier1Native.length} native-fix, ${tier2Dedicated.length} dedicated-fixer, ${analyzed.length} AI-generated, ${recommendationOnly.length} recommendation-only`
+  ].join('. ');
+
   return {
     analyzed,
     deferred,
+    recommendationOnly,
+    tier1Native,
+    tier2Dedicated,
     reasoning
   };
 }

@@ -4,7 +4,8 @@
  * Common git operations used across V9 analysis tools
  */
 
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
+import { sanitizeBranchName, sanitizePath } from './security-utils';
 
 /**
  * Detect the default branch for a repository
@@ -66,10 +67,16 @@ export function getModifiedFilesBetweenBranches(
   baseBranch: string,
   compareBranch: string
 ): string[] {
+  // Sanitize branch names to prevent command injection
+  const safeBaseBranch = sanitizeBranchName(baseBranch);
+  const safeCompareBranch = sanitizeBranchName(compareBranch);
+
   // Try three-dot diff first (merge base approach)
+  // Using execFileSync with args array to prevent shell injection
   try {
-    const diffOutput = execSync(
-      `git diff --name-only --find-renames ${baseBranch}...${compareBranch}`,
+    const diffOutput = execFileSync(
+      'git',
+      ['diff', '--name-only', '--find-renames', `${safeBaseBranch}...${safeCompareBranch}`],
       { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
     );
 
@@ -88,8 +95,9 @@ export function getModifiedFilesBetweenBranches(
 
   // Fallback to two-dot diff if no merge base exists or three-dot returned nothing
   try {
-    const diffOutput = execSync(
-      `git diff --name-only --find-renames ${baseBranch}..${compareBranch}`,
+    const diffOutput = execFileSync(
+      'git',
+      ['diff', '--name-only', '--find-renames', `${safeBaseBranch}..${safeCompareBranch}`],
       { cwd: repoPath, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
     );
 
@@ -100,8 +108,8 @@ export function getModifiedFilesBetweenBranches(
   } catch (fallbackError: any) {
     // If both approaches fail, log warning and return empty array
     // This allows analysis to continue without modified file filtering
-    console.warn(`⚠️  Could not determine modified files between ${baseBranch} and ${compareBranch}: ${fallbackError.message}`);
-    console.warn('   Analysis will include ALL files (no filtering by modified files)');
+    console.warn(`[Git] Could not determine modified files between ${safeBaseBranch} and ${safeCompareBranch}:`, fallbackError.message);
+    console.warn('[Git] Analysis will include ALL files (no filtering by modified files)');
     return [];
   }
 }

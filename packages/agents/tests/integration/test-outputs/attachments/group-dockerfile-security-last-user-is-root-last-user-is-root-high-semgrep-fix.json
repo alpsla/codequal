@@ -4,7 +4,7 @@
   "rule": "dockerfile.security.last-user-is-root.last-user-is-root",
   "tool": "semgrep",
   "severity": "high",
-  "description": "To mitigate this issue, modify the Dockerfile to create a non-root user and switch to that user before running the application. This can be achieved by adding the following lines to the Dockerfile:\n\n```dockerfile\nRUN groupadd -r myuser && useradd -r -g myuser myuser\nUSER myuser\n```\n\nThis approach follows the principle of least privilege, reducing the potential impact of a security breach. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))",
+  "description": "AI-generated fix pattern for dockerfile.security.last-user-is-root.last-user-is-root",
   "fix_pattern": {
     "type": "template",
     "fixTier": 2,
@@ -13,9 +13,9 @@
     "confidence": 85,
     "example": {
       "before": "",
-      "after": "RUN groupadd -r myuser && useradd -r -g myuser myuser\nUSER myuser"
+      "after": "{PATH}\"\n\n# Switch to root for installation\nUSER root\n\n# Install system dependencies including jq\nRUN apt-get update && apt-get install -y \\\n    curl \\\n    git \\\n    jq \\\n    && rm -rf /var/lib/apt/lists/*\n\n# Switch back to non-root user\nUSER node"
     },
-    "instructions": "To mitigate this issue, modify the Dockerfile to create a non-root user and switch to that user before running the application. This can be achieved by adding the following lines to the Dockerfile:\n\n```dockerfile\nRUN groupadd -r myuser && useradd -r -g myuser myuser\nUSER myuser\n```\n\nThis approach follows the principle of least privilege, reducing the potential impact of a security breach. ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/?utm_source=openai))"
+    "instructions": "AI-generated fix pattern for dockerfile.security.last-user-is-root.last-user-is-root"
   },
   "locations": [
     {

@@ -25,7 +25,7 @@ export interface CloudAPIConfig {
   /** Tool name for logging */
   name: string;
 
-  /** Base URL of the API (e.g., https://api.corgea.app) */
+  /** Base URL of the API (e.g., https://www.corgea.app/api/v1) */
   baseUrl: string;
 
   /** API key or token for authentication */
