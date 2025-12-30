@@ -214,18 +214,19 @@ export function generateUpgradeHint(context: 'security' | 'performance' | 'bulk'
  */
 export function generateTierComparisonTable(): string {
   return `
-| Feature | BASIC (Free) | PRO ($10/mo) |
-|---------|--------------|--------------|
+| Feature | BASIC | PRO |
+|---------|-------|-----|
 | Issue Detection | ✅ All issues | ✅ All issues |
 | AI Recommendations | ✅ Copy-paste ready | ✅ Copy-paste ready |
+| Educational Resources | ✅ Learning paths | ✅ Learning paths |
+| Skill Progression | ✅ Track growth | ✅ Track growth |
+| Achievements & XP | ✅ Unlock badges | ✅ Unlock badges |
+| Community Impact | ✅ See your impact | ✅ See your impact |
 | Pattern-Based Fixes | ✅ Suggestions | ✅ **Auto-apply** |
-| AI Fix Generation | ❌ | ✅ **Included** |
-| Auto-Fix Apply | ❌ | ✅ **One-click** |
-| Historical Analytics | ❌ | ✅ 5 PRs history |
-| Skill Progression | ❌ | ✅ Track growth |
-| Achievements | ❌ | ✅ Unlock badges |
-| Community Impact | ❌ | ✅ See your impact |
-| Priority Support | ❌ | ✅ Email support |
+| **AI Fix Generation** | ❌ | ✅ **Included** |
+| **Auto-Fix Apply** | ❌ | ✅ **One-click** |
+| **Historical Analytics** | ❌ | ✅ **5 PRs history** |
+| **Priority Support** | ❌ | ✅ Email support |
 `;
 }
 

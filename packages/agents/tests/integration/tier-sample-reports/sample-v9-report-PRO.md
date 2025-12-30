@@ -8,7 +8,7 @@
 **Organization:** expressjs
 **Source Branch:** feature/middleware-api
 **Target Branch:** main
-**Analysis Date:** December 22, 2025 at 04:09 PM EST
+**Analysis Date:** December 30, 2025 at 03:52 PM EST
 **Repository Size:** 1,247 files | 89,432 lines
 **Analyzer Version:** 9.0.0
 **Tier:** 🌟 PRO
@@ -42,12 +42,19 @@
 
 **Category Scores** (Repository Health):
 - 🔒 Security: 87/100
-- ⚡ Performance: 97/100
-- ✨ Code Quality: 97/100
+- ⚡ Performance: 99/100
+- ✨ Code Quality: 98/100
 
 **Overall Scores**:
 - 📱 **APP Score**: 87/100 (MIN of categories - "weakest link")
-- 👨‍💻 **Skill Score**: 94/100 (AVG of categories)
+- 👨‍💻 **Skill Score**: 47/100 (base 50 ± issue deductions)
+
+**Skill Score Breakdown** (NEW + EXISTING_MODIFIED issues only):
+- 🔒 Security: 37/100
+- ⚡ Performance: 49/100
+- ✨ Code Quality: 50/100
+- 🏗️ Architecture: 50/100
+- 📦 Dependencies: 50/100
 
 > Scores saved to Supabase for tracking trends over time
 
@@ -82,11 +89,13 @@
 | Category | Critical | High | Medium | Low | Total | Score |
 |----------|----------|------|--------|-----|-------|-------|
 | 🔒 Security | 2 | 1 | 0 | 0 | **3** | **87/100** |
-| ⚡ Performance | 0 | 0 | 1 | 0 | **1** | **97/100** |
-| ✨ Code Quality | 0 | 0 | 0 | 4 | **4** | **97/100** |
+| ⚡ Performance | 0 | 0 | 1 | 0 | **1** | **99/100** |
+| ✨ Code Quality | 0 | 0 | 0 | 4 | **4** | **98/100** |
 | **TOTAL** | **2** | **1** | **1** | **4** | **8** | - |
 
-> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories).
+> **Score Calculation:**
+> - **APP Score:** Each category starts at 100, deducts for ALL issues: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall = MIN(all categories).
+> - **Skill Score:** Each category starts at 50 (new user) or previous score (existing user), deducts only for NEW + EXISTING_MODIFIED issues. Overall = AVG(all categories).
 
 ---
 
@@ -118,8 +127,6 @@
 - 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
 - ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
 - 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
-
-> 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
 
 ---
 
@@ -521,18 +528,19 @@ Unexpected console statement in `src/index.ts:12`
   - Security vulnerabilities (3) pose ongoing risk
 
 ### Risk Matrix by Category
-| Category | Blocking | Backlog | Total Issues | Risk Level |
-|----------|----------|---------|--------------|------------|
+| Category | This PR | Pre-existing | Auto-fixable | Action Required |
+|----------|---------|--------------|--------------|-----------------|
 | **Security** | 3 | 0 | 3 | 🔴 Critical |
-| **Performance** | 0 | 1 | 1 | 🟢 Low |
+| **Performance** | 1 | 0 | 1 | 🟢 Low |
 | **Architecture** | 0 | 0 | 0 | ⚪ None |
 | **Dependencies** | 0 | 0 | 0 | ⚪ None |
-| **Code Quality** | 0 | 4 | 4 | 🟢 Low |
+| **Code Quality** | 1 | 3 | 1 | 🟢 Low |
 
 **Legend:**
-- **Blocking:** Critical/High severity issues in NEW or EXISTING_MODIFIED files (must fix before merge)
-- **Backlog:** Medium/Low severity or pre-existing issues (can be addressed later)
-- **Risk Level:** Overall impact assessment based on severity distribution
+- **This PR:** Issues in files modified by this PR (NEW + EXISTING_MODIFIED)
+- **Pre-existing:** Issues in files NOT touched by this PR (EXISTING_REST)
+- **Auto-fixable:** Issues with available 1-click fixes
+- **Action Required:** Priority based on severity of issues introduced/modified by this PR
 
 ### Recommendations
 
@@ -586,7 +594,7 @@ You've contributed **8 patterns** that accelerate fixes for everyone.
 
 PERFECT COMBO! 5 flawless reviews in a row. Unstoppable!
 
-**+200 XP** | Unlocked: 4 days ago
+**+200 XP** | Unlocked: 1 weeks ago
 
 ---
 
@@ -596,7 +604,7 @@ PERFECT COMBO! 5 flawless reviews in a row. Unstoppable!
 
 Master hunter! 50 vulnerabilities eliminated from the codebase.
 
-**+500 XP** | Unlocked: 1 weeks ago
+**+500 XP** | Unlocked: 2 weeks ago
 
 Progress: [██████████] 100%
 
@@ -645,7 +653,44 @@ saving the community **12.5 hours** of development time.
 ---
 
 [View All Patterns] | [Enable Profile Sharing]
+## 📚 Phased Educational Plan
 
+### 📚 Phase 1: Blocker Issues Training (MUST FIX BEFORE MERGE)
+**Quick Learning:** 30-60 min per issue type | **Deep Dive:** 1-2 weeks
+
+**Javascript Express Security Audit Xss Direct Response Write Direct Response Write** (1 occurrence):
+- [📚 Semgrep: direct-response-write](https://semgrep.dev/r/javascript.express.security.audit.xss-direct-response-write.direct-response-write)
+
+**Javascript Express Security Sql Injection** (1 occurrence):
+- [📚 Semgrep: sql-injection](https://semgrep.dev/r/javascript.express.security.sql-injection)
+
+**Javascript Lang Security Detect Child Process** (1 occurrence):
+- [📚 Semgrep: detect-child-process](https://semgrep.dev/r/javascript.lang.security.detect-child-process)
+- [📋 Node.js Child Process](https://nodejs.org/api/child_process.html#child_process_security_considerations)
+
+### 📚 Phase 2: Dedicated Training (Extended Learning)
+
+**Required Time:** 2-4 weeks | **Format:** Self-paced courses and documentation
+
+**Goal:** Address knowledge gaps identified by this analysis to prevent future issues.
+
+**Security Fundamentals** (based on Security issues found):
+- [🎓 PortSwigger Web Security Academy](https://portswigger.net/web-security) - Interactive hands-on labs
+- [🛡️ OWASP Top 10](https://owasp.org/www-project-top-ten/) - Critical security risks
+- [🔒 OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/) - Quick security reference
+- [📖 CWE Top 25](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses
+
+> 💡 **Note**: Focus on the knowledge areas above to write better code and avoid similar issues in future PRs.
+
+### 📚 Phase 3: Code Style & Formatting (Optional)
+
+**5 style/formatting issues** can be addressed to improve code consistency.
+
+| Tool | Issues | Reference |
+|------|--------|----------|
+| ESLint | 5 | [📚 ESLint Rules Reference](https://eslint.org/docs/rules/) |
+
+> 💡 **Tip**: These are style issues with no runtime impact. Fix via IDE auto-format or linter `--fix` commands.
 ---
 
 ## 🚀 One-Click Auto-Fix
@@ -671,12 +716,15 @@ All 8 issues can be auto-fixed. Click below to apply fixes:
 
 ### Developer Skill Progress
 
+> 📊 **Base Score:** 50/100 for new developers | Deductions for issues in your code
+
 | Skill | Current | Trend | Next Milestone |
 |-------|---------|-------|----------------|
-| 🔒 Security | 85/100 | ↗️ +5 | Expert (90) |
-| ⚡ Performance | 72/100 | ↗️ +3 | Advanced (75) |
-| ✨ Code Quality | 78/100 | → 0 | Advanced (80) |
-| 🏗️ Architecture | 65/100 | ↗️ +8 | Intermediate (70) |
+| 🔒 Security | 37/100 | ↘️ -3 | Beginner (45) |
+| ⚡ Performance | 49/100 | ↘️ -1 | Intermediate (60) |
+| ✨ Code Quality | 50/100 | → 0 | Intermediate (60) |
+| 🏗️ Architecture | 50/100 | → 0 | Intermediate (60) |
+| 📦 Dependencies | 50/100 | → 0 | Intermediate (60) |
 
 ### This Month's Activity
 

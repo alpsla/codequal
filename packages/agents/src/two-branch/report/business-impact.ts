@@ -349,12 +349,16 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 | **Fix Time** | ${baseFixHours.toFixed(1)} hours (~${fixDays} days) | **${Math.max(1, Math.ceil(blocking.length * 0.05))} hours** (AI-assisted) |
 | **Developer Cost** | $${totalFixCost.toLocaleString()} | **$${Math.round(Math.max(1, blocking.length * 0.05) * developerRate).toLocaleString()}** |
 | **Time Saved** | - | **${Math.round((baseFixHours - Math.max(1, blocking.length * 0.05)) / baseFixHours * 100)}%** |
-| **Auto-Fix Coverage** | 0% | **${totalAutoFixPercentage.toFixed(0)}%** (${autoFixableTotalCount}/${activeIssues.length} active issues) |
+| **Fix Coverage** | 0% | **100%** (All ${activeIssues.length} issues have fix suggestions) |
+
+**Fix Availability by Type:**
+- **Pattern Auto-Fix**: ${autoFixableTotalCount}/${activeIssues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) - high-confidence, instant apply
+- **AI-Assisted Fix**: ${activeIssues.length - autoFixableTotalCount}/${activeIssues.length} issues (${(100 - totalAutoFixPercentage).toFixed(0)}%) - review recommended
 
 **How CodeQual Reduces Fix Time:**
-- **PRO Tier**: 1-click auto-fix for ${autoFixableTotalCount} issues (~3 min review + apply)
-- **BASIC Tier**: AI recommendations ready for IDE agents (Cursor, Copilot) to apply
-- **All Tiers**: 100% of issues have AI-generated fix code suggestions
+- **PRO Tier**: 1-click apply for all ${activeIssues.length} issues (~${Math.ceil(activeIssues.length * 0.05)} min review + apply)
+- **BASIC Tier**: Export to IDE (LSP/SARIF) for semi-automated application
+- **All Tiers**: Every issue includes AI-generated fix code
 
 | Risk Metric | Value |
 |-------------|-------|
@@ -539,10 +543,12 @@ function generateBasicTierSection(
 |---------|-------|-----|
 | Pattern Fixes | ✅ | ✅ |
 | AI Recommendations | ✅ | ✅ |
+| Educational Resources | ✅ | ✅ |
+| Achievements & XP | ✅ | ✅ |
+| Skills Tracking | ✅ | ✅ |
+| Community Impact | ✅ | ✅ |
 | **Auto-Apply Fixes** | ❌ | ✅ |
-| **AI Fix Generation** | ❌ | ✅ |
-| Historical Analytics | ❌ | ✅ |
-| Community Impact | ❌ | ✅ |
+| **Historical Analytics** | ❌ | ✅ |
 
 [🚀 Upgrade to PRO] — Start your free trial
 `;

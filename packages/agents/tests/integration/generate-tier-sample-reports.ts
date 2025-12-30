@@ -16,8 +16,43 @@ import { generateBusinessImpact, UserTier, UserMetrics, MonthlyStats } from '../
 import { generateCommunityImpactSection, CommunityImpactSummary } from '../../src/two-branch/report/community-impact';
 import { generatePromoSection, checkPromoEligibility, PromoEligibility, generateTierComparisonTable, generateValueProp } from '../../src/two-branch/report/promotional-offers';
 import { generateAchievementsSection, UnlockedAchievement, calculateLevel, generateXpProgressBar } from '../../src/two-branch/report/achievements';
+import { generateEducationalResourcesBrave } from '../../src/two-branch/report/educational-resources';
 import { EnrichedIssue } from '../../src/two-branch/report/types';
 import { IssueGroup } from '../../src/two-branch/utils/issue-grouping';
+import { createClient } from '@supabase/supabase-js';
+
+// ============================================================
+// PATTERN COUNT UTILITY
+// ============================================================
+
+/**
+ * Get the current pattern count from the database
+ * Returns cached value if DB unavailable
+ */
+async function getPatternCount(): Promise<number> {
+  // Try to get from Supabase
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { count, error } = await supabase
+        .from('fix_patterns')
+        .select('*', { count: 'exact', head: true });
+
+      if (!error && count !== null && count > 0) {
+        return count;
+      }
+    } catch {
+      // Fall through to default
+    }
+  }
+
+  // Default fallback - approximate count based on last known value
+  // This should be updated periodically
+  return 640;
+}
 
 // ============================================================
 // SAMPLE DATA
@@ -389,12 +424,54 @@ function generateExecutiveSummary(tier: UserTier): string {
   const performanceCount = sampleIssues.filter(i => i.detectedCategory === 'Performance').length;
   const qualityCount = sampleIssues.filter(i => i.detectedCategory === 'Code Quality').length;
 
-  // Calculate scores
-  const securityScore = Math.max(0, 100 - (criticalCount * 5 + highCount * 3));
-  const performanceScore = Math.max(0, 100 - (mediumCount * 1 + lowCount * 0.5));
-  const qualityScore = Math.max(0, 100 - (mediumCount * 1 + lowCount * 0.5));
+  // =========================================================================
+  // APP SCORE CALCULATION (Repository Health)
+  // Base: 100, counts ALL issues, uses MIN of categories
+  // =========================================================================
+  const calculateAppCategoryScore = (issues: EnrichedIssue[]): number => {
+    let score = 100;
+    issues.forEach(issue => {
+      const deduction = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
+      score -= deduction;
+    });
+    return Math.max(0, Math.min(100, Math.round(score)));
+  };
+
+  const securityScore = calculateAppCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Security'));
+  const performanceScore = calculateAppCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Performance'));
+  const qualityScore = calculateAppCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Code Quality'));
   const appScore = Math.min(securityScore, performanceScore, qualityScore);
-  const skillScore = Math.round((securityScore + performanceScore + qualityScore) / 3);
+
+  // =========================================================================
+  // SKILL SCORE CALCULATION (Developer's Code Quality)
+  // Base: 50 (new user) or from Supabase (existing user)
+  // Only counts NEW + EXISTING_MODIFIED issues (developer's responsibility)
+  // =========================================================================
+  const SKILL_BASE_SCORE = 50; // New users start at 50, existing users would load from Supabase
+
+  const calculateSkillCategoryScore = (issues: EnrichedIssue[]): number => {
+    // Filter to only developer-responsible issues
+    const developerIssues = issues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED');
+    let score = SKILL_BASE_SCORE;
+    developerIssues.forEach(issue => {
+      const deduction = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
+      score -= deduction;
+    });
+    return Math.max(0, Math.min(100, Math.round(score)));
+  };
+
+  // Calculate skill scores per category (only developer-responsible issues)
+  const skillSecurityScore = calculateSkillCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Security'));
+  const skillPerformanceScore = calculateSkillCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Performance'));
+  const skillQualityScore = calculateSkillCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Code Quality'));
+  const skillArchitectureScore = calculateSkillCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Architecture'));
+  const skillDependencyScore = calculateSkillCategoryScore(sampleIssues.filter(i => i.detectedCategory === 'Dependencies'));
+
+  // Skill Score = AVG of all 5 categories
+  const skillScore = Math.round(
+    (skillSecurityScore + skillPerformanceScore + skillQualityScore +
+     skillArchitectureScore + skillDependencyScore) / 5
+  );
 
   const grade = appScore >= 90 ? 'A' : appScore >= 80 ? 'B' : appScore >= 70 ? 'C' : appScore >= 60 ? 'D' : 'F';
   const gradeEmoji = appScore >= 70 ? '✅' : appScore >= 50 ? '⚠️' : '❌';
@@ -417,7 +494,14 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 
 **Overall Scores**:
 - 📱 **APP Score**: ${appScore}/100 (MIN of categories - "weakest link")
-- 👨‍💻 **Skill Score**: ${skillScore}/100 (AVG of categories)
+- 👨‍💻 **Skill Score**: ${skillScore}/100 (base ${SKILL_BASE_SCORE} ± issue deductions)
+
+**Skill Score Breakdown** (NEW + EXISTING_MODIFIED issues only):
+- 🔒 Security: ${skillSecurityScore}/100
+- ⚡ Performance: ${skillPerformanceScore}/100
+- ✨ Code Quality: ${skillQualityScore}/100
+- 🏗️ Architecture: ${skillArchitectureScore}/100
+- 📦 Dependencies: ${skillDependencyScore}/100
 
 > ${tier === 'pro' ? 'Scores saved to Supabase for tracking trends over time' : 'Upgrade to PRO for historical score tracking'}
 
@@ -456,7 +540,9 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 | ✨ Code Quality | 0 | 0 | 0 | ${lowCount} | **${qualityCount}** | **${qualityScore}/100** |
 | **TOTAL** | **${criticalCount}** | **${highCount}** | **${mediumCount}** | **${lowCount}** | **${sampleIssues.length}** | - |
 
-> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories).
+> **Score Calculation:**
+> - **APP Score:** Each category starts at 100, deducts for ALL issues: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall = MIN(all categories).
+> - **Skill Score:** Each category starts at ${SKILL_BASE_SCORE} (new user) or previous score (existing user), deducts only for NEW + EXISTING_MODIFIED issues. Overall = AVG(all categories).
 
 ---
 
@@ -478,18 +564,17 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 
 **BASIC vs PRO Tier Fix System**:
 
-**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
-- 📚 **Pattern Fixes**: ${sampleGroups.filter(g => g.fixTier === 1).length} issues - Pre-learned fixes from 640+ patterns
-- 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
-- 📖 **Actionable Guidance**: Clear instructions for all issues
+**🆓 BASIC Tier** (Issue Detection + IDE Export):
+- 🔍 **Full Detection**: All ${sampleIssues.length} issues detected and analyzed
+- 📄 **Export Formats**: LSP, SARIF, GitLab - apply fixes in your IDE
+- 📖 **Fix Guidance**: AI-generated fix recommendations for every issue
+- ⏱️ **Manual Apply**: ~${Math.round(sampleIssues.length * 3)} min to apply fixes via IDE
 
-**⭐ PRO Tier** (Full AI-Powered Analysis):
-- 🤖 **AI Auto-Fix**: All ${sampleIssues.length} issues analyzed with contextual AI fixes
-- 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
-- ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
-- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
-
-> 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
+**⭐ PRO Tier** (One-Click Auto-Fix):
+- ⚡ **Instant Apply**: All fixes applied in ~30 seconds (no manual work)
+- ✅ **Verified Fixes**: Syntax and behavior validated before apply
+- 🔄 **Pattern Library**: ${await getPatternCount()}+ pre-learned patterns for fast fixing
+- 📈 **100% Coverage**: Every issue gets an actionable fix
 
 ---
 
@@ -924,18 +1009,54 @@ Copy this to your PR comment:
 `;
 }
 
-function generateSkillsTracker(): string {
+/**
+ * Generate Skills Growth Tracker for PRO tier
+ * Uses base 50 for new users, deducts for issues in NEW/MODIFIED files
+ */
+function generateSkillsTrackerPro(skillScores: {
+  security: number;
+  performance: number;
+  codeQuality: number;
+  architecture: number;
+  dependencies: number;
+}): string {
+  // Calculate trends (sample data - in real implementation would come from Supabase)
+  const trends = {
+    security: skillScores.security < 50 ? -3 : skillScores.security > 60 ? +2 : 0,
+    performance: skillScores.performance < 50 ? -1 : skillScores.performance > 55 ? +1 : 0,
+    codeQuality: skillScores.codeQuality < 50 ? -1 : skillScores.codeQuality > 55 ? +1 : 0,
+    architecture: 0,
+    dependencies: 0
+  };
+
+  const formatTrend = (value: number): string => {
+    if (value > 0) return `↗️ +${value}`;
+    if (value < 0) return `↘️ ${value}`;
+    return '→ 0';
+  };
+
+  const getNextMilestone = (score: number): string => {
+    if (score >= 90) return 'Expert ✓';
+    if (score >= 75) return 'Expert (90)';
+    if (score >= 60) return 'Advanced (75)';
+    if (score >= 45) return 'Intermediate (60)';
+    return 'Beginner (45)';
+  };
+
   return `
 ## 📈 Skills Growth Tracker
 
 ### Developer Skill Progress
 
+> 📊 **Base Score:** 50/100 for new developers | Deductions for issues in your code
+
 | Skill | Current | Trend | Next Milestone |
 |-------|---------|-------|----------------|
-| 🔒 Security | 85/100 | ↗️ +5 | Expert (90) |
-| ⚡ Performance | 72/100 | ↗️ +3 | Advanced (75) |
-| ✨ Code Quality | 78/100 | → 0 | Advanced (80) |
-| 🏗️ Architecture | 65/100 | ↗️ +8 | Intermediate (70) |
+| 🔒 Security | ${skillScores.security}/100 | ${formatTrend(trends.security)} | ${getNextMilestone(skillScores.security)} |
+| ⚡ Performance | ${skillScores.performance}/100 | ${formatTrend(trends.performance)} | ${getNextMilestone(skillScores.performance)} |
+| ✨ Code Quality | ${skillScores.codeQuality}/100 | ${formatTrend(trends.codeQuality)} | ${getNextMilestone(skillScores.codeQuality)} |
+| 🏗️ Architecture | ${skillScores.architecture}/100 | ${formatTrend(trends.architecture)} | ${getNextMilestone(skillScores.architecture)} |
+| 📦 Dependencies | ${skillScores.dependencies}/100 | ${formatTrend(trends.dependencies)} | ${getNextMilestone(skillScores.dependencies)} |
 
 ### This Month's Activity
 
@@ -956,16 +1077,102 @@ function generateSkillsTracker(): string {
 `;
 }
 
+/**
+ * Generate Skills section for BASIC tier - shows upgrade CTA
+ */
+function generateSkillsTrackerBasic(): string {
+  return `
+## 📈 Skills Tracking
+
+> 🔒 **Skill tracking is a PRO feature**
+
+With PRO tier, you can:
+- 📊 Track your skill scores across 5 categories
+- 📈 Monitor improvement trends over time
+- 🏅 Earn skill badges and achievements
+- 🏆 Compare with team and community
+
+[🚀 **Upgrade to PRO**](/pricing) to unlock skill tracking
+
+---
+`;
+}
+
+/**
+ * Generate IDE Integration section with LSP, SARIF, and GitLab formats
+ * Available for all tiers - helps users apply fixes using their preferred IDE/CI
+ */
+function generateIDEIntegrationSection(issueCount: number): string {
+  const analysisId = 'a1b2c3d4'; // Sample analysis ID
+  const baseUrl = 'https://api.codequal.dev/v1/reports';
+
+  return `
+---
+
+## 🔧 IDE Integration & Export Formats
+
+Apply fixes directly in your IDE or integrate with your CI/CD pipeline.
+
+### Quick Fix with IDE
+
+| IDE | Integration | How to Apply |
+|-----|-------------|--------------|
+| **VS Code** | [CodeQual Extension](https://marketplace.visualstudio.com/items?itemName=codequal.codequal) | Open Command Palette → "CodeQual: Apply Fixes" |
+| **Cursor** | Native LSP Support | Ctrl/Cmd + . on highlighted issues |
+| **JetBrains** | [CodeQual Plugin](https://plugins.jetbrains.com/plugin/codequal) | Alt + Enter on issues → Quick Fix |
+| **Neovim** | LSP Client | \`:lua vim.lsp.buf.code_action()\` |
+
+### Export Formats
+
+Download analysis results in standard formats for integration:
+
+| Format | Use Case | Download |
+|--------|----------|----------|
+| **LSP (JSON)** | VS Code, Cursor, Neovim | [\`codequal-lsp-actions.json\`](${baseUrl}/${analysisId}/lsp) |
+| **SARIF 2.1.0** | GitHub Security, VS Code SARIF Viewer | [\`codequal-sarif-report.json\`](${baseUrl}/${analysisId}/sarif) |
+| **GitLab Code Quality** | GitLab MR Integration | [\`codequal-gitlab-codequality.json\`](${baseUrl}/${analysisId}/gitlab) |
+
+### CI/CD Integration
+
+**GitHub Actions:**
+\`\`\`yaml
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v2
+  with:
+    sarif_file: codequal-sarif-report.json
+\`\`\`
+
+**GitLab CI:**
+\`\`\`yaml
+code_quality:
+  artifacts:
+    reports:
+      codequality: codequal-gitlab-codequality.json
+\`\`\`
+
+### API Endpoints
+
+| Endpoint | Format | Response |
+|----------|--------|----------|
+| \`GET /api/reports/{id}/lsp\` | LSP Code Actions | JSON with workspace edits |
+| \`GET /api/reports/{id}/sarif\` | SARIF 2.1.0 | Industry standard static analysis format |
+| \`GET /api/reports/{id}/gitlab\` | Code Climate | GitLab merge request integration |
+
+> 💡 **Tip:** Use LSP format with Cursor or VS Code for the best "Quick Fix" experience - issues appear inline with one-click fixes.
+
+`;
+}
+
 async function generateBasicReport(): Promise<string> {
   let report = generateHeader('basic');
   report += generateExecutiveSummary('basic');
   report += generateIssueDetails();
 
-  // Calculate XP and level (same as PRO)
+  // Calculate XP and level (available for all tiers - already computed)
   const totalXp = sampleAchievements.reduce((sum, a) => sum + a.xpValue, 0);
   const levelInfo = calculateLevel(totalXp);
 
-  // Progress section (same as PRO)
+  // Progress section - available for all tiers (data already computed)
   report += `
 ---
 
@@ -980,38 +1187,63 @@ ${generateXpProgressBar(totalXp, levelInfo.nextLevelXp)}
   // Business impact
   report += generateBusinessImpact(sampleIssues, sampleGroups, 'typescript', 'basic');
 
-  // Achievements section (same as PRO)
+  // Achievements section - available for all tiers (data already computed)
   report += generateAchievementsSection(sampleAchievements, 'gamified');
 
-  // Community impact (same as PRO)
+  // Community impact - available for all tiers (data already computed)
   report += generateCommunityImpactSection(sampleCommunityImpact);
 
-  // One-Click Auto-Fix section (same as PRO)
+  // Educational Resources - available for all tiers (helps developers learn)
+  // Uses tool-specific documentation links (Semgrep, ESLint, etc.) instead of generic searches
+  report += await generateEducationalResourcesBrave(sampleIssues, 'typescript');
+
+  // IDE Integration section - available for all tiers
+  report += generateIDEIntegrationSection(sampleIssues.length);
+
+  // One-Click Auto-Fix section - BASIC tier shows upgrade CTA instead
   report += `
 ---
 
-## 🚀 One-Click Auto-Fix
+## 🚀 Auto-Fix Available with PRO
 
-All ${sampleIssues.length} issues can be auto-fixed. Click below to apply fixes:
+All ${sampleIssues.length} issues detected can be auto-fixed with PRO tier.
 
-| Issue | File | Confidence | Action |
-|-------|------|------------|--------|
-| SQL Injection | queries.ts:123 | 95% | [Apply Fix](javascript:void(0)) |
-| Command Injection | shell.ts:67 | 90% | [Apply Fix](javascript:void(0)) |
-| XSS Response | api.ts:45 | 85% | [Apply Fix](javascript:void(0)) |
-| Inline Functions | Form.tsx:89 | 80% | [Apply Fix](javascript:void(0)) |
-| Missing Key | List.tsx:34 | 100% | [Apply Fix](javascript:void(0)) |
+**What you get with BASIC tier:**
+- ✅ Detailed fix recommendations (see issue sections above)
+- ✅ Code examples showing correct implementation
+- ✅ Copy-paste ready fixes for IDE agents (Cursor, Copilot)
 
-[🔧 **Apply All Fixes**](javascript:void(0)) | [📋 Review Changes](javascript:void(0)) | [⏭️ Skip This Time](javascript:void(0))
+**What PRO adds:**
+- 🔧 **One-click auto-fix** - Apply fixes directly from this report
+- ⏱️ **~30 seconds** to fix all issues (vs 1.5+ hours manually)
+- ✅ **Verified fixes** - Syntax and behavior validated before apply
 
-> ⏱️ **Estimated time:** ~30 seconds for all fixes
-> 💰 **Value:** Save ~1.5 hours of manual work
+[🚀 **Upgrade to PRO**](/pricing) | [📋 View Fix Recommendations](#issue-details)
 
 ---
 `;
 
-  // Skills growth tracker (same as PRO)
-  report += generateSkillsTracker();
+  // Skills tracking - available for all tiers (data already computed)
+  const SKILL_BASE = 50;
+  const calculateSkillScore = (categoryIssues: EnrichedIssue[]): number => {
+    const devIssues = categoryIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED');
+    let score = SKILL_BASE;
+    devIssues.forEach(issue => {
+      const deduction = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
+      score -= deduction;
+    });
+    return Math.max(0, Math.min(100, Math.round(score)));
+  };
+
+  const skillScores = {
+    security: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Security')),
+    performance: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Performance')),
+    codeQuality: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Code Quality')),
+    architecture: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Architecture')),
+    dependencies: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Dependencies'))
+  };
+
+  report += generateSkillsTrackerPro(skillScores);
 
   // Add analysis metadata
   report += generateAnalysisMetadata();
@@ -1039,17 +1271,18 @@ All ${sampleIssues.length} issues can be auto-fixed. Click below to apply fixes:
 
 ## ⬆️ Upgrade to PRO
 
-**Unlock Full Potential:**
+**What PRO adds:**
 
-| With BASIC | With PRO |
-|------------|----------|
-| ✅ Issue detection | ✅ Issue detection |
-| ✅ Detailed recommendations | ✅ Detailed recommendations |
-| ❌ Manual copy-paste fixes | ✅ **One-click auto-fix** |
-| ❌ No history | ✅ **5 PR history tracking** |
-| ❌ No achievements | ✅ **Skill progression & badges** |
-| ❌ No skill tracking | ✅ **Developer skill scores** |
-| ❌ No community impact | ✅ **Pattern contribution recognition** |
+| Feature | BASIC | PRO |
+|---------|-------|-----|
+| Issue detection | ✅ | ✅ |
+| Detailed recommendations | ✅ | ✅ |
+| Achievements & XP | ✅ | ✅ |
+| Skills tracking | ✅ | ✅ |
+| Community impact | ✅ | ✅ |
+| **One-click auto-fix** | ❌ Copy-paste | ✅ **Instant apply** |
+| **Historical analytics** | ❌ Current PR only | ✅ **5 PR trend tracking** |
+| **Priority support** | ❌ | ✅ |
 
 ${generateTierComparisonTable()}
 
@@ -1093,7 +1326,11 @@ ${generateXpProgressBar(totalXp, levelInfo.nextLevelXp)}
   // Community impact
   report += generateCommunityImpactSection(sampleCommunityImpact);
 
-  // Auto-fix section (PRO exclusive)
+  // Educational Resources - available for all tiers (helps developers learn)
+  // Uses tool-specific documentation links (Semgrep, ESLint, etc.) instead of generic searches
+  report += await generateEducationalResourcesBrave(sampleIssues, 'typescript');
+
+  // Auto-fix section (PRO exclusive) - PRO users get one-click fixes, no need for IDE export
   report += `
 ---
 
@@ -1117,8 +1354,28 @@ All ${sampleIssues.length} issues can be auto-fixed. Click below to apply fixes:
 ---
 `;
 
-  // Skills growth tracker
-  report += generateSkillsTracker();
+  // Skills growth tracker - PRO tier with actual calculated scores
+  // Calculate skill scores using base 50 for developer-responsible issues
+  const SKILL_BASE = 50;
+  const calculateSkillScore = (categoryIssues: EnrichedIssue[]): number => {
+    const devIssues = categoryIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED');
+    let score = SKILL_BASE;
+    devIssues.forEach(issue => {
+      const deduction = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
+      score -= deduction;
+    });
+    return Math.max(0, Math.min(100, Math.round(score)));
+  };
+
+  const skillScores = {
+    security: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Security')),
+    performance: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Performance')),
+    codeQuality: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Code Quality')),
+    architecture: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Architecture')),
+    dependencies: calculateSkillScore(sampleIssues.filter(i => i.detectedCategory === 'Dependencies'))
+  };
+
+  report += generateSkillsTrackerPro(skillScores);
 
   // Analysis metadata
   report += generateAnalysisMetadata();

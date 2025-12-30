@@ -1,8 +1,132 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: December 21, 2025 (Session 65 - AI-Fixer Multi-Key & Pattern Analysis)
-**Current Phase**: Fix System Fully Operational
-**Status**: ✅ **SESSION 65 COMPLETE** | Multi-key rotation fixed, pattern system verified, cost estimates corrected
+**Last Updated**: December 24, 2025 (Session 67 - Unified Report System Implementation)
+**Current Phase**: Web Report System Development
+**Status**: ✅ **SESSION 67 COMPLETE** | Unified report types, API routes, section generators, and V9 integration complete
+
+---
+
+## 🚨 SESSION 67: Unified Report System (COMPLETE)
+
+### 🏆 KEY ACHIEVEMENTS (Session 67)
+
+| Task | Description | Status |
+|------|-------------|--------|
+| **Unified Report Types** | Created comprehensive TypeScript interfaces for BASIC/PRO reports | ✅ Complete |
+| **9 Section Generators** | Header, Progress, FixSummary, RemainingIssues, BusinessImpact, Educational, Skills, CommitInfo, Metadata | ✅ Complete |
+| **API Routes & Controllers** | POST/GET endpoints for reports, exports, preferences, history | ✅ Complete |
+| **Export Service** | Markdown, HTML, PDF, SARIF, JSON export formats | ✅ Complete |
+| **V9 Integration** | Analysis results automatically registered for report generation | ✅ Complete |
+| **Database Migrations** | Users, preferences, skills, achievements tables | ✅ Complete |
+
+### 📁 NEW FILES CREATED (Session 67)
+
+**Type Definitions:**
+- `src/two-branch/report/unified-report-types.ts` - Complete TypeScript interfaces (1183 lines)
+
+**Section Generators:**
+- `src/two-branch/report/sections/header-section.ts` - Score, decision, stats
+- `src/two-branch/report/sections/progress-section.ts` - Historical trends
+- `src/two-branch/report/sections/fix-summary-section.ts` - PRO only fix summary
+- `src/two-branch/report/sections/remaining-issues-section.ts` - Unfixed issues
+- `src/two-branch/report/sections/business-impact-section.ts` - Time/cost savings
+- `src/two-branch/report/sections/educational-section.ts` - Learning paths
+- `src/two-branch/report/sections/skills-section.ts` - XP and achievements
+- `src/two-branch/report/sections/commit-info-section.ts` - PRO only commit info
+- `src/two-branch/report/sections/metadata-section.ts` - Tools and costs
+- `src/two-branch/report/sections/index.ts` - Exports
+- `src/two-branch/report/unified-report-generator.ts` - Main generator
+
+**API Endpoints:**
+- `src/two-branch/api/unified-report-endpoint.ts` - Report API routes
+
+**Database:**
+- `src/infrastructure/supabase/migrations/20251224_unified_report_system.sql`
+
+### 📡 API ROUTES ADDED
+
+```
+Analysis:
+  POST /api/analyze - Start PR analysis
+  GET  /api/analyze/:id - Get analysis status
+  GET  /api/analyze/:id/issues - Get filtered issues
+  GET  /api/analyze/:id/summary - Get summary
+  POST /api/analyze/:id/report - Generate unified report
+
+Reports:
+  POST /api/reports - Generate unified report
+  GET  /api/reports/:id - Get unified report
+  GET  /api/reports/:id/section/:name - Get report section
+  GET  /api/reports/:id/export/:format - Export report
+
+Users:
+  GET  /api/users/:id/preferences - Get user preferences
+  PUT  /api/users/:id/preferences - Update user preferences
+  GET  /api/users/:id/history - Get analysis history
+```
+
+### 📊 UNIFIED REPORT STRUCTURE
+
+```typescript
+interface UnifiedReport {
+  id: string;
+  version: string;
+  tier: 'basic' | 'pro';
+
+  header: ReportHeader;           // Score, decision, stats
+  progressHistory: ProgressHistory; // Historical trends
+  fixSummary?: FixSummary;         // PRO only
+  remainingIssues: RemainingIssues;
+  businessImpact: BusinessImpact;
+  educational: EducationalContent;
+  skillsAndAchievements: SkillsAndAchievements;
+  commitInfo?: CommitInfo;         // PRO only
+  metadata: UnifiedReportMetadata;
+}
+```
+
+### ⚠️ NEXT SESSION TODO (Session 68)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Test unified report generation with real PRs | High | 1 hour |
+| Implement Supabase repositories (replace in-memory stores) | High | 2 hours |
+| Add WebSocket support for real-time report updates | Medium | 2 hours |
+| Create UI components to consume report API | Medium | 3 hours |
+| Add authentication/authorization middleware | High | 1 hour |
+
+### 🚀 QUICK START (Session 68)
+
+```bash
+cd packages/agents
+
+# Test unified report generation
+npx ts-node -e "
+import { generateUnifiedReportSync } from './src/two-branch/report/unified-report-generator';
+
+const mockAnalysis = {
+  id: 'test-001',
+  repositoryUrl: 'https://github.com/test/repo',
+  prNumber: 123,
+  prTitle: 'Test PR',
+  prAuthor: 'tester',
+  prBranch: 'feature/test',
+  baseBranch: 'main',
+  mode: 'standard' as const,
+  timestamp: new Date().toISOString(),
+  duration: 30000,
+  score: 75,
+  blockingCount: 2,
+  issues: []
+};
+
+const report = generateUnifiedReportSync(mockAnalysis, undefined, 'basic');
+console.log(JSON.stringify(report, null, 2));
+"
+
+# Verify build
+npm run build
+```
 
 ---
 

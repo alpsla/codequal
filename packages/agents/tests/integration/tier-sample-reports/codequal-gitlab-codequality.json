@@ -1,0 +1,402 @@
+[
+  {
+    "type": "issue",
+    "check_name": "codequal/CollapsibleIfStatements",
+    "description": "Collapsible If Statements",
+    "content": {
+      "body": "Two nested if statements with no else can be combined into one.\n\n**Rule:** CollapsibleIfStatements\n**Occurrences:** 2"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "major",
+    "fingerprint": "12eeb9e3fa07d1b06276ed4a3dc1721a",
+    "location": {
+      "path": "group-collapsibleifstatements-medium-pmd-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/FinalParametersCheck",
+    "description": "Final Parameters Check",
+    "content": {
+      "body": "Method parameters are not declared as final.\n\n**Rule:** FinalParametersCheck\n**Occurrences:** 161"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "198c3644392b28f479c79db2b640ace2",
+    "location": {
+      "path": "group-finalparameterscheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/JavadocVariableCheck",
+    "description": "Javadoc Variable Check",
+    "content": {
+      "body": "Public fields lack Javadoc comments.\n\n**Rule:** JavadocVariableCheck\n**Occurrences:** 84"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "7813b6decd5b9ce59c948c8a6bbd2ea3",
+    "location": {
+      "path": "group-javadocvariablecheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/DesignForExtensionCheck",
+    "description": "Design For Extension Check",
+    "content": {
+      "body": "Non-private methods in non-final classes should be abstract, final, or have empty implementation.\n\n**Rule:** DesignForExtensionCheck\n**Occurrences:** 62"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "3ee06cd979f39fffe8fbd1785027ad2c",
+    "location": {
+      "path": "group-designforextensioncheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/MissingJavadocMethodCheck",
+    "description": "Missing Javadoc Method Check",
+    "content": {
+      "body": "Public methods lack Javadoc comments explaining their purpose, parameters, and return values.\n\n**Rule:** MissingJavadocMethodCheck\n**Occurrences:** 56"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "1fe7e41493acd40be1c18bb7bf345e09",
+    "location": {
+      "path": "group-missingjavadocmethodcheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/FileTabCharacterCheck",
+    "description": "File Tab Character Check",
+    "content": {
+      "body": "File contains tab characters instead of spaces.\n\n**Rule:** FileTabCharacterCheck\n**Occurrences:** 52"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "a11f6899d92c114791c2606a0636bbb9",
+    "location": {
+      "path": "group-filetabcharactercheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/HiddenFieldCheck",
+    "description": "Hidden Field Check",
+    "content": {
+      "body": "A local variable or parameter has the same name as a class field, hiding the field.\n\n**Rule:** HiddenFieldCheck\n**Occurrences:** 37"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "3c094f7e50247a500c4bfe00589681f4",
+    "location": {
+      "path": "group-hiddenfieldcheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/MagicNumberCheck",
+    "description": "Magic Number Check",
+    "content": {
+      "body": "Numeric literals appear directly in code without explanation.\n\n**Rule:** MagicNumberCheck\n**Occurrences:** 33"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "aabef3a634fb231509e7f1c89fb56f41",
+    "location": {
+      "path": "group-magicnumbercheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/JavadocMethodCheck",
+    "description": "Javadoc Method Check",
+    "content": {
+      "body": "Method Javadoc is present but incomplete (missing @param, @return, or @throws tags).\n\n**Rule:** JavadocMethodCheck\n**Occurrences:** 11"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "e857a0ce24bd235aa0137843f7a33555",
+    "location": {
+      "path": "group-javadocmethodcheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/AvoidStarImportCheck",
+    "description": "Avoid Star Import Check",
+    "content": {
+      "body": "Code uses wildcard imports (import java.util.*).\n\n**Rule:** AvoidStarImportCheck\n**Occurrences:** 9"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "b18e49622ca04c340808670705cd701d",
+    "location": {
+      "path": "group-avoidstarimportcheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/VisibilityModifierCheck",
+    "description": "Visibility Modifier Check",
+    "content": {
+      "body": "Class has public or protected fields instead of using accessor methods.\n\n**Rule:** VisibilityModifierCheck\n**Occurrences:** 9"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "7864fdfdff7bc390180b880f08f969af",
+    "location": {
+      "path": "group-visibilitymodifiercheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/RightCurlyCheck",
+    "description": "Right Curly Check",
+    "content": {
+      "body": "Closing brace is in the wrong location.\n\n**Rule:** RightCurlyCheck\n**Occurrences:** 8"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "0bc6b0bf4116c7153c7923476d7d77b2",
+    "location": {
+      "path": "group-rightcurlycheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/RedundantModifierCheck",
+    "description": "Redundant Modifier Check",
+    "content": {
+      "body": "Code contains redundant modifiers (e.g., public in interface methods, final in final classes).\n\n**Rule:** RedundantModifierCheck\n**Occurrences:** 7"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "5ebccc818034a5189e29f442ec543741",
+    "location": {
+      "path": "group-redundantmodifiercheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/WhitespaceAfterCheck",
+    "description": "Whitespace After Check",
+    "content": {
+      "body": "Missing space after comma, semicolon, or typecast.\n\n**Rule:** WhitespaceAfterCheck\n**Occurrences:** 4"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "047fe5b7e4e4c57e8e4841acb3d5d307",
+    "location": {
+      "path": "group-whitespaceaftercheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/WhitespaceAroundCheck",
+    "description": "Whitespace Around Check",
+    "content": {
+      "body": "Missing space around operators (=, +, -, etc.).\n\n**Rule:** WhitespaceAroundCheck\n**Occurrences:** 4"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "aaa8b2504536926c5b2bbabe78a683d0",
+    "location": {
+      "path": "group-whitespacearoundcheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/HideUtilityClassConstructorCheck",
+    "description": "Hide Utility Class Constructor Check",
+    "content": {
+      "body": "Utility class (all static methods) has an accessible constructor.\n\n**Rule:** HideUtilityClassConstructorCheck\n**Occurrences:** 2"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "79fded16249c4d842b26e7b5d54bbca7",
+    "location": {
+      "path": "group-hideutilityclassconstructorcheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/ArrayTypeStyleCheck",
+    "description": "Array Type Style Check",
+    "content": {
+      "body": "Array brackets in wrong location (e.g., String args[] instead of String[] args).\n\n**Rule:** ArrayTypeStyleCheck\n**Occurrences:** 1"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "53b4603386cd76adfd3e65978f6e633b",
+    "location": {
+      "path": "group-arraytypestylecheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/NoWhitespaceBeforeCheck",
+    "description": "No Whitespace Before Check",
+    "content": {
+      "body": "Unnecessary space before semicolon, comma, or other punctuation.\n\n**Rule:** NoWhitespaceBeforeCheck\n**Occurrences:** 1"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "022ddab52304d3bcaaa47f1717586adf",
+    "location": {
+      "path": "group-nowhitespacebeforecheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/UnusedImportsCheck",
+    "description": "Unused Imports Check",
+    "content": {
+      "body": "Unused code detected (Rule: UnusedImportsCheck). Unused imports or variables clutter the codebase.\n\n**Rule:** UnusedImportsCheck\n**Occurrences:** 1"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "5fdf54024b58e3d12fafb78a284448fc",
+    "location": {
+      "path": "group-unusedimportscheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  },
+  {
+    "type": "issue",
+    "check_name": "codequal/NeedBracesCheck",
+    "description": "Need Braces Check",
+    "content": {
+      "body": "This issue was detected by checkstyle as a low severity problem. Rule: NeedBracesCheck\n\n**Rule:** NeedBracesCheck\n**Occurrences:** 1"
+    },
+    "categories": [
+      "Bug Risk",
+      "Clarity"
+    ],
+    "severity": "minor",
+    "fingerprint": "05cdddd60efd09a19ffb7fa2422f94e1",
+    "location": {
+      "path": "group-needbracescheck-low-checkstyle-fix.json",
+      "lines": {
+        "begin": 1
+      }
+    }
+  }
+]

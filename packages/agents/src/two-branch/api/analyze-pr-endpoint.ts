@@ -28,6 +28,8 @@ import {
   type SupportedLanguage
 } from './v9-analysis-service';
 import { isValidWebhookUrl } from '../utils/security-utils';
+import { registerAnalysisResult } from './unified-report-endpoint';
+import type { V9AnalysisResultInput, AnalyzedIssue, IssueCategory as UnifiedCategory } from '../report/unified-report-types';
 
 // ============================================================================
 // TYPES
@@ -600,6 +602,80 @@ export async function handleAnalyzeSummary(
 // HELPER FUNCTIONS
 // ============================================================================
 
+/**
+ * Convert V9 analysis result to unified report input format
+ */
+function convertToUnifiedAnalysisInput(
+  result: AnalysisResult,
+  request: AnalyzeRequestBody,
+  analysisId: string
+): V9AnalysisResultInput {
+  // Map issue category from V9 to unified format
+  const mapCategory = (category: IssueCategory): 'new' | 'existing_modified' | 'existing_rest' | 'resolved' => {
+    switch (category) {
+      case 'NEW': return 'new';
+      case 'EXISTING_MODIFIED': return 'existing_modified';
+      case 'EXISTING_REST': return 'existing_rest';
+      case 'RESOLVED': return 'resolved';
+      default: return 'new';
+    }
+  };
+
+  // Map detected category to unified category
+  const mapDetectedCategory = (detectedCategory?: string): UnifiedCategory => {
+    const categoryLower = (detectedCategory || '').toLowerCase();
+    if (categoryLower.includes('security')) return 'security';
+    if (categoryLower.includes('performance')) return 'performance';
+    if (categoryLower.includes('architecture')) return 'architecture';
+    if (categoryLower.includes('depend')) return 'dependencies';
+    return 'code_quality';
+  };
+
+  // Convert all issues to unified format
+  const allIssues = [
+    ...result.byCategory.NEW,
+    ...result.byCategory.EXISTING_MODIFIED,
+    ...result.byCategory.RESOLVED,
+    ...result.byCategory.EXISTING_REST
+  ];
+
+  const analyzedIssues: AnalyzedIssue[] = allIssues.map((issue, index) => ({
+    id: `${analysisId}-issue-${index}`,
+    ruleId: issue.rule || 'unknown-rule',
+    tool: issue.tool || 'unknown',
+    file: issue.file,
+    line: issue.line || 0,
+    column: issue.column,
+    message: issue.message,
+    category: mapDetectedCategory(issue.detectedCategory),
+    severity: issue.severity,
+    status: mapCategory(issue.category),
+    codeSnippet: issue.snippet,
+    language: request.language
+  }));
+
+  // Calculate score from blocking issues
+  const score = result.decision === 'APPROVED' ? 85 :
+                result.decision === 'NEEDS_REVIEW' ? 65 : 45;
+
+  return {
+    id: analysisId,
+    repositoryUrl: request.repositoryUrl,
+    prNumber: request.prNumber,
+    prTitle: `PR #${request.prNumber}`,
+    prAuthor: 'unknown',
+    prBranch: request.prBranch || `pr-${request.prNumber}`,
+    baseBranch: request.baseBranch || 'main',
+    mode: request.analysisMode === 'quick' ? 'fast' :
+          request.analysisMode === 'complete' ? 'complete' : 'standard',
+    timestamp: result.metadata.analysisTimestamp,
+    duration: result.metadata.duration.total,
+    score,
+    blockingCount: result.issues.blocking,
+    issues: analyzedIssues
+  };
+}
+
 async function runAnalysisAsync(analysisId: string, request: AnalyzeRequestBody): Promise<void> {
   const service = getAnalysisService();
   const tier = request.userTier || 'basic';
@@ -633,6 +709,13 @@ async function runAnalysisAsync(analysisId: string, request: AnalyzeRequestBody)
       analysis.status = result.success ? 'completed' : 'failed';
       analysis.result = tieredResult;
       analysis.completedAt = new Date().toISOString();
+    }
+
+    // Register analysis result for unified report generation
+    if (result.success) {
+      const unifiedAnalysisInput = convertToUnifiedAnalysisInput(result, request, analysisId);
+      registerAnalysisResult(analysisId, unifiedAnalysisInput);
+      console.log(`[Unified Report] Analysis registered: ${analysisId}`);
     }
 
     // Webhook functionality disabled for security (SSRF prevention)
@@ -705,6 +788,67 @@ export const expressHandlers = {
 };
 
 /**
+ * POST /api/analyze/:analysisId/report
+ * Generate a unified report for a completed analysis
+ */
+export async function handleGenerateAnalysisReport(
+  req: APIRequest<{ tier?: 'basic' | 'pro'; userId?: string }>
+): Promise<APIResponse<{ reportId: string }>> {
+  const analysisId = req.params?.analysisId;
+  const body = req.body || {};
+
+  if (!analysisId) {
+    return {
+      success: false,
+      error: 'Missing analysisId parameter',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  const analysis = analysisStore.get(analysisId);
+  if (!analysis) {
+    return {
+      success: false,
+      error: `Analysis not found: ${analysisId}`,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  if (analysis.status !== 'completed' || !analysis.result) {
+    return {
+      success: false,
+      error: `Analysis not completed. Status: ${analysis.status}`,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Import the handleGenerateReport from unified-report-endpoint
+  const { handleGenerateReport } = require('./unified-report-endpoint');
+
+  const reportResult = await handleGenerateReport({
+    body: {
+      analysisId,
+      userId: body.userId || 'anonymous',
+      tier: body.tier || 'basic'
+    }
+  });
+
+  if (reportResult.success && reportResult.data) {
+    return {
+      success: true,
+      data: { reportId: reportResult.data.reportId },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  return {
+    success: false,
+    error: reportResult.error || 'Failed to generate report',
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
  * Express router setup helper
  */
 export function setupAnalyzeRoutes(router: any): void {
@@ -712,6 +856,10 @@ export function setupAnalyzeRoutes(router: any): void {
   router.get('/analyze/:analysisId', expressHandlers.getStatus);
   router.get('/analyze/:analysisId/issues', expressHandlers.getIssues);
   router.get('/analyze/:analysisId/summary', expressHandlers.getSummary);
+  router.post('/analyze/:analysisId/report', async (req: any, res: any) => {
+    const result = await handleGenerateAnalysisReport({ params: req.params, body: req.body });
+    res.status(result.success ? 201 : 400).json(result);
+  });
 }
 
 // ============================================================================

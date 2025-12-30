@@ -37,6 +37,7 @@ export {
   handleAnalyzeStatus,
   handleAnalyzeIssues,
   handleAnalyzeSummary,
+  handleGenerateAnalysisReport,
   setupAnalyzeRoutes,
   expressHandlers as analyzeExpressHandlers,
   type AnalyzeRequestBody,
@@ -44,6 +45,23 @@ export {
   type APIRequest,
   type APIResponse
 } from './analyze-pr-endpoint';
+
+// Unified Report Endpoints
+export {
+  handleGenerateReport,
+  handleGetReport,
+  handleGetReportSection,
+  handleExportReport,
+  handleGetPreferences,
+  handleUpdatePreferences,
+  handleGetHistory,
+  setupReportRoutes,
+  expressHandlers as reportExpressHandlers,
+  registerAnalysisResult,
+  addHistoricalAnalysis,
+  type GenerateReportRequestBody,
+  type UpdatePreferencesRequestBody
+} from './unified-report-endpoint';
 
 // ============================================================================
 // COMBINED ROUTER SETUP
@@ -53,10 +71,23 @@ export {
  * Setup all API routes on an Express app or router
  *
  * Routes:
+ * Analysis:
  * - POST /api/analyze - Start PR analysis
  * - GET /api/analyze/:id - Get analysis status/results
  * - GET /api/analyze/:id/issues - Get filtered issues
  * - GET /api/analyze/:id/summary - Get summary with scanner guidance
+ * - POST /api/analyze/:id/report - Generate unified report from analysis
+ *
+ * Reports:
+ * - POST /api/reports - Generate unified report
+ * - GET /api/reports/:id - Get unified report
+ * - GET /api/reports/:id/section/:name - Get report section
+ * - GET /api/reports/:id/export/:format - Export report
+ *
+ * Users:
+ * - GET /api/users/:id/preferences - Get user preferences
+ * - PUT /api/users/:id/preferences - Update user preferences
+ * - GET /api/users/:id/history - Get analysis history
  *
  * Usage:
  *   import express from 'express';
@@ -68,23 +99,40 @@ export {
  */
 export function setupAllRoutes(app: any): void {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { setupAnalyzeRoutes: setupRoutes } = require('./analyze-pr-endpoint');
+  const { setupAnalyzeRoutes } = require('./analyze-pr-endpoint');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { setupReportRoutes } = require('./unified-report-endpoint');
 
   // Create API router
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const apiRouter = app.Router ? app.Router() : require('express').Router();
 
   // Setup routes
-  setupRoutes(apiRouter);
+  setupAnalyzeRoutes(apiRouter);
+  setupReportRoutes(apiRouter);
 
   // Mount at /api
   app.use('/api', apiRouter);
 
   console.log('V9 API routes mounted at /api');
+  console.log('');
+  console.log('Analysis:');
   console.log('  POST /api/analyze - Start PR analysis');
   console.log('  GET  /api/analyze/:id - Get analysis status');
   console.log('  GET  /api/analyze/:id/issues - Get filtered issues');
   console.log('  GET  /api/analyze/:id/summary - Get summary');
+  console.log('  POST /api/analyze/:id/report - Generate unified report');
+  console.log('');
+  console.log('Reports:');
+  console.log('  POST /api/reports - Generate unified report');
+  console.log('  GET  /api/reports/:id - Get unified report');
+  console.log('  GET  /api/reports/:id/section/:name - Get report section');
+  console.log('  GET  /api/reports/:id/export/:format - Export report');
+  console.log('');
+  console.log('Users:');
+  console.log('  GET  /api/users/:id/preferences - Get user preferences');
+  console.log('  PUT  /api/users/:id/preferences - Update user preferences');
+  console.log('  GET  /api/users/:id/history - Get analysis history');
 }
 
 // ============================================================================
