@@ -1079,21 +1079,67 @@ function generateSkillsTrackerPro(skillScores: {
 }
 
 /**
- * Generate Skills section for BASIC tier - shows upgrade CTA
+ * Generate Skills section for BASIC tier - same as PRO (gamification is for all tiers)
  */
-function generateSkillsTrackerBasic(): string {
+function generateSkillsTrackerBasic(skillScores: {
+  security: number;
+  performance: number;
+  codeQuality: number;
+  architecture: number;
+  dependencies: number;
+}): string {
+  // Calculate trends (sample data - in real implementation would come from Supabase)
+  const trends = {
+    security: skillScores.security < 50 ? -3 : skillScores.security > 60 ? +2 : 0,
+    performance: skillScores.performance < 50 ? -1 : skillScores.performance > 55 ? +1 : 0,
+    codeQuality: skillScores.codeQuality < 50 ? -1 : skillScores.codeQuality > 55 ? +1 : 0,
+    architecture: 0,
+    dependencies: 0
+  };
+
+  const formatTrend = (value: number): string => {
+    if (value > 0) return `↗️ +${value}`;
+    if (value < 0) return `↘️ ${value}`;
+    return '→ 0';
+  };
+
+  const getNextMilestone = (score: number): string => {
+    if (score >= 90) return 'Expert ✓';
+    if (score >= 75) return 'Expert (90)';
+    if (score >= 60) return 'Advanced (75)';
+    if (score >= 45) return 'Intermediate (60)';
+    return 'Beginner (45)';
+  };
+
   return `
-## 📈 Skills Tracking
+## 📈 Skills Growth Tracker
 
-> 🔒 **Skill tracking is a PRO feature**
+### Developer Skill Progress
 
-With PRO tier, you can:
-- 📊 Track your skill scores across 5 categories
-- 📈 Monitor improvement trends over time
-- 🏅 Earn skill badges and achievements
-- 🏆 Compare with team and community
+> 📊 **Base Score:** 50/100 for new developers | Deductions for issues in your code
 
-[🚀 **Upgrade to PRO**](/pricing) to unlock skill tracking
+| Skill | Current | Trend | Next Milestone |
+|-------|---------|-------|----------------|
+| 🔒 Security | ${skillScores.security}/100 | ${formatTrend(trends.security)} | ${getNextMilestone(skillScores.security)} |
+| ⚡ Performance | ${skillScores.performance}/100 | ${formatTrend(trends.performance)} | ${getNextMilestone(skillScores.performance)} |
+| ✨ Code Quality | ${skillScores.codeQuality}/100 | ${formatTrend(trends.codeQuality)} | ${getNextMilestone(skillScores.codeQuality)} |
+| 🏗️ Architecture | ${skillScores.architecture}/100 | ${formatTrend(trends.architecture)} | ${getNextMilestone(skillScores.architecture)} |
+| 📦 Dependencies | ${skillScores.dependencies}/100 | ${formatTrend(trends.dependencies)} | ${getNextMilestone(skillScores.dependencies)} |
+
+### This Month's Activity
+
+- **PRs Analyzed:** 12
+- **Issues Fixed:** 38
+- **Patterns Contributed:** 3
+- **XP Earned:** 450
+
+### Skill Badges Earned
+
+| Badge | Skill | Date |
+|-------|-------|------|
+| 🛡️ Security Expert | Security | Dec 15 |
+| ⚡ Performance Pro | Performance | Dec 10 |
+| 🔧 First Fix | General | Nov 20 |
 
 ---
 `;
@@ -1282,7 +1328,7 @@ All ${sampleIssues.length} issues detected can be auto-fixed with PRO tier.
 | Skills tracking | ✅ | ✅ |
 | Community impact | ✅ | ✅ |
 | **One-click auto-fix** | ❌ Copy-paste | ✅ **Instant apply** |
-| **Historical analytics** | ❌ Current PR only | ✅ **5 PR trend tracking** |
+| **Historical analytics** | ✅ 5 PR history | ✅ **Unlimited history** |
 | **Priority support** | ❌ | ✅ |
 
 ${generateTierComparisonTable()}

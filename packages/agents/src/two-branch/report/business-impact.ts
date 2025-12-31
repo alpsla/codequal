@@ -548,7 +548,7 @@ function generateBasicTierSection(
 | Skills Tracking | ✅ | ✅ |
 | Community Impact | ✅ | ✅ |
 | **Auto-Apply Fixes** | ❌ | ✅ |
-| **Historical Analytics** | ❌ | ✅ |
+| **Historical Analytics** | ✅ 5 PRs | ✅ Unlimited |
 
 [🚀 Upgrade to PRO] — Start your free trial
 `;

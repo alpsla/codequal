@@ -225,7 +225,7 @@ export function generateTierComparisonTable(): string {
 | Pattern-Based Fixes | ✅ Suggestions | ✅ **Auto-apply** |
 | **AI Fix Generation** | ❌ | ✅ **Included** |
 | **Auto-Fix Apply** | ❌ | ✅ **One-click** |
-| **Historical Analytics** | ❌ | ✅ **5 PRs history** |
+| **Historical Analytics** | ✅ 5 PRs history | ✅ **Unlimited history** |
 | **Priority Support** | ❌ | ✅ Email support |
 `;
 }

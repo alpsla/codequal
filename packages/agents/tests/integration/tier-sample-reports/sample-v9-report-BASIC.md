@@ -8,7 +8,7 @@
 **Organization:** expressjs
 **Source Branch:** feature/middleware-api
 **Target Branch:** main
-**Analysis Date:** December 31, 2025 at 01:02 PM EST
+**Analysis Date:** December 31, 2025 at 02:23 PM EST
 **Repository Size:** 1,247 files | 89,432 lines
 **Analyzer Version:** 9.0.0
 **Tier:** 📋 Basic
@@ -587,7 +587,7 @@ Unexpected console statement in `src/index.ts:12`
 | Skills Tracking | ✅ | ✅ |
 | Community Impact | ✅ | ✅ |
 | **Auto-Apply Fixes** | ❌ | ✅ |
-| **Historical Analytics** | ❌ | ✅ |
+| **Historical Analytics** | ✅ 5 PRs | ✅ Unlimited |
 
 [🚀 Upgrade to PRO] — Start your free trial
 
@@ -909,7 +909,7 @@ Experience automated fixes on this PR at no cost.
 | Skills tracking | ✅ | ✅ |
 | Community impact | ✅ | ✅ |
 | **One-click auto-fix** | ❌ Copy-paste | ✅ **Instant apply** |
-| **Historical analytics** | ❌ Current PR only | ✅ **5 PR trend tracking** |
+| **Historical analytics** | ✅ 5 PR history | ✅ **Unlimited history** |
 | **Priority support** | ❌ | ✅ |
 
 
@@ -924,7 +924,7 @@ Experience automated fixes on this PR at no cost.
 | Pattern-Based Fixes | ✅ Suggestions | ✅ **Auto-apply** |
 | **AI Fix Generation** | ❌ | ✅ **Included** |
 | **Auto-Fix Apply** | ❌ | ✅ **One-click** |
-| **Historical Analytics** | ❌ | ✅ **5 PRs history** |
+| **Historical Analytics** | ✅ 5 PRs history | ✅ **Unlimited history** |
 | **Priority Support** | ❌ | ✅ Email support |
 
 
