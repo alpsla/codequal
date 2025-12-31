@@ -1,6 +1,62 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: December 20, 2025**
+**Last Updated: December 31, 2025**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
+
+---
+
+## 📋 Tier Differentiation & API Documentation (Session 68)
+
+### Tier Feature Matrix (FINAL)
+
+| Feature | BASIC | PRO | Cost Justification |
+|---------|-------|-----|-------------------|
+| Issue detection | ✅ | ✅ | Free |
+| Educational content | ✅ | ✅ | Free |
+| Business impact analysis | ✅ | ✅ | Free |
+| Historical PR analytics | ✅ | ✅ | Minimal storage |
+| XP & Level progress | ✅ | ✅ | Free |
+| Achievements | ✅ | ✅ | Free |
+| Community impact | ✅ | ✅ | Free |
+| Skills tracking | ✅ | ✅ | Free |
+| IDE exports (SARIF, GitLab) | ✅ | ✅ | Free |
+| **Auto-fix buttons** | ❌ | ✅ | AI compute cost |
+| **Fix confidence levels** | ❌ | ✅ | AI analysis |
+| **Commit integration** | ❌ | ✅ | Git operations |
+
+### Key Decisions
+- **Gamification for ALL tiers**: XP, achievements, skills, community impact - keeps users engaged
+- **Historical analytics for ALL tiers**: Better engagement drives conversion
+- **Auto-fix is the killer PRO feature**: Clear value proposition, real compute cost
+
+### API Documentation (Swagger)
+
+**File**: `apps/api/src/docs/v9-unified-report-endpoints.yaml` (850+ lines)
+
+**Endpoints documented**:
+```
+/api/v9/analyze          - Start/get V9 analysis
+/api/v9/analyze/:id/issues - Filtered issues
+/api/v9/reports          - Generate/get unified reports
+/api/v9/reports/:id/export/:format - Export (SARIF, GitLab, etc.)
+/api/v9/users/:id/preferences - User preferences
+/api/v9/users/:id/history - Analysis history (ALL tiers)
+/api/v9/users/:id/skills - Skills & achievements (ALL tiers)
+```
+
+**Access Swagger UI**: `http://localhost:8080/api/docs`
+
+### Cross-Language API Test
+
+**File**: `tests/integration/test-v9-api-cross-language.ts`
+
+Tests 7 languages × 2 tiers = 14 test combinations:
+- Java, TypeScript, Python, Go, Rust, Ruby, PHP
+- Validates: gamification, historical data, tier-specific sections
+
+```bash
+# Run test
+DRY_RUN=true npx ts-node tests/integration/test-v9-api-cross-language.ts
+```
 
 ---
 

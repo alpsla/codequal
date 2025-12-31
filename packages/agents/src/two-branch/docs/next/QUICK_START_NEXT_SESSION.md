@@ -1,8 +1,141 @@
 # 🎯 QUICK START: NEXT SESSION
 
-**Last Updated**: December 24, 2025 (Session 67 - Unified Report System Implementation)
-**Current Phase**: Web Report System Development
-**Status**: ✅ **SESSION 67 COMPLETE** | Unified report types, API routes, section generators, and V9 integration complete
+**Last Updated**: December 31, 2025 (Session 68 - Tier Differentiation & Swagger Documentation)
+**Current Phase**: API Documentation & Cross-Language Testing
+**Status**: ✅ **SESSION 68 COMPLETE** | Tier differentiation finalized, Swagger docs added, cross-language API tests created
+
+---
+
+## 🚨 SESSION 68: Tier Differentiation & API Documentation (COMPLETE)
+
+### 🏆 KEY ACHIEVEMENTS (Session 68)
+
+| Task | Description | Status |
+|------|-------------|--------|
+| **Tier Differentiation Finalized** | BASIC gets ALL free features, PRO adds auto-fix only | ✅ Complete |
+| **Community Impact for ALL Tiers** | Fixed skills-section.ts - no longer PRO-gated | ✅ Complete |
+| **Historical Analytics for ALL Tiers** | Confirmed in framework - not tier-gated | ✅ Complete |
+| **Swagger Documentation** | Created comprehensive V9 API OpenAPI spec (850+ lines) | ✅ Complete |
+| **Cross-Language API Test** | Created test-v9-api-cross-language.ts for 7 languages | ✅ Complete |
+| **Swagger Middleware Updated** | All endpoint docs now loaded automatically | ✅ Complete |
+
+### 📋 TIER DIFFERENTIATION (FINAL)
+
+**BASIC Tier (All Free Features):**
+- Issue detection and details
+- Educational content and recommendations
+- Business impact analysis
+- Historical PR analytics (5 PRs) - track improvement
+- XP level and progress bar
+- Achievements with progress
+- Community impact section
+- Skills tracking
+- IDE integration exports (LSP, SARIF, GitLab)
+
+**PRO Tier (BASIC + Auto-Fix):**
+- One-click auto-fix buttons (AI-powered)
+- Fix confidence levels and review guidance
+- Commit integration with detailed messages
+- Priority support
+
+### 📁 FILES CHANGED (Session 68)
+
+**Framework Fix:**
+- `src/two-branch/report/sections/skills-section.ts` - Community Impact for ALL tiers (line 114)
+
+**Swagger Documentation:**
+- `apps/api/src/docs/v9-unified-report-endpoints.yaml` - Full V9 API spec (NEW)
+- `apps/api/src/middleware/swagger.ts` - Load all endpoint docs
+
+**Cross-Language Testing:**
+- `tests/integration/test-v9-api-cross-language.ts` - API test for 7 languages (NEW)
+
+**Test Updates:**
+- `tests/integration/generate-tier-sample-reports.ts` - Updated tier comparison summary
+
+### 📡 V9 API ENDPOINTS (Swagger Documented)
+
+```
+V9 Analysis:
+  POST /api/v9/analyze                    - Start PR analysis
+  GET  /api/v9/analyze/{analysisId}       - Get status/results
+  GET  /api/v9/analyze/{analysisId}/issues - Get filtered issues
+
+V9 Reports:
+  POST /api/v9/reports                    - Generate unified report
+  GET  /api/v9/reports/{reportId}         - Get report
+  GET  /api/v9/reports/{reportId}/section/{name} - Get section
+  GET  /api/v9/reports/{reportId}/export/{format} - Export (SARIF, GitLab, etc.)
+
+V9 User:
+  GET  /api/v9/users/{userId}/preferences - Get user preferences
+  PUT  /api/v9/users/{userId}/preferences - Update preferences
+  GET  /api/v9/users/{userId}/history     - Analysis history (ALL tiers)
+  GET  /api/v9/users/{userId}/skills      - Skills & achievements (ALL tiers)
+```
+
+### 🧪 CROSS-LANGUAGE API TEST
+
+Tests all 7 languages with BASIC and PRO tiers:
+
+| Language | Repository | PR | Expected Tools |
+|----------|------------|-----|----------------|
+| Java | spring-petclinic | #950 | pmd, semgrep, dependency-check |
+| TypeScript | expressjs/express | - | eslint, semgrep, npm-audit |
+| Python | pallets/flask | - | ruff, bandit, pip-audit |
+| Go | gin-gonic/gin | - | golangci-lint, gosec, govulncheck |
+| Rust | tokio-rs/tokio | - | clippy, cargo-audit |
+| Ruby | sinatra/sinatra | - | rubocop, brakeman, bundler-audit |
+| PHP | laravel/framework | - | phpstan, semgrep, composer-audit |
+
+```bash
+# Run cross-language API test
+npx ts-node tests/integration/test-v9-api-cross-language.ts
+
+# Dry run (validate structure only)
+DRY_RUN=true npx ts-node tests/integration/test-v9-api-cross-language.ts
+
+# Custom API URL
+API_BASE_URL=http://localhost:8080 npx ts-node tests/integration/test-v9-api-cross-language.ts
+```
+
+### ⚠️ NEXT SESSION TODO (Session 69)
+
+| Task | Priority | Effort |
+|------|----------|--------|
+| Run cross-language API test against cloud instance | High | 30 min |
+| Implement Supabase repositories (replace in-memory stores) | High | 2 hours |
+| Add authentication/authorization middleware | High | 1 hour |
+| Create UI components to consume report API | Medium | 3 hours |
+| Add WebSocket support for real-time report updates | Medium | 2 hours |
+
+### 🚀 QUICK START (Session 69)
+
+```bash
+cd packages/agents
+
+# Verify Swagger docs are loaded
+curl http://localhost:8080/api/docs/openapi.json | jq '.paths | keys'
+
+# Run cross-language API test
+API_BASE_URL=http://129.212.136.24 npx ts-node tests/integration/test-v9-api-cross-language.ts
+
+# Test unified report generation
+npx ts-node tests/integration/test-unified-report-generation.ts
+
+# Generate sample tier reports
+npx ts-node tests/integration/generate-tier-sample-reports.ts
+
+# Verify build
+npm run build
+```
+
+### 📊 COMMITS (Session 68)
+
+| Commit | Description |
+|--------|-------------|
+| `5440a9d6` | fix(reports): Correct tier differentiation - all gamification for BASIC |
+| `1b2d71ed` | feat(api): Add V9 unified report Swagger docs and cross-language API tests |
 
 ---
 
