@@ -504,7 +504,7 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 - 🏗️ Architecture: ${skillArchitectureScore}/100
 - 📦 Dependencies: ${skillDependencyScore}/100
 
-> ${tier === 'pro' ? 'Scores saved to Supabase for tracking trends over time' : 'Upgrade to PRO for historical score tracking'}
+> Scores saved to Supabase for tracking trends over time
 
 
 > 🚀 **Fix Coverage**: ${sampleIssues.length} issues (100%) have pattern-based fixes available
@@ -1425,22 +1425,21 @@ async function main(): Promise<void> {
   console.log('TIER COMPARISON SUMMARY');
   console.log('═══════════════════════════════════════════════════════════════\n');
 
-  console.log('📋 BASIC Report Features:');
+  console.log('📋 BASIC Report Features (all free, no extra cost):');
   console.log('   • Issue detection and details');
   console.log('   • Educational content and recommendations');
-  console.log('   • Business impact analysis (basic)');
-  console.log('   • Promotional offers and upgrade CTAs');
-  console.log('   • Tier comparison table');
-
-  console.log('\n🌟 PRO Report Features (all BASIC + these):');
+  console.log('   • Business impact analysis');
   console.log('   • XP level and progress bar');
-  console.log('   • Historical PR analytics (5 PRs)');
-  console.log('   • Skill scores with trends');
-  console.log('   • Monthly statistics');
   console.log('   • Achievements with progress');
   console.log('   • Community impact section');
-  console.log('   • One-click auto-fix buttons');
-  console.log('   • Pattern contribution recognition');
+  console.log('   • Skills tracking (current session)');
+  console.log('   • IDE integration exports (LSP, SARIF, GitLab)');
+
+  console.log('\n🌟 PRO Report Features (BASIC + these paid features):');
+  console.log('   • Historical PR analytics (5 PRs) - requires storage');
+  console.log('   • One-click auto-fix buttons - requires AI/compute');
+  console.log('   • Pattern contribution tracking');
+  console.log('   • Priority support');
 
   console.log('\n📂 Reports saved to:');
   console.log(`   ${outputDir}/`);

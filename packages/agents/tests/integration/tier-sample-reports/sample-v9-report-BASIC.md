@@ -8,7 +8,7 @@
 **Organization:** expressjs
 **Source Branch:** feature/middleware-api
 **Target Branch:** main
-**Analysis Date:** December 30, 2025 at 11:16 PM EST
+**Analysis Date:** December 31, 2025 at 01:02 PM EST
 **Repository Size:** 1,247 files | 89,432 lines
 **Analyzer Version:** 9.0.0
 **Tier:** 📋 Basic
@@ -56,7 +56,7 @@
 - 🏗️ Architecture: 50/100
 - 📦 Dependencies: 50/100
 
-> Upgrade to PRO for historical score tracking
+> Scores saved to Supabase for tracking trends over time
 
 
 > 🚀 **Fix Coverage**: 8 issues (100%) have pattern-based fixes available
