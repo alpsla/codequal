@@ -4,6 +4,23 @@
   "description": "V9 Two-Branch Analyzer - Production Implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./services/*": {
+      "types": "./dist/services/*.d.ts",
+      "require": "./dist/services/*.js",
+      "import": "./dist/services/*.js"
+    },
+    "./two-branch/*": {
+      "types": "./dist/two-branch/*.d.ts",
+      "require": "./dist/two-branch/*.js",
+      "import": "./dist/two-branch/*.js"
+    }
+  },
   "scripts": {
     "prebuild": "cd ../database && npm run build && cd ../core && npm run build && cd ../mcp-hybrid && npm run build && cd ../agents",
     "build": "npm run prebuild && tsc --skipLibCheck",
