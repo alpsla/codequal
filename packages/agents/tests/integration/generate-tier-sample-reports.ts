@@ -410,7 +410,8 @@ function generateHeader(tier: UserTier): string {
 `;
 }
 
-function generateExecutiveSummary(tier: UserTier): string {
+async function generateExecutiveSummary(tier: UserTier): Promise<string> {
+  const patternCount = await getPatternCount();
   const criticalCount = sampleIssues.filter(i => i.severity === 'critical').length;
   const highCount = sampleIssues.filter(i => i.severity === 'high').length;
   const mediumCount = sampleIssues.filter(i => i.severity === 'medium').length;
@@ -573,7 +574,7 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 **⭐ PRO Tier** (One-Click Auto-Fix):
 - ⚡ **Instant Apply**: All fixes applied in ~30 seconds (no manual work)
 - ✅ **Verified Fixes**: Syntax and behavior validated before apply
-- 🔄 **Pattern Library**: ${await getPatternCount()}+ pre-learned patterns for fast fixing
+- 🔄 **Pattern Library**: ${patternCount}+ pre-learned patterns for fast fixing
 - 📈 **100% Coverage**: Every issue gets an actionable fix
 
 ---
@@ -1165,7 +1166,7 @@ code_quality:
 
 async function generateBasicReport(): Promise<string> {
   let report = generateHeader('basic');
-  report += generateExecutiveSummary('basic');
+  report += await generateExecutiveSummary('basic');
   report += generateIssueDetails();
 
   // Calculate XP and level (available for all tiers - already computed)
@@ -1298,7 +1299,7 @@ ${generateValueProp(sampleIssues.length, 1.5)}
 
 async function generateProReport(): Promise<string> {
   let report = generateHeader('pro');
-  report += generateExecutiveSummary('pro');
+  report += await generateExecutiveSummary('pro');
   report += generateIssueDetails();
 
   // Calculate XP and level

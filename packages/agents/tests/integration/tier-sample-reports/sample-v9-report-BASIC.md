@@ -8,7 +8,7 @@
 **Organization:** expressjs
 **Source Branch:** feature/middleware-api
 **Target Branch:** main
-**Analysis Date:** December 30, 2025 at 03:52 PM EST
+**Analysis Date:** December 30, 2025 at 11:16 PM EST
 **Repository Size:** 1,247 files | 89,432 lines
 **Analyzer Version:** 9.0.0
 **Tier:** 📋 Basic
@@ -117,16 +117,17 @@
 
 **BASIC vs PRO Tier Fix System**:
 
-**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
-- 📚 **Pattern Fixes**: 2 issues - Pre-learned fixes from 640+ patterns
-- 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
-- 📖 **Actionable Guidance**: Clear instructions for all issues
+**🆓 BASIC Tier** (Issue Detection + IDE Export):
+- 🔍 **Full Detection**: All 8 issues detected and analyzed
+- 📄 **Export Formats**: LSP, SARIF, GitLab - apply fixes in your IDE
+- 📖 **Fix Guidance**: AI-generated fix recommendations for every issue
+- ⏱️ **Manual Apply**: ~24 min to apply fixes via IDE
 
-**⭐ PRO Tier** (Full AI-Powered Analysis):
-- 🤖 **AI Auto-Fix**: All 8 issues analyzed with contextual AI fixes
-- 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
-- ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
-- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
+**⭐ PRO Tier** (One-Click Auto-Fix):
+- ⚡ **Instant Apply**: All fixes applied in ~30 seconds (no manual work)
+- ✅ **Verified Fixes**: Syntax and behavior validated before apply
+- 🔄 **Pattern Library**: 640+ pre-learned patterns for fast fixing
+- 📈 **100% Coverage**: Every issue gets an actionable fix
 
 ---
 
@@ -501,12 +502,16 @@ Unexpected console statement in `src/index.ts:12`
 | **Fix Time** | 3.6 hours (~1 days) | **1 hours** (AI-assisted) |
 | **Developer Cost** | $540 | **$150** |
 | **Time Saved** | - | **72%** |
-| **Auto-Fix Coverage** | 0% | **38%** (3/8 active issues) |
+| **Fix Coverage** | 0% | **100%** (All 8 issues have fix suggestions) |
+
+**Fix Availability by Type:**
+- **Pattern Auto-Fix**: 3/8 issues (38%) - high-confidence, instant apply
+- **AI-Assisted Fix**: 5/8 issues (63%) - review recommended
 
 **How CodeQual Reduces Fix Time:**
-- **PRO Tier**: 1-click auto-fix for 3 issues (~3 min review + apply)
-- **BASIC Tier**: AI recommendations ready for IDE agents (Cursor, Copilot) to apply
-- **All Tiers**: 100% of issues have AI-generated fix code suggestions
+- **PRO Tier**: 1-click apply for all 8 issues (~1 min review + apply)
+- **BASIC Tier**: Export to IDE (LSP/SARIF) for semi-automated application
+- **All Tiers**: Every issue includes AI-generated fix code
 
 | Risk Metric | Value |
 |-------------|-------|
@@ -615,7 +620,7 @@ PERFECT COMBO! 5 flawless reviews in a row. Unstoppable!
 
 Master hunter! 50 vulnerabilities eliminated from the codebase.
 
-**+500 XP** | Unlocked: 2 weeks ago
+**+500 XP** | Unlocked: 3 weeks ago
 
 Progress: [██████████] 100%
 

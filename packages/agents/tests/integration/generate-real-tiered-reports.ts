@@ -179,24 +179,25 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
 
   // Issue summary
   const remaining = report.remainingIssues;
+  const summary = remaining.summary;
   md += `### Issue Summary
 
-**Total Issues:** ${remaining.total}
+**Total Issues:** ${summary.total}
 
 **By Severity:**
-- 🔴 Critical: ${remaining.bySeverity.critical}
-- 🟠 High: ${remaining.bySeverity.high}
-- 🟡 Medium: ${remaining.bySeverity.medium}
-- 🟢 Low: ${remaining.bySeverity.low}
+- 🔴 Critical: ${summary.bySeverity.critical}
+- 🟠 High: ${summary.bySeverity.high}
+- 🟡 Medium: ${summary.bySeverity.medium}
+- 🟢 Low: ${summary.bySeverity.low}
 
 **By Category:**
 | Category | Count |
 |----------|-------|
-| 🔒 Security | ${remaining.byCategory.security} |
-| ✨ Code Quality | ${remaining.byCategory.code_quality} |
-| ⚡ Performance | ${remaining.byCategory.performance} |
-| 🏗️ Architecture | ${remaining.byCategory.architecture} |
-| 📦 Dependencies | ${remaining.byCategory.dependencies} |
+| 🔒 Security | ${summary.byCategory.security} |
+| ✨ Code Quality | ${summary.byCategory.code_quality} |
+| ⚡ Performance | ${summary.byCategory.performance} |
+| 🏗️ Architecture | ${summary.byCategory.architecture} |
+| 📦 Dependencies | ${summary.byCategory.dependencies} |
 
 ---
 
@@ -205,25 +206,28 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
   // Fix Summary (PRO only)
   if (tier === 'pro' && report.fixSummary) {
     const fix = report.fixSummary;
+    const totalAttempted = fix.overview.totalAttempted;
+    const totalFixed = fix.overview.totalSuccessful;
+    const byTier = fix.successfullyFixed.byTier;
     md += `## 🔧 Fix Summary (PRO)
 
 ### Auto-Fix Results
 
 | Metric | Value |
 |--------|-------|
-| **Issues Fixed** | ${fix.fixed.total} / ${fix.fixed.total + fix.requireReview.total + fix.cannotFix.total} |
-| **Time Saved** | ${fix.timeSaved.minutes} minutes |
-| **Cost Saved** | $${fix.costSaved.total} |
+| **Issues Fixed** | ${totalFixed} / ${totalAttempted} |
+| **Success Rate** | ${fix.overview.successRate.toFixed(1)}% |
+| **Requires Review** | ${fix.overview.totalRequiringReview} |
 
 ### Fixes by Tier
 
 | Tier | Count |
 |------|-------|
-| Native Tool Fixes | ${fix.byTier.tier1_native} |
-| Dedicated Fixer | ${fix.byTier.tier2_dedicated} |
-| Pattern-Based | ${fix.byTier.tier2_5_pattern} |
-| Cloud API | ${fix.byTier.tier2_5_cloud} |
-| AI-Generated | ${fix.byTier.tier3_ai} |
+| Native Tool Fixes | ${byTier.tier1Native} |
+| Dedicated Fixer | ${byTier.tier2Dedicated} |
+| Pattern-Based | ${byTier.tier2_5Pattern} |
+| Cloud API | ${byTier.tier2_5CloudAPI} |
+| AI-Generated | ${byTier.tier3AI} |
 
 ---
 
@@ -238,9 +242,9 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
 
 | Metric | Value |
 |--------|-------|
-| **Estimated Fix Time** | ${impact.fixTimeEstimate.hours} hours |
-| **Developer Cost** | $${impact.fixTimeEstimate.cost} |
-| **Risk Level** | ${impact.riskAssessment.level} |
+| **Manual Fix Time** | ${impact.time.manual.formatted} |
+| **Developer Cost** | $${impact.cost.manualEstimate} |
+| **Remaining Effort** | ${impact.remainingEffort.formatted} |
 
 `;
 
@@ -249,9 +253,9 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
 
 | Metric | Value |
 |--------|-------|
-| **Time Saved** | ${impact.roi.timeSavedHours} hrs |
-| **Cost Saved** | $${impact.roi.moneySaved} |
-| **ROI** | ${impact.roi.percentage}% |
+| **Time Saved** | ${impact.roi.timeSavedPercent}% |
+| **Cost Saved** | ${impact.roi.costSavedPercent}% |
+| **Summary** | ${impact.roi.summary} |
 
 `;
   }
@@ -262,31 +266,38 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
 
 ## 📚 Educational Resources
 
-### Top Learning Resources
+### Learning Paths
 
 `;
-  (edu.topResources || []).slice(0, 5).forEach((r: any) => {
-    md += `- [${r.title}](${r.url}) - ${r.category}\n`;
+  (edu.learningPaths || []).slice(0, 3).forEach((path: any) => {
+    md += `**${path.categoryLabel}** (${path.issueCount} issues)\n`;
+    (path.modules || []).slice(0, 2).forEach((mod: any) => {
+      md += `- ${mod.title} (${mod.estimatedTime})\n`;
+    });
+    md += '\n';
   });
 
   // Skills & Achievements
   const skills = report.skillsAndAchievements;
+  const level = skills.level;
   md += `
 ---
 
 ## 🏆 Skills & Achievements
 
-**Level ${skills.level}** | **${skills.totalXp} XP**
+**Level ${level.current}** (${level.title}) | **${level.xp} XP**
+
+Progress: ${level.progressPercent}% to next level
 
 ### Skill Scores
 
 | Skill | Score |
 |-------|-------|
-| 🔒 Security | ${skills.skills.security}/100 |
-| ✨ Code Quality | ${skills.skills.codeQuality}/100 |
-| ⚡ Performance | ${skills.skills.performance}/100 |
-| 🏗️ Architecture | ${skills.skills.architecture}/100 |
-| 📦 Dependencies | ${skills.skills.dependencies}/100 |
+| 🔒 Security | ${skills.skills.security?.score || 50}/100 |
+| ✨ Code Quality | ${skills.skills.code_quality?.score || 50}/100 |
+| ⚡ Performance | ${skills.skills.performance?.score || 50}/100 |
+| 🏗️ Architecture | ${skills.skills.architecture?.score || 50}/100 |
+| 📦 Dependencies | ${skills.skills.dependencies?.score || 50}/100 |
 
 `;
 
@@ -295,12 +306,13 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
 
 `;
     skills.achievements.unlocked.slice(0, 3).forEach((a: any) => {
-      md += `- 🏅 **${a.name}** - ${a.description} (+${a.xpValue} XP)\n`;
+      md += `- ${a.icon || '🏅'} **${a.name}** (${a.rarity}) - ${a.description}\n`;
     });
   }
 
   // Metadata
   const meta = report.metadata;
+  const toolNames = (meta.tools || []).map((t: any) => t.name).join(', ') || 'semgrep, pmd, checkstyle';
   md += `
 ---
 
@@ -308,10 +320,10 @@ ${score.value >= 70 ? '✅' : score.value >= 50 ? '⚠️' : '❌'} **${score.va
 
 | Metric | Value |
 |--------|-------|
-| **Analysis Duration** | ${meta.duration}ms |
-| **Tools Used** | ${meta.toolsUsed?.join(', ') || 'semgrep, pmd, checkstyle'} |
-| **AI Cost** | $${meta.aiCost || 0} |
-| **Pattern Hits** | ${meta.patternHits || 0} |
+| **Analysis Duration** | ${meta.analysis.duration.formatted} |
+| **Tools Used** | ${toolNames} |
+| **AI Cost** | $${meta.costs?.analysis?.cost?.toFixed(2) || '0.00'} |
+| **Total Cost** | $${meta.costs?.total?.toFixed(2) || '0.00'} |
 
 `;
 
@@ -400,28 +412,36 @@ async function main() {
     console.log('🌟 Generating PRO tier report...');
 
     // Simulate fix results for PRO
+    const fixedCount = Math.floor(issues.length * 0.85);
     const fixResult: FixOrchestrationResultInput = {
       score: Math.min(100, analysisInput.score + 15), // Score improved by 15 points
       execution: {
-        totalFixesApplied: Math.floor(issues.length * 0.85),
+        totalFixesApplied: fixedCount,
         totalRolledBack: 0,
         totalRequiringReview: Math.floor(issues.length * 0.10),
       },
-      fixes: issues.slice(0, Math.floor(issues.length * 0.85)).map((issue, idx) => ({
+      fixes: issues.slice(0, fixedCount).map((issue, idx) => ({
         issueId: `issue-${idx}`,
+        ruleId: issue.rule,
         tier: idx % 5 === 0 ? 'tier1_native' as const :
               idx % 5 === 1 ? 'tier2_dedicated' as const :
               idx % 5 === 2 ? 'tier2_5_pattern' as const :
               idx % 5 === 3 ? 'tier2_5_cloud' as const : 'tier3_ai' as const,
-        applied: true,
-        verified: true,
-        timeSavedMinutes: 5,
-        costSaved: 12.50,
+        confidence: 85 + Math.floor(Math.random() * 15),
+        file: issue.file,
+        line: issue.line,
+        originalCode: '// Original code',
+        fixedCode: '// Fixed code',
+        explanation: 'Applied automated fix based on pattern matching',
+        verificationStatus: 'passed' as const,
       })),
       reviewRequired: [],
       rolledBack: [],
       unfixed: issues.slice(Math.floor(issues.length * 0.95)).map((issue, idx) => ({
         issueId: `issue-${Math.floor(issues.length * 0.95) + idx}`,
+        ruleId: issue.rule,
+        file: issue.file,
+        line: issue.line,
         reason: 'complex_refactoring' as const,
         explanation: 'This issue requires manual review due to complex code structure',
       })),
@@ -429,9 +449,9 @@ async function main() {
 
     // Historical data for PRO
     const history = [
-      { prNumber: 948, repository: REPO_URL, score: 72, date: '2025-12-20', issuesFound: 45, issuesFixed: 40 },
-      { prNumber: 945, repository: REPO_URL, score: 68, date: '2025-12-18', issuesFound: 52, issuesFixed: 48 },
-      { prNumber: 940, repository: REPO_URL, score: 75, date: '2025-12-15', issuesFound: 38, issuesFixed: 35 },
+      { id: 'hist-1', prNumber: 948, prTitle: 'Feature: Add validation', timestamp: '2025-12-20T10:00:00Z', scoreBefore: 65, scoreAfter: 72, grade: 'C', issuesFixed: 40 },
+      { id: 'hist-2', prNumber: 945, prTitle: 'Fix: Security patches', timestamp: '2025-12-18T14:30:00Z', scoreBefore: 60, scoreAfter: 68, grade: 'D', issuesFixed: 48 },
+      { id: 'hist-3', prNumber: 940, prTitle: 'Refactor: Clean up', timestamp: '2025-12-15T09:00:00Z', scoreBefore: 70, scoreAfter: 75, grade: 'C', issuesFixed: 35 },
     ];
 
     const proReport = generateUnifiedReportSync(
@@ -452,8 +472,8 @@ async function main() {
         },
         achievements: {
           unlocked: [
-            { id: 'first-fix', name: 'First Blood', description: 'Fixed your first issue', category: 'general', tier: 'common', xpValue: 50, unlockedAt: new Date().toISOString() },
-            { id: 'java-master', name: 'Java Master', description: 'Fixed 100 Java issues', category: 'language', tier: 'epic', xpValue: 200, unlockedAt: new Date().toISOString() },
+            { id: 'first-fix', name: 'First Blood', description: 'Fixed your first issue', icon: '🎯', rarity: 'common' as const, unlockedAt: new Date().toISOString(), isNew: false },
+            { id: 'java-master', name: 'Java Master', description: 'Fixed 100 Java issues', icon: '☕', rarity: 'epic' as const, unlockedAt: new Date().toISOString(), isNew: true },
           ],
           inProgress: [],
           totalUnlocked: 2,
