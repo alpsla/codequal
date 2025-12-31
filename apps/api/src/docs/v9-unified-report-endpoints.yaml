@@ -1,0 +1,1224 @@
+paths:
+  /api/v9/analyze:
+    post:
+      summary: Start V9 PR Analysis
+      description: |
+        Initiates a comprehensive V9 analysis on a pull request using cloud-deployed tools
+        and hybrid AI agents. Supports multiple languages and tier-based features.
+      tags: [V9 Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V9AnalyzeRequest'
+            examples:
+              basic:
+                summary: Basic tier analysis
+                value:
+                  repositoryUrl: "https://github.com/spring-projects/spring-petclinic"
+                  prNumber: 950
+                  language: "java"
+                  userTier: "basic"
+                  userId: "user-123"
+              pro:
+                summary: PRO tier with auto-fix
+                value:
+                  repositoryUrl: "https://github.com/spring-projects/spring-petclinic"
+                  prNumber: 950
+                  language: "java"
+                  userTier: "pro"
+                  userId: "user-123"
+                  options:
+                    generateFixes: true
+                    includeEducational: true
+      responses:
+        '202':
+          description: Analysis started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V9AnalysisStarted'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '402':
+          description: Tier upgrade required for requested features
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /api/v9/analyze/{analysisId}:
+    get:
+      summary: Get V9 Analysis Status/Results
+      description: |
+        Retrieves the current status or final results of a V9 analysis.
+        When complete, returns the full unified report.
+      tags: [V9 Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: analysisId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Analysis ID from the analyze request
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V9AnalysisResult'
+        '202':
+          description: Analysis still in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V9AnalysisProgress'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v9/analyze/{analysisId}/issues:
+    get:
+      summary: Get Issues with Filtering
+      description: Get analyzed issues with optional filtering by category, severity, or tool.
+      tags: [V9 Analysis]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: analysisId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: category
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [security, code_quality, performance, architecture, dependencies]
+        - name: severity
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [critical, high, medium, low]
+        - name: tool
+          in: query
+          schema:
+            type: string
+          description: Filter by specific tool (e.g., semgrep, pmd, eslint)
+        - name: hasAIFix
+          in: query
+          schema:
+            type: boolean
+          description: Filter to issues with/without AI-generated fixes
+      responses:
+        '200':
+          description: Filtered issues list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuesList'
+
+  /api/v9/reports:
+    post:
+      summary: Generate Unified Report
+      description: |
+        Generates a unified report from a completed analysis.
+        Supports both BASIC and PRO tiers with tier-specific content.
+      tags: [V9 Reports]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportRequest'
+      responses:
+        '200':
+          description: Report generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnifiedReport'
+        '404':
+          description: Analysis not found
+
+  /api/v9/reports/{reportId}:
+    get:
+      summary: Get Unified Report
+      description: Retrieves a previously generated unified report.
+      tags: [V9 Reports]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unified report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnifiedReport'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v9/reports/{reportId}/section/{sectionName}:
+    get:
+      summary: Get Report Section
+      description: Retrieves a specific section from a unified report.
+      tags: [V9 Reports]
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sectionName
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [header, progressHistory, fixSummary, remainingIssues, businessImpact, educational, ideIntegration, skillsAndAchievements, commitInfo, metadata]
+      responses:
+        '200':
+          description: Report section
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Report or section not found
+
+  /api/v9/reports/{reportId}/export/{format}:
+    get:
+      summary: Export Report
+      description: Exports a unified report in various formats.
+      tags: [V9 Reports]
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [markdown, html, pdf, sarif, gitlab-codequality, lsp-actions]
+      responses:
+        '200':
+          description: Exported report
+          content:
+            application/json:
+              schema:
+                type: object
+            text/markdown:
+              schema:
+                type: string
+            text/html:
+              schema:
+                type: string
+
+  /api/v9/users/{userId}/preferences:
+    get:
+      summary: Get User Preferences
+      description: Retrieves user preferences for report generation.
+      tags: [V9 User]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+    put:
+      summary: Update User Preferences
+      description: Updates user preferences for report generation.
+      tags: [V9 User]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferencesRequest'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+
+  /api/v9/users/{userId}/history:
+    get:
+      summary: Get Analysis History
+      description: |
+        Retrieves user's analysis history for a repository.
+        Available for all tiers - enables progress tracking and trends.
+      tags: [V9 User]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repositoryId
+          in: query
+          schema:
+            type: string
+          description: Filter by specific repository
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: Analysis history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoricalAnalysis'
+
+  /api/v9/users/{userId}/skills:
+    get:
+      summary: Get User Skills & Achievements
+      description: |
+        Retrieves user's skill levels, XP, and achievements.
+        Available for all tiers - gamification features are free.
+      tags: [V9 User]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User skills and achievements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSkillsAndAchievements'
+
+tags:
+  - name: V9 Analysis
+    description: |
+      V9 PR analysis endpoints with cloud-deployed tools and hybrid AI agents.
+      Supports Java, TypeScript, Python, Go, Rust, Ruby, and PHP.
+  - name: V9 Reports
+    description: |
+      Unified report generation and retrieval.
+      Supports BASIC and PRO tiers with tier-specific content.
+  - name: V9 User
+    description: |
+      User preferences, history, skills, and achievements.
+      Gamification features available for all tiers.
+
+components:
+  schemas:
+    V9AnalyzeRequest:
+      type: object
+      required: [repositoryUrl, prNumber]
+      properties:
+        repositoryUrl:
+          type: string
+          format: uri
+          description: GitHub repository URL
+          example: "https://github.com/spring-projects/spring-petclinic"
+        prNumber:
+          type: integer
+          minimum: 1
+          description: Pull request number
+          example: 950
+        baseBranch:
+          type: string
+          description: Base branch (auto-detected if not specified)
+        prBranch:
+          type: string
+          description: PR branch (auto-detected if not specified)
+        language:
+          type: string
+          enum: [java, typescript, python, go, rust, ruby, php]
+          description: Primary language (auto-detected if not specified)
+        analysisMode:
+          type: string
+          enum: [quick, standard, complete]
+          default: standard
+          description: |
+            - quick: Fast scan, essential tools only (~1 min)
+            - standard: Balanced analysis (~3 min)
+            - complete: Comprehensive with all tools (~5 min)
+        userTier:
+          type: string
+          enum: [basic, pro, enterprise]
+          default: basic
+          description: User's subscription tier
+        userId:
+          type: string
+          description: User ID for history and preferences
+        options:
+          type: object
+          properties:
+            skipCache:
+              type: boolean
+              default: false
+              description: Skip cached results
+            generateFixes:
+              type: boolean
+              default: true
+              description: Generate AI-powered fix suggestions (PRO only)
+            includeEducational:
+              type: boolean
+              default: true
+              description: Include educational content
+            webhook:
+              type: string
+              format: uri
+              description: Webhook URL for completion notification
+
+    V9AnalysisStarted:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        analysisId:
+          type: string
+          format: uuid
+          description: Unique analysis identifier
+        statusUrl:
+          type: string
+          format: uri
+          description: URL to check analysis status
+        estimatedDuration:
+          type: integer
+          description: Estimated duration in seconds
+        tier:
+          type: string
+          enum: [basic, pro, enterprise]
+
+    V9AnalysisProgress:
+      type: object
+      properties:
+        analysisId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, analyzing, finalizing]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        currentPhase:
+          type: string
+          description: Current analysis phase
+        phases:
+          type: object
+          properties:
+            initialization:
+              $ref: '#/components/schemas/PhaseStatus'
+            toolExecution:
+              $ref: '#/components/schemas/PhaseStatus'
+            agentAnalysis:
+              $ref: '#/components/schemas/PhaseStatus'
+            reportGeneration:
+              $ref: '#/components/schemas/PhaseStatus'
+
+    PhaseStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        percentage:
+          type: integer
+        message:
+          type: string
+
+    V9AnalysisResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        analysisId:
+          type: string
+          format: uuid
+        repository:
+          type: string
+        prNumber:
+          type: integer
+        language:
+          type: string
+        tier:
+          type: string
+          enum: [basic, pro, enterprise]
+        summary:
+          $ref: '#/components/schemas/AnalysisSummary'
+        score:
+          $ref: '#/components/schemas/ScoreBreakdown'
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyzedIssue'
+        report:
+          $ref: '#/components/schemas/UnifiedReport'
+        metrics:
+          $ref: '#/components/schemas/AnalysisMetrics'
+
+    AnalysisSummary:
+      type: object
+      properties:
+        totalIssues:
+          type: integer
+        critical:
+          type: integer
+        high:
+          type: integer
+        medium:
+          type: integer
+        low:
+          type: integer
+        fixed:
+          type: integer
+          description: Issues with auto-fix available (PRO)
+        decision:
+          type: string
+          enum: [APPROVED, REVIEW_REQUIRED, DECLINED]
+
+    ScoreBreakdown:
+      type: object
+      properties:
+        overall:
+          type: number
+          minimum: 0
+          maximum: 100
+        grade:
+          type: string
+          enum: [A+, A, B+, B, C+, C, D, F]
+        security:
+          type: number
+        quality:
+          type: number
+        performance:
+          type: number
+        architecture:
+          type: number
+        dependencies:
+          type: number
+
+    AnalyzedIssue:
+      type: object
+      properties:
+        id:
+          type: string
+        tool:
+          type: string
+        category:
+          type: string
+          enum: [security, code_quality, performance, architecture, dependencies]
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        message:
+          type: string
+        file:
+          type: string
+        line:
+          type: integer
+        column:
+          type: integer
+        ruleId:
+          type: string
+        fix:
+          $ref: '#/components/schemas/IssueFix'
+        educational:
+          $ref: '#/components/schemas/EducationalContent'
+
+    IssueFix:
+      type: object
+      description: Auto-fix details (PRO tier only)
+      properties:
+        available:
+          type: boolean
+        tier:
+          type: string
+          enum: [tier1_native, tier2_lsp, tier2_5_pattern, tier3_ai]
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        code:
+          type: string
+        explanation:
+          type: string
+        requiresReview:
+          type: boolean
+
+    EducationalContent:
+      type: object
+      properties:
+        explanation:
+          type: string
+        bestPractice:
+          type: string
+        references:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              url:
+                type: string
+
+    IssuesList:
+      type: object
+      properties:
+        total:
+          type: integer
+        filtered:
+          type: integer
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyzedIssue'
+        groupedByCategory:
+          type: object
+          additionalProperties:
+            type: integer
+        groupedBySeverity:
+          type: object
+          additionalProperties:
+            type: integer
+
+    GenerateReportRequest:
+      type: object
+      required: [analysisId, userId]
+      properties:
+        analysisId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        tier:
+          type: string
+          enum: [basic, pro]
+          default: basic
+
+    UnifiedReport:
+      type: object
+      description: |
+        Unified report structure for both BASIC and PRO tiers.
+        Some sections are tier-gated (e.g., fixSummary, commitInfo for PRO only).
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+          example: "2.0"
+        generatedAt:
+          type: string
+          format: date-time
+        tier:
+          type: string
+          enum: [basic, pro]
+        header:
+          $ref: '#/components/schemas/ReportHeader'
+        progressHistory:
+          $ref: '#/components/schemas/ProgressHistory'
+        fixSummary:
+          $ref: '#/components/schemas/FixSummary'
+          description: PRO tier only
+        remainingIssues:
+          $ref: '#/components/schemas/RemainingIssues'
+        businessImpact:
+          $ref: '#/components/schemas/BusinessImpact'
+        educational:
+          $ref: '#/components/schemas/EducationalSection'
+        ideIntegration:
+          $ref: '#/components/schemas/IDEIntegration'
+          description: BASIC tier only (PRO gets auto-fix instead)
+        skillsAndAchievements:
+          $ref: '#/components/schemas/SkillsAndAchievements'
+        commitInfo:
+          $ref: '#/components/schemas/CommitInfo'
+          description: PRO tier only
+        metadata:
+          $ref: '#/components/schemas/ReportMetadata'
+
+    ReportHeader:
+      type: object
+      properties:
+        repository:
+          type: object
+          properties:
+            name:
+              type: string
+            url:
+              type: string
+        pr:
+          type: object
+          properties:
+            number:
+              type: integer
+            title:
+              type: string
+            url:
+              type: string
+        score:
+          type: object
+          properties:
+            overall:
+              type: number
+            grade:
+              type: string
+            categoryScores:
+              type: object
+        decision:
+          type: string
+          enum: [APPROVED, REVIEW_REQUIRED, DECLINED]
+
+    ProgressHistory:
+      type: object
+      description: Available for ALL tiers - tracks improvement over time
+      properties:
+        isFirstTimeUser:
+          type: boolean
+        userId:
+          type: string
+        repositoryId:
+          type: string
+        firstTimeMessage:
+          type: string
+        history:
+          type: object
+          properties:
+            analyses:
+              type: array
+              items:
+                $ref: '#/components/schemas/HistoricalAnalysis'
+            displayCount:
+              type: integer
+            totalAvailable:
+              type: integer
+        trend:
+          type: object
+          properties:
+            direction:
+              type: string
+              enum: [improving, declining, stable]
+            changePoints:
+              type: number
+            changePercent:
+              type: number
+
+    HistoricalAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+        analyzedAt:
+          type: string
+          format: date-time
+        prNumber:
+          type: integer
+        prTitle:
+          type: string
+        scoreBefore:
+          type: number
+        scoreAfter:
+          type: number
+        grade:
+          type: string
+        issuesFound:
+          type: integer
+        issuesFixed:
+          type: integer
+
+    FixSummary:
+      type: object
+      description: PRO tier only - auto-fix results
+      properties:
+        successfullyFixed:
+          type: object
+          properties:
+            total:
+              type: integer
+            byTier:
+              type: object
+              properties:
+                tier1Native:
+                  type: integer
+                tier2Lsp:
+                  type: integer
+                tier2_5Pattern:
+                  type: integer
+                tier3Ai:
+                  type: integer
+            bySeverity:
+              type: object
+        unfixedIssues:
+          type: array
+          items:
+            type: object
+        confidenceBreakdown:
+          type: object
+
+    RemainingIssues:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            bySeverity:
+              type: object
+            byCategory:
+              type: object
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyzedIssue'
+
+    BusinessImpact:
+      type: object
+      properties:
+        riskAssessment:
+          type: object
+          properties:
+            level:
+              type: string
+              enum: [low, medium, high, critical]
+            score:
+              type: number
+        time:
+          type: object
+          properties:
+            manual:
+              type: object
+              properties:
+                hours:
+                  type: number
+                formatted:
+                  type: string
+            withAutoFix:
+              type: object
+              properties:
+                hours:
+                  type: number
+                formatted:
+                  type: string
+            saved:
+              type: object
+              properties:
+                hours:
+                  type: number
+                formatted:
+                  type: string
+                percentage:
+                  type: number
+        cost:
+          type: object
+          properties:
+            manual:
+              type: number
+            withAutoFix:
+              type: number
+            saved:
+              type: number
+            hourlyRate:
+              type: number
+
+    EducationalSection:
+      type: object
+      properties:
+        topIssueTypes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              count:
+                type: integer
+              explanation:
+                type: string
+              bestPractices:
+                type: array
+                items:
+                  type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    IDEIntegration:
+      type: object
+      description: BASIC tier only - manual fix guidance
+      properties:
+        reportId:
+          type: string
+        analysisId:
+          type: string
+        exports:
+          type: object
+          properties:
+            sarif:
+              type: string
+              description: URL to download SARIF file
+            gitlabCodeQuality:
+              type: string
+              description: URL to download GitLab Code Quality JSON
+            lspActions:
+              type: string
+              description: URL to download LSP actions file
+
+    SkillsAndAchievements:
+      type: object
+      description: Available for ALL tiers - gamification features
+      properties:
+        level:
+          type: object
+          properties:
+            current:
+              type: integer
+            title:
+              type: string
+              example: "Code Specialist"
+            xp:
+              type: integer
+            xpForCurrentLevel:
+              type: integer
+            xpForNextLevel:
+              type: integer
+            progressPercent:
+              type: integer
+        skills:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              score:
+                type: integer
+              scoreLabel:
+                type: string
+              trend:
+                type: string
+                enum: [improving, declining, stable]
+              issuesFixedLifetime:
+                type: integer
+              issuesFixedThisSession:
+                type: integer
+        xpEarned:
+          type: object
+          properties:
+            total:
+              type: integer
+            breakdown:
+              type: array
+              items:
+                type: object
+                properties:
+                  action:
+                    type: string
+                  description:
+                    type: string
+                  amount:
+                    type: integer
+        achievements:
+          type: object
+          properties:
+            unlocked:
+              type: array
+              items:
+                $ref: '#/components/schemas/Achievement'
+            inProgress:
+              type: array
+              items:
+                $ref: '#/components/schemas/AchievementProgress'
+            totalUnlocked:
+              type: integer
+            totalAvailable:
+              type: integer
+        communityImpact:
+          type: object
+          description: Available for ALL tiers
+          properties:
+            patternsContributed:
+              type: integer
+            patternsContributedThisSession:
+              type: integer
+            developersHelped:
+              type: integer
+            timeSavedForOthers:
+              type: string
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        rarity:
+          type: string
+          enum: [common, uncommon, rare, epic, legendary]
+        unlockedAt:
+          type: string
+          format: date-time
+        isNew:
+          type: boolean
+
+    AchievementProgress:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        progress:
+          type: integer
+        target:
+          type: integer
+        progressPercent:
+          type: integer
+
+    CommitInfo:
+      type: object
+      description: PRO tier only - commit integration
+      properties:
+        suggestedMessage:
+          type: string
+        filesModified:
+          type: integer
+        additions:
+          type: integer
+        deletions:
+          type: integer
+
+    ReportMetadata:
+      type: object
+      properties:
+        analysis:
+          type: object
+          properties:
+            id:
+              type: string
+            startedAt:
+              type: string
+              format: date-time
+            completedAt:
+              type: string
+              format: date-time
+            duration:
+              type: object
+              properties:
+                total:
+                  type: string
+                tools:
+                  type: string
+                agents:
+                  type: string
+        tools:
+          type: object
+          properties:
+            executed:
+              type: array
+              items:
+                type: string
+            successful:
+              type: integer
+            failed:
+              type: integer
+        cost:
+          type: object
+          properties:
+            total:
+              type: number
+            breakdown:
+              type: object
+
+    UserPreferences:
+      type: object
+      properties:
+        userId:
+          type: string
+        historyDisplayCount:
+          type: integer
+          default: 5
+        defaultOutputMethod:
+          type: string
+          enum: [commit, branch, pull_request, patch]
+        defaultCommitStyle:
+          type: string
+          enum: [single, grouped_category, grouped_tier]
+        defaultFixScope:
+          type: string
+          enum: [safe, recommended, maximum, always_ask]
+        commitMessageTemplate:
+          type: string
+        reviewConfidenceThreshold:
+          type: integer
+          minimum: 0
+          maximum: 100
+        alwaysReviewSecurity:
+          type: boolean
+        alwaysReviewDependencies:
+          type: boolean
+        alwaysReviewPerformance:
+          type: boolean
+        hourlyRate:
+          type: number
+          description: Developer hourly rate for cost calculations
+        achievementStyle:
+          type: string
+          enum: [professional, gamified]
+
+    UpdatePreferencesRequest:
+      type: object
+      properties:
+        historyDisplayCount:
+          type: integer
+        defaultOutputMethod:
+          type: string
+          enum: [commit, branch, pull_request, patch]
+        defaultFixScope:
+          type: string
+          enum: [safe, recommended, maximum, always_ask]
+        hourlyRate:
+          type: number
+        achievementStyle:
+          type: string
+          enum: [professional, gamified]
+
+    UserSkillsAndAchievements:
+      type: object
+      properties:
+        level:
+          type: integer
+        totalXp:
+          type: integer
+        skills:
+          type: object
+          properties:
+            security:
+              type: integer
+            codeQuality:
+              type: integer
+            performance:
+              type: integer
+            architecture:
+              type: integer
+            dependencies:
+              type: integer
+        issuesFixedTotal:
+          type: integer
+        analysesCompleted:
+          type: integer
+        patternsContributed:
+          type: integer
+        achievements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+
+    AnalysisMetrics:
+      type: object
+      properties:
+        analysisTime:
+          type: integer
+          description: Total analysis time in ms
+        toolsExecutionTime:
+          type: integer
+        fixGenerationTime:
+          type: integer
+        cacheHitRate:
+          type: string
+        costEstimate:
+          type: number
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        details:
+          type: object
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

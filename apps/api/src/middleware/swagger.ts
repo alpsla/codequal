@@ -20,7 +20,18 @@ const options: swaggerJsdoc.Options = {
 const spec = swaggerJsdoc(options) as any;
 
 // Load additional endpoint documentation
-const docsToLoad = ['auth-endpoints.yaml', 'billing-endpoints.yaml'];
+const docsToLoad = [
+  'auth-endpoints.yaml',
+  'billing-endpoints.yaml',
+  'v9-unified-report-endpoints.yaml',  // V9 Analysis & Unified Reports
+  'analysis-endpoints.yaml',
+  'reports-endpoints.yaml',
+  'monitoring-endpoints.yaml',
+  'api-keys-endpoints.yaml',
+  'organizations-endpoints.yaml',
+  'users-endpoints.yaml',
+  'vector-endpoints.yaml',
+];
 
 docsToLoad.forEach(docFile => {
   try {
