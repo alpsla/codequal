@@ -1429,16 +1429,17 @@ async function main(): Promise<void> {
   console.log('   • Issue detection and details');
   console.log('   • Educational content and recommendations');
   console.log('   • Business impact analysis');
+  console.log('   • Historical PR analytics (5 PRs) - track improvement');
   console.log('   • XP level and progress bar');
   console.log('   • Achievements with progress');
   console.log('   • Community impact section');
-  console.log('   • Skills tracking (current session)');
+  console.log('   • Skills tracking');
   console.log('   • IDE integration exports (LSP, SARIF, GitLab)');
 
-  console.log('\n🌟 PRO Report Features (BASIC + these paid features):');
-  console.log('   • Historical PR analytics (5 PRs) - requires storage');
-  console.log('   • One-click auto-fix buttons - requires AI/compute');
-  console.log('   • Pattern contribution tracking');
+  console.log('\n🌟 PRO Report Features (BASIC + auto-fix):');
+  console.log('   • One-click auto-fix buttons - AI-powered fixes');
+  console.log('   • Fix confidence levels and review guidance');
+  console.log('   • Commit integration with detailed messages');
   console.log('   • Priority support');
 
   console.log('\n📂 Reports saved to:');

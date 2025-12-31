@@ -110,8 +110,8 @@ export function generateSkillsSection(
     newTotalXp
   );
 
-  // Calculate community impact (PRO only)
-  const communityImpact = tier === 'pro' ? calculateCommunityImpact(fixResult) : undefined;
+  // Calculate community impact (available for ALL tiers - no additional cost)
+  const communityImpact = calculateCommunityImpact(fixResult);
 
   return {
     level: {
