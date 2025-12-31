@@ -7,14 +7,35 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { 
-  RepositoryModelConfig, 
-  RepositorySizeCategory, 
+import {
+  RepositoryModelConfig,
+  RepositorySizeCategory,
   TestingStatus,
   RepositoryProvider
 } from '../../config/models/repository-model-config';
-import { CalibrationTestResult } from './RepositoryCalibrationService';
 import { Logger } from '../../utils/logger';
+
+/**
+ * Calibration test result
+ * Defines the structure for individual calibration test results
+ */
+export interface CalibrationTestResult {
+  /** Model configuration used for the test */
+  modelConfig: {
+    provider: string;
+    model: string;
+  };
+  /** Response time in seconds */
+  responseTime: number;
+  /** Response size in bytes */
+  responseSize: number;
+  /** Quality score (if evaluated) */
+  qualityScore?: number;
+  /** Any errors encountered */
+  error?: string;
+  /** Test timestamp */
+  timestamp: string;
+}
 
 /**
  * Interface for the model configuration database table

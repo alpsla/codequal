@@ -7,7 +7,6 @@
  */
 
 export * from './RepositoryModelSelectionService';
-export * from './RepositoryCalibrationService';
 export * from './ModelConfigStore';
 
 // Export specific items from ModelVersionSync to avoid naming conflicts

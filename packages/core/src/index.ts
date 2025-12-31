@@ -61,7 +61,6 @@ export * from './config/models/model-versions';
 
 // Export model selection services
 export * from './services/model-selection/RepositoryModelSelectionService';
-export * from './services/model-selection/RepositoryCalibrationService';
 export * from './services/model-selection/ModelConfigStore';
 
 // Export agent registry types (single export to avoid duplicates)
