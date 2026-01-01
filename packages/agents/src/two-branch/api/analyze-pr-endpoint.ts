@@ -28,6 +28,7 @@ import {
   type SupportedLanguage
 } from './v9-analysis-service';
 import { isValidWebhookUrl } from '../utils/security-utils';
+import { handleGenerateReport } from './unified-report-endpoint';
 import { registerAnalysisResult } from './unified-report-endpoint';
 import type { V9AnalysisResultInput, AnalyzedIssue, IssueCategory as UnifiedCategory } from '../report/unified-report-types';
 
@@ -822,8 +823,7 @@ export async function handleGenerateAnalysisReport(
     };
   }
 
-  // Import the handleGenerateReport from unified-report-endpoint
-  const { handleGenerateReport } = require('./unified-report-endpoint');
+  // handleGenerateReport is imported at the top of the file
 
   const reportResult = await handleGenerateReport({
     body: {
