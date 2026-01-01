@@ -36,6 +36,7 @@ import usageStatsRoutes from './routes/usage-stats';
 import researcherRoutes from './routes/researcher';
 import metricsRoutes from './routes/metrics';
 import monitoringPublicRoutes from './routes/monitoring-public';
+import v9AnalyzeRoutes from './routes/v9-analyze';
 import { errorHandler } from './middleware/error-handler';
 // import { i18nMiddleware, translateResponse, validateLanguage } from './middleware/i18n-middleware';
 import { requestLogger } from './middleware/request-logger';
@@ -214,6 +215,12 @@ app.use('/stripe', stripeWebhookRoutes);
 // Note: This must come before the auth middleware to allow public access
 app.use('/api/monitoring/public', monitoringPublicRoutes);
 
+// V9 Unified Analysis API (for development/testing - no auth required)
+// TODO: Add proper authentication before production deployment
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/v9', v9AnalyzeRoutes);
+  logger.info('V9 API routes mounted at /api/v9 (no auth - dev mode)');
+}
 
 // Internal API routes (requires user authentication)
 app.use('/api', authMiddleware);

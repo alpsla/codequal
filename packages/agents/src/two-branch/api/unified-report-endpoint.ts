@@ -27,6 +27,7 @@ import {
 } from '../report/unified-report-types';
 
 import { generateUnifiedReportSync } from '../report/unified-report-generator';
+import crypto from 'crypto';
 
 // ============================================================================
 // TYPES
@@ -829,8 +830,6 @@ function generateLSPExport(report: UnifiedReport): string {
 }
 
 function generateGitLabExport(report: UnifiedReport): string {
-  const crypto = require('crypto');
-
   type GitLabSeverity = 'blocker' | 'critical' | 'major' | 'minor' | 'info';
 
   interface GitLabCodeQualityIssue {

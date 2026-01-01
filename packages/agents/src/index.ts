@@ -51,13 +51,11 @@ export const ReporterAgent = class {
 // Do NOT define a stub here - it shadows the real interface!
 export type { StandardReport } from './services/report-formatter.service';
 
-// Temporarily commented out two-branch exports due to build issues
-// These need to be re-enabled after fixing missing dependencies in two-branch
-
-/*
+// V9 Two-Branch Framework Exports (Re-enabled after lazy initialization fix)
 // Export the main V9 framework
-export { V9AnalyzerFramework as CodeQualAnalyzer } from './two-branch/analyzers/v9-analyzer-framework';
+export { V9IntegratedAnalyzer as CodeQualAnalyzer } from './two-branch/analyzers/v9-integrated-analyzer';
 export { V9BaseAnalyzer } from './two-branch/analyzers/v9-base-analyzer';
+export { V9AnalyzerFactory } from './two-branch/analyzers/v9-analyzer-factory';
 
 // Export all 11 language-specific analyzers
 export { V9JavaAnalyzer } from './two-branch/analyzers/v9-java-analyzer';
@@ -76,9 +74,9 @@ export { V9KotlinAnalyzer } from './two-branch/analyzers/v9-kotlin-analyzer';
 // Export types
 export * from './two-branch/analyzers/v9-types';
 
-// Export utilities
-export { getRepoManager, getFileSelector } from './two-branch/utils/repository-utils-factory';
-*/
+// Export report formatters
+export { V9ReportFormatterFinal } from './two-branch/analyzers/v9-report-formatter';
+export { V9GroupedReportFormatter } from './two-branch/analyzers/v9-grouped-report-formatter';
 
 // Export other working modules
 export * from './standard/utils';
@@ -87,4 +85,4 @@ export * from './types';
 // Session validator
 // export { validateImplementation } from './session-validator';
 
-console.log('CodeQual Agents Package Loaded - Two-branch temporarily disabled for build fixes');
+console.log('CodeQual Agents Package Loaded - V9 Two-Branch Framework active');

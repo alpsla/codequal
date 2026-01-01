@@ -34,6 +34,12 @@ export const authMiddleware = async (
       return next();
     }
 
+    // Skip auth for V9 routes in development mode
+    // Note: V9 routes have their own auth when needed
+    if (process.env.NODE_ENV !== 'production' && (req.path.startsWith('/v9') || req.baseUrl?.includes('/v9'))) {
+      return next();
+    }
+
     // Temporary: Allow internal researcher testing
     if (req.path === '/researcher/research' && req.headers['x-internal-test'] === 'true') {
       (req as any).user = {
