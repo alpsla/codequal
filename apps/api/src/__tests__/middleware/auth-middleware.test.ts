@@ -9,8 +9,9 @@ const mockSupabase = {
   eq: jest.fn().mockReturnThis()
 };
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabase)
+// Mock the database package's getSupabase function
+jest.mock('@codequal/database/supabase/client', () => ({
+  getSupabase: jest.fn(() => mockSupabase)
 }));
 
 import { Request, Response, NextFunction } from 'express';
@@ -24,7 +25,8 @@ describe('Authentication Middleware', () => {
 
   beforeEach(() => {
     mockRequest = {
-      headers: {}
+      headers: {},
+      path: '/api/test'  // Default path to avoid undefined errors
     } as any;
     
     mockResponse = {
