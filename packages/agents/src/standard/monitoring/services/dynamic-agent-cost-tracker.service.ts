@@ -75,17 +75,31 @@ export interface CostAnalysis {
 
 export class DynamicAgentCostTrackerService {
   private static instance: DynamicAgentCostTrackerService;
-  private supabase: SupabaseClient;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private supabase: any = null;
   private configCache: Map<string, ModelConfig> = new Map();
   private cacheExpiry = 300000; // 5 minutes
   private lastCacheUpdate = 0;
-  
+
   private constructor() {
-    // Initialize Supabase client
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Lazy initialization - Supabase client will be created on first use
+    // This prevents import-time errors when env vars aren't set
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getSupabaseClient(): any {
+    if (!this.supabase) {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase URL and key are required for DynamicAgentCostTrackerService. ' +
+          'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.');
+      }
+
+      this.supabase = createClient(supabaseUrl, supabaseKey);
+    }
+    return this.supabase;
   }
   
   public static getInstance(): DynamicAgentCostTrackerService {
@@ -116,7 +130,7 @@ export class DynamicAgentCostTrackerService {
       // Query Supabase for best matching config
       // NOTE: is_active column doesn't exist in current schema
       // Skip this filter to avoid database errors
-      let query = this.supabase
+      let query = this.getSupabaseClient()
         .from('model_configurations')
         .select('*')
         .eq('role', role);
@@ -176,7 +190,7 @@ export class DynamicAgentCostTrackerService {
   ): Promise<void> {
     try {
       // Insert request into research_requests table
-      await this.supabase.from('research_requests').insert({
+      await this.getSupabaseClient().from('research_requests').insert({
         request_type: 'model_config',
         role,
         language,
@@ -221,7 +235,7 @@ export class DynamicAgentCostTrackerService {
   }): Promise<void> {
     try {
       // Get the model config to calculate cost
-      const { data: config } = await this.supabase
+      const { data: config } = await this.getSupabaseClient()
         .from('model_configurations')
         .select('*')
         .eq('id', params.modelConfigId)
@@ -270,7 +284,7 @@ export class DynamicAgentCostTrackerService {
         metadata: params.metadata
       };
       
-      await this.supabase.from('agent_activity').insert(activity);
+      await this.getSupabaseClient().from('agent_activity').insert(activity);
       
       // Update model performance metrics if needed
       if (!params.success && params.retryCount && params.retryCount > 2) {
@@ -297,7 +311,7 @@ export class DynamicAgentCostTrackerService {
     /* DISABLED - Missing schema columns
     try {
       // Get current performance score
-      const { data: config } = await this.supabase
+      const { data: config } = await this.getSupabaseClient()
         .from('model_configurations')
         .select('performance_score, usage_count, success_count')
         .eq('id', configId)
@@ -310,7 +324,7 @@ export class DynamicAgentCostTrackerService {
       const newSuccessCount = (config.success_count || 0) + (success ? 1 : 0);
       const newPerformanceScore = (newSuccessCount / newUsageCount) * 100;
       
-      await this.supabase
+      await this.getSupabaseClient()
         .from('model_configurations')
         .update({
           performance_score: newPerformanceScore,
@@ -335,7 +349,7 @@ export class DynamicAgentCostTrackerService {
   ): Promise<CostAnalysis> {
     try {
       // Fetch activities from Supabase
-      let query = this.supabase
+      let query = this.getSupabaseClient()
         .from('agent_activities')
         .select('*')
         .eq('repository_url', repositoryUrl);
@@ -482,13 +496,13 @@ export class DynamicAgentCostTrackerService {
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       
       // Fetch current month
-      const { data: currentMonth } = await this.supabase
+      const { data: currentMonth } = await this.getSupabaseClient()
         .from('agent_activities')
         .select('agent_role, cost')
         .gte('timestamp', currentMonthStart.getTime());
       
       // Fetch last month
-      const { data: lastMonth } = await this.supabase
+      const { data: lastMonth } = await this.getSupabaseClient()
         .from('agent_activities')
         .select('agent_role, cost')
         .gte('timestamp', lastMonthStart.getTime())
@@ -550,7 +564,7 @@ export class DynamicAgentCostTrackerService {
     performance_improvement: number;
   }>> {
     try {
-      const { data } = await this.supabase
+      const { data } = await this.getSupabaseClient()
         .from('model_update_history')
         .select('*')
         .order('updated_at', { ascending: false })
@@ -568,7 +582,7 @@ export class DynamicAgentCostTrackerService {
    */
   public async triggerModelResearch(): Promise<void> {
     try {
-      await this.supabase.from('research_requests').insert({
+      await this.getSupabaseClient().from('research_requests').insert({
         request_type: 'quarterly_model_update',
         status: 'pending',
         requested_by: 'scheduler',
