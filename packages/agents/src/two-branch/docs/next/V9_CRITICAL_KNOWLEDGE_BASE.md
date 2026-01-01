@@ -895,6 +895,159 @@ packages/agents/src/fix-agent/parallel-ai-fixer/
 
 ---
 
+## 🏗️ PRODUCTION CLOUD ARCHITECTURE (Session 69 - CURRENT VISION)
+
+### Overview
+Single Oracle Cloud instance serving as unified API + Analysis server. Tools run directly on host (no Docker containers) for maximum performance.
+
+### Architecture Diagram
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                 ORACLE CLOUD INSTANCE (129.213.49.128)                   │
+│                        ARM64 A1.Flex - 24GB RAM                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─────────────────┐   ┌─────────────────────────────────────────────┐  │
+│  │   API Server    │   │        HOST-NATIVE ANALYSIS TOOLS            │  │
+│  │   (Port 3001)   │   │                                              │  │
+│  │                 │   │  Security:    semgrep, gitleaks, trivy       │  │
+│  │  • Express.js   │   │  Java:        pmd, checkstyle, spotbugs      │  │
+│  │  • V9 Routes    │◄─►│  Python:      ruff, bandit, pylint           │  │
+│  │  • Async Poll   │   │  JavaScript:  eslint, biome                  │  │
+│  │                 │   │  Go:          golangci-lint, gosec           │  │
+│  │  Execution:     │   │  Ruby:        rubocop, brakeman              │  │
+│  │  4-5 sec/branch │   │  Rust:        clippy, cargo-audit            │  │
+│  │                 │   │  PHP:         phpstan                         │  │
+│  └────────┬────────┘   └──────────────────────┬──────────────────────┘  │
+│           │                                    │                         │
+│           │         ┌──────────────────────────┼──────────────┐         │
+│           │         │                          │              │         │
+│           ▼         ▼                          ▼              ▼         │
+│  ┌─────────────────────┐  ┌────────────────────────────────────────┐   │
+│  │       Redis         │  │      PostgreSQL (dependency-check)      │   │
+│  │   (10.116.0.7)      │  │                                         │   │
+│  │                     │  │  • 211,304 CVEs loaded                  │   │
+│  │  • Tool output cache│  │  • dc-scan wrapper configured           │   │
+│  │  • Analysis state   │  │  • ~9 sec per dependency scan           │   │
+│  │  • Pattern registry │  │                                         │   │
+│  └─────────────────────┘  └────────────────────────────────────────┘   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Tool Execution** | Host-native (no Docker) | 4-5 sec/branch vs 30+ sec in containers |
+| **API + Analysis** | Same server | Reduces latency, simpler deployment |
+| **Caching** | Redis (10.116.0.7) | Shared cache for patterns, state, outputs |
+| **CVE Database** | PostgreSQL local | 211K CVEs, instant lookups |
+| **Languages** | 7 fully tested | Java, Python, JS/TS, Go, Rust, Ruby, PHP |
+
+### Performance Targets
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| Tool execution (per branch) | < 10 sec | 4-5 sec ✅ |
+| Full PR analysis (both branches) | < 30 sec | ~10 sec ✅ |
+| AI enrichment (PRO tier) | < 60 sec | Pending |
+| Report generation | < 5 sec | Pending |
+| **Total analysis time** | < 2 min | Target |
+
+### Tool Execution Flow
+
+```
+1. API receives PR request
+       │
+       ▼
+2. Clone/checkout repository (cached if recent)
+       │
+       ├─────────────────────┬─────────────────────┐
+       ▼                     ▼                     ▼
+3a. Tool scan          3b. Tool scan          3c. Tool scan
+    (main branch)          (PR branch)            (both: dep-check)
+    ~4-5 sec               ~4-5 sec               ~9 sec
+       │                     │                     │
+       └─────────────────────┴─────────────────────┘
+                             │
+                             ▼
+4. Compare results → Categorize (NEW/RESOLVED/EXISTING)
+       │
+       ▼
+5. AI Enrichment (PRO) / Pattern Lookup (BASIC)
+       │
+       ▼
+6. Generate Report → Return to API
+```
+
+### API Endpoints (V9)
+
+```
+POST /api/v9/analyze          - Start analysis (returns 202 + analysisId)
+GET  /api/v9/analyze/:id      - Poll status (202 in-progress, 200 complete)
+POST /api/v9/reports          - Get unified report with gamification
+GET  /api/v9/health           - Health check + cloud service status
+```
+
+### Environment Variables (Cloud Instance)
+
+```bash
+# API Configuration
+PORT=3001
+NODE_ENV=production
+V9_SIMULATION_MODE=false          # CRITICAL: Set false for real analysis
+
+# Redis (Private Subnet)
+REDIS_URL=redis://10.116.0.7:6379
+
+# PostgreSQL (dependency-check)
+ORACLE_DEPCHECK_DB_URL=jdbc:postgresql://localhost:5432/depcheck
+ORACLE_DEPCHECK_DB_USER=depcheck_scanner
+ORACLE_DEPCHECK_DB_PASSWORD=depcheck123
+
+# Supabase
+SUPABASE_URL=https://ftjhmbbcuqjqmmbaymqb.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<key>
+
+# AI Services (via OpenRouter)
+OPENROUTER_API_KEY=<key>
+```
+
+### Deployment Commands
+
+```bash
+# SSH to instance
+ssh -i "keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
+
+# Deploy API
+cd ~/codequal/apps/api
+npm run build
+pm2 restart codequal-api  # or: node dist/index.js
+
+# Run E2E test
+cd ~/codequal/packages/agents
+npx ts-node tests/integration/test-v9-lite-e2e.ts
+```
+
+### Future Scaling (When Needed)
+
+```
+CURRENT: Single Instance (API + Analysis)
+         ┌─────────────────┐
+         │  129.213.49.128 │
+         │  API + Analysis │
+         └─────────────────┘
+
+FUTURE: Separate Roles (Higher Load)
+         ┌─────────────────┐     ┌─────────────────────────────┐
+         │   API Server    │◄───►│   Analysis Worker Pool      │
+         │  (lightweight)  │ MQ  │  (2-4 instances, auto-scale)│
+         └─────────────────┘     └─────────────────────────────┘
+```
+
+---
+
 ## INFRASTRUCTURE
 
 ### Oracle Cloud
