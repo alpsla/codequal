@@ -191,37 +191,41 @@ export function generateBusinessImpact(
   tier: UserTier = 'basic',
   userMetrics?: UserMetrics
 ): string {
-  // BLOCKERS ONLY: NEW/EXISTING_MODIFIED + critical/high
-  const blocking = issues.filter(i =>
+  // BUG-109 FIX: Consider ALL active issues (not RESOLVED) for time calculation
+  const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+
+  // BLOCKERS: NEW/EXISTING_MODIFIED + critical/high (affects PR decision)
+  const blocking = activeIssues.filter(i =>
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
     (i.severity === 'critical' || i.severity === 'high')
   );
 
   const blockingCritical = blocking.filter(i => i.severity === 'critical');
   const blockingHigh = blocking.filter(i => i.severity === 'high');
-  const backlogMedium = issues.filter(i => i.severity === 'medium');
-  const backlogLow = issues.filter(i => i.severity === 'low');
+  const backlogMedium = activeIssues.filter(i => i.severity === 'medium');
+  const backlogLow = activeIssues.filter(i => i.severity === 'low');
 
-  // Calculate fix costs (hours) for BLOCKERS ONLY, with auto-fix adjustment
+  // BUG-109 FIX: Calculate fix costs for ALL active issues, not just blockers
+  // This gives more realistic time estimates
   let baseFixHours =
     (blockingCritical.length * 2) +      // 2 hours per critical blocker
-    (blockingHigh.length * 1.5);         // 1.5 hours per high blocker
+    (blockingHigh.length * 1.5) +         // 1.5 hours per high blocker
+    (backlogMedium.length * 0.25) +       // 15 min per medium issue
+    (backlogLow.length * 0.083);          // 5 min per low issue (~1/12 hour)
 
-  // Adjust hours for auto-fixable groups: replace original severity time with a small per-occurrence cost
+  // BUG-109 FIX: Adjust hours for auto-fixable groups (all issues, not just blockers)
   const autoFixableGroups = groups.filter(g => canAutoFix(g));
   if (autoFixableGroups.length > 0) {
-    // Original hours attributed to auto-fixable occurrences by severity
-    const severityHours: Record<string, number> = { critical: 2, high: 1.5, medium: 1, low: 0.5 };
+    // Updated severity hours to match the new calculation
+    const severityHours: Record<string, number> = { critical: 2, high: 1.5, medium: 0.25, low: 0.083 };
     let autoFixOriginalHours = 0;
     let autoFixAdjustedHours = 0;
     for (const g of autoFixableGroups) {
-      const perIssue = severityHours[g.severity] ?? 1;
-      // Only count auto-fix occurrences that are part of BLOCKERS
-      const isBlockingGroup = blocking.some(i => i.rule === g.rule && i.tool === g.tool && i.severity === g.severity);
-      if (!isBlockingGroup) continue;
+      const perIssue = severityHours[g.severity] ?? 0.1;
+      // Count all active issues in auto-fixable groups
       autoFixOriginalHours += perIssue * g.count;
-      // Assume IDE auto-fix averages ~0.1h per occurrence including review
-      autoFixAdjustedHours += 0.1 * g.count;
+      // Assume IDE auto-fix averages ~0.02h per occurrence including review (about 1 min)
+      autoFixAdjustedHours += 0.02 * g.count;
     }
     baseFixHours = Math.max(0, baseFixHours - autoFixOriginalHours + autoFixAdjustedHours);
   }
@@ -283,7 +287,7 @@ export function generateBusinessImpact(
 
   // SESSION 26 FIX: Count auto-fixable issues EXCLUDING RESOLVED (they don't need fixing!)
   // RESOLVED issues are already fixed in the PR - no action needed
-  const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+  // (activeIssues already defined above in BUG-109 fix)
   const autoFixableTotalCount = activeIssues.filter(issue => {
     return autoFixableGroups.some(g =>
       g.rule === issue.rule &&

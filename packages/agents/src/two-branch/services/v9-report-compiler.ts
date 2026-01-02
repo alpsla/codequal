@@ -34,6 +34,9 @@ export interface CompileReportInput {
     estimatedEffort?: string;
     model?: string;
   };
+  // BUG-108 FIX: Actual PR-modified files (not just issue files)
+  // This is needed to correctly distinguish EXISTING_MODIFIED from EXISTING_REST
+  actualModifiedFiles?: string[];
 }
 
 export interface CompileReportOptions {
@@ -103,16 +106,23 @@ export async function compileV9Report(
   const mainIssues = data.mainOutputs.flatMap(o => o.parsedIssues || []);
   const prIssues = data.prOutputs.flatMap(o => o.parsedIssues || []);
 
-  // BUG #91 FIX: Get list of modified files from PR outputs
-  // This is needed to distinguish EXISTING_MODIFIED from EXISTING_REST
-  // Note: modifiedFiles may not be available in all outputs, so we use optional chaining
-  const modifiedFiles = new Set<string>(
-    data.prOutputs.flatMap((o: any) => o.modifiedFiles || [])
-  );
-
-  console.log(`[BUG #91 FIX] Detected ${modifiedFiles.size} modified files in PR`);
-  if (modifiedFiles.size === 0) {
-    console.log(`[BUG #91 FIX] ⚠️  No modified files detected - all EXISTING issues will be EXISTING_REST`);
+  // BUG-108 FIX: Use actualModifiedFiles from input if provided
+  // This is the correct source of PR-modified files
+  // Falls back to prOutputs.modifiedFiles or empty for backwards compatibility
+  let modifiedFiles: Set<string>;
+  if (data.actualModifiedFiles && data.actualModifiedFiles.length > 0) {
+    modifiedFiles = new Set<string>(data.actualModifiedFiles);
+    console.log(`[BUG-108] Using ${modifiedFiles.size} actual PR-modified files`);
+  } else {
+    // Legacy fallback - may incorrectly include all issue files
+    modifiedFiles = new Set<string>(
+      data.prOutputs.flatMap((o: any) => o.modifiedFiles || [])
+    );
+    if (modifiedFiles.size === 0) {
+      console.log(`[BUG-108] ⚠️ No modified files detected - all EXISTING issues will be EXISTING_REST`);
+    } else {
+      console.log(`[BUG-108] ⚠️ Using legacy modifiedFiles from prOutputs (${modifiedFiles.size} files) - may be inaccurate`);
+    }
   }
 
   // Helper function to format issues
@@ -409,7 +419,8 @@ export async function compileV9Report(
     resolvedIssues: formattedResolvedIssues,
     blockingIssues: formattedBlockingIssues,
     backlogIssues: formattedBacklogIssues,
-    modifiedFiles: [...new Set(prIssues.map(i => i.file))],
+    // BUG-108 FIX: Use actual PR-modified files, not issue files
+    modifiedFiles: [...modifiedFiles],
     categoryScores: {},
     businessImpact: {
       summary: data.aiInsights.businessImpact || 'Moderate impact',

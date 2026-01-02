@@ -44,6 +44,26 @@
       "types": "./dist/multi-agent/types/*.d.ts",
       "require": "./dist/multi-agent/types/*.js",
       "import": "./dist/multi-agent/types/*.js"
+    },
+    "./fix-agent": {
+      "types": "./dist/fix-agent/index.d.ts",
+      "require": "./dist/fix-agent/index.js",
+      "import": "./dist/fix-agent/index.js"
+    },
+    "./fix-agent/*": {
+      "types": "./dist/fix-agent/*.d.ts",
+      "require": "./dist/fix-agent/*.js",
+      "import": "./dist/fix-agent/*.js"
+    },
+    "./fix-agent/agents/*": {
+      "types": "./dist/fix-agent/agents/*.d.ts",
+      "require": "./dist/fix-agent/agents/*.js",
+      "import": "./dist/fix-agent/agents/*.js"
+    },
+    "./fix-agent/fix-pattern-registry": {
+      "types": "./dist/fix-agent/fix-pattern-registry/index.d.ts",
+      "require": "./dist/fix-agent/fix-pattern-registry/index.js",
+      "import": "./dist/fix-agent/fix-pattern-registry/index.js"
     }
   },
   "scripts": {

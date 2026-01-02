@@ -6,26 +6,29 @@
 
 ## 📋 Tier Differentiation & API Documentation (Session 68)
 
-### Tier Feature Matrix (FINAL)
+### Tier Feature Matrix (FINAL - Updated Session 70)
 
-| Feature | BASIC | PRO | Cost Justification |
-|---------|-------|-----|-------------------|
-| Issue detection | ✅ | ✅ | Free |
-| Educational content | ✅ | ✅ | Free |
-| Business impact analysis | ✅ | ✅ | Free |
-| Historical PR analytics | ✅ | ✅ | Minimal storage |
-| XP & Level progress | ✅ | ✅ | Free |
-| Achievements | ✅ | ✅ | Free |
-| Community impact | ✅ | ✅ | Free |
-| Skills tracking | ✅ | ✅ | Free |
-| IDE exports (SARIF, GitLab) | ✅ | ✅ | Free |
-| **Auto-fix buttons** | ❌ | ✅ | AI compute cost |
-| **Fix confidence levels** | ❌ | ✅ | AI analysis |
-| **Commit integration** | ❌ | ✅ | Git operations |
+| Feature | BASIC | PRO | Notes |
+|---------|-------|-----|-------|
+| Issue detection | ✅ | ✅ | Same analysis |
+| Educational content | ✅ | ✅ | Based on found issues |
+| Business impact analysis | ✅ | ✅ | Same metrics |
+| Historical PR analytics | ✅ | ✅ | Same |
+| XP & Level progress | ✅ | ✅ | PRO earns more via auto-fix |
+| Achievements | ✅ | ✅ | Same |
+| Skills tracking | ✅ | ✅ | Same |
+| **IDE exports (SARIF, GitLab)** | ✅ | ❌ | BASIC needs IDE to fix |
+| **Pattern contribution** | ✅ (opt-in) | ✅ (auto) | BASIC: manual +50 XP |
+| **Auto-fix** | ❌ | ✅ | AI compute cost |
+| **Fix verification** | ❌ | ✅ | Re-scan + regression check |
+| **Commit integration** | ❌ | ✅ | Direct apply |
 
-### Key Decisions
-- **Gamification for ALL tiers**: XP, achievements, skills, community impact - keeps users engaged
-- **Historical analytics for ALL tiers**: Better engagement drives conversion
+### Key Decisions (Updated Session 70)
+- **Gamification for ALL tiers**: XP, achievements, skills - keeps users engaged
+- **Educational resources for ALL tiers**: Same content based on found issues
+- **IDE exports ONLY for BASIC**: BASIC users need IDE help to fix manually
+- **PRO fixes directly**: No IDE needed, CodeQual applies fixes
+- **Pattern contribution**: BASIC = opt-in (+50 XP), PRO = automatic
 - **Auto-fix is the killer PRO feature**: Clear value proposition, real compute cost
 
 ### API Documentation (Swagger)

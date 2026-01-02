@@ -322,9 +322,60 @@ export class V9GroupedReportFormatter {
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
   private readonly SHOW_SYSTEM_INFO: boolean = false;
-  private readonly SHOW_AGENT_PERFORMANCE: boolean = true;  // BUG #9 FIX: Enable AI performance tracking
+  private readonly SHOW_AGENT_PERFORMANCE: boolean = false;  // BUG-110: Disabled - not useful for users
   private readonly SHOW_TOOL_PERFORMANCE: boolean = true;   // BUG #8 FIX: Enable tool performance tracking
   private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = true; // BUG #10 FIX: Enable cost analysis
+  private readonly SHOW_FOCUS_AREAS: boolean = false;        // BUG-110: Disabled - not useful for users
+  // BUG-105 FIX: Cached pattern count (fetched from Supabase once per session)
+  private cachedPatternCount: number | null = null;
+
+  /**
+   * BUG-105 FIX: Get pattern count from cache or Supabase
+   * Returns cached value if available, otherwise fetches from DB and caches
+   */
+  private getPatternCountFromCache(): number {
+    // Return cached value if available
+    if (this.cachedPatternCount !== null) {
+      return this.cachedPatternCount;
+    }
+    // Default to 640 if no Supabase connection
+    // The actual count will be set during formatGroupedReport() initialization
+    return 640;
+  }
+
+  /**
+   * BUG-105 FIX: Fetch and cache pattern count from Supabase
+   */
+  private async fetchPatternCount(): Promise<number> {
+    if (this.cachedPatternCount !== null) {
+      return this.cachedPatternCount;
+    }
+
+    if (!this.supabase) {
+      this.cachedPatternCount = 640;
+      return 640;
+    }
+
+    try {
+      const { count, error } = await this.supabase
+        .from('fix_patterns')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.warn('[V9Formatter] Error fetching pattern count:', error.message);
+        this.cachedPatternCount = 640;
+        return 640;
+      }
+
+      this.cachedPatternCount = count || 640;
+      console.log(`[V9Formatter] Pattern count: ${this.cachedPatternCount}`);
+      return this.cachedPatternCount;
+    } catch (e) {
+      console.warn('[V9Formatter] Failed to fetch pattern count:', e);
+      this.cachedPatternCount = 640;
+      return 640;
+    }
+  }
 
   /**
    * Template patterns that indicate AI error responses (not actual code)
@@ -1130,7 +1181,15 @@ export class V9GroupedReportFormatter {
 
       // SESSION 25-27: Generate LSP, SARIF, and GitLab formats
       // BUG-DOG-04 FIX: Pass analysisTimestamp to ensure consistent IDs across all files
-      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata, analysisTimestamp);
+      // SESSION 69 FIX: Exclude RESOLVED issues from fix files - they're already fixed in the PR!
+      const activeIssuesForFix = enrichedIssues.filter(i => i.category !== 'RESOLVED');
+      const activeGroupsForFix = updatedGroups.filter(g => {
+        // Group is active if it has at least one non-RESOLVED issue
+        const groupIssues = activeIssuesForFix.filter(i => i.rule === g.rule);
+        return groupIssues.length > 0;
+      });
+      console.log(`[LSP/SARIF] Filtering: ${enrichedIssues.length} total → ${activeIssuesForFix.length} active (excluding RESOLVED)`);
+      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(activeIssuesForFix, activeGroupsForFix, metadata, analysisTimestamp);
 
       // SESSION 26-27: Store URLs for metadata footer (type assertion needed for dynamic properties)
       if (lspUrl) (metadata as any).lspUrl = lspUrl;
@@ -2165,7 +2224,11 @@ ${qualityResult.breakdown.resolutionBonus > 0 ? `
 
 ### Issue Summary
 
-**Total Issues**: ${issues.length.toLocaleString()} (${groups.length} unique types)
+${(() => {
+        const activeCount = issues.filter(i => i.category !== 'RESOLVED').length;
+        const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
+        return `**Active Issues**: ${activeCount.toLocaleString()} (${groups.length} unique types)${resolvedCount > 0 ? `\n**Resolved in PR**: ${resolvedCount.toLocaleString()} ✅` : ''}`;
+      })()}
 
 ${(() => {
         // BUG-083 FIX: Clear distinction between Manual Review and Auto-Fixable
@@ -2179,11 +2242,22 @@ ${(() => {
         return '';
       })()}
 
-**By Severity**:
-- 🔴 Critical: ${bySeverity.critical} (${((bySeverity.critical / issues.length) * 100).toFixed(1)}%)
-- 🟠 High: ${bySeverity.high} (${((bySeverity.high / issues.length) * 100).toFixed(1)}%)
-- 🟡 Medium: ${bySeverity.medium} (${((bySeverity.medium / issues.length) * 100).toFixed(1)}%)
-- 🟢 Low: ${bySeverity.low} (${((bySeverity.low / issues.length) * 100).toFixed(1)}%)
+${(() => {
+        // BUG-103 FIX: Show active issues only (exclude RESOLVED) since that's what affects the score
+        const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+        const activeBySeverity = {
+          critical: activeIssues.filter(i => i.severity === 'critical').length,
+          high: activeIssues.filter(i => i.severity === 'high').length,
+          medium: activeIssues.filter(i => i.severity === 'medium').length,
+          low: activeIssues.filter(i => i.severity === 'low').length
+        };
+        const total = activeIssues.length || 1; // Prevent division by zero
+        return `**By Severity** (active issues):
+- 🔴 Critical: ${activeBySeverity.critical} (${((activeBySeverity.critical / total) * 100).toFixed(1)}%)
+- 🟠 High: ${activeBySeverity.high} (${((activeBySeverity.high / total) * 100).toFixed(1)}%)
+- 🟡 Medium: ${activeBySeverity.medium} (${((activeBySeverity.medium / total) * 100).toFixed(1)}%)
+- 🟢 Low: ${activeBySeverity.low} (${((activeBySeverity.low / total) * 100).toFixed(1)}%)`;
+      })()}
 
 **By Category & Severity**:
 
@@ -2226,7 +2300,10 @@ ${(() => {
           'Code Quality': { critical: 0, high: 0, medium: 0, low: 0, total: 0 }
         };
 
-        issues.forEach(issue => {
+        // BUG-102 FIX: Only count ACTIVE issues (not RESOLVED) since RESOLVED gives bonus, not penalty
+        // This makes the table counts match the score deductions
+        const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+        activeIssues.forEach(issue => {
           const cat = issue.detectedCategory || 'Code Quality';
           if (byDetectedCategory[cat]) {
             const sev = issue.severity;
@@ -2242,10 +2319,12 @@ ${(() => {
 | 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.categoryScores?.architecture ?? qualityResult.categoryScores?.architecture ?? 'N/A'}/100** |
 | 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.categoryScores?.dependency ?? qualityResult.categoryScores?.dependency ?? 'N/A'}/100** |
 | ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.categoryScores?.codeQuality ?? qualityResult.categoryScores?.codeQuality ?? 'N/A'}/100** |
-| **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** | - |`;
+| **TOTAL** | **${byDetectedCategory['Security'].critical + byDetectedCategory['Performance'].critical + byDetectedCategory['Architecture'].critical + byDetectedCategory['Dependencies'].critical + byDetectedCategory['Code Quality'].critical}** | **${byDetectedCategory['Security'].high + byDetectedCategory['Performance'].high + byDetectedCategory['Architecture'].high + byDetectedCategory['Dependencies'].high + byDetectedCategory['Code Quality'].high}** | **${byDetectedCategory['Security'].medium + byDetectedCategory['Performance'].medium + byDetectedCategory['Architecture'].medium + byDetectedCategory['Dependencies'].medium + byDetectedCategory['Code Quality'].medium}** | **${byDetectedCategory['Security'].low + byDetectedCategory['Performance'].low + byDetectedCategory['Architecture'].low + byDetectedCategory['Dependencies'].low + byDetectedCategory['Code Quality'].low}** | **${activeIssues.length}** | - |`;
       })()}
 
-> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
+> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Table shows active issues only (excludes RESOLVED). APP Score = MIN(all categories).
+>
+> 💡 **Tip:** RESOLVED issues (ones you fixed) earn XP instead of penalties! [📖 Full Scoring Guide](https://codequal.dev/docs/scoring-guide)
 
 ---
 
@@ -2278,15 +2357,21 @@ ${(() => {
         const patternFixable = breakdown.tier1.issues + breakdown.tier2.issues;
         const patternPercent = issues.length > 0 ? (patternFixable / issues.length * 100).toFixed(1) : '0.0';
         const guidanceNeeded = issues.length - patternFixable;
-        const guidancePercent = issues.length > 0 ? (guidanceNeeded / issues.length * 100).toFixed(1) : '0.0';
+
+        // BUG-105 FIX: Get pattern count dynamically (no longer hardcoded 500)
+        const patternCount = this.getPatternCountFromCache() || 640;
+        // BUG-103 FIX: Exclude resolved issues from counts
+        const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
+        const activeIssueCount = issues.length - resolvedCount;
+        const activeIssuesNeedingGuidance = Math.max(0, guidanceNeeded - resolvedCount);
 
         return `**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
-- 📚 **Pattern Fixes**: ${patternFixable.toLocaleString()} issues (${patternPercent}%) - Pre-learned fixes from 500+ patterns in Supabase
+- 📚 **Pattern Fixes**: ${patternFixable.toLocaleString()} issues (${patternPercent}%) - Pre-learned fixes from ${patternCount}+ patterns in Supabase
 - 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
-- 📖 **Actionable Guidance**: Clear instructions for ${guidanceNeeded.toLocaleString()} issues needing manual attention
+- 📖 **Actionable Guidance**: Clear instructions for ${activeIssuesNeedingGuidance.toLocaleString()} active issues needing manual attention
 
 **⭐ PRO Tier** (Full AI-Powered Analysis):
-- 🤖 **AI Auto-Fix**: All ${issues.length.toLocaleString()} issues analyzed with contextual AI fixes
+- 🤖 **AI Auto-Fix**: All ${activeIssueCount.toLocaleString()} active issues analyzed with contextual AI fixes
 - 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
 - ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
 - 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
@@ -2296,10 +2381,6 @@ ${(() => {
 - Each pattern reuse = FREE (no AI API call needed)
 - Estimated savings: 60-80% reduction in AI calls for recurring issues`;
       })()}
-
-> 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
->
-> **All issues have guidance** - you're never left wondering how to fix something.
 
 ---
 
@@ -2323,8 +2404,6 @@ ${this.generateQuickWins(groups, autoFixableGroups)}
 
 ### 📈 Trends & Recommendations
 
-<!-- NOTE: This section will be enhanced later when API service and CI/CD integration is complete -->
-<!-- For now, keeping minimal recommendations only -->
 ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   }
 
@@ -6602,7 +6681,8 @@ Continue following best practices and consider integrating static analysis into 
       if (categoryScores.dependencies < teamAvg) weakCategories.push('Dependencies');
       if (categoryScores.codeQuality < teamAvg) weakCategories.push('Code Quality');
 
-      if (weakCategories.length > 0) {
+      // BUG-110 FIX: Only show Focus Areas if enabled
+      if (this.SHOW_FOCUS_AREAS && weakCategories.length > 0) {
         content += `### 🎯 Focus Areas\n\n`;
         content += `Consider improving these categories where you're below team average:\n\n`;
         weakCategories.forEach(cat => {
@@ -6946,6 +7026,10 @@ Continue following best practices and consider integrating static analysis into 
       content += `| 💜 Epic | ${tierCounts.epic} |\n`;
       content += `| 💙 Rare | ${tierCounts.rare} |\n`;
       content += `| ⚪ Common | ${tierCounts.common} |\n\n`;
+
+      // SESSION 69: Add link to scoring guide for transparency
+      content += `> 💡 **How to earn more XP:** Fix issues in your PR before analysis! Each resolved issue = +5 XP, critical = +20 XP bonus.\n`;
+      content += `> [📖 Full Scoring Guide](https://codequal.dev/docs/scoring-guide)\n\n`;
 
       // Show achievements using the imported function
       if (achievements.length > 0) {

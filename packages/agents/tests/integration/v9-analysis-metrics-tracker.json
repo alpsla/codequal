@@ -1,0 +1,149 @@
+{
+  "session": {
+    "id": "session-69",
+    "date": "2026-01-01",
+    "purpose": "V9 2-tier analysis testing across all languages with pattern growth tracking"
+  },
+  "baseline": {
+    "patternCount": 640,
+    "timestamp": "2026-01-01T00:00:00Z"
+  },
+  "current": {
+    "patternCount": 640,
+    "newPatternsAdded": 0,
+    "timestamp": "2026-01-02T01:53:54.590Z"
+  },
+  "languages": {
+    "java": {
+      "status": "in_progress",
+      "repository": "spring-projects/spring-petclinic",
+      "prNumber": 950,
+      "metrics": {
+        "totalIssues": 547,
+        "newIssues": 250,
+        "existingModified": 79,
+        "resolved": 218,
+        "securityIssues": 2,
+        "codeQualityIssues": 545,
+        "appScore": 45,
+        "skillScore": 1,
+        "decision": "DECLINED",
+        "blockingIssues": 1,
+        "toolsExecuted": [
+          "pmd",
+          "checkstyle",
+          "spotbugs",
+          "semgrep",
+          "dependency-check"
+        ],
+        "frameworkDetected": "spring-boot",
+        "linesOfCode": 51,
+        "filesModified": 37
+      },
+      "basicMetrics": {
+        "language": "java",
+        "repository": "https://github.com/spring-projects/spring-petclinic",
+        "prNumber": 950,
+        "tier": "basic",
+        "startTime": "2026-01-02T01:51:53.792Z",
+        "endTime": "2026-01-02T01:52:54.197Z",
+        "durationMs": 60405,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {},
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 15000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [],
+        "score": 0,
+        "decision": "UNKNOWN",
+        "success": false,
+        "error": "connect ETIMEDOUT 129.213.49.128:3001"
+      },
+      "proMetrics": {
+        "language": "java",
+        "repository": "https://github.com/spring-projects/spring-petclinic",
+        "prNumber": 950,
+        "tier": "pro",
+        "startTime": "2026-01-02T01:52:54.197Z",
+        "endTime": "2026-01-02T01:53:54.590Z",
+        "durationMs": 60393,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {},
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 15000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [],
+        "score": 0,
+        "decision": "UNKNOWN",
+        "success": false,
+        "error": "connect ETIMEDOUT 129.213.49.128:3001"
+      }
+    },
+    "typescript": {
+      "status": "pending",
+      "repository": "expressjs/express",
+      "prNumber": null,
+      "metrics": null,
+      "basicMetrics": null,
+      "proMetrics": null
+    },
+    "python": {
+      "status": "pending",
+      "repository": "pallets/flask",
+      "prNumber": null,
+      "metrics": null,
+      "basicMetrics": null,
+      "proMetrics": null
+    },
+    "go": {
+      "status": "pending",
+      "repository": "gin-gonic/gin",
+      "prNumber": null,
+      "metrics": null,
+      "basicMetrics": null,
+      "proMetrics": null
+    },
+    "rust": {
+      "status": "pending",
+      "repository": "tokio-rs/tokio",
+      "prNumber": null,
+      "metrics": null,
+      "basicMetrics": null,
+      "proMetrics": null
+    },
+    "ruby": {
+      "status": "pending",
+      "repository": "sinatra/sinatra",
+      "prNumber": null,
+      "metrics": null,
+      "basicMetrics": null,
+      "proMetrics": null
+    },
+    "php": {
+      "status": "pending",
+      "repository": "laravel/framework",
+      "prNumber": null,
+      "metrics": null,
+      "basicMetrics": null,
+      "proMetrics": null
+    }
+  },
+  "summary": {
+    "totalLanguages": 7,
+    "completedLanguages": 0,
+    "totalIssuesFound": 0,
+    "totalIssuesFixed": 0,
+    "totalPatternsAdded": 0,
+    "avgAnalysisTimeBasic": 163.15,
+    "avgAnalysisTimePro": 111.56,
+    "avgCostSavings": "96.25%"
+  }
+}

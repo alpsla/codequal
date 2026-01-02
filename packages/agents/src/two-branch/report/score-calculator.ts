@@ -368,7 +368,11 @@ export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScor
   // SESSION 13 FIX: Use provided baseScore (100 for APP, 50 for Skill)
   let score = baseScore;
 
-  categoryIssues.forEach(issue => {
+  // BUG-102 FIX: Only count active issues (exclude RESOLVED) for cleaner scoring
+  // RESOLVED issues are already fixed, so they don't affect current health score
+  const activeIssues = categoryIssues.filter(i => i.category !== 'RESOLVED');
+
+  activeIssues.forEach(issue => {
     // User-specified deduction values
     const deduction = {
       critical: 5.0,    // -5 points
@@ -377,13 +381,8 @@ export function calculateCategoryScore(categoryIssues: EnrichedIssue[], baseScor
       low: 0.5          // -0.5 points
     }[issue.severity] || 1.0;
 
-    // Handle RESOLVED issues (bonus) vs other issues (penalty)
-    if (issue.category === 'RESOLVED') {
-      score += deduction;  // Bonus for fixes
-    } else {
-      // NEW, EXISTING_MODIFIED, EXISTING_REST all deduct
-      score -= deduction;
-    }
+    // NEW, EXISTING_MODIFIED, EXISTING_REST all deduct
+    score -= deduction;
   });
 
   // Ensure score stays within 0-100 range
@@ -397,21 +396,23 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
   const baseScore = 100.0;
   let deduction = 0;
 
+  // BUG-102 FIX: Only count active issues (exclude RESOLVED) for cleaner scoring
+  const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+
   // Separate issues by category for breakdown
-  const newIssues = issues.filter(i => i.category === 'NEW');
-  const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
-  const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
+  const newIssues = activeIssues.filter(i => i.category === 'NEW');
+  const existingModified = activeIssues.filter(i => i.category === 'EXISTING_MODIFIED');
+  const existingRest = activeIssues.filter(i => i.category === 'EXISTING_REST');
   const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
 
   // Count blocking issues (critical or high severity NEW/EXISTING_MODIFIED)
-  const blockingIssues = issues.filter(i =>
+  const blockingIssues = activeIssues.filter(i =>
     (i.severity === 'critical' || i.severity === 'high') &&
     (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED')
   );
 
-  // Apply severity weights to calculate deduction
-  // All categories have equal weight (100%) - only blocking decision differs
-  issues.forEach(issue => {
+  // Apply severity weights to calculate deduction (only active issues)
+  activeIssues.forEach(issue => {
     // Severity weight
     const severityWeight = {
       critical: 5.0,
@@ -429,14 +430,11 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
   const blockingPenalty = blockingIssues.length * 2.5;
   deduction += blockingPenalty;
 
-  // Bonus for resolved issues (encourage fixing existing problems)
-  const bonus = resolvedIssues.reduce((sum, issue) => {
-    const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[issue.severity] || 1;
-    return sum + weight;
-  }, 0);
+  // BUG-102 FIX: No bonus for resolved issues - they're excluded from deduction calculation
+  // This makes scoring intuitive: if you see N high issues, score = 100 - (N * 3)
 
   // Calculate final score
-  let finalScore = baseScore - deduction + bonus;
+  let finalScore = baseScore - deduction;
 
   // Clamp score between 0 and 100
   finalScore = Math.max(0, Math.min(100, finalScore));
@@ -520,7 +518,7 @@ export function calculateSimplifiedScore(issues: EnrichedIssue[]): any {
       existingModifiedDeduction: -existingModifiedDeduction,
       existingRestDeduction: -existingRestDeduction,
       blockingPenalty: -blockingPenalty,
-      resolutionBonus: bonus,
+      resolutionBonus: 0, // BUG-102 FIX: No bonus, RESOLVED issues are excluded from deduction
       totalDeduction: -deduction,
       finalScore: Math.round(finalScore * 10) / 10
     },

@@ -357,6 +357,9 @@ router.post('/reports', async (req: Request, res: Response) => {
 
     const isPro = tier === 'pro' || tier === 'enterprise';
 
+    // SESSION 70: Calculate REAL gamification data based on analysis results
+    const gamification = calculateRealGamification(state.result, isPro);
+
     // Generate unified report with gamification and historical data
     const unifiedReport = {
       analysisId,
@@ -369,33 +372,19 @@ router.post('/reports', async (req: Request, res: Response) => {
       issues: state.result.issues,
       report: state.result.report,
 
-      // Gamification - available for ALL tiers
-      skillsAndAchievements: {
-        skills: [
-          { name: 'Security Analysis', level: 3, xp: 750, nextLevelXp: 1000 },
-          { name: 'Code Quality', level: 2, xp: 450, nextLevelXp: 500 },
-          { name: 'Performance', level: 2, xp: 380, nextLevelXp: 500 }
-        ],
-        achievements: [
-          { id: 'first-analysis', name: 'First Analysis', description: 'Completed your first PR analysis', earned: true },
-          { id: 'security-champion', name: 'Security Champion', description: 'Fixed 10 security issues', earned: false, progress: 4 }
-        ],
-        streaks: {
-          current: 3,
-          longest: 7,
-          lastActivity: new Date().toISOString()
-        }
-      },
+      // Gamification - available for ALL tiers (SESSION 70: Real calculations)
+      skillsAndAchievements: gamification.skills,
 
       // Historical progress - available for ALL tiers
       progressHistory: {
         recentAnalyses: [
-          { date: new Date(Date.now() - 86400000).toISOString(), score: 85, issues: 12 },
-          { date: new Date(Date.now() - 172800000).toISOString(), score: 78, issues: 18 },
           { date: new Date().toISOString(), score: state.result.score.overall, issues: state.result.summary.totalIssues }
         ],
-        trendDirection: 'improving',
-        averageScore: (85 + 78 + state.result.score.overall) / 3
+        trendDirection: gamification.xp.totalXP > 50 ? 'improving' : 'stable',
+        averageScore: state.result.score.overall,
+        // XP details
+        xpEarned: gamification.xp.totalXP,
+        xpBreakdown: gamification.xp.breakdown
       },
 
       // PRO tier features
@@ -412,15 +401,29 @@ router.post('/reports', async (req: Request, res: Response) => {
         }
       } : {}),
 
-      // BASIC tier features
+      // BASIC tier features - IDE exports for manual fixing
       ...(!isPro ? {
+        ideExports: {
+          sarif: `/api/v9/reports/${analysisId}/export/sarif`,
+          gitlab: `/api/v9/reports/${analysisId}/export/gitlab`,
+          lsp: `/api/v9/reports/${analysisId}/export/lsp`,
+          description: 'Export issues to your IDE for manual fixing'
+        },
         ideIntegration: {
           vscode: { available: true, installUrl: 'https://marketplace.visualstudio.com/items?itemName=codequal' },
           jetbrains: { available: true, installUrl: 'https://plugins.jetbrains.com/plugin/codequal' }
         },
+        patternContribution: {
+          enabled: true,
+          optIn: true,
+          xpReward: 50,
+          description: 'Contribute fix patterns after manually fixing issues to earn XP',
+          contributeUrl: `/api/v9/patterns/contribute`
+        },
         upgradePrompt: {
-          message: 'Upgrade to PRO for AI-powered auto-fixes and advanced insights',
-          features: ['Automatic code fixes', 'AI-powered recommendations', 'Priority support']
+          message: 'Upgrade to PRO for AI-powered auto-fixes',
+          features: ['Automatic code fixes', 'Fix verification', 'Direct commit integration'],
+          estimatedTimeSaved: `${state.result.summary.totalIssues * 15} minutes per PR`
         }
       } : {}),
 
@@ -1420,42 +1423,201 @@ function parseSpotbugsXML(xmlOutput: string): any[] {
   return issues;
 }
 
+/**
+ * Generate REAL fixes using the AIFixerAgent
+ *
+ * SESSION 70: Replaced fake template placeholders with real AI fix generation
+ *
+ * Flow:
+ * 1. Check pattern registry first (FREE, instant) - cached patterns from previous PRO analyses
+ * 2. For unmatched issues, use AIFixerAgent to generate real fixes
+ * 3. Store successful fixes in pattern registry for future reuse
+ */
 async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
-  // Simulate fix generation with cache behavior
-  await delay(500 + Math.random() * 1500);
-
   const fixes = new Map();
-  let hits = 0;
-  let misses = 0;
+  let patternHits = 0;
+  let aiGenerated = 0;
+  let failed = 0;
 
-  for (const issue of issues) {
-    const cached = Math.random() > 0.3; // 70% cache hit rate
-    if (cached) hits++;
-    else misses++;
+  // Try to import the AIFixerAgent and pattern store
+  let AIFixerAgent: any = null;
+  let patternStore: any = null;
 
-    fixes.set(issue.id, {
-      suggestion: `// Fix for ${issue.message}\n// Replace the problematic code with the corrected version`,
-      confidence: cached ? 'high' : 'medium',
-      cached,
-      educational: `Learn more about ${issue.type} issues and best practices for ${prInfo.language}.`
-    });
+  try {
+    const fixAgentModule = await import('@codequal/agents/fix-agent/agents/ai-fixer-agent');
+    AIFixerAgent = fixAgentModule.AIFixerAgent;
+    logger.info('[FixGen] AIFixerAgent loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FixGen] AIFixerAgent not available:', e.message);
   }
 
-  const hitRate = issues.length > 0 ? Math.round((hits / issues.length) * 100) : 0;
+  try {
+    const patternModule = await import('@codequal/agents/fix-agent/fix-pattern-registry');
+    patternStore = patternModule.getSupabasePatternStore();
+    logger.info('[FixGen] Pattern store loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FixGen] Pattern store not available:', e.message);
+  }
+
+  // Phase 1: Check pattern registry for cached fixes (FREE for all tiers)
+  if (patternStore) {
+    for (const issue of issues) {
+      try {
+        const pattern = await patternStore.lookupPattern(issue.type, issue.tool);
+        if (pattern && pattern.fix_template) {
+          fixes.set(issue.id, {
+            suggestion: pattern.fix_template.correctedCode || pattern.fix_template.fix,
+            confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
+            cached: true,
+            patternId: pattern.id,
+            educational: `This fix uses a proven pattern from our registry. ${pattern.description || ''}`
+          });
+          patternHits++;
+        }
+      } catch (e) {
+        // Pattern lookup failed, will try AI generation
+      }
+    }
+  }
+
+  // Phase 2: Use AI for remaining issues (PRO tier only)
+  const unmatchedIssues = issues.filter(i => !fixes.has(i.id));
+
+  if (AIFixerAgent && unmatchedIssues.length > 0) {
+    try {
+      const fixer = new AIFixerAgent({ submitToRegistry: true });
+
+      // Convert issues to AIFixerAgent format
+      const aiFixerIssues = unmatchedIssues.map(issue => ({
+        id: issue.id,
+        validatorToolId: issue.tool || 'unknown',
+        ruleId: issue.type || issue.rule || 'unknown',
+        file: issue.file || 'unknown',
+        line: issue.line || 1,
+        message: issue.message || 'No message',
+        severity: mapToAISeverity(issue.severity),
+        language: prInfo.language || 'java',
+        originalConfidence: 30, // Low confidence to trigger AI
+        codeContext: issue.codeContext || undefined,
+        toolContext: {
+          toolSuggestion: issue.suggestion,
+          ruleDescription: issue.message
+        }
+      }));
+
+      // Process issues in parallel (max 5 at a time)
+      const result = await fixer.processBatch(aiFixerIssues, {
+        parallel: 5,
+        verbose: false
+      });
+
+      // Apply AI-generated fixes
+      for (const enriched of result.enrichedIssues) {
+        if (enriched.fixRecommendation) {
+          const rec = enriched.fixRecommendation;
+          fixes.set(enriched.id, {
+            suggestion: rec.correctedCode || rec.fix,
+            confidence: rec.confidence >= 70 ? 'high' : rec.confidence >= 50 ? 'medium' : 'low',
+            cached: false,
+            aiGenerated: true,
+            model: rec.model,
+            explanation: rec.explanation,
+            bestPractices: rec.bestPractices,
+            educational: rec.issueDescription
+              ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}`
+              : `AI-generated fix for ${enriched.ruleId}`
+          });
+          aiGenerated++;
+        }
+      }
+
+      // Track failed issues
+      failed = result.failed.length;
+
+    } catch (e: any) {
+      logger.error('[FixGen] AI fix generation failed:', e.message);
+      failed = unmatchedIssues.length;
+    }
+  } else if (unmatchedIssues.length > 0) {
+    // No AI available - provide guidance instead of fake fixes
+    for (const issue of unmatchedIssues) {
+      fixes.set(issue.id, {
+        suggestion: null, // No actual fix available
+        confidence: 'none',
+        cached: false,
+        aiGenerated: false,
+        requiresManualFix: true,
+        educational: `This issue requires manual review. Check the ${issue.tool || 'tool'} documentation for ${issue.type || 'this rule'}.`,
+        guidance: getManualFixGuidance(issue)
+      });
+      failed++;
+    }
+  }
+
+  const total = issues.length;
+  const patternHitRate = total > 0 ? Math.round((patternHits / total) * 100) : 0;
+  const aiRate = total > 0 ? Math.round((aiGenerated / total) * 100) : 0;
+
+  logger.info(`[FixGen] Results: ${patternHits} pattern hits (${patternHitRate}%), ${aiGenerated} AI generated (${aiRate}%), ${failed} failed`);
 
   return {
     fixes,
-    cacheStats: { hits, misses, hitRate: `${hitRate}%` }
+    cacheStats: {
+      hits: patternHits,
+      misses: aiGenerated + failed,
+      hitRate: `${patternHitRate}%`,
+      aiGenerated,
+      failed
+    }
   };
 }
 
+/**
+ * Map severity to AI-compatible format
+ */
+function mapToAISeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+  const s = (severity || '').toLowerCase();
+  if (s === 'critical' || s === 'error') return 'critical';
+  if (s === 'high' || s === 'warning') return 'high';
+  if (s === 'medium' || s === 'moderate') return 'medium';
+  return 'low';
+}
+
+/**
+ * Generate manual fix guidance when AI is not available
+ */
+function getManualFixGuidance(issue: any): string {
+  const tool = (issue.tool || '').toLowerCase();
+  const type = issue.type || issue.rule || '';
+
+  const toolDocs: Record<string, string> = {
+    semgrep: `https://semgrep.dev/r?q=${encodeURIComponent(type)}`,
+    eslint: `https://eslint.org/docs/rules/${type}`,
+    pmd: 'https://pmd.github.io/latest/pmd_rules_java.html',
+    checkstyle: 'https://checkstyle.sourceforge.io/checks.html',
+    spotbugs: 'https://spotbugs.readthedocs.io/en/stable/bugDescriptions.html',
+    bandit: 'https://bandit.readthedocs.io/en/latest/plugins/',
+    ruff: `https://docs.astral.sh/ruff/rules/${type}`,
+    trivy: 'https://aquasecurity.github.io/trivy/',
+    checkov: 'https://www.checkov.io/5.Policy%20Index/all.html'
+  };
+
+  return toolDocs[tool] || `Search for: "${tool} ${type} fix"`;
+}
+
+/**
+ * Calculate scores based on issue categorization
+ *
+ * SESSION 70: Fixed score calculation - now properly maps issues to categories
+ * based on tool type and issue characteristics, not just issue.type
+ */
 function calculateScores(issues: any[]) {
   const baseScore = 100;
   const deductions: Record<string, number> = {
-    critical: 10,
-    high: 5,
-    medium: 2,
-    low: 1
+    critical: 5,   // Reduced from 10 for more realistic scores
+    high: 3,       // Reduced from 5
+    medium: 1,     // Reduced from 2
+    low: 0.5       // Reduced from 1
   };
 
   const scores: Record<string, number> = {
@@ -1466,18 +1628,94 @@ function calculateScores(issues: any[]) {
     dependencies: baseScore
   };
 
+  // Issue counts per category for debugging
+  const categoryCounts: Record<string, number> = {
+    security: 0,
+    quality: 0,
+    performance: 0,
+    architecture: 0,
+    dependencies: 0
+  };
+
   issues.forEach(issue => {
-    const deduction = deductions[issue.severity] || 0;
-    if (scores[issue.type] !== undefined) {
-      scores[issue.type] = Math.max(0, scores[issue.type] - deduction);
+    const deduction = deductions[issue.severity] || 1;
+    const category = categorizeIssueForScoring(issue);
+
+    if (scores[category] !== undefined) {
+      scores[category] = Math.max(0, scores[category] - deduction);
+      categoryCounts[category]++;
     }
   });
 
-  const overall = Math.round(
-    Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length
-  );
+  // Round scores to 1 decimal
+  Object.keys(scores).forEach(key => {
+    scores[key] = Math.round(scores[key] * 10) / 10;
+  });
+
+  // Overall score is the MINIMUM (weakest link) - same as V9 production
+  const overall = Math.round(Math.min(
+    scores.security,
+    scores.quality,
+    scores.performance,
+    scores.architecture,
+    scores.dependencies
+  ));
+
+  logger.debug('[Score] Category breakdown:', categoryCounts);
+  logger.debug('[Score] Scores:', scores);
 
   return { overall, ...scores };
+}
+
+/**
+ * Categorize an issue into one of the 5 scoring categories
+ * Based on tool type and issue characteristics
+ */
+function categorizeIssueForScoring(issue: any): string {
+  const tool = (issue.tool || '').toLowerCase();
+  const type = (issue.type || issue.rule || '').toLowerCase();
+  const category = (issue.category || '').toLowerCase();
+  const message = (issue.message || '').toLowerCase();
+
+  // Security tools and patterns
+  const securityTools = ['semgrep', 'gitleaks', 'trufflehog', 'bandit', 'gosec', 'brakeman', 'trivy', 'grype', 'checkov'];
+  const securityPatterns = ['security', 'inject', 'xss', 'csrf', 'secret', 'auth', 'crypto', 'sql', 'path-traversal', 'command-injection', 'cwe-'];
+
+  if (securityTools.includes(tool) || category === 'secrets' || category === 'iac') {
+    return 'security';
+  }
+  if (securityPatterns.some(p => type.includes(p) || message.includes(p))) {
+    return 'security';
+  }
+
+  // Dependency/vulnerability tools
+  const depTools = ['dependency-check', 'npm-audit', 'pip-audit', 'bundler-audit', 'cargo-audit', 'govulncheck'];
+  if (depTools.includes(tool) || category === 'dependency') {
+    return 'dependencies';
+  }
+  if (type.includes('cve-') || type.includes('vulnerability') || message.includes('vulnerable')) {
+    return 'dependencies';
+  }
+
+  // Architecture tools
+  const archTools = ['jdepend', 'madge', 'dependency-cruiser', 'pydeps', 'import-linter', 'go-arch-lint', 'packwerk', 'deptrac', 'cargo-modules'];
+  if (archTools.includes(tool)) {
+    return 'architecture';
+  }
+  if (type.includes('circular') || type.includes('coupling') || type.includes('architecture')) {
+    return 'architecture';
+  }
+
+  // Performance patterns
+  if (type.includes('performance') || type.includes('complexity') || type.includes('n+1') || type.includes('slow')) {
+    return 'performance';
+  }
+  if (message.includes('performance') || message.includes('complexity') || message.includes('expensive')) {
+    return 'performance';
+  }
+
+  // Default to quality for linting and style tools
+  return 'quality';
 }
 
 function generateSummary(issues: any[], fixes: Map<string, any>) {
@@ -1572,6 +1810,218 @@ function generateV9Report(data: any) {
       ]
     }
   };
+}
+
+/**
+ * SESSION 70: Calculate REAL gamification data based on analysis results
+ *
+ * XP System (from GAMIFICATION_SCORING_GUIDE.md):
+ * - Base Analysis: +10 XP
+ * - Per issue fixed: +5 XP
+ * - Critical fix bonus: +20 XP
+ * - High fix bonus: +15 XP
+ * - Security fix bonus: +10 XP
+ * - Perfect score (>=95): +100 XP
+ *
+ * Level System:
+ * Level 1: 0 XP, Level 2: 100 XP, Level 3: 250 XP, Level 4: 500 XP, Level 5: 1000 XP
+ */
+function calculateRealGamification(result: any, isPro: boolean) {
+  const breakdown: { action: string; xp: number }[] = [];
+  let totalXP = 0;
+
+  // Base analysis XP
+  totalXP += 10;
+  breakdown.push({ action: 'Complete Analysis', xp: 10 });
+
+  // Count resolved issues (issues YOU fixed)
+  const resolvedIssues = result.issues?.filter((i: any) =>
+    i.category === 'RESOLVED' || i.status === 'resolved'
+  ) || [];
+  const resolvedCount = resolvedIssues.length;
+
+  if (resolvedCount > 0) {
+    const resolvedXP = resolvedCount * 5;
+    totalXP += resolvedXP;
+    breakdown.push({ action: `Resolve ${resolvedCount} Issues (You)`, xp: resolvedXP });
+  }
+
+  // Count critical/high severity resolved issues for bonuses
+  const criticalResolved = resolvedIssues.filter((i: any) => i.severity === 'critical').length;
+  const highResolved = resolvedIssues.filter((i: any) => i.severity === 'high').length;
+
+  if (criticalResolved > 0) {
+    const criticalBonus = criticalResolved * 20;
+    totalXP += criticalBonus;
+    breakdown.push({ action: `Critical Fix Bonus (${criticalResolved}x)`, xp: criticalBonus });
+  }
+
+  if (highResolved > 0) {
+    const highBonus = highResolved * 15;
+    totalXP += highBonus;
+    breakdown.push({ action: `High Fix Bonus (${highResolved}x)`, xp: highBonus });
+  }
+
+  // Security fix bonus
+  const securityResolved = resolvedIssues.filter((i: any) =>
+    categorizeIssueForScoring(i) === 'security'
+  ).length;
+
+  if (securityResolved > 0) {
+    const securityBonus = securityResolved * 10;
+    totalXP += securityBonus;
+    breakdown.push({ action: `Security Fix Bonus (${securityResolved}x)`, xp: securityBonus });
+  }
+
+  // PRO tier: Auto-fix bonus
+  if (isPro && result.summary?.fixed > 0) {
+    const proFixXP = result.summary.fixed * 5;
+    totalXP += proFixXP;
+    breakdown.push({ action: `PRO Auto-Fix (${result.summary.fixed}x)`, xp: proFixXP });
+  }
+
+  // Perfect score bonus
+  if (result.score?.overall >= 95) {
+    totalXP += 100;
+    breakdown.push({ action: 'Perfect Score (>=95)', xp: 100 });
+  }
+
+  // Calculate level from XP
+  const levels = [
+    { level: 1, xp: 0, title: 'Newcomer' },
+    { level: 2, xp: 100, title: 'Apprentice' },
+    { level: 3, xp: 250, title: 'Developer' },
+    { level: 4, xp: 500, title: 'Craftsman' },
+    { level: 5, xp: 1000, title: 'Expert' },
+    { level: 6, xp: 2000, title: 'Master' },
+    { level: 7, xp: 4000, title: 'Grandmaster' },
+    { level: 8, xp: 8000, title: 'Legend' },
+    { level: 9, xp: 16000, title: 'Mythic' },
+    { level: 10, xp: 32000, title: 'Transcendent' }
+  ];
+
+  // For now, assume cumulative XP starts at 0 (would come from user profile in production)
+  const cumulativeXP = totalXP;
+  const currentLevel = levels.filter(l => l.xp <= cumulativeXP).pop() || levels[0];
+  const nextLevel = levels.find(l => l.xp > cumulativeXP) || levels[levels.length - 1];
+
+  // Calculate skill levels based on issue types fixed
+  const skills = calculateSkillLevels(result, resolvedIssues);
+
+  // Generate achievements based on analysis
+  const achievements = generateAchievements(result, resolvedIssues, isPro);
+
+  return {
+    xp: {
+      totalXP,
+      breakdown,
+      cumulativeXP,
+      currentLevel: currentLevel.level,
+      currentTitle: currentLevel.title,
+      nextLevelXP: nextLevel.xp,
+      progressToNextLevel: Math.round(((cumulativeXP - currentLevel.xp) / (nextLevel.xp - currentLevel.xp)) * 100)
+    },
+    skills: {
+      skills,
+      achievements,
+      streaks: {
+        current: 1, // Would come from user profile in production
+        longest: 1,
+        lastActivity: new Date().toISOString()
+      }
+    }
+  };
+}
+
+/**
+ * Calculate skill levels based on issues resolved per category
+ */
+function calculateSkillLevels(result: any, resolvedIssues: any[]) {
+  const skillCategories = ['security', 'quality', 'performance', 'architecture', 'dependencies'];
+
+  return skillCategories.map(category => {
+    // Count resolved issues in this category
+    const categoryResolved = resolvedIssues.filter(i =>
+      categorizeIssueForScoring(i) === category
+    ).length;
+
+    // XP per category = 10 per resolved issue
+    const categoryXP = categoryResolved * 10;
+
+    // Level thresholds: 50, 100, 200, 400, 800
+    const thresholds = [0, 50, 100, 200, 400, 800];
+    const level = thresholds.filter(t => t <= categoryXP).length;
+    const nextThreshold = thresholds[level] || 800;
+
+    return {
+      name: category.charAt(0).toUpperCase() + category.slice(1),
+      level: Math.min(level, 5),
+      xp: categoryXP,
+      nextLevelXp: nextThreshold,
+      issuesFixed: categoryResolved
+    };
+  });
+}
+
+/**
+ * Generate achievements based on analysis results
+ */
+function generateAchievements(result: any, resolvedIssues: any[], isPro: boolean) {
+  const achievements: any[] = [];
+
+  // First Analysis
+  achievements.push({
+    id: 'first-analysis',
+    name: 'First Analysis',
+    description: 'Completed your first PR analysis',
+    earned: true
+  });
+
+  // Security Champion (10 security issues fixed)
+  const securityFixed = resolvedIssues.filter(i =>
+    categorizeIssueForScoring(i) === 'security'
+  ).length;
+  achievements.push({
+    id: 'security-champion',
+    name: 'Security Champion',
+    description: 'Fixed 10 security issues',
+    earned: securityFixed >= 10,
+    progress: securityFixed,
+    target: 10
+  });
+
+  // Perfect Score
+  achievements.push({
+    id: 'perfect-score',
+    name: 'Perfect Score',
+    description: 'Achieved a score of 95 or higher',
+    earned: result.score?.overall >= 95
+  });
+
+  // Bug Squasher (50 issues resolved)
+  achievements.push({
+    id: 'bug-squasher',
+    name: 'Bug Squasher',
+    description: 'Fixed 50 issues total',
+    earned: resolvedIssues.length >= 50,
+    progress: resolvedIssues.length,
+    target: 50
+  });
+
+  // PRO tier achievements
+  if (isPro) {
+    const autoFixCount = result.summary?.fixed || 0;
+    achievements.push({
+      id: 'automation-master',
+      name: 'Automation Master',
+      description: 'Used PRO auto-fix on 100 issues',
+      earned: autoFixCount >= 100,
+      progress: autoFixCount,
+      target: 100
+    });
+  }
+
+  return achievements;
 }
 
 export default router;

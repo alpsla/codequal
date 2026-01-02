@@ -213,13 +213,15 @@ export class V9AnalysisService {
       console.log(`   Detected language: ${language}\n`);
 
       // Step 3: Tool Execution
+      // SESSION 69: Default to 'complete' mode for maximum tool coverage during testing
+      // Later: Users will configure their preferred mode via settings page
       const toolStart = Date.now();
       const toolResults = await this.executeTools(
         repoSetup.repoPath,
         language,
         repoSetup.baseBranch,
         repoSetup.prBranch,
-        request.analysisMode || 'standard'
+        request.analysisMode || 'complete'
       );
       const toolDuration = Date.now() - toolStart;
 
@@ -486,8 +488,25 @@ export class V9AnalysisService {
       includeAllSeverities: mode === 'complete',
       analysisMode: mode
     });
-    const prIssues = prResult.toolResults.flatMap(t => t.issues);
-    console.log(`   ✅ PR: ${prIssues.length} issues\n`);
+    const prIssues = prResult.toolResults.flatMap((t: any) => t.issues);
+
+    // SESSION 69: Log per-tool metrics for PR branch
+    console.log(`   ✅ PR Branch - Per-Tool Metrics:`);
+    console.log(`   ┌──────────────────────────┬──────────┬────────┐`);
+    console.log(`   │ Tool                     │ Duration │ Issues │`);
+    console.log(`   ├──────────────────────────┼──────────┼────────┤`);
+    let prTotalDuration = 0;
+    for (const tr of prResult.toolResults) {
+      const toolName = (tr.tool || 'unknown').padEnd(24);
+      const durationMs = tr.duration || 0;
+      prTotalDuration += durationMs;
+      const duration = `${(durationMs / 1000).toFixed(1)}s`.padStart(8);
+      const issues = String(tr.issues?.length || 0).padStart(6);
+      console.log(`   │ ${toolName} │ ${duration} │ ${issues} │`);
+    }
+    console.log(`   ├──────────────────────────┼──────────┼────────┤`);
+    console.log(`   │ ${'TOTAL'.padEnd(24)} │ ${`${(prTotalDuration / 1000).toFixed(1)}s`.padStart(8)} │ ${String(prIssues.length).padStart(6)} │`);
+    console.log(`   └──────────────────────────┴──────────┴────────┘\n`);
 
     // Analyze base branch using execFileSync for safety
     console.log(`   Analyzing base branch...`);
@@ -496,8 +515,29 @@ export class V9AnalysisService {
       includeAllSeverities: mode === 'complete',
       analysisMode: mode
     });
-    const baseIssues = baseResult.toolResults.flatMap(t => t.issues);
-    console.log(`   ✅ Base: ${baseIssues.length} issues\n`);
+    const baseIssues = baseResult.toolResults.flatMap((t: any) => t.issues);
+
+    // SESSION 69: Log per-tool metrics for base branch
+    console.log(`   ✅ Base Branch - Per-Tool Metrics:`);
+    console.log(`   ┌──────────────────────────┬──────────┬────────┐`);
+    console.log(`   │ Tool                     │ Duration │ Issues │`);
+    console.log(`   ├──────────────────────────┼──────────┼────────┤`);
+    let baseTotalDuration = 0;
+    for (const tr of baseResult.toolResults) {
+      const toolName = (tr.tool || 'unknown').padEnd(24);
+      const durationMs = tr.duration || 0;
+      baseTotalDuration += durationMs;
+      const duration = `${(durationMs / 1000).toFixed(1)}s`.padStart(8);
+      const issues = String(tr.issues?.length || 0).padStart(6);
+      console.log(`   │ ${toolName} │ ${duration} │ ${issues} │`);
+    }
+    console.log(`   ├──────────────────────────┼──────────┼────────┤`);
+    console.log(`   │ ${'TOTAL'.padEnd(24)} │ ${`${(baseTotalDuration / 1000).toFixed(1)}s`.padStart(8)} │ ${String(baseIssues.length).padStart(6)} │`);
+    console.log(`   └──────────────────────────┴──────────┴────────┘`);
+
+    // Combined total
+    const combinedDuration = (prTotalDuration + baseTotalDuration) / 1000;
+    console.log(`\n   📊 Combined: ${combinedDuration.toFixed(1)}s total, ${prIssues.length + baseIssues.length} issues (PR: ${prIssues.length}, Base: ${baseIssues.length})\n`);
 
     return { prIssues, baseIssues };
   }
