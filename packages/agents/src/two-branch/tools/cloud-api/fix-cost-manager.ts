@@ -1152,7 +1152,14 @@ export class FixCostManager {
   getDashboard(): {
     avgCosts: Record<FixSource, number>;
     successRates: Record<FixSource, number>;
-    ceilingStatus: ReturnType<typeof this.checkCeilings>;
+    ceilingStatus: {
+      dailyUsed: number;
+      dailyRemaining: number;
+      monthlyUsed: number;
+      monthlyRemaining: number;
+      warnings: string[];
+      blocked: boolean;
+    };
     recordCount: number;
   } {
     return {

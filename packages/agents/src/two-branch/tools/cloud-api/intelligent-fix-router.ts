@@ -394,11 +394,11 @@ export class IntelligentFixRouter {
    * Get routing analytics
    */
   async getAnalytics(): Promise<{
-    costComparison: Awaited<ReturnType<typeof this.costManager.getCostComparison>>;
-    profitability: Awaited<ReturnType<typeof this.costManager.analyzeProfitability>>;
-    ceilingStatus: ReturnType<typeof this.costManager.getCeilingStatus>;
-    cacheStats: Awaited<ReturnType<typeof this.cache.getStats>>;
-    queueStatus: ReturnType<typeof this.queue.getStatus>;
+    costComparison: any;
+    profitability: any;
+    ceilingStatus: any;
+    cacheStats: any;
+    queueStatus: any;
   }> {
     const [costComparison, profitability, cacheStats] = await Promise.all([
       this.costManager.getCostComparison('weekly'),
