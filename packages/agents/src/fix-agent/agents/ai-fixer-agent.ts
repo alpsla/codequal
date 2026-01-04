@@ -972,6 +972,8 @@ ${instruction}`;
         issueMessage: issue.message,
         aiModel: recommendation.model,
         attemptNumber: 1,
+        // SESSION 73: Pass language for tool re-validation
+        language: issue.language,
       });
 
       if (result.success && result.patternResponse) {

@@ -5,14 +5,16 @@
  * 1. AI generates a fix
  * 2. Apply fix to code
  * 3. Run verification (linting, type-check, security scan)
- * 4. If pass → submit to registry (pending_review or active based on trust)
- * 5. If fail → enhance and retry (up to max attempts)
+ * 4. SESSION 73: Run TOOL RE-VALIDATION (re-run original tool to verify fix works)
+ * 5. If pass → submit to registry (pending_review or active based on trust)
+ * 6. If fail → enhance and retry (up to max attempts)
  *
  * This creates a quality gate before fixes enter the pattern registry.
  */
 
 import { getFixPatternRegistry } from './fix-pattern-registry';
 import { FixCaptureResponse, PatternStatus } from './types';
+import { getToolRevalidator, ToolRevalidationResult } from './tool-revalidator';
 
 // =============================================================================
 // Types
@@ -37,6 +39,8 @@ export interface AIFixAttempt {
   aiModel: string;
   /** Attempt number (1, 2, 3...) */
   attemptNumber: number;
+  /** SESSION 73: Programming language for tool re-validation */
+  language?: string;
 }
 
 export interface VerificationResult {
@@ -50,6 +54,8 @@ export interface VerificationResult {
   warnings: string[];
   /** Total score (0-100) */
   score: number;
+  /** SESSION 73: Tool re-validation result */
+  toolRevalidation?: ToolRevalidationResult;
 }
 
 export interface VerificationCheck {
@@ -464,6 +470,94 @@ export class AIFixerVerifier {
       });
 
       if (result.passed && result.score >= this.options.minScore) {
+        // SESSION 73: Run tool re-validation BEFORE submitting to registry
+        // This ensures the original issue is actually fixed and no regressions are introduced
+        if (currentAttempt.language && currentAttempt.tool) {
+          console.log(`[AIFixer:ToolRevalidation] Running ${currentAttempt.tool} on fixed code...`);
+          const revalidator = getToolRevalidator();
+          const toolResult = await revalidator.validateFix({
+            ruleId: currentAttempt.ruleId,
+            tool: currentAttempt.tool,
+            language: currentAttempt.language,
+            originalFilePath: currentAttempt.filePath,
+            originalCode: currentAttempt.originalCode,
+            fixedCode: currentAttempt.fixedCode,
+            lineNumber: currentAttempt.lineNumber,
+            issueMessage: currentAttempt.issueMessage,
+          });
+
+          // Add tool revalidation result to verification result
+          result.toolRevalidation = toolResult;
+
+          if (!toolResult.passed) {
+            console.log(`[AIFixer:ToolRevalidation] ❌ Failed: ${toolResult.summary}`);
+
+            // If original issue not resolved or regressions found, treat as failed verification
+            if (!toolResult.originalIssueResolved) {
+              result.errors.push({
+                type: 'semantic',
+                message: `Original issue (${currentAttempt.ruleId}) still present after fix`,
+              });
+            }
+            if (toolResult.hasRegressions) {
+              for (const regression of toolResult.regressions.slice(0, 3)) {
+                result.errors.push({
+                  type: 'lint',
+                  message: `Regression: ${regression.rule} - ${regression.message}`,
+                  line: regression.line,
+                });
+              }
+            }
+
+            // Mark as failed and continue to retry loop
+            result.passed = false;
+            result.score = Math.max(0, result.score - 30); // Penalty for tool validation failure
+
+            // Log this attempt and continue (skip to next iteration)
+            logFixAttempt({
+              timestamp: new Date().toISOString(),
+              ruleId: attempt.ruleId,
+              tool: attempt.tool,
+              filePath: attempt.filePath,
+              attemptNumber: attempts,
+              maxAttempts: this.options.maxAttempts,
+              verificationScore: result.score,
+              passed: false,
+              errors: result.errors.map((e) => e.message),
+              durationMs: Date.now() - attemptStartTime,
+            });
+
+            // If we have more attempts, try to enhance
+            if (attempts < this.options.maxAttempts && this.options.enhancer) {
+              try {
+                console.log(`[AIFixer:Enhance] Tool revalidation failed, enhancing...`);
+                const enhancedCode = await this.options.enhancer({
+                  originalFix: currentAttempt.fixedCode,
+                  errors: result.errors,
+                  previousAttempts: attempts,
+                  context: {
+                    ruleId: currentAttempt.ruleId,
+                    issueMessage: currentAttempt.issueMessage,
+                    originalCode: currentAttempt.originalCode,
+                  },
+                });
+
+                currentAttempt = {
+                  ...currentAttempt,
+                  fixedCode: enhancedCode,
+                  attemptNumber: attempts + 1,
+                };
+                continue; // Go to next iteration of while loop
+              } catch (enhanceError: any) {
+                console.log(`[AIFixer:Enhance] Enhancement failed: ${enhanceError.message}`);
+              }
+            }
+            continue; // Go to next iteration
+          }
+
+          console.log(`[AIFixer:ToolRevalidation] ✅ Passed: ${toolResult.summary}`);
+        }
+
         // Success! Submit to registry
         if (this.options.dryRun) {
           logFixResult({
