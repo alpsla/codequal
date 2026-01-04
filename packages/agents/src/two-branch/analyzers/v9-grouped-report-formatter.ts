@@ -313,6 +313,7 @@ export class V9GroupedReportFormatter {
   private SHOW_PERF_SUBMETRICS = false;
   private skillScoreManager: SkillScoreManager | null = null;
   private repoPath: string | undefined = undefined;  // Local repo path for snippet extraction
+  private repositoryUrl: string | undefined = undefined;  // SESSION 74: GitHub URL for remote snippet fetching
   private userTier: 'basic' | 'pro' | 'enterprise' = 'basic';  // User tier for report differentiation
   // BUG-76: AI enrichment dependencies
   private modelConfigResolver: any = null;
@@ -875,8 +876,10 @@ export class V9GroupedReportFormatter {
     console.log(`[BUG #89]   - UNKNOWN/MISSING: ${categoryCounts.UNKNOWN}`);
     console.log(`[BUG #89] ====================================\n`);
 
-    // Store repoPath for snippet extraction
+    // Store repoPath and repositoryUrl for snippet extraction
+    // SESSION 74: Also store repositoryUrl for GitHub API fallback
     this.repoPath = metadata.repoPath || undefined;
+    this.repositoryUrl = metadata.repoUrl || metadata.repository || undefined;
 
     // Store userTier for tier-specific report sections
     this.userTier = (metadata.userTier as 'basic' | 'pro' | 'enterprise') || 'basic';
@@ -1384,11 +1387,13 @@ export class V9GroupedReportFormatter {
           }
 
           const fullPath = path.join(this.repoPath!, fileToExtract);
-          if (fs.existsSync(fullPath)) {
-            snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';
-          } else {
-            snippet = '';
-          }
+          // SESSION 74: Try local file first, then GitHub API fallback
+          snippet = await CodeSnippetExtractor.extractSnippet(
+            fullPath,
+            issue.line,
+            3,
+            this.repositoryUrl  // GitHub fallback URL
+          ) || '';
         } catch (error) {
           // Extraction failed - use empty snippet
           snippet = '';
@@ -4680,7 +4685,13 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
           // Build full file path if repoPath is available
           const fullPath = this.repoPath ? path.join(this.repoPath, relativePath) : relativePath;
-          snippet = await CodeSnippetExtractor.extractSnippet(fullPath, exampleIssue.line, 3) || undefined;
+          // SESSION 74: Try local file first, then GitHub API fallback
+          snippet = await CodeSnippetExtractor.extractSnippet(
+            fullPath,
+            exampleIssue.line,
+            3,
+            this.repositoryUrl  // GitHub fallback URL
+          ) || undefined;
 
           if (!snippet || snippet.trim().length === 0) {
             console.warn(`[V9GroupedReportFormatter] Empty snippet extracted for ${displayPath}:${exampleIssue.line}`);
@@ -4741,14 +4752,26 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           // If after cleaning, the code is valid, show it
           if (cleanCorrectedCode && cleanCorrectedCode.length >= 20) {
             if (hasValidSnippet) {
-              section += `**Suggested Change**:\n\n`;
-              section += '```diff\n';
-              section += '- // Before:\n';
-              section += (representative.snippet || '').split('\n').map(line => `- ${line}`).join('\n');
-              section += '\n\n';
-              section += '+ // After:\n';
-              section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
-              section += '\n```\n\n';
+              // SESSION 74 FIX: Check if before and after are identical to avoid confusing diffs
+              const snippetNormalized = (representative.snippet || '').trim().replace(/\s+/g, ' ');
+              const correctedNormalized = cleanCorrectedCode.trim().replace(/\s+/g, ' ');
+              const areIdentical = snippetNormalized === correctedNormalized ||
+                this.calculateSimilarity(snippetNormalized, correctedNormalized) > 0.95;
+
+              if (areIdentical) {
+                // Before and after are essentially the same - show a helpful message instead
+                section += `> 💡 **Note**: The AI-suggested fix involves changes that may require context beyond the displayed snippet. `;
+                section += `Please review the specific fix guidance above and apply it manually to the affected locations.\n\n`;
+              } else {
+                section += `**Suggested Change**:\n\n`;
+                section += '```diff\n';
+                section += '- // Before:\n';
+                section += (representative.snippet || '').split('\n').map(line => `- ${line}`).join('\n');
+                section += '\n\n';
+                section += '+ // After:\n';
+                section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
+                section += '\n```\n\n';
+              }
             } else if (!alreadyShowedAICode) {
               // BUG FIX: Only show "Recommended Code" if we didn't already show it as "Code (AI-generated example)"
               // SESSION 73 FIX: Validate that corrected code matches the representative file
@@ -4819,6 +4842,54 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    */
   private cleanAIContent(content: string): string {
     return cleanAIContent(content);
+  }
+
+  /**
+   * Calculate text similarity (0-1) using Levenshtein distance ratio
+   * SESSION 74: Added to detect identical before/after code samples
+   */
+  private calculateSimilarity(text1: string, text2: string): number {
+    if (text1 === text2) return 1;
+    if (!text1 || !text2) return 0;
+
+    const len1 = text1.length;
+    const len2 = text2.length;
+    const maxLen = Math.max(len1, len2);
+
+    if (maxLen === 0) return 1;
+
+    // For very long strings, use a simpler character overlap check
+    if (maxLen > 1000) {
+      const set1 = new Set(text1.split(' '));
+      const set2 = new Set(text2.split(' '));
+      const intersection = [...set1].filter(x => set2.has(x)).length;
+      const union = new Set([...set1, ...set2]).size;
+      return union > 0 ? intersection / union : 0;
+    }
+
+    // Levenshtein distance for smaller strings
+    const matrix: number[][] = [];
+
+    for (let i = 0; i <= len1; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= len2; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= len1; i++) {
+      for (let j = 1; j <= len2; j++) {
+        const cost = text1[i - 1] === text2[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost
+        );
+      }
+    }
+
+    const distance = matrix[len1][len2];
+    return 1 - distance / maxLen;
   }
 
   /**
