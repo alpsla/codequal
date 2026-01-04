@@ -1,253 +1,191 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 73 (January 3, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Tool Re-Validation System Added
-**Status**: Tool re-validation feature complete, security hardening needed
+**Last Updated**: Session 74 (January 4, 2026)
+**Current Phase**: V9 Two-Branch Analysis - Security Hardening Complete
+**Status**: All Session 74 priorities completed and deployed to Oracle Cloud
 
 ---
 
-## Session 73 Completed
+## Session 74 Completed
 
 ### Major Features Implemented
 
-1. **Tool Re-Validator System** (New Feature)
-   - Created `tool-revalidator.ts` - Re-runs original linting tools (PMD, ESLint, Ruff, etc.) on AI-generated fixes
-   - Ensures fixes actually resolve issues before saving to Supabase
-   - Detects regressions (new issues introduced by fix)
-   - Supports: Java (PMD, Checkstyle), Python (Ruff, Pylint, Bandit), TypeScript (ESLint), Go, Ruby, PHP
+1. **Security Hardening (P0 - Critical)**
+   - Secure file permissions: Mode 0600 for temp files, 0700 for temp directories
+   - Command injection prevention: Replaced shell execution with `spawn` + args array
+   - Rate limiting: 30 executions/min, 5 concurrent, 30s timeout per tool
+   - Path traversal prevention: Validates temp file paths stay within allowed directory
+   - Secure random filenames using `crypto.randomBytes()`
    - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
 
-2. **AI Fixer Integration**
-   - Updated `ai-fixer-verifier.ts` to integrate tool re-validation into verification flow
-   - Fixes are now: AI Generated -> Syntax Check -> Tool Re-Validation -> Save to Supabase
-   - Updated `ai-fixer-agent.ts` to pass language field for tool selection
-   - File: `packages/agents/src/fix-agent/fix-pattern-registry/ai-fixer-verifier.ts`
+2. **Tool Availability Detection**
+   - Added `checkToolAvailability()` - checks if tools (PMD, ESLint, Ruff, etc.) are installed
+   - 5-minute cache to avoid repeated checks
+   - Provides helpful error messages when tools are missing
+   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
 
-3. **Report Tier-Awareness Improvements**
-   - Removed "Pattern Reuse Efficiency" section (confused users)
-   - Added tier-aware messaging: PRO shows "Fixes Applied", BASIC shows IDE instructions
-   - Fixed duplicate code sample tracking issue
+3. **ESLint/TypeScript Configuration (P1)**
+   - Added `--no-config-lookup` flag for standalone temp file validation
+   - Relaxed TSC flags for isolated file checking
+   - Added configurations for: Mypy, Clippy, Brakeman, TSC
+
+4. **JSON Output Parsing Improvements (P1)**
+   - New `extractJSON()` with 3 extraction strategies (pure, prefixed, line-by-line)
+   - Text-based fallback parsing for non-JSON tool outputs
+   - Expanded tool-specific parsers (Mypy, Clippy, Brakeman, PHPStan, etc.)
+   - Handles: empty output, malformed JSON, array outputs, control characters
+   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
+
+5. **Code Snippet Improvements (P2)**
+   - GitHub API fallback when local files unavailable
+   - 5-minute content cache to reduce API calls
+   - Automatic main/master branch fallback
+   - Repository URL passed through report formatter
+   - File: `packages/agents/src/two-branch/utils/code-snippet-extractor.ts`
+
+6. **Identical Code Detection (P2)**
+   - Added `calculateSimilarity()` using Levenshtein distance
+   - Detects when before/after code samples are >95% similar
+   - Shows helpful guidance instead of confusing identical diffs
    - File: `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts`
 
-4. **Test Suite**
-   - Created `test-tool-revalidation.ts` with 4 test cases
-   - Tests: Java PMD fix validation, Python Ruff fix, TypeScript ESLint fix, Invalid fix detection
-   - File: `packages/agents/tests/integration/test-tool-revalidation.ts`
+7. **Oracle Cloud Deployment**
+   - Pulled latest changes and built successfully
+   - Restarted codequal-api service (PM2)
+   - API is online and running
 
-5. **Gitignore Updates**
-   - Added patterns to ignore V9 test reports (*.json, *-COMPREHENSIVE.md, etc.)
-   - Ignore Claude settings and worktrees
-
-### Commits Created (Session 73)
+### Commits Created (Session 74)
 
 | Commit | Description |
 |--------|-------------|
-| `22eca62d` | feat(session-73): Add tool re-validation for AI-generated fixes |
-| `54467cb7` | fix(session-73): Improve report tier-awareness and remove confusing sections |
-| `87e4aef6` | chore: Update .gitignore for V9 test reports and Claude settings |
+| `6a909a5b` | feat(session-74): Security hardening and code snippet improvements |
 
 ---
 
-## Session 74 TODO
+## Session 75 TODO
 
-### P0: Security Hardening (Critical)
+### P0: Production Testing
 
-1. **Fix temp file permissions vulnerability**
-   - Current: Files created with default permissions
-   - Required: Mode 0600 (owner read/write only)
-   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
-   - Line: ~348 `fs.writeFileSync(tempFilePath, ...)`
-
-2. **Mitigate command injection risk**
-   - Current: `filePath` passed directly to shell commands
-   - Required: Proper escaping or use spawn with args array
-   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
-   - Function: `runTool()`, `getToolCommand()`
-
-3. **Add rate limiting for tool execution**
-   - Prevent abuse of tool re-validation (CPU/memory intensive)
-   - Consider: Max executions per minute, timeout enforcement
-   - File: New rate limiter or add to existing
-
-### P1: Tool Re-Validation Improvements
-
-1. **Add ESLint TypeScript rules configuration**
-   - Current: ESLint may fail without proper TypeScript config
-   - Create minimal tsconfig.json for temp files
-   - Or configure ESLint to use installed parser
-
-2. **Improve JSON output parsing robustness**
-   - Handle edge cases in PMD, ESLint, Ruff output formats
-   - Add fallback parsing for non-JSON tool outputs
-   - Better error messages for parsing failures
-
-3. **Add tool availability detection**
-   - Check if tools (pmd, eslint, ruff) are installed before running
-   - Provide helpful error messages if tools missing
-   - Consider Docker fallback for missing tools
-
-### P2: User Feedback Issues (From Session 72)
-
-1. **Fix missing code snippets**
-   - "Code snippet unavailable" appearing for some issues
-   - Need to fetch actual code from repository
-   - May need to read file content during analysis
-   - File: `apps/api/src/routes/v9-analyze.ts`
-
-2. **Fix identical code sample/fix**
-   - "Resource Not Properly Closed" shows same code for problem and solution
-   - AI fix generation not producing distinct before/after examples
-   - Review AIFixerAgent implementation
-
-3. **Review AI-generated code examples**
-   - Claude agents setup needs verification
-   - Ensure AI is being called for fix generation
-   - Check model selection and prompts
-
-### P3: Production Deployment
-
-1. **Deploy Session 73 fixes to Oracle Cloud**
+1. **Run full E2E test on Oracle Cloud**
    ```bash
    ssh -i "keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
-   cd ~/codequal && git pull && npm run build && npx pm2 restart codequal-api
+   cd ~/codequal/packages/agents
+   npx ts-node tests/integration/test-v9-2tier-all-languages.ts
    ```
 
-2. **Enable Redis caching** for analysis results
-3. **Add rate limiting** for API endpoints
+2. **Verify rate limiting is working**
+   - Test with rapid consecutive requests
+   - Ensure 30/min limit is enforced
+
+3. **Test GitHub fallback for code snippets**
+   - Analyze a PR where local repo is cleaned up
+   - Verify snippets are fetched from GitHub
+
+### P1: Caching Improvements
+
+1. **Enable Redis caching for analysis results**
+   - Currently Redis is configured but not fully utilized
+   - Cache tool results, code snippets, AI fixes
+
+2. **Add API rate limiting**
+   - Limit requests per user/IP
+   - Protect against abuse
+
+### P2: Documentation
+
+1. **Update API documentation**
+   - Document new security features
+   - Rate limiting behavior
+   - GitHub fallback for snippets
+
+2. **Create deployment runbook**
+   - Step-by-step Oracle Cloud deployment
+   - Rollback procedures
+   - Health check commands
 
 ---
 
 ## Current Architecture
 
-### Tool Re-Validation Flow (New in Session 73)
+### Security Features (Session 74)
 
 ```
-1. AI generates fix for issue
-2. Syntax verification (TypeScript, Python, etc.)
-3. *** NEW: Tool Re-Validation ***
-   a. Write original code to temp file
-   b. Run original tool (PMD, ESLint, etc.) → baseline issues
-   c. Write fixed code to temp file
-   d. Run tool again → new issues
-   e. Compare: Original issue resolved? New regressions?
-4. If pass → Save to Supabase with verification metadata
-5. If fail → Enhance prompt and retry (up to max attempts)
+Tool Re-Validation Security Flow:
+1. Rate Limiter checks (30/min, 5 concurrent)
+   ↓ (Reject if exceeded)
+2. Generate secure random filename (crypto.randomBytes)
+   ↓
+3. Validate path (no traversal, within temp dir)
+   ↓
+4. Write file with mode 0600
+   ↓
+5. Execute tool via spawn (no shell, args array)
+   ↓
+6. Cleanup: overwrite with zeros, then unlink
+   ↓
+7. Release rate limiter slot
 ```
 
-### V9 Two-Branch Analysis Flow
+### Code Snippet Fetching (Session 74)
 
 ```
-1. Clone PR branch (shallow)
-2. Fetch base branch explicitly
-3. Detect language (using /languages API, skip CSS/HTML)
-4. Run tools on BOTH branches
-5. Compare issues using file:rule signature
-6. Categorize: NEW, EXISTING_MODIFIED, RESOLVED, EXISTING_REST
-7. Generate comprehensive report with V9GroupedReportFormatter
+1. Try local file (repoPath + filePath)
+   ↓ (if not exists)
+2. Parse GitHub URL from repositoryUrl
+   ↓
+3. Fetch from raw.githubusercontent.com/owner/repo/branch/path
+   ↓ (if 404)
+4. Try 'master' branch fallback
+   ↓
+5. Cache result for 5 minutes
 ```
-
-### Issue Categorization Logic
-
-- **NEW**: Issue exists on PR branch but NOT on base branch
-- **EXISTING_MODIFIED**: Issue exists on both but line number changed
-- **RESOLVED**: Issue existed on base but NOT on PR (fixed by PR)
-- **EXISTING_REST**: Issue exists on both at same location (pre-existing)
 
 ---
 
 ## Quick Commands
 
 ```bash
-# Run tool re-validation test
+# Run V9 E2E test
 cd /Users/alpinro/CodePrjects/codequal/packages/agents
-npx ts-node tests/integration/test-tool-revalidation.ts
-
-# Run 7-language test
 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 
-# Start local API
-cd /Users/alpinro/CodePrjects/codequal/apps/api
-npx ts-node src/index.ts
-
-# Check report output
-cat packages/agents/tests/integration/v9-2tier-reports/java-BASIC-report.md
-
-# SSH to Oracle
-ssh -i "keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
+# Run tool re-validation test
+npx ts-node tests/integration/test-tool-revalidation.ts
 
 # Build and type-check
-cd /Users/alpinro/CodePrjects/codequal
-npm run build
-npx tsc --noEmit
+npm run build && npx tsc --noEmit
+
+# Deploy to Oracle Cloud
+ssh -i "keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
+cd ~/codequal && git pull && npm run build && npx pm2 restart codequal-api
 ```
+
+---
+
+## Files Modified (Session 74)
+
+| File | Changes |
+|------|---------|
+| `tool-revalidator.ts` | Security hardening, rate limiting, tool availability |
+| `code-snippet-extractor.ts` | GitHub API fallback, caching |
+| `v9-grouped-report-formatter.ts` | Repository URL storage, identical diff detection |
 
 ---
 
 ## Known Issues
 
-### Security Issues (Session 73)
-
-| Issue | Severity | Status |
-|-------|----------|--------|
-| Temp file permissions (mode 0644 default) | HIGH | TODO - P0 |
-| Command injection risk in tool execution | HIGH | TODO - P0 |
-| No rate limiting on tool execution | MEDIUM | TODO - P0 |
-| ESLint TypeScript rules may not be configured | LOW | TODO - P1 |
-
-### Active Bugs
-
 | ID | Description | Severity | Status |
 |----|-------------|----------|--------|
-| - | Code snippets unavailable for some issues | Medium | TODO |
-| - | Identical before/after in Resource Not Closed | High | TODO |
+| - | VSCode extension missing build script | Low | Ignore (not critical) |
 
-### Resolved in Session 73
+### Resolved in Session 74
 
-| Issue | Solution |
-|-------|----------|
-| Pattern Reuse Efficiency confuses users | Removed section |
-| Quick Win message unclear | Added tier-aware messaging |
-
-### Resolved in Session 72
-
-| Issue | Solution |
-|-------|----------|
-| EXISTING_REST = 0 | Explicit base branch fetch |
-| Tool durations = 0 | Return actual toolStats |
-| Language = CSS | Use /languages API, skip non-programming |
-| Strict line matching | Use file:rule signature |
-
----
-
-## Files Modified in Session 73
-
-| File | Change |
-|------|--------|
-| `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts` | **NEW** - Tool re-validation system |
-| `packages/agents/src/fix-agent/fix-pattern-registry/ai-fixer-verifier.ts` | Integrated tool re-validation |
-| `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts` | Pass language field |
-| `packages/agents/tests/integration/test-tool-revalidation.ts` | **NEW** - Integration tests |
-| `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts` | Tier-aware messaging |
-| `packages/agents/src/two-branch/report/business-impact.ts` | Minor fixes |
-| `packages/agents/src/two-branch/report/community-impact.ts` | Minor fixes |
-| `.gitignore` | Ignore V9 test reports |
-
----
-
-## Build Status
-
-- API: Compiles, all routes working
-- Agents: Compiles, tool-revalidator.ts added
-- Core: Compiles
-- Database: Compiles
-- Web: Pre-existing Next.js SSR issues (not related to Session 73)
-
----
-
-## References
-
-- V9 Architecture: `packages/agents/V9_CANONICAL_ARCHITECTURE.md`
-- Report Formatter: `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts`
-- Tool Revalidator: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
-- API Route: `apps/api/src/routes/v9-analyze.ts`
-- Test Suite: `packages/agents/tests/integration/test-v9-2tier-all-languages.ts`
+| ID | Description | Resolution |
+|----|-------------|------------|
+| P0-1 | Temp file permissions vulnerable | Added mode 0600/0700 |
+| P0-2 | Command injection risk in runTool | Replaced with spawn+args |
+| P0-3 | No rate limiting for tool execution | Added RateLimiter class |
+| P1-1 | ESLint fails without config | Added --no-config-lookup |
+| P1-2 | JSON parsing fragile | Multi-strategy extraction |
+| P2-1 | Code snippets unavailable | GitHub API fallback |
+| P2-2 | Identical before/after diffs | Similarity detection |
