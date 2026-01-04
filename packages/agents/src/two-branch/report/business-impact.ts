@@ -378,7 +378,7 @@ No critical or high-severity issues detected. All identified issues are related 
 **Impact if not fixed:** Gradual technical debt accumulation, slower code reviews, minor maintainability concerns.
 **Recommendation:** Address during regular refactoring cycles or enable ${getPreCommitHookRecommendation(language)}.
 
-${autoFixableTotalCount > 0 ? `**🎁 Quick Win:** ${autoFixableTotalCount} of ${activeIssues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be auto-fixed in ~${Math.ceil(autoFixableTotalCount / 60)} minutes with linter \`--fix\` commands.` : ''}`
+${autoFixableTotalCount > 0 ? `**🔧 Auto-Fixable:** ${autoFixableTotalCount} of ${activeIssues.length} issues (${totalAutoFixPercentage.toFixed(0)}%) can be resolved with linter \`--fix\` commands.` : ''}`
     }
 
 ### Risk Assessment

@@ -48,14 +48,20 @@ export interface CommunityPrivacyPrefs {
  *
  * @param impact - Community impact summary data
  * @param prefs - User privacy preferences
+ * @param tier - User tier (basic, pro, enterprise) - SESSION 73: Added for tier differentiation
  * @returns Markdown section for the report
  */
 export function generateCommunityImpactSection(
   impact: CommunityImpactSummary,
-  prefs: CommunityPrivacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false }
+  prefs: CommunityPrivacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false },
+  tier: 'basic' | 'pro' | 'enterprise' = 'basic'
 ): string {
   // No contributions yet
   if (impact.totalPatternsContributed === 0) {
+    // SESSION 73: PRO tier auto-saves patterns, so show different message
+    if (tier === 'pro' || tier === 'enterprise') {
+      return generateProAutoSaveSection();
+    }
     return generateNewContributorSection();
   }
 
@@ -93,6 +99,28 @@ your patterns can be saved to help other developers facing the same issues.
 - 🎯 Build your developer reputation
 
 > 💡 **Tip**: Enable "Save patterns" in settings to start contributing automatically.
+`;
+}
+
+/**
+ * Section for PRO tier users - patterns are auto-saved
+ * SESSION 73: Added for tier differentiation
+ */
+function generateProAutoSaveSection(): string {
+  return `
+## 🌟 Community Impact
+
+### Pattern Auto-Save Enabled
+
+As a PRO user, your fix patterns are automatically saved to the community library.
+When you fix issues, other developers instantly benefit from your solutions.
+
+**Your impact will grow as you:**
+- ✅ Fix issues using AI-generated fixes
+- ✅ Contribute unique fix patterns
+- ✅ Help developers facing similar issues
+
+> 🚀 Your patterns will appear here after your first contribution.
 `;
 }
 

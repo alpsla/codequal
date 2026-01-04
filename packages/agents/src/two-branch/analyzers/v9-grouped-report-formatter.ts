@@ -313,6 +313,7 @@ export class V9GroupedReportFormatter {
   private SHOW_PERF_SUBMETRICS = false;
   private skillScoreManager: SkillScoreManager | null = null;
   private repoPath: string | undefined = undefined;  // Local repo path for snippet extraction
+  private userTier: 'basic' | 'pro' | 'enterprise' = 'basic';  // User tier for report differentiation
   // BUG-76: AI enrichment dependencies
   private modelConfigResolver: any = null;
   private detectedLanguage = 'java';
@@ -805,6 +806,9 @@ export class V9GroupedReportFormatter {
       agentPerformance?: Array<any>;
       toolPerformance?: Array<any>;
       modelsUsed?: Array<any> | Record<string, any>;
+
+      // SESSION 73: User tier for tier-specific report content
+      userTier?: 'basic' | 'pro' | 'enterprise';
     }
   ): Promise<GroupedReportOutput> {
 
@@ -873,6 +877,9 @@ export class V9GroupedReportFormatter {
 
     // Store repoPath for snippet extraction
     this.repoPath = metadata.repoPath || undefined;
+
+    // Store userTier for tier-specific report sections
+    this.userTier = (metadata.userTier as 'basic' | 'pro' | 'enterprise') || 'basic';
 
     // BUG-095 FIX: Calculate real repo stats if not provided or if values look hardcoded
     // This ensures we show real file counts and LOC instead of placeholder values
@@ -2374,12 +2381,7 @@ ${(() => {
 - 🤖 **AI Auto-Fix**: All ${activeIssueCount.toLocaleString()} active issues analyzed with contextual AI fixes
 - 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
 - ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
-- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
-
-**Pattern Reuse Efficiency** (Cost Savings):
-- Pattern library contains ${breakdown.autoFixable.toLocaleString()}+ learned fixes
-- Each pattern reuse = FREE (no AI API call needed)
-- Estimated savings: 60-80% reduction in AI calls for recurring issues`;
+- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions`;
       })()}
 
 ---
@@ -2637,7 +2639,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     const autoFixPercent = activeIssues.length > 0 ? Math.round((autoFixableIssues.length / activeIssues.length) * 100) : 0;
 
     if (autoFixableIssues.length > 0) {
-      content += `🚀 **Quick Win**: ${autoFixableIssues.length.toLocaleString()} active issues (${autoFixPercent}%) have auto-fix available via IDE integration (see **How to Apply Fixes** section for LSP, SARIF, or GitLab options).\n\n`;
+      // SESSION 73: Tier-aware messaging - PRO shows fixes applied, BASIC shows IDE instructions
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        content += `✅ **Fixes Applied**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) have been auto-fixed. Review changes in the **Applied Fixes** section below.\n\n`;
+      } else {
+        content += `🚀 **Easy Fixes Available**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) can be auto-fixed using your IDE or linter. See **How to Apply Fixes** below.\n\n`;
+      }
     }
 
     if (blockingCount > 0) {
@@ -2669,7 +2676,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
     if (autoFixable.length > issues.length * 0.3) {
-      content += `4. **Automation Opportunity**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues auto-fixable - consider pre-commit hooks\n`;
+      // SESSION 73: Tier-aware messaging
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        content += `4. **Fixes Applied**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues were auto-fixed. Review and commit when ready.\n`;
+      } else {
+        content += `4. **Automation Opportunity**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues auto-fixable - consider pre-commit hooks\n`;
+      }
     } else {
       if (issues.length > 0) {
         content += `4. **Code Quality**: Most issues require manual attention - allocate development time accordingly\n`;
@@ -4531,6 +4543,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
     const representative = groupIssues[0];
     const canAutoFix = this.canAutoFix(group);
+    let alreadyShowedAICode = false; // BUG FIX: Track if we showed AI code to avoid duplication
 
     // Phase D: User-friendly title
     const friendlyTitle = this.getUserFriendlyTitle(group.rule, group.tool);
@@ -4696,6 +4709,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           section += `\`\`\`${language}\n`;
           section += cleanCode;
           section += '\n```\n\n';
+          alreadyShowedAICode = true; // Track that we showed AI code here
         } else {
           section += `> Code snippet unavailable. See fix recommendation below.\n\n`;
         }
@@ -4735,12 +4749,26 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
               section += '+ // After:\n';
               section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
               section += '\n```\n\n';
-            } else {
-              section += `**Recommended Code**:\n\n`;
-              const language = representative?.file ? this.getLanguageFromFile(representative.file) : 'text';
-              section += `\`\`\`${language}\n`;
-              section += cleanCorrectedCode;
-              section += '\n```\n\n';
+            } else if (!alreadyShowedAICode) {
+              // BUG FIX: Only show "Recommended Code" if we didn't already show it as "Code (AI-generated example)"
+              // SESSION 73 FIX: Validate that corrected code matches the representative file
+              // Extract class name from exampleIssue file to check if code is for the right file
+              const exampleFileName = exampleIssue?.file?.split('/').pop()?.replace('.java', '').replace('.ts', '').replace('.py', '') || '';
+              const codeMatchesFile = !exampleFileName ||
+                cleanCorrectedCode.includes(exampleFileName) ||
+                cleanCorrectedCode.includes(`class ${exampleFileName}`) ||
+                cleanCorrectedCode.length < 200; // Short generic patterns are OK
+
+              if (codeMatchesFile) {
+                section += `**Recommended Code**:\n\n`;
+                const language = representative?.file ? this.getLanguageFromFile(representative.file) : 'text';
+                section += `\`\`\`${language}\n`;
+                section += cleanCorrectedCode;
+                section += '\n```\n\n';
+              } else {
+                // Code doesn't match the representative example - show generic guidance instead
+                section += `> 💡 **Pattern-Based Fix**: This fix pattern applies to all occurrences. Adapt the principle to each specific file.\n\n`;
+              }
             }
           } else {
             // BUG-LSP-001: Fix was rejected (template pattern detected) - show manual review message
@@ -4771,7 +4799,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     section += `This issue appears in **${group.count} ${group.count === 1 ? 'file' : 'files'}** across your codebase.\n\n`;
 
     if (canAutoFix) {
-      section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
+      // SESSION 73: Tier-aware messaging
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        section += `> ✅ **Auto-fixed**: This issue has been automatically fixed. See the **Applied Fixes** section below for details.\n\n`;
+      } else {
+        section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
+      }
     }
 
     section += '---\n\n';
@@ -5874,9 +5907,10 @@ mvn spotless:check  # Verify (use in CI)
   /**
    * Generate Business Impact Analysis with real financial calculations
    * SESSION 50 FIX: Pass detected language for language-specific recommendations
+   * SESSION 73 FIX: Pass userTier for tier-specific sections (Upgrade to PRO, etc.)
    */
   private generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
-    return generateBusinessImpact(issues, groups, this.detectedLanguage);
+    return generateBusinessImpact(issues, groups, this.detectedLanguage, this.userTier);
   }
 
   private _REMOVED_legacyGenerateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
@@ -7118,7 +7152,8 @@ Continue following best practices and consider integrating static analysis into 
       const privacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false };
 
       // Generate the section using imported function
-      return generateCommunityImpactSection(impact, privacyPrefs);
+      // SESSION 73: Pass userTier for tier-specific messaging
+      return generateCommunityImpactSection(impact, privacyPrefs, this.userTier);
     } catch (error) {
       console.error('[V9GroupedReportFormatter] Error generating Community Impact:', error);
       return ''; // Silent fail - optional section
