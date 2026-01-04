@@ -15,6 +15,13 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 
+// V9 Comprehensive Report Formatter
+import { V9GroupedReportFormatter } from '@codequal/agents/two-branch/analyzers/v9-grouped-report-formatter';
+import { groupIssues } from '@codequal/agents/two-branch/utils/issue-grouping';
+
+// PR Context Service for fetching real PR metadata
+import { PRContextService } from '../services/pr-context-service';
+
 const execAsync = promisify(exec);
 
 const logger = createLogger('v9-analyze');
@@ -24,8 +31,8 @@ const router = Router();
 // CONFIGURATION
 // ============================================================================
 // SIMULATION_MODE: When true, generates mock results for testing API flow
-// Set to false and configure real endpoints for production analysis
-const SIMULATION_MODE = process.env.V9_SIMULATION_MODE !== 'false';
+// Default is FALSE (real analysis) - set V9_SIMULATION_MODE=true only for testing
+const SIMULATION_MODE = process.env.V9_SIMULATION_MODE === 'true';
 
 // Cloud service endpoints (used when SIMULATION_MODE=false)
 const HYBRID_AGENT_URL = process.env.HYBRID_AGENT_URL || 'http://129.212.136.24';
@@ -456,6 +463,33 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
     const isPro = userTier === 'pro' || userTier === 'enterprise';
     const generateFixes = isPro && (options?.generateFixes !== false);
 
+    // Fetch real PR metadata from GitHub
+    let prMetadata = {
+      author: 'unknown',
+      authorEmail: 'unknown@example.com',
+      title: `PR #${prNumber}`,
+      additions: 0,
+      deletions: 0
+    };
+
+    try {
+      const prContextService = new PRContextService();
+      const prDetails = await prContextService.fetchPRDetails(repositoryUrl, prNumber);
+      prMetadata = {
+        author: prDetails.author || 'unknown',
+        authorEmail: `${prDetails.author}@github.com`,
+        title: prDetails.title || `PR #${prNumber}`,
+        additions: prDetails.additions || 0,
+        deletions: prDetails.deletions || 0
+      };
+      logger.info('Fetched PR metadata', { author: prMetadata.author, title: prMetadata.title });
+    } catch (prError) {
+      logger.warn('Failed to fetch PR metadata, using defaults', { error: (prError as Error).message });
+    }
+
+    // Store PR metadata in state for report generation
+    state.request.prMetadata = prMetadata;
+
     // Phase 1: Analyzing (0-40%)
     updateState(analysisId, 'analyzing', 10, 'Running tool analysis', 'Initializing analyzers...');
     await delay(500);
@@ -512,7 +546,8 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
     updateState(analysisId, 'finalizing', 90, 'Finalizing report', 'Generating report...');
 
     const analysisTime = Date.now() - state.startTime;
-    const report = generateV9Report({
+    const finalPrMetadata = state.request.prMetadata || { author: 'unknown', authorEmail: 'unknown@example.com', title: `PR #${prNumber}`, additions: 0, deletions: 0 };
+    const report = await generateV9Report({
       analysisId,
       repository: repositoryUrl,
       prNumber,
@@ -520,6 +555,12 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
       issues: issuesWithFixes,
       scores,
       summary,
+      prAuthor: finalPrMetadata.author,
+      prAuthorEmail: finalPrMetadata.authorEmail,
+      prTitle: finalPrMetadata.title,
+      linesAdded: finalPrMetadata.additions,
+      linesDeleted: finalPrMetadata.deletions,
+      toolPerformance: (toolResults as any).toolPerformance || [],
       metrics: {
         analysisTime,
         toolsExecutionTime: toolResults.executionTime,
@@ -527,7 +568,7 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
         cacheHitRate: cacheStats.hitRate,
         costEstimate: calculateCostEstimate(issuesWithFixes.length, cacheStats)
       }
-    });
+    }, userTier as 'basic' | 'pro');
 
     // Complete!
     const result = {
@@ -611,10 +652,39 @@ async function detectLanguageFromRepo(repoUrl: string): Promise<string> {
   if (!match) throw new Error('Invalid GitHub URL');
 
   const [, owner, repo] = match;
+  const cleanRepo = repo.replace('.git', '');
+
+  // Map of GitHub language names to our tool language codes
+  const languageMap: Record<string, string> = {
+    'java': 'java',
+    'python': 'python',
+    'javascript': 'javascript',
+    'typescript': 'typescript',
+    'rust': 'rust',
+    'go': 'go',
+    'c++': 'cpp',
+    'c': 'c',
+    'c#': 'csharp',
+    'ruby': 'ruby',
+    'php': 'php',
+    'swift': 'swift',
+    'kotlin': 'kotlin',
+    'scala': 'scala'
+  };
+
+  // These are NOT programming languages - skip them when detecting
+  const nonProgrammingLanguages = new Set([
+    'css', 'scss', 'sass', 'less',  // Stylesheets
+    'html', 'xml', 'svg',            // Markup
+    'json', 'yaml', 'toml',          // Data formats
+    'markdown', 'restructuredtext',  // Documentation
+    'dockerfile', 'makefile', 'shell', 'powershell'  // Build/config
+  ]);
 
   try {
-    const response = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}`,
+    // First try: Get languages breakdown (more accurate than primary language)
+    const langResponse = await axios.get(
+      `https://api.github.com/repos/${owner}/${cleanRepo}/languages`,
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -624,26 +694,43 @@ async function detectLanguageFromRepo(repoUrl: string): Promise<string> {
       }
     );
 
-    const primaryLanguage = response.data.language?.toLowerCase() || 'unknown';
+    // Sort languages by bytes (descending)
+    const languages = Object.entries(langResponse.data as Record<string, number>)
+      .sort(([, a], [, b]) => b - a);
 
-    const languageMap: Record<string, string> = {
-      'java': 'java',
-      'python': 'python',
-      'javascript': 'javascript',
-      'typescript': 'typescript',
-      'rust': 'rust',
-      'go': 'go',
-      'c++': 'cpp',
-      'c': 'c',
-      'c#': 'csharp',
-      'ruby': 'ruby',
-      'php': 'php',
-      'swift': 'swift',
-      'kotlin': 'kotlin',
-      'scala': 'scala'
-    };
+    // Find the first PROGRAMMING language (skip CSS, HTML, etc.)
+    for (const [lang] of languages) {
+      const langLower = lang.toLowerCase();
+      if (!nonProgrammingLanguages.has(langLower)) {
+        const mapped = languageMap[langLower];
+        if (mapped) {
+          logger.info(`Detected programming language: ${lang} → ${mapped}`);
+          return mapped;
+        }
+      }
+    }
 
-    return languageMap[primaryLanguage] || 'javascript';
+    // Fallback: Use primary language from repo metadata
+    const repoResponse = await axios.get(
+      `https://api.github.com/repos/${owner}/${cleanRepo}`,
+      {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'CodeQual-V9-API'
+        },
+        timeout: 5000
+      }
+    );
+
+    const primaryLanguage = repoResponse.data.language?.toLowerCase() || 'unknown';
+    const mapped = languageMap[primaryLanguage];
+    if (mapped) {
+      logger.info(`Using primary language: ${primaryLanguage} → ${mapped}`);
+      return mapped;
+    }
+
+    logger.warn(`Could not map language "${primaryLanguage}", defaulting to JavaScript`);
+    return 'javascript';
   } catch (error) {
     logger.warn('Could not auto-detect language, defaulting to JavaScript');
     return 'javascript';
@@ -704,21 +791,37 @@ async function runCloudTools(repoUrl: string, prNumber: number, language: string
   return {
     issues,
     executionTime: Math.floor(1000 + Math.random() * 4000),
-    toolsPods: tools.map(t => `${t}-host-native`)
+    toolsPods: tools.map(t => `${t}-host-native`),
+    toolPerformance: tools.map(t => ({
+      tool: t,
+      duration: Math.floor(Math.random() * 3000),
+      issuesFound: Math.floor(Math.random() * 3)
+    }))
   };
 }
 
 /**
- * Run analysis using host-native tools (no Docker)
- * Tools are pre-installed on Oracle Cloud ARM64 instance
+ * Run TWO-BRANCH analysis using host-native tools
+ *
+ * V9 Canonical Flow:
+ * 1. Clone repository with full history for PR
+ * 2. Run tools on BASE branch (main/master) → baseIssues
+ * 3. Run tools on PR branch → prIssues
+ * 4. Compare issues to categorize:
+ *    - NEW: In PR but not in main (introduced by PR)
+ *    - RESOLVED: In main but not in PR (fixed by PR)
+ *    - EXISTING_MODIFIED: In both, in modified files
+ *    - EXISTING_REST: In both, unchanged
+ *
+ * This enables proper detection of issues introduced vs. pre-existing
  */
 async function runHostNativeAnalysis(
   repoUrl: string,
   prNumber: number,
   language: string
-): Promise<{ issues: any[]; executionTime: number; toolsPods: string[] }> {
+): Promise<{ issues: any[]; executionTime: number; toolsPods: string[]; toolPerformance: any[] }> {
   const startTime = Date.now();
-  logger.info(`Running HOST-NATIVE analysis for ${language}`);
+  logger.info(`Running TWO-BRANCH HOST-NATIVE analysis for ${language}`);
 
   // ==========================================================================
   // COMPREHENSIVE TOOL MATRIX (49 unique tools across 7 categories)
@@ -847,73 +950,328 @@ async function runHostNativeAnalysis(
   const repoName = repoUrl.split('/').pop()?.replace('.git', '') || 'repo';
   const repoPath = `/tmp/${repoName}-pr${prNumber}`;
 
-  // Clone repository if needed
+  // ==========================================================================
+  // STEP 1: Clone repository with enough depth for PR analysis
+  // ==========================================================================
   try {
-    await execAsync(`git clone --depth 1 ${repoUrl} ${repoPath} 2>/dev/null || (cd ${repoPath} && git pull)`, {
+    // Remove old repo if exists to get fresh clone
+    await execAsync(`rm -rf ${repoPath}`, { timeout: 30000 });
+
+    // Clone with depth 50 to get PR commits
+    await execAsync(`git clone --depth 50 ${repoUrl} ${repoPath}`, {
+      timeout: 120000
+    });
+
+    // Fetch PR ref
+    await execAsync(`git -C ${repoPath} fetch origin pull/${prNumber}/head:pr-${prNumber}`, {
       timeout: 60000
     });
-    logger.info(`Repository ready at ${repoPath}`);
+
+    logger.info(`Repository cloned with PR #${prNumber} ref at ${repoPath}`);
   } catch (error) {
-    logger.warn('Repository clone/update failed, continuing with existing repo');
-  }
-
-  // Execute tools in parallel batches (4 tools at a time to avoid overwhelming system)
-  const batchSize = 4;
-  const toolResults: Array<{ tool: string; output: string; success: boolean; category: string }> = [];
-
-  for (let i = 0; i < allTools.length; i += batchSize) {
-    const batch = allTools.slice(i, i + batchSize);
-    const batchResults = await Promise.all(
-      batch.map(async (tool) => {
-        const toolStart = Date.now();
-        try {
-          const { stdout } = await execAsync(tool.command, {
-            cwd: repoPath,
-            timeout: 45000, // 45 sec per tool
-            maxBuffer: 20 * 1024 * 1024, // 20MB buffer
-            env: {
-              ...process.env,
-              PATH: `/home/opc/.local/bin:/opt/codequal-tools/bin:/usr/local/bin:${process.env.PATH}`,
-              HOME: '/home/opc'
-            }
-          });
-          logger.info(`✅ ${tool.name}: completed in ${Date.now() - toolStart}ms`);
-          return { tool: tool.name, output: stdout, success: true, category: tool.category };
-        } catch (error: any) {
-          // Many tools return non-zero exit code when issues are found
-          if (error.stdout) {
-            logger.info(`⚠️ ${tool.name}: completed with issues in ${Date.now() - toolStart}ms`);
-            return { tool: tool.name, output: error.stdout, success: true, category: tool.category };
-          }
-          logger.warn(`❌ ${tool.name}: failed after ${Date.now() - toolStart}ms - ${error.message?.substring(0, 100)}`);
-          return { tool: tool.name, output: '', success: false, category: tool.category };
-        }
-      })
-    );
-    toolResults.push(...batchResults);
-  }
-
-  // Parse outputs and collect issues
-  const allIssues: any[] = [];
-  for (const result of toolResults) {
-    if (result.success && result.output) {
-      const parsed = parseToolOutput(result.tool, result.output);
-      // Add category to each issue
-      parsed.forEach(issue => {
-        issue.category = result.category;
-      });
-      allIssues.push(...parsed);
+    logger.warn('Repository clone/PR fetch failed, attempting basic clone');
+    try {
+      await execAsync(`git clone --depth 1 ${repoUrl} ${repoPath} 2>/dev/null || true`, { timeout: 60000 });
+    } catch {
+      logger.warn('Repository clone failed completely');
     }
   }
 
+  // ==========================================================================
+  // STEP 2: Detect base branch and get modified files
+  // ==========================================================================
+  let baseBranch = 'main';
+  let modifiedFiles: string[] = [];
+
+  try {
+    // Detect default branch
+    const { stdout: defaultBranchOutput } = await execAsync(
+      `git -C ${repoPath} symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo 'main'`,
+      { timeout: 5000 }
+    );
+    baseBranch = defaultBranchOutput.trim() || 'main';
+    logger.info(`Detected base branch: ${baseBranch}`);
+
+    // CRITICAL: Explicitly fetch base branch (shallow clone may not have it)
+    try {
+      await execAsync(`git -C ${repoPath} fetch origin ${baseBranch}:refs/remotes/origin/${baseBranch} --depth 50`, {
+        timeout: 60000
+      });
+      logger.info(`✅ Fetched base branch: origin/${baseBranch}`);
+    } catch (fetchError) {
+      logger.warn(`⚠️ Could not fetch base branch ${baseBranch}: ${(fetchError as Error).message}`);
+      // Try without depth limit as fallback
+      try {
+        await execAsync(`git -C ${repoPath} fetch origin ${baseBranch}`, { timeout: 60000 });
+        logger.info(`✅ Fetched base branch (fallback): origin/${baseBranch}`);
+      } catch {
+        logger.error(`❌ Failed to fetch base branch ${baseBranch} - two-branch comparison may fail!`);
+      }
+    }
+
+    // Get list of modified files in PR from GitHub API (more reliable than git diff with shallow clone)
+    try {
+      // Extract owner/repo from URL
+      const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (match) {
+        const [, owner, repo] = match;
+        const cleanRepo = repo.replace('.git', '');
+        const prFilesResponse = await axios.get(
+          `https://api.github.com/repos/${owner}/${cleanRepo}/pulls/${prNumber}/files`,
+          {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'CodeQual-V9-API'
+            },
+            timeout: 10000
+          }
+        );
+        modifiedFiles = prFilesResponse.data.map((f: any) => f.filename);
+        logger.info(`PR modifies ${modifiedFiles.length} files (via GitHub API)`);
+      }
+    } catch (apiError) {
+      // Fallback to git diff
+      logger.warn('GitHub API failed for modified files, trying git diff');
+      try {
+        const { stdout: diffOutput } = await execAsync(
+          `git -C ${repoPath} diff --name-only origin/${baseBranch} pr-${prNumber} 2>/dev/null || echo ''`,
+          { timeout: 10000 }
+        );
+        modifiedFiles = diffOutput.trim().split('\n').filter(f => f.length > 0);
+        logger.info(`PR modifies ${modifiedFiles.length} files (via git diff)`);
+      } catch {
+        logger.warn('Could not get modified files list');
+      }
+    }
+  } catch (error) {
+    logger.warn('Branch detection failed, using main');
+  }
+
+  // Helper to run tools on a specific branch
+  // Returns { issues, toolStats } where toolStats contains per-tool durations and issue counts
+  const runToolsOnBranch = async (branch: string, branchType: 'base' | 'pr'): Promise<{ issues: any[]; toolStats: Array<{ tool: string; duration: number; issuesFound: number; success: boolean }> }> => {
+    const branchStart = Date.now();
+
+    // Checkout the branch
+    let checkoutSuccess = false;
+    try {
+      if (branchType === 'pr') {
+        await execAsync(`git -C ${repoPath} checkout pr-${prNumber}`, { timeout: 30000 });
+        checkoutSuccess = true;
+        logger.info(`✅ Checked out PR #${prNumber} branch`);
+      } else {
+        // For base branch, try detached HEAD checkout (more reliable)
+        await execAsync(`git -C ${repoPath} checkout origin/${baseBranch}`, { timeout: 30000 });
+        checkoutSuccess = true;
+        logger.info(`✅ Checked out BASE branch: origin/${baseBranch}`);
+      }
+    } catch (error: any) {
+      const errorMsg = error.message || 'Unknown error';
+      if (branchType === 'base') {
+        logger.error(`❌ CRITICAL: Failed to checkout BASE branch (origin/${baseBranch}): ${errorMsg}`);
+        logger.error(`   This will cause all issues to appear as NEW instead of proper categorization!`);
+      } else {
+        logger.warn(`⚠️ Could not checkout PR branch: ${errorMsg}`);
+      }
+    }
+
+    // Log branch state for debugging
+    try {
+      const { stdout: branchInfo } = await execAsync(`git -C ${repoPath} rev-parse --abbrev-ref HEAD 2>/dev/null || git -C ${repoPath} rev-parse --short HEAD`, { timeout: 5000 });
+      logger.info(`   Current HEAD: ${branchInfo.trim()} (checkout ${checkoutSuccess ? 'succeeded' : 'FAILED'})`);
+    } catch { /* ignore */ }
+
+    // Execute tools in parallel batches
+    const batchSize = 4;
+    const toolResults: Array<{ tool: string; output: string; success: boolean; category: string; duration: number }> = [];
+
+    for (let i = 0; i < allTools.length; i += batchSize) {
+      const batch = allTools.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (tool) => {
+          const toolStart = Date.now();
+          try {
+            const { stdout } = await execAsync(tool.command, {
+              cwd: repoPath,
+              timeout: 45000,
+              maxBuffer: 20 * 1024 * 1024,
+              env: {
+                ...process.env,
+                PATH: `/home/opc/.local/bin:/opt/codequal-tools/bin:/usr/local/bin:${process.env.PATH}`,
+                HOME: '/home/opc'
+              }
+            });
+            const duration = Date.now() - toolStart;
+            return { tool: tool.name, output: stdout, success: true, category: tool.category, duration };
+          } catch (error: any) {
+            const duration = Date.now() - toolStart;
+            if (error.stdout) {
+              return { tool: tool.name, output: error.stdout, success: true, category: tool.category, duration };
+            }
+            return { tool: tool.name, output: '', success: false, category: tool.category, duration };
+          }
+        })
+      );
+      toolResults.push(...batchResults);
+    }
+
+    // Parse and collect issues
+    const branchIssues: any[] = [];
+    for (const result of toolResults) {
+      if (result.success && result.output) {
+        const parsed = parseToolOutput(result.tool, result.output);
+        parsed.forEach(issue => {
+          issue.toolCategory = result.category;
+          // Map toolCategory to detectedCategory for scoring
+          const categoryMap: Record<string, string> = {
+            'security': 'Security',
+            'secrets': 'Security',
+            'iac': 'Security',
+            'quality': 'Code Quality',
+            'dependency': 'Dependencies',
+            'architecture': 'Architecture',
+            'fixer': 'Code Quality',
+            'api': 'Architecture'
+          };
+          issue.detectedCategory = categoryMap[result.category] || 'Code Quality';
+        });
+        branchIssues.push(...parsed);
+      }
+    }
+
+    const branchDuration = Date.now() - branchStart;
+    const successCount = toolResults.filter(r => r.success).length;
+    logger.info(`${branchType.toUpperCase()} branch analysis: ${branchIssues.length} issues from ${successCount}/${allTools.length} tools in ${branchDuration}ms`);
+
+    // Build per-tool stats for this branch
+    const toolStats = toolResults.map(r => ({
+      tool: r.tool,
+      duration: r.duration,
+      issuesFound: branchIssues.filter(i => i.tool === r.tool).length,
+      success: r.success
+    }));
+
+    return { issues: branchIssues, toolStats };
+  };
+
+  // ==========================================================================
+  // STEP 3: Run tools on BOTH branches
+  // ==========================================================================
+  logger.info('📊 Running TWO-BRANCH COMPARISON...');
+
+  // Run on base branch first
+  const baseResult = await runToolsOnBranch(baseBranch, 'base');
+  const baseIssues = baseResult.issues;
+  logger.info(`BASE (${baseBranch}): ${baseIssues.length} issues`);
+
+  // Run on PR branch
+  const prResult = await runToolsOnBranch(`pr-${prNumber}`, 'pr');
+  const prIssues = prResult.issues;
+  const prToolStats = prResult.toolStats;  // Use PR branch stats for reporting
+  logger.info(`PR #${prNumber}: ${prIssues.length} issues`);
+
+  // ==========================================================================
+  // STEP 4: Categorize issues using signature comparison
+  // ==========================================================================
+  const normalizePath = (filePath: string): string => {
+    return filePath.replace(/^\.\//, '').replace(/^\//, '');
+  };
+
+  // Full signature for display (includes line number)
+  const getFullSig = (issue: any): string => {
+    const file = normalizePath(issue.file || 'unknown');
+    const line = issue.line || 0;
+    const rule = issue.rule || issue.type || issue.tool || 'unknown';
+    return `${file}:${line}:${rule}`;
+  };
+
+  // Categorization signature (file:rule only - ignores line number shifts)
+  // This allows matching issues even when line numbers change between branches
+  const getCategorySig = (issue: any): string => {
+    const file = normalizePath(issue.file || 'unknown');
+    const rule = issue.rule || issue.type || issue.tool || 'unknown';
+    return `${file}:${rule}`;
+  };
+
+  // Create signature sets for categorization (using file:rule only)
+  const baseSigs = new Set(baseIssues.map(getCategorySig));
+  const prSigs = new Set(prIssues.map(getCategorySig));
+  const modifiedFilesSet = new Set(modifiedFiles.map(normalizePath));
+
+  // Categorize all issues
+  const categorizedIssues: any[] = [];
+
+  // NEW: In PR but NOT in base (introduced by this PR)
+  // Uses file:rule signature to match issues regardless of line number changes
+  const newIssues = prIssues.filter(i => !baseSigs.has(getCategorySig(i)));
+  newIssues.forEach(issue => {
+    issue.category = 'NEW';
+    categorizedIssues.push(issue);
+  });
+
+  // RESOLVED: In base but NOT in PR AND in a modified file (fixed by this PR)
+  const resolvedIssues = baseIssues.filter(i => {
+    const sig = getCategorySig(i);
+    const normalizedFile = normalizePath(i.file || '');
+    return !prSigs.has(sig) && modifiedFilesSet.has(normalizedFile);
+  });
+  resolvedIssues.forEach(issue => {
+    issue.category = 'RESOLVED';
+    categorizedIssues.push(issue);
+  });
+
+  // EXISTING_MODIFIED: In BOTH branches AND in modified files
+  // Uses file:rule signature to match issues regardless of line number changes
+  const existingModified = prIssues.filter(i => {
+    const sig = getCategorySig(i);
+    const normalizedFile = normalizePath(i.file || '');
+    return baseSigs.has(sig) && modifiedFilesSet.has(normalizedFile);
+  });
+  existingModified.forEach(issue => {
+    issue.category = 'EXISTING_MODIFIED';
+    categorizedIssues.push(issue);
+  });
+
+  // EXISTING_REST: In BOTH branches, NOT in modified files (pre-existing, untouched)
+  // Uses file:rule signature to match issues regardless of line number changes
+  const existingRest = prIssues.filter(i => {
+    const sig = getCategorySig(i);
+    const normalizedFile = normalizePath(i.file || '');
+    return baseSigs.has(sig) && !modifiedFilesSet.has(normalizedFile);
+  });
+  existingRest.forEach(issue => {
+    issue.category = 'EXISTING_REST';
+    categorizedIssues.push(issue);
+  });
+
   const executionTime = Date.now() - startTime;
-  const successCount = toolResults.filter(r => r.success).length;
-  logger.info(`Host-native analysis complete: ${allIssues.length} issues from ${successCount}/${allTools.length} tools in ${executionTime}ms`);
+
+  // Log categorization summary
+  logger.info(`📊 Issue Categorization Summary:`);
+  logger.info(`   🆕 NEW (introduced by PR): ${newIssues.length}`);
+  logger.info(`   ✅ RESOLVED (fixed by PR): ${resolvedIssues.length}`);
+  logger.info(`   📝 EXISTING_MODIFIED: ${existingModified.length}`);
+  logger.info(`   📦 EXISTING_REST: ${existingRest.length}`);
+  logger.info(`   📈 Total: ${categorizedIssues.length} issues in ${executionTime}ms`);
+
+  // Build tool performance data using actual stats from PR branch analysis
+  const toolPerformance = prToolStats.map(stat => ({
+    tool: stat.tool,
+    duration: stat.duration,
+    issuesFound: categorizedIssues.filter(i => i.tool === stat.tool).length,
+    success: stat.success
+  }));
+
+  // Log tool performance summary
+  const successfulTools = toolPerformance.filter(t => t.success);
+  const toolsWithIssues = toolPerformance.filter(t => t.issuesFound > 0);
+  logger.info(`📊 Tool Performance: ${successfulTools.length}/${toolPerformance.length} tools ran, ${toolsWithIssues.length} found issues`);
 
   return {
-    issues: allIssues,
+    issues: categorizedIssues,
     executionTime,
-    toolsPods: allTools.map(t => `${t.name}-host-native`)
+    toolsPods: allTools.map(t => `${t.name}-host-native`),
+    toolPerformance
   };
 }
 
@@ -986,6 +1344,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `semgrep-${i}-${Date.now()}`,
           tool: 'semgrep',
           type: r.check_id,
+          rule: r.check_id,  // Add rule for grouping/display
           severity: mapSeverity(r.extra?.severity || 'WARNING'),
           message: r.extra?.message || r.check_id,
           file: r.path,
@@ -997,6 +1356,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `gitleaks-${i}-${Date.now()}`,
           tool: 'gitleaks',
           type: r.RuleID || 'secret',
+          rule: r.RuleID || 'secret',  // Add rule for grouping/display
           severity: 'critical',
           message: `Secret detected: ${r.Description || r.Match?.substring(0, 50)}`,
           file: r.File,
@@ -1008,6 +1368,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `trufflehog-${i}-${Date.now()}`,
           tool: 'trufflehog',
           type: r.DetectorType || 'secret',
+          rule: r.DetectorType || 'secret',  // Add rule for grouping/display
           severity: 'critical',
           message: `Secret found: ${r.DetectorType || 'credential'}`,
           file: r.SourceMetadata?.Data?.Filesystem?.file || 'unknown',
@@ -1023,6 +1384,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `trivy-${vuln.VulnerabilityID}-${Date.now()}`,
               tool: 'trivy',
               type: vuln.VulnerabilityID,
+              rule: vuln.VulnerabilityID,  // Add rule for grouping/display (CVE ID)
               severity: mapSeverity(vuln.Severity),
               message: vuln.Title || vuln.Description?.substring(0, 200),
               file: result.Target,
@@ -1035,6 +1397,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `trivy-${misconf.ID}-${Date.now()}`,
               tool: 'trivy',
               type: misconf.ID,
+              rule: misconf.ID,  // Add rule for grouping/display (check ID)
               severity: mapSeverity(misconf.Severity),
               message: misconf.Title || misconf.Description,
               file: result.Target,
@@ -1050,6 +1413,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `grype-${m.vulnerability?.id || i}-${Date.now()}`,
           tool: 'grype',
           type: m.vulnerability?.id || 'CVE',
+          rule: m.vulnerability?.id || 'CVE',  // Add rule for grouping/display
           severity: mapSeverity(m.vulnerability?.severity),
           message: m.vulnerability?.description?.substring(0, 200) || m.vulnerability?.id,
           file: m.artifact?.name || 'unknown',
@@ -1066,6 +1430,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `checkov-${check.check_id}-${Date.now()}`,
               tool: 'checkov',
               type: check.check_id,
+              rule: check.check_id,  // Add rule for grouping/display
               severity: mapSeverity(check.severity || 'MEDIUM'),
               message: check.check_name || check.check_id,
               file: check.file_path,
@@ -1087,6 +1452,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `pmd-${pmdIssues.length}-${Date.now()}`,
               tool: 'pmd',
               type: violation.rule,
+              rule: violation.rule,  // Add rule for grouping/display
               severity: mapPMDPriority(violation.priority),
               message: violation.description,
               file: file.filename,
@@ -1105,6 +1471,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `eslint-${eslintIssues.length}-${Date.now()}`,
               tool: 'eslint',
               type: msg.ruleId,
+              rule: msg.ruleId,  // Add rule for grouping/display
               severity: msg.severity === 2 ? 'high' : 'medium',
               message: msg.message,
               file: file.filePath,
@@ -1120,6 +1487,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `ruff-${i}-${Date.now()}`,
           tool: 'ruff',
           type: r.code,
+          rule: r.code,  // Add rule for grouping/display
           severity: 'medium',
           message: r.message,
           file: r.filename,
@@ -1131,6 +1499,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `bandit-${i}-${Date.now()}`,
           tool: 'bandit',
           type: r.test_id,
+          rule: r.test_id,  // Add rule for grouping/display
           severity: mapSeverity(r.issue_severity),
           message: r.issue_text,
           file: r.filename,
@@ -1142,6 +1511,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `golangci-${idx}-${Date.now()}`,
           tool: 'golangci-lint',
           type: i.FromLinter,
+          rule: i.FromLinter,  // Add rule for grouping/display
           severity: mapSeverity(i.Severity),
           message: i.Text,
           file: i.Pos?.Filename || 'unknown',
@@ -1153,6 +1523,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `gosec-${idx}-${Date.now()}`,
           tool: 'gosec',
           type: i.rule_id,
+          rule: i.rule_id,  // Add rule for grouping/display
           severity: mapSeverity(i.severity),
           message: i.details,
           file: i.file,
@@ -1163,10 +1534,12 @@ function parseToolOutput(toolName: string, output: string): any[] {
         const npmIssues: any[] = [];
         for (const [name, vuln] of Object.entries(data.vulnerabilities || {})) {
           const v = vuln as any;
+          const ruleId = v.via?.[0]?.name || name;
           npmIssues.push({
             id: `npm-${name}-${Date.now()}`,
             tool: 'npm-audit',
-            type: v.via?.[0]?.name || name,
+            type: ruleId,
+            rule: ruleId,  // Add rule for grouping/display
             severity: mapSeverity(v.severity),
             message: v.via?.[0]?.title || `Vulnerability in ${name}`,
             file: 'package.json',
@@ -1184,6 +1557,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `dc-${vuln.name}-${Date.now()}`,
               tool: 'dependency-check',
               type: vuln.name,
+              rule: vuln.name,  // Add rule for grouping/display (CVE ID)
               severity: mapCVSS(vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0),
               message: vuln.description?.substring(0, 200) || vuln.name,
               file: dep.fileName,
@@ -1203,6 +1577,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `pylint-${i}-${Date.now()}`,
           tool: 'pylint',
           type: r.symbol || r.message_id,
+          rule: r.symbol || r.message_id,  // Add rule for grouping/display
           severity: mapPylintType(r.type),
           message: r.message,
           file: r.path,
@@ -1214,6 +1589,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `staticcheck-${i}-${Date.now()}`,
           tool: 'staticcheck',
           type: r.code,
+          rule: r.code,  // Add rule for grouping/display
           severity: r.severity === 'error' ? 'high' : 'medium',
           message: r.message,
           file: r.location?.file || 'unknown',
@@ -1225,6 +1601,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `biome-${i}-${Date.now()}`,
           tool: 'biome',
           type: d.category,
+          rule: d.category,  // Add rule for grouping/display
           severity: mapSeverity(d.severity),
           message: d.description || d.message,
           file: d.location?.path?.file || 'unknown',
@@ -1239,6 +1616,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `rubocop-${rubocopIssues.length}-${Date.now()}`,
               tool: 'rubocop',
               type: offense.cop_name,
+              rule: offense.cop_name,  // Add rule for grouping/display
               severity: mapSeverity(offense.severity),
               message: offense.message,
               file: file.path,
@@ -1254,6 +1632,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `brakeman-${i}-${Date.now()}`,
           tool: 'brakeman',
           type: w.warning_type,
+          rule: w.warning_type,  // Add rule for grouping/display
           severity: w.confidence === 'High' ? 'high' : w.confidence === 'Medium' ? 'medium' : 'low',
           message: w.message,
           file: w.file,
@@ -1265,6 +1644,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `bundler-audit-${i}-${Date.now()}`,
           tool: 'bundler-audit',
           type: r.advisory?.cve || r.advisory?.id,
+          rule: r.advisory?.cve || r.advisory?.id,  // Add rule for grouping/display
           severity: mapSeverity(r.advisory?.criticality),
           message: r.advisory?.title || r.advisory?.description,
           file: 'Gemfile.lock',
@@ -1279,6 +1659,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `phpstan-${phpstanIssues.length}-${Date.now()}`,
               tool: 'phpstan',
               type: 'phpstan',
+              rule: msg.identifier || 'phpstan',  // Add rule for grouping/display
               severity: 'medium',
               message: msg.message,
               file: file,
@@ -1298,6 +1679,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `cargo-audit-${i}-${Date.now()}`,
           tool: 'cargo-audit',
           type: v.advisory?.id,
+          rule: v.advisory?.id,  // Add rule for grouping/display
           severity: mapSeverity(v.advisory?.severity),
           message: v.advisory?.title || v.advisory?.description,
           file: 'Cargo.toml',
@@ -1309,6 +1691,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `pip-audit-${i}-${Date.now()}`,
           tool: 'pip-audit',
           type: v.vulns?.[0]?.id || v.name,
+          rule: v.vulns?.[0]?.id || v.name,  // Add rule for grouping/display
           severity: mapSeverity(v.vulns?.[0]?.severity),
           message: v.vulns?.[0]?.description || `Vulnerability in ${v.name}`,
           file: 'requirements.txt',
@@ -1320,6 +1703,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `govulncheck-${i}-${Date.now()}`,
           tool: 'govulncheck',
           type: v.osv?.id,
+          rule: v.osv?.id,  // Add rule for grouping/display
           severity: 'high',
           message: v.osv?.summary || v.osv?.details,
           file: 'go.mod',
@@ -1748,68 +2132,139 @@ function calculateCostEstimate(issueCount: number, cacheStats: any): number {
   return apiCalls * costPerApiCall;
 }
 
-function generateV9Report(data: any) {
+/**
+ * Generate comprehensive V9 report using V9GroupedReportFormatter
+ * This produces the full 2000+ line report with all sections
+ */
+async function generateV9Report(data: any, userTier: 'basic' | 'pro' = 'basic') {
   const grade = data.scores.overall >= 90 ? 'A' :
                 data.scores.overall >= 80 ? 'B' :
                 data.scores.overall >= 70 ? 'C' :
                 data.scores.overall >= 60 ? 'D' : 'F';
 
-  const markdown = `
-# V9 Analysis Report
+  try {
+    // Convert issues to format expected by groupIssues
+    // All issues from single-branch analysis are categorized as EXISTING_REST (pre-existing in codebase)
+    // For proper NEW/EXISTING categorization, we need two-branch comparison (main vs PR)
+    const enrichedIssues = (data.issues || []).map((issue: any) => {
+      // Determine category: use provided category, or default to EXISTING_REST for tool findings
+      let category = issue.category;
+      if (!category || !['NEW', 'EXISTING_MODIFIED', 'RESOLVED', 'EXISTING_REST'].includes(category)) {
+        // Default: issues from tool scans are existing in the codebase
+        category = 'EXISTING_REST';
+      }
 
-## Repository: ${data.repository}
-## PR #${data.prNumber}
-## Language: ${data.language.toUpperCase()}
+      return {
+        file: issue.file || 'unknown',
+        line: issue.line || 1,
+        column: issue.column,
+        rule: issue.rule || issue.ruleId || 'unknown',
+        tool: issue.tool || 'unknown',
+        severity: issue.severity || 'medium',
+        message: issue.message || issue.description || '',
+        category: category,
+        detectedCategory: issue.detectedCategory || 'code_quality',
+        snippet: issue.snippet || '',
+        fixSuggestion: issue.fix ? {
+          fix: issue.fix,
+          correctedCode: issue.fixedCode || '',
+          explanation: issue.fixExplanation || ''
+        } : undefined
+      };
+    });
 
-### Executive Summary
-- **Overall Score**: ${data.scores.overall}/100 (Grade: ${grade})
-- **Total Issues**: ${data.summary.totalIssues}
-- **Critical Issues**: ${data.summary.critical}
-- **High Issues**: ${data.summary.high}
-- **Fixed Automatically**: ${data.summary.fixed}
-- **Cache Hit Rate**: ${data.metrics.cacheHitRate}
+    // Group issues for the formatter
+    const groupingResult = groupIssues(enrichedIssues);
 
-### Score Breakdown
-| Category | Score |
-|----------|-------|
-| Security | ${data.scores.security}/100 |
-| Quality | ${data.scores.quality}/100 |
-| Performance | ${data.scores.performance}/100 |
-| Architecture | ${data.scores.architecture}/100 |
-| Dependencies | ${data.scores.dependencies}/100 |
+    // Create formatter (null = use patterns only, no AI calls for cost efficiency)
+    const formatter = new V9GroupedReportFormatter(null, data.language || 'java', 'medium');
 
-### Performance Metrics
-- **Analysis Time**: ${data.metrics.analysisTime}ms
-- **Tool Execution**: ${data.metrics.toolsExecutionTime}ms
-- **Fix Generation**: ${data.metrics.fixGenerationTime}ms
-- **Cost Estimate**: $${data.metrics.costEstimate.toFixed(4)}
+    // Build metadata for the formatter
+    const repoName = data.repository.split('/').slice(-2).join('/');
+    const metadata = {
+      repository: repoName,
+      repoUrl: data.repository,
+      repoPath: '', // Not needed for API reports
+      prNumber: data.prNumber || 0,
+      prTitle: data.prTitle || `PR #${data.prNumber}`,
+      branch: `pr-${data.prNumber}`,
+      baseBranch: 'main',
+      prAuthor: data.prAuthor || 'unknown',
+      prAuthorEmail: data.prAuthorEmail || 'unknown@example.com',
+      organizationName: data.repository.split('/')[3] || 'unknown',
+      totalFiles: enrichedIssues.length > 0 ? new Set(enrichedIssues.map((i: any) => i.file)).size : 0,
+      totalLinesOfCode: 0,
+      filesModified: new Set(enrichedIssues.map((i: any) => i.file)).size,
+      linesAdded: data.linesAdded || 0,
+      linesDeleted: data.linesDeleted || 0,
+      decision: (data.summary?.critical || 0) > 0 ||
+                enrichedIssues.some((i: any) => i.category === 'NEW' && (i.severity === 'critical' || i.severity === 'high'))
+                  ? 'DECLINED' : 'APPROVED',
+      blockingCount: enrichedIssues.filter((i: any) =>
+        i.category === 'NEW' && (i.severity === 'critical' || i.severity === 'high')
+      ).length,
+      totalDuration: data.metrics?.analysisTime || 0,
+      cloneTime: 0,
+      analysisTime: data.metrics?.analysisTime || 0,
+      reportGenerationTime: 0,
+      analyzedAt: new Date().toISOString(),
+      analyzerVersion: '9.0.0',
+      // Provide mock tool performance if not available (simulation mode)
+      toolPerformance: data.toolPerformance?.length > 0 ? data.toolPerformance : [
+        { tool: 'semgrep', duration: 5000, issuesFound: Math.ceil((data.issues?.length || 0) / 2) },
+        { tool: 'checkstyle', duration: 3000, issuesFound: Math.floor((data.issues?.length || 0) / 2) }
+      ],
+      agentPerformance: data.agentPerformance?.length > 0 ? data.agentPerformance : [
+        { agent: 'Security Agent', model: 'mock', duration: 2000, cost: 0 },
+        { agent: 'Code Quality Agent', model: 'mock', duration: 3000, cost: 0 }
+      ],
+      userTier: userTier
+    };
 
-### Recommendations
-1. Address ${data.summary.critical} critical issues immediately
-2. Review ${data.summary.high} high-priority issues
-3. Consider automated fixes for ${data.summary.fixed} issues
-`;
+    // Generate comprehensive report using V9GroupedReportFormatter (ONLY formatter - no legacy fallback)
+    const result = await formatter.generateGroupedReport(enrichedIssues, groupingResult.groups, metadata);
 
-  return {
-    markdown,
-    html: markdown, // Convert to HTML in production
-    grade,
-    recommendations: [
-      `Address ${data.summary.critical} critical issues immediately`,
-      `Review ${data.summary.high} high-priority issues`,
-      `Consider automated fixes for ${data.summary.fixed} issues`
-    ],
-    businessImpact: {
-      riskScore: 100 - data.scores.overall,
-      technicalDebt: `${data.summary.totalIssues * 30} minutes`,
-      estimatedFixTime: `${Math.ceil(data.summary.totalIssues * 0.5)} hours`,
-      priorityActions: [
-        'Fix critical security vulnerabilities',
-        'Address performance bottlenecks',
-        'Improve code quality metrics'
-      ]
-    }
-  };
+    logger.info('Report generated successfully', {
+      markdownLength: result.markdown?.length || 0,
+      issueCount: enrichedIssues.length,
+      prNumber: data.prNumber
+    });
+
+    return {
+      markdown: result.markdown,
+      html: result.markdown, // Could convert to HTML if needed
+      grade,
+      attachments: result.attachments,
+      ideFixFiles: result.ideFixFiles,
+      recommendations: [
+        `Address ${data.summary?.critical || 0} critical issues immediately`,
+        `Review ${data.summary?.high || 0} high-priority issues`,
+        `Consider automated fixes for ${data.summary?.fixed || 0} issues`
+      ],
+      businessImpact: {
+        riskScore: 100 - data.scores.overall,
+        technicalDebt: `${(data.summary?.totalIssues || 0) * 30} minutes`,
+        estimatedFixTime: `${Math.ceil((data.summary?.totalIssues || 0) * 0.5)} hours`,
+        priorityActions: [
+          'Fix critical security vulnerabilities',
+          'Address performance bottlenecks',
+          'Improve code quality metrics'
+        ]
+      }
+    };
+  } catch (error) {
+    // No fallback - V9GroupedReportFormatter is the ONLY formatter
+    // Log error details for debugging
+    logger.error('V9GroupedReportFormatter failed - this is the only formatter, no fallback', {
+      error: (error as any)?.message,
+      stack: (error as any)?.stack,
+      repository: data.repository,
+      prNumber: data.prNumber
+    });
+
+    // Re-throw to fail fast - no legacy fallback
+    throw new Error(`Report generation failed: ${(error as any)?.message}`);
+  }
 }
 
 /**

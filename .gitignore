@@ -198,3 +198,6 @@ apps/api/deepwiki-metrics.json
 packages/agents/src/standard/tests/reports/comparison-agent/pr-*-2025-*.md
 # packages/agents/test-outputs/
 # test-outputs/
+
+# Auto Claude data directory
+.auto-claude/
