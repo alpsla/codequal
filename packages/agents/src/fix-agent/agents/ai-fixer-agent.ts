@@ -930,6 +930,9 @@ ${instruction}`;
         maxAttempts: 2,
         minScore: 80,
         dryRun: false,
+        // SESSION 76: Skip tool revalidation for performance
+        // Tool revalidation adds 120-240s per fix which is too slow for real-time analysis
+        skipToolRevalidation: true,
       });
     }
   }
@@ -958,6 +961,9 @@ ${instruction}`;
         maxAttempts: 2,
         minScore: 80,
         dryRun: false,
+        // SESSION 76: Skip tool revalidation for performance
+        // Tool revalidation adds 120-240s per fix which is too slow for real-time analysis
+        skipToolRevalidation: true,
       });
     }
 

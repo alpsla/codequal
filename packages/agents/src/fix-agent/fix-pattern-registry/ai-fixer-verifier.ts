@@ -93,6 +93,8 @@ export interface AIFixerVerifierOptions {
   aiModel: string;
   /** Enable dry-run mode (don't submit to registry) */
   dryRun: boolean;
+  /** Skip tool revalidation (default: false) - set true to skip slow static analysis verification */
+  skipToolRevalidation?: boolean;
   /** Custom verification function */
   customVerifier?: (code: string, filePath: string) => Promise<VerificationResult>;
   /** Custom enhancement function (for AI retry) */
@@ -472,7 +474,8 @@ export class AIFixerVerifier {
       if (result.passed && result.score >= this.options.minScore) {
         // SESSION 73: Run tool re-validation BEFORE submitting to registry
         // This ensures the original issue is actually fixed and no regressions are introduced
-        if (currentAttempt.language && currentAttempt.tool) {
+        // SESSION 76: Added skipToolRevalidation option for performance-critical scenarios
+        if (currentAttempt.language && currentAttempt.tool && !this.options.skipToolRevalidation) {
           console.log(`[AIFixer:ToolRevalidation] Running ${currentAttempt.tool} on fixed code...`);
           const revalidator = getToolRevalidator();
           const toolResult = await revalidator.validateFix({
