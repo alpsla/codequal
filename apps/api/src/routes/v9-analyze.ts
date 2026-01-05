@@ -442,6 +442,12 @@ router.post('/reports', async (req: Request, res: Response) => {
       version: '9.0.0'
     };
 
+    // Debug: log the report keys before sending
+    logger.info('[Reports] unifiedReport keys:', Object.keys(unifiedReport));
+    logger.info('[Reports] isPro:', isPro, 'tier:', tier);
+    logger.info('[Reports] Has ideExports:', 'ideExports' in unifiedReport);
+    logger.info('[Reports] Has patternContribution:', 'patternContribution' in unifiedReport);
+
     res.json(unifiedReport);
 
   } catch (error) {
