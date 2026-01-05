@@ -19,6 +19,9 @@ import * as path from 'path';
 import { V9GroupedReportFormatter } from '@codequal/agents/two-branch/analyzers/v9-grouped-report-formatter';
 import { groupIssues } from '@codequal/agents/two-branch/utils/issue-grouping';
 
+// LSP and SARIF converter for IDE exports
+import { LSPSARIFConverter } from '@codequal/agents/two-branch/analyzers/lsp-sarif-converter';
+
 // PR Context Service for fetching real PR metadata
 import { PRContextService } from '../services/pr-context-service';
 
@@ -451,6 +454,193 @@ router.post('/reports', async (req: Request, res: Response) => {
 });
 
 // =============================================================================
+// IDE EXPORT ENDPOINTS (SARIF, GitLab Code Quality, LSP)
+// =============================================================================
+
+/**
+ * SARIF 2.1.0 Export
+ * Industry standard format for static analysis results
+ * Supported by VSCode, JetBrains, GitHub Actions, and most IDEs
+ *
+ * GET /api/v9/reports/:analysisId/export/sarif
+ */
+router.get('/reports/:analysisId/export/sarif', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+
+    const state = analysisStore.get(analysisId);
+    if (!state || state.status !== 'completed' || !state.result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Analysis not found or not completed'
+      });
+    }
+
+    const converter = new LSPSARIFConverter();
+    const issues = state.result.issues || [];
+    const groupingResult = groupIssues(issues);
+
+    // Extract repository info from request
+    const repoUrl = state.request.repositoryUrl || '';
+    const repoName = repoUrl.split('/').slice(-2).join('/').replace('.git', '');
+
+    const sarifReport = converter.generateSARIFReport(issues, groupingResult.groups, {
+      repository: repoName,
+      version: '9.0.0',
+      analyzedAt: state.result.report?.generatedAt || new Date().toISOString()
+    });
+
+    // Set appropriate headers for SARIF file download
+    res.setHeader('Content-Type', 'application/sarif+json');
+    res.setHeader('Content-Disposition', `attachment; filename="${analysisId}-sarif.json"`);
+    res.json(sarifReport);
+
+  } catch (error) {
+    logger.error('Failed to generate SARIF export', error as any);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate SARIF export'
+    });
+  }
+});
+
+/**
+ * GitLab Code Quality Export
+ * Format compatible with GitLab CI/CD Code Quality reports
+ * Shows issues inline in merge requests
+ *
+ * GET /api/v9/reports/:analysisId/export/gitlab
+ */
+router.get('/reports/:analysisId/export/gitlab', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+
+    const state = analysisStore.get(analysisId);
+    if (!state || state.status !== 'completed' || !state.result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Analysis not found or not completed'
+      });
+    }
+
+    const issues = state.result.issues || [];
+
+    // Convert to GitLab Code Quality format
+    // https://docs.gitlab.com/ee/ci/testing/code_quality.html#implement-a-custom-tool
+    const gitlabIssues = issues.map((issue: any) => ({
+      type: 'issue',
+      check_name: issue.rule || issue.type || 'unknown',
+      description: issue.message || issue.description || 'Issue detected',
+      content: {
+        body: issue.fixSuggestion?.explanation || issue.educationalContent || ''
+      },
+      categories: [mapCategoryToGitLab(issue.category || issue.detectedCategory)],
+      location: {
+        path: cleanFilePath(issue.file || ''),
+        lines: {
+          begin: issue.line || 1,
+          end: issue.line || 1
+        }
+      },
+      severity: mapSeverityToGitLab(issue.severity),
+      fingerprint: generateFingerprint(issue)
+    }));
+
+    // Set headers for GitLab Code Quality JSON
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="gl-code-quality-report.json"`);
+    res.json(gitlabIssues);
+
+  } catch (error) {
+    logger.error('Failed to generate GitLab Code Quality export', error as any);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate GitLab Code Quality export'
+    });
+  }
+});
+
+/**
+ * LSP Code Actions Export
+ * For Cursor, VSCode, and other LSP-compatible editors
+ * Provides quick-fix actions directly in the IDE
+ *
+ * GET /api/v9/reports/:analysisId/export/lsp
+ */
+router.get('/reports/:analysisId/export/lsp', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const workspaceRoot = req.query.workspaceRoot as string || '/';
+
+    const state = analysisStore.get(analysisId);
+    if (!state || state.status !== 'completed' || !state.result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Analysis not found or not completed'
+      });
+    }
+
+    const converter = new LSPSARIFConverter();
+    const issues = state.result.issues || [];
+
+    const codeActions = converter.generateLSPCodeActions(issues, workspaceRoot);
+
+    res.json({
+      version: '1.0.0',
+      analysisId,
+      workspaceRoot,
+      totalActions: codeActions.length,
+      codeActions
+    });
+
+  } catch (error) {
+    logger.error('Failed to generate LSP export', error as any);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate LSP export'
+    });
+  }
+});
+
+// Helper functions for GitLab Code Quality format
+function mapSeverityToGitLab(severity: string): 'blocker' | 'critical' | 'major' | 'minor' | 'info' {
+  switch (severity?.toLowerCase()) {
+    case 'critical': return 'blocker';
+    case 'high': return 'critical';
+    case 'medium': return 'major';
+    case 'low': return 'minor';
+    default: return 'info';
+  }
+}
+
+function mapCategoryToGitLab(category: string): string {
+  const cat = category?.toLowerCase() || 'bug risk';
+  if (cat.includes('security')) return 'Security';
+  if (cat.includes('performance')) return 'Performance';
+  if (cat.includes('style') || cat.includes('lint')) return 'Style';
+  if (cat.includes('complexity')) return 'Complexity';
+  return 'Bug Risk';
+}
+
+function cleanFilePath(file: string): string {
+  // Remove leading ./ or / for GitLab
+  return file.replace(/^\.\//, '').replace(/^\//, '');
+}
+
+function generateFingerprint(issue: any): string {
+  // Generate a unique fingerprint for deduplication
+  const content = `${issue.rule}:${issue.file}:${issue.line}:${issue.message}`;
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// =============================================================================
 // BACKGROUND ANALYSIS EXECUTION
 // =============================================================================
 
@@ -547,11 +737,17 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
 
     const analysisTime = Date.now() - state.startTime;
     const finalPrMetadata = state.request.prMetadata || { author: 'unknown', authorEmail: 'unknown@example.com', title: `PR #${prNumber}`, additions: 0, deletions: 0 };
+
+    // Reconstruct repoPath for snippet extraction (same formula used in runCloudTools)
+    const repoName = repositoryUrl.split('/').pop()?.replace('.git', '') || 'repo';
+    const repoPath = `/tmp/${repoName}-pr${prNumber}`;
+
     const report = await generateV9Report({
       analysisId,
       repository: repositoryUrl,
       prNumber,
       language,
+      repoPath, // Pass repoPath for code snippet extraction
       issues: issuesWithFixes,
       scores,
       summary,
@@ -1915,6 +2111,27 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
         }
       }
 
+      // SESSION 73: Submit successful AI fixes to pattern registry for future reuse
+      // This is the key optimization: once AI generates a fix, save it so next time
+      // the same rule is found, we use the cached pattern instead of calling AI again
+      let patternsSubmitted = 0;
+      for (const enriched of result.enrichedIssues) {
+        if (enriched.fixRecommendation && enriched.fixRecommendation.confidence >= 70) {
+          try {
+            const submitted = await fixer.submitFixToRegistry(enriched, enriched.fixRecommendation);
+            if (submitted.submitted) {
+              patternsSubmitted++;
+              logger.info(`[FixGen] ✅ Pattern saved for ${enriched.ruleId}`);
+            }
+          } catch (submitErr: any) {
+            logger.warn(`[FixGen] Failed to save pattern for ${enriched.ruleId}:`, submitErr.message);
+          }
+        }
+      }
+      if (patternsSubmitted > 0) {
+        logger.info(`[FixGen] 📚 Saved ${patternsSubmitted} new patterns to registry for future reuse`);
+      }
+
       // Track failed issues
       failed = result.failed.length;
 
@@ -2184,7 +2401,7 @@ async function generateV9Report(data: any, userTier: 'basic' | 'pro' = 'basic') 
     const metadata = {
       repository: repoName,
       repoUrl: data.repository,
-      repoPath: '', // Not needed for API reports
+      repoPath: data.repoPath || '', // Used for code snippet extraction
       prNumber: data.prNumber || 0,
       prTitle: data.prTitle || `PR #${data.prNumber}`,
       branch: `pr-${data.prNumber}`,

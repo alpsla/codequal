@@ -386,23 +386,85 @@ Egress:
 
 ## 🎯 Scaling Strategy
 
-### Horizontal Scaling
+### Current Capacity (Single VM)
+
+```
+Oracle Cloud A1.Flex (4 OCPU, 24GB RAM):
+├── Concurrent analyses: ~6 (basic tier)
+├── Analyses per minute: ~60
+└── Estimated throughput: ~200 PRs/hour
+```
+
+### Session 75: Dynamic Rate Limiting
+
+Rate limits now scale automatically with:
+- **Tool Type**: Heavy tools (SpotBugs) get 5 min timeout, fast tools (ESLint) get 1 min
+- **Repo Size**: Enterprise repos (200k+ lines) get 8× timeout multiplier
+- **CPU Count**: Concurrent limits = 75% of available CPUs
+- **User Tier**: Basic/Pro/Enterprise quotas
 
 ```bash
-# Add more VMs (manual for now)
-# Each VM handles ~100 concurrent analyses
+# Configure via environment
+export CODEQUAL_USER_TIER=pro
+export CODEQUAL_REPO_SIZE=large
+export CODEQUAL_MAX_CONCURRENT=20
+```
 
+### Horizontal Scaling (Phase 1: Load Balancer)
+
+```
+                    ┌─────────────┐
+    Users ──────────▶│ NGINX/HAProxy│
+                    └──────┬──────┘
+           ┌───────────────┼───────────────┐
+           ▼               ▼               ▼
+     ┌─────────┐     ┌─────────┐     ┌─────────┐
+     │ API #1  │     │ API #2  │     │ API #3  │
+     │ A1.Flex │     │ A1.Flex │     │ A1.Flex │
+     └─────────┘     └─────────┘     └─────────┘
+           │               │               │
+           └───────────────┴───────────────┘
+                           ▼
+                    ┌─────────────┐
+                    │    Redis    │ (shared rate limits)
+                    └─────────────┘
+```
+
+```bash
+# Add more VMs
 VM 1 (Primary): 129.213.49.128
 VM 2 (Secondary): <new-ip>
 VM 3 (Tertiary): <new-ip>
 
-# Load balancer
+# Oracle Cloud Load Balancer
 oci lb load-balancer create \
   --compartment-id <compartment> \
   --display-name codequal-lb \
   --shape flexible \
   --backend-sets '...'
 ```
+
+### Horizontal Scaling (Phase 2: Job Queue)
+
+For high-volume usage (100+ concurrent users):
+
+```
+     ┌─────────┐         ┌─────────────┐
+     │   API   │─────────▶│  Bull Queue │
+     └─────────┘         └──────┬──────┘
+                    ┌──────────┼──────────┐
+                    ▼          ▼          ▼
+              ┌─────────┐┌─────────┐┌─────────┐
+              │Worker 1 ││Worker 2 ││Worker 3 │
+              │SpotBugs ││  PMD    ││ ESLint  │
+              └─────────┘└─────────┘└─────────┘
+```
+
+**Benefits:**
+- PRO users get priority queue
+- Dedicated workers for heavy tools
+- Scales independently from API
+- Handles burst traffic gracefully
 
 ### Vertical Scaling
 
@@ -411,7 +473,19 @@ oci lb load-balancer create \
 oci compute instance update \
   --instance-id <instance-id> \
   --shape-config '{"ocpus":8,"memoryInGBs":48}'
+
+# New capacity after upgrade:
+# Concurrent analyses: ~12 (basic tier)
+# Analyses per minute: ~120
 ```
+
+### Kubernetes (Phase 3: Enterprise Scale)
+
+For 1000+ concurrent users:
+- HPA (Horizontal Pod Autoscaler)
+- Pod per language for isolation
+- Auto-scaling based on queue depth
+- Multi-region deployment
 
 ---
 

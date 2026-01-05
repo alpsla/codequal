@@ -266,8 +266,10 @@ function updateTrackerSummary(tracker: TrackerData): void {
 // ============================================================================
 
 function createApiClient(): AxiosInstance {
+  // Ensure base URL includes /api/v9 prefix for V9 endpoints
+  const baseUrl = API_BASE_URL.endsWith('/api/v9') ? API_BASE_URL : `${API_BASE_URL}/api/v9`;
   return axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: baseUrl,
     timeout: TIMEOUT_MS,
     headers: { 'Content-Type': 'application/json' }
   });

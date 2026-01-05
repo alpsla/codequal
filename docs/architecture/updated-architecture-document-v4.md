@@ -31,7 +31,94 @@ This document describes the production-ready architecture for CodeQual V9, featu
 - **Language-Agnostic**: Easy to add TypeScript, Python, Go (1 method update)
 - **LLM Enhancement**: Use AI for synthesis and recommendations, not raw analysis
 
-## Recent Updates (2025-12-19)
+## Recent Updates (2026-01-04)
+
+### Dynamic Rate Limiting & Scaling (Session 75) ✅ COMPLETE
+
+**What Changed:**
+1. ✅ **Dynamic Timeouts** → Tool-specific timeouts based on tool type AND repository size
+2. ✅ **Per-Tool Concurrency** → Each tool has its own max concurrent limit
+3. ✅ **CPU-Aware Limits** → Global limits scale with available CPU cores
+4. ✅ **User Tier Quotas** → Basic/Pro/Enterprise with different limits
+5. ✅ **Environment Configuration** → All settings configurable via environment variables
+
+**Key Configuration (generous defaults for testing - will be tuned based on monitoring):**
+```typescript
+// Tool-specific base timeouts (in milliseconds)
+TOOL_TIMEOUT_CONFIGS = {
+  spotbugs: { baseTimeoutMs: 300000, maxConcurrent: 4 },  // 5 min - compilation required
+  clippy:   { baseTimeoutMs: 300000, maxConcurrent: 4 },  // 5 min - compilation required
+  pmd:      { baseTimeoutMs: 120000, maxConcurrent: 8 },  // 2 min
+  eslint:   { baseTimeoutMs: 60000,  maxConcurrent: 12 }, // 1 min
+  ruff:     { baseTimeoutMs: 60000,  maxConcurrent: 12 }, // 1 min
+}
+
+// Repo size multipliers
+REPO_SIZE_MULTIPLIERS = {
+  small: 1,      // < 10k lines
+  medium: 2,     // 10k-50k lines
+  large: 4,      // 50k-200k lines
+  enterprise: 8  // 200k+ lines
+}
+
+// User tier quotas (generous for testing)
+USER_TIER_QUOTAS = {
+  basic:      { maxPerMinute: 60,   maxConcurrent: 6 },
+  pro:        { maxPerMinute: 200,  maxConcurrent: 20 },
+  enterprise: { maxPerMinute: 1000, maxConcurrent: 100 }
+}
+```
+
+**Monitoring for Tuning:**
+- Execution metrics are collected automatically
+- Call `flushMetricsToLog()` to see avg/p95/max times per tool
+- Use data from multi-language tests to tune rate limits
+
+**Environment Variables:**
+- `CODEQUAL_USER_TIER`: basic | pro | enterprise
+- `CODEQUAL_REPO_SIZE`: small | medium | large | enterprise
+- `CODEQUAL_ESTIMATED_LINES`: number (auto-classifies repo size)
+- `CODEQUAL_MAX_PER_MINUTE`: override per-minute limit
+- `CODEQUAL_MAX_CONCURRENT`: override concurrent limit
+
+**Files:**
+- `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts` - Complete rate limiting system
+
+---
+
+### Security Hardening & Code Snippet Improvements (Session 74) ✅ COMPLETE
+
+**What Changed:**
+1. ✅ **Secure File Permissions** → Mode 0600 for temp files, 0700 for directories
+2. ✅ **Command Injection Prevention** → Using `spawn` with args array instead of shell
+3. ✅ **Path Traversal Prevention** → Validates paths stay within allowed directory
+4. ✅ **Secure Random Filenames** → Using `crypto.randomBytes()` for temp files
+5. ✅ **GitHub API Fallback** → Fetches code snippets when local files unavailable
+6. ✅ **Identical Code Detection** → Detects >95% similar before/after diffs
+
+**Security Flow:**
+```
+1. Rate Limiter checks (dynamic, tier-based)
+   ↓ (Reject if exceeded)
+2. Generate secure random filename (crypto.randomBytes)
+   ↓
+3. Validate path (no traversal, within temp dir)
+   ↓
+4. Write file with mode 0600 (owner read/write only)
+   ↓
+5. Execute tool via spawn (no shell, args array)
+   ↓
+6. Cleanup: overwrite with zeros, then unlink
+```
+
+**Files:**
+- `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts` - Security hardening
+- `packages/agents/src/two-branch/utils/code-snippet-extractor.ts` - GitHub fallback
+- `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts` - Similarity detection
+
+---
+
+## Previous Updates (2025-12-19)
 
 ### Fix Verification & Unfixed Issue Handler (Session 61) ✅ COMPLETE
 

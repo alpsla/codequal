@@ -30,8 +30,15 @@ const SECURE_FILE_MODE = 0o600;
 const SECURE_DIR_MODE = 0o700;
 
 // ============================================================================
-// Security: Rate Limiting
+// Security: Rate Limiting with Dynamic Configuration
+// SESSION 75: Dynamic timeouts based on tool type + repo size
 // ============================================================================
+
+/** User tier for rate limiting quotas */
+type UserTier = 'basic' | 'pro' | 'enterprise';
+
+/** Repository size category */
+type RepoSize = 'small' | 'medium' | 'large' | 'enterprise';
 
 interface RateLimitConfig {
   /** Maximum executions per minute */
@@ -42,60 +49,348 @@ interface RateLimitConfig {
   timeoutMs: number;
 }
 
+/** Tool-specific timeout and concurrency configuration */
+interface ToolTimeoutConfig {
+  /** Base timeout in milliseconds */
+  baseTimeoutMs: number;
+  /** Maximum concurrent executions for this tool */
+  maxConcurrent: number;
+  /** Whether tool requires compilation */
+  requiresCompilation: boolean;
+}
+
+/**
+ * Per-tool timeout configurations
+ * SESSION 75: Initial generous defaults - will be tuned based on monitoring data
+ * TODO: Collect actual timing data during multi-language tests and adjust
+ */
+const TOOL_TIMEOUT_CONFIGS: Record<string, ToolTimeoutConfig> = {
+  // Heavy tools requiring compilation - GENEROUS timeouts for large repos
+  spotbugs: { baseTimeoutMs: 300000, maxConcurrent: 4, requiresCompilation: true },  // 5 min base
+
+  // Java static analysis (no compilation)
+  pmd: { baseTimeoutMs: 120000, maxConcurrent: 8, requiresCompilation: false },       // 2 min base
+  checkstyle: { baseTimeoutMs: 90000, maxConcurrent: 8, requiresCompilation: false }, // 1.5 min base
+
+  // JavaScript/TypeScript (fast)
+  eslint: { baseTimeoutMs: 60000, maxConcurrent: 12, requiresCompilation: false },    // 1 min base
+  tsc: { baseTimeoutMs: 120000, maxConcurrent: 8, requiresCompilation: false },       // 2 min base
+
+  // Python (generally fast)
+  ruff: { baseTimeoutMs: 60000, maxConcurrent: 12, requiresCompilation: false },      // 1 min base
+  pylint: { baseTimeoutMs: 90000, maxConcurrent: 8, requiresCompilation: false },     // 1.5 min base
+  bandit: { baseTimeoutMs: 90000, maxConcurrent: 8, requiresCompilation: false },     // 1.5 min base
+  mypy: { baseTimeoutMs: 120000, maxConcurrent: 8, requiresCompilation: false },      // 2 min base
+
+  // Go tools
+  'golangci-lint': { baseTimeoutMs: 180000, maxConcurrent: 6, requiresCompilation: true }, // 3 min base
+  gosec: { baseTimeoutMs: 120000, maxConcurrent: 8, requiresCompilation: false },     // 2 min base
+
+  // Rust (requires compilation)
+  clippy: { baseTimeoutMs: 300000, maxConcurrent: 4, requiresCompilation: true },     // 5 min base
+
+  // Ruby
+  rubocop: { baseTimeoutMs: 90000, maxConcurrent: 8, requiresCompilation: false },    // 1.5 min base
+  brakeman: { baseTimeoutMs: 180000, maxConcurrent: 6, requiresCompilation: false },  // 3 min base
+
+  // PHP
+  phpstan: { baseTimeoutMs: 120000, maxConcurrent: 8, requiresCompilation: false },   // 2 min base
+};
+
+/** Repo size multipliers for timeout calculation */
+const REPO_SIZE_MULTIPLIERS: Record<RepoSize, number> = {
+  small: 1,      // < 10k lines
+  medium: 2,     // 10k-50k lines
+  large: 4,      // 50k-200k lines
+  enterprise: 8, // 200k+ lines
+};
+
+/**
+ * User tier quotas - GENEROUS for initial testing
+ * SESSION 75: Will be tuned based on monitoring data
+ */
+const USER_TIER_QUOTAS: Record<UserTier, { maxPerMinute: number; maxConcurrent: number }> = {
+  basic: { maxPerMinute: 60, maxConcurrent: 6 },      // Generous for testing
+  pro: { maxPerMinute: 200, maxConcurrent: 20 },      // Generous for testing
+  enterprise: { maxPerMinute: 1000, maxConcurrent: 100 }, // Very generous for testing
+};
+
+// ============================================================================
+// Monitoring: Collect timing data for future tuning
+// SESSION 75: Simple timing collection for rate limit optimization
+// ============================================================================
+
+interface ToolExecutionMetric {
+  tool: string;
+  repoSize: RepoSize;
+  durationMs: number;
+  succeeded: boolean;
+  timedOut: boolean;
+  timestamp: number;
+}
+
+// In-memory metrics collection (will be flushed to logs periodically)
+const executionMetrics: ToolExecutionMetric[] = [];
+const MAX_METRICS_IN_MEMORY = 1000;
+
+/**
+ * Record a tool execution metric for future analysis
+ */
+function recordExecutionMetric(metric: ToolExecutionMetric): void {
+  executionMetrics.push(metric);
+
+  // Flush to console when buffer is full
+  if (executionMetrics.length >= MAX_METRICS_IN_MEMORY) {
+    flushMetricsToLog();
+  }
+}
+
+/**
+ * Flush collected metrics to console log for analysis
+ */
+function flushMetricsToLog(): void {
+  if (executionMetrics.length === 0) return;
+
+  // Calculate summary statistics
+  const byTool = new Map<string, { durations: number[]; timeouts: number; successes: number }>();
+
+  for (const metric of executionMetrics) {
+    const key = `${metric.tool}:${metric.repoSize}`;
+    if (!byTool.has(key)) {
+      byTool.set(key, { durations: [], timeouts: 0, successes: 0 });
+    }
+    const stats = byTool.get(key)!;
+    stats.durations.push(metric.durationMs);
+    if (metric.timedOut) stats.timeouts++;
+    if (metric.succeeded) stats.successes++;
+  }
+
+  // Log summary
+  console.log('[ToolRevalidator] Execution Metrics Summary:');
+  byTool.forEach((stats, key) => {
+    const avgDuration = stats.durations.reduce((a, b) => a + b, 0) / stats.durations.length;
+    const maxDuration = Math.max(...stats.durations);
+    const p95Index = Math.floor(stats.durations.length * 0.95);
+    stats.durations.sort((a, b) => a - b);
+    const p95Duration = stats.durations[p95Index] || maxDuration;
+
+    console.log(`  ${key}: avg=${Math.round(avgDuration)}ms, p95=${Math.round(p95Duration)}ms, max=${Math.round(maxDuration)}ms, timeouts=${stats.timeouts}/${stats.durations.length}`);
+  });
+
+  // Clear buffer
+  executionMetrics.length = 0;
+}
+
+/**
+ * Get current metrics buffer (for testing/debugging)
+ */
+function getExecutionMetrics(): ToolExecutionMetric[] {
+  return [...executionMetrics];
+}
+
+/** Default configuration (used when no dynamic config provided) */
 const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   maxPerMinute: 30,
-  maxConcurrent: 5,
-  timeoutMs: 30000,
+  maxConcurrent: Math.max(2, Math.floor(os.cpus().length * 0.75)), // 75% of CPU cores
+  timeoutMs: 60000,
 };
+
+/**
+ * Calculate dynamic timeout based on tool and repository size
+ * SESSION 75: Smart timeout calculation
+ */
+function calculateDynamicTimeout(tool: string, repoSize: RepoSize = 'medium'): number {
+  const normalizedTool = tool.toLowerCase().replace(/-/g, '');
+
+  // Find matching tool config
+  let toolConfig: ToolTimeoutConfig | undefined;
+  for (const [name, config] of Object.entries(TOOL_TIMEOUT_CONFIGS)) {
+    if (name.toLowerCase().replace(/-/g, '') === normalizedTool) {
+      toolConfig = config;
+      break;
+    }
+  }
+
+  // Default config for unknown tools
+  if (!toolConfig) {
+    toolConfig = { baseTimeoutMs: 60000, maxConcurrent: 4, requiresCompilation: false };
+  }
+
+  const multiplier = REPO_SIZE_MULTIPLIERS[repoSize];
+  return toolConfig.baseTimeoutMs * multiplier;
+}
+
+/**
+ * Get per-tool concurrency limit
+ * SESSION 75: Tool-specific concurrency
+ */
+function getToolConcurrencyLimit(tool: string): number {
+  const normalizedTool = tool.toLowerCase().replace(/-/g, '');
+
+  for (const [name, config] of Object.entries(TOOL_TIMEOUT_CONFIGS)) {
+    if (name.toLowerCase().replace(/-/g, '') === normalizedTool) {
+      return config.maxConcurrent;
+    }
+  }
+
+  return 4; // Default for unknown tools
+}
+
+/**
+ * Determine repository size category from line count
+ * SESSION 75: Repo size classification
+ */
+function classifyRepoSize(lineCount: number): RepoSize {
+  if (lineCount < 10000) return 'small';
+  if (lineCount < 50000) return 'medium';
+  if (lineCount < 200000) return 'large';
+  return 'enterprise';
+}
+
+/**
+ * Get user tier quotas (CPU-aware)
+ * SESSION 75: CPU-aware limits with user tiers
+ */
+function getUserTierConfig(tier: UserTier = 'basic'): { maxPerMinute: number; maxConcurrent: number } {
+  const baseQuota = USER_TIER_QUOTAS[tier];
+  const cpuCount = os.cpus().length;
+
+  // Scale concurrent limit based on available CPUs
+  const cpuAdjustedConcurrent = Math.min(
+    baseQuota.maxConcurrent,
+    Math.max(2, Math.floor(cpuCount * 0.75))
+  );
+
+  return {
+    maxPerMinute: baseQuota.maxPerMinute,
+    maxConcurrent: cpuAdjustedConcurrent,
+  };
+}
 
 class RateLimiter {
   private executions: number[] = [];
   private concurrent = 0;
   private config: RateLimitConfig;
+  private userTier: UserTier;
+  private repoSize: RepoSize;
+  // Track per-tool concurrent executions
+  private toolConcurrent: Map<string, number> = new Map();
 
-  constructor(config: RateLimitConfig = DEFAULT_RATE_LIMIT) {
+  constructor(
+    config: RateLimitConfig = DEFAULT_RATE_LIMIT,
+    userTier: UserTier = 'basic',
+    repoSize: RepoSize = 'medium'
+  ) {
     this.config = config;
+    this.userTier = userTier;
+    this.repoSize = repoSize;
+
+    // Override with user tier quotas
+    const tierConfig = getUserTierConfig(userTier);
+    this.config.maxPerMinute = tierConfig.maxPerMinute;
+    this.config.maxConcurrent = tierConfig.maxConcurrent;
   }
 
   /**
    * Check if execution is allowed and acquire a slot
+   * SESSION 75: Now supports per-tool limits
    * @throws Error if rate limit exceeded
    */
-  async acquire(): Promise<void> {
+  async acquire(tool?: string): Promise<void> {
     const now = Date.now();
     const oneMinuteAgo = now - 60000;
 
     // Clean up old executions
     this.executions = this.executions.filter(ts => ts > oneMinuteAgo);
 
-    // Check rate limit
+    // Check global rate limit
     if (this.executions.length >= this.config.maxPerMinute) {
       throw new Error(`Rate limit exceeded: ${this.config.maxPerMinute} executions per minute`);
     }
 
-    // Check concurrent limit
+    // Check global concurrent limit
     if (this.concurrent >= this.config.maxConcurrent) {
       throw new Error(`Concurrent limit exceeded: ${this.config.maxConcurrent} concurrent executions`);
+    }
+
+    // Check per-tool concurrent limit if tool specified
+    if (tool) {
+      const toolLimit = getToolConcurrencyLimit(tool);
+      const currentToolConcurrent = this.toolConcurrent.get(tool) || 0;
+      if (currentToolConcurrent >= toolLimit) {
+        throw new Error(`Tool ${tool} concurrent limit exceeded: ${toolLimit} max`);
+      }
+      this.toolConcurrent.set(tool, currentToolConcurrent + 1);
     }
 
     this.executions.push(now);
     this.concurrent++;
   }
 
-  /** Release execution slot */
-  release(): void {
+  /**
+   * Release execution slot
+   * SESSION 75: Now supports per-tool tracking
+   */
+  release(tool?: string): void {
     this.concurrent = Math.max(0, this.concurrent - 1);
+
+    if (tool) {
+      const currentToolConcurrent = this.toolConcurrent.get(tool) || 0;
+      this.toolConcurrent.set(tool, Math.max(0, currentToolConcurrent - 1));
+    }
+  }
+
+  /**
+   * Get dynamic timeout for a specific tool
+   * SESSION 75: Calculates timeout based on tool type and repo size
+   */
+  getDynamicTimeout(tool: string): number {
+    return calculateDynamicTimeout(tool, this.repoSize);
+  }
+
+  /**
+   * Set repository size (affects timeout calculations)
+   */
+  setRepoSize(size: RepoSize): void {
+    this.repoSize = size;
+  }
+
+  /**
+   * Set user tier (affects quotas)
+   */
+  setUserTier(tier: UserTier): void {
+    this.userTier = tier;
+    const tierConfig = getUserTierConfig(tier);
+    this.config.maxPerMinute = tierConfig.maxPerMinute;
+    this.config.maxConcurrent = tierConfig.maxConcurrent;
   }
 
   /** Get current stats */
-  getStats(): { executionsLastMinute: number; concurrent: number; config: RateLimitConfig } {
+  getStats(): {
+    executionsLastMinute: number;
+    concurrent: number;
+    config: RateLimitConfig;
+    userTier: UserTier;
+    repoSize: RepoSize;
+    toolConcurrent: Record<string, number>;
+  } {
     const now = Date.now();
     const oneMinuteAgo = now - 60000;
     this.executions = this.executions.filter(ts => ts > oneMinuteAgo);
+
+    // Convert Map to plain object
+    const toolConcurrentObj: Record<string, number> = {};
+    this.toolConcurrent.forEach((value, key) => {
+      toolConcurrentObj[key] = value;
+    });
+
     return {
       executionsLastMinute: this.executions.length,
       concurrent: this.concurrent,
       config: this.config,
+      userTier: this.userTier,
+      repoSize: this.repoSize,
+      toolConcurrent: toolConcurrentObj,
     };
   }
 }
@@ -785,16 +1080,35 @@ function parseToolOutput(
 // Main Revalidator Class
 // ============================================================================
 
+/** Options for creating a ToolRevalidator */
+export interface ToolRevalidatorOptions {
+  /** Rate limit configuration overrides */
+  rateLimitConfig?: Partial<RateLimitConfig>;
+  /** User tier for quota limits */
+  userTier?: UserTier;
+  /** Repository size for timeout calculation */
+  repoSize?: RepoSize;
+  /** Estimated lines of code (used to auto-classify repo size) */
+  estimatedLineCount?: number;
+}
+
 export class ToolRevalidator {
   private tempDir: string;
   private rateLimiter: RateLimiter;
 
-  constructor(rateLimitConfig?: Partial<RateLimitConfig>) {
+  constructor(options: ToolRevalidatorOptions = {}) {
     this.tempDir = path.join(os.tmpdir(), 'codequal-fix-validation');
-    this.rateLimiter = new RateLimiter({
-      ...DEFAULT_RATE_LIMIT,
-      ...rateLimitConfig,
-    });
+
+    // Auto-classify repo size if line count provided
+    const repoSize = options.estimatedLineCount
+      ? classifyRepoSize(options.estimatedLineCount)
+      : options.repoSize || 'medium';
+
+    this.rateLimiter = new RateLimiter(
+      { ...DEFAULT_RATE_LIMIT, ...options.rateLimitConfig },
+      options.userTier || 'basic',
+      repoSize
+    );
 
     // Ensure temp directory exists with secure permissions (owner only: 0700)
     if (!fs.existsSync(this.tempDir)) {
@@ -810,6 +1124,29 @@ export class ToolRevalidator {
   }
 
   /**
+   * Update repository size (affects timeout calculations)
+   * SESSION 75: Allow runtime updates
+   */
+  setRepoSize(size: RepoSize): void {
+    this.rateLimiter.setRepoSize(size);
+  }
+
+  /**
+   * Update user tier (affects quota limits)
+   * SESSION 75: Allow runtime updates
+   */
+  setUserTier(tier: UserTier): void {
+    this.rateLimiter.setUserTier(tier);
+  }
+
+  /**
+   * Get current rate limiter statistics
+   */
+  getStats(): ReturnType<RateLimiter['getStats']> {
+    return this.rateLimiter.getStats();
+  }
+
+  /**
    * Validate a fix by re-running the original tool
    *
    * Flow:
@@ -819,11 +1156,12 @@ export class ToolRevalidator {
    */
   async validateFix(request: ToolRevalidationRequest): Promise<ToolRevalidationResult> {
     const startTime = Date.now();
-    console.log(`[ToolRevalidator] Validating fix for ${request.ruleId} using ${request.tool}`);
+    const dynamicTimeout = this.rateLimiter.getDynamicTimeout(request.tool);
+    console.log(`[ToolRevalidator] Validating fix for ${request.ruleId} using ${request.tool} (timeout: ${dynamicTimeout}ms)`);
 
-    // Apply rate limiting
+    // Apply rate limiting with per-tool tracking
     try {
-      await this.rateLimiter.acquire();
+      await this.rateLimiter.acquire(request.tool);
     } catch (rateLimitError) {
       console.warn(`[ToolRevalidator] ${(rateLimitError as Error).message}`);
       return {
@@ -902,14 +1240,14 @@ export class ToolRevalidator {
         // Step 1: Run tool on ORIGINAL code to get baseline
         console.log(`[ToolRevalidator] Step 1: Getting baseline issues from original code`);
         this.writeSecureFile(tempFilePath, request.originalCode);
-        const originalResult = await this.runToolSafe(request.tool, tempFilePath, command);
+        const originalResult = await this.runToolSafe(request.tool, tempFilePath, command, dynamicTimeout);
         const originalIssues = parseToolOutput(request.tool, originalResult.stdout, request.language);
         console.log(`[ToolRevalidator] Baseline: ${originalIssues.length} issues found`);
 
         // Step 2: Run tool on FIXED code
         console.log(`[ToolRevalidator] Step 2: Running tool on fixed code`);
         this.writeSecureFile(tempFilePath, request.fixedCode);
-        const fixedResult = await this.runToolSafe(request.tool, tempFilePath, command);
+        const fixedResult = await this.runToolSafe(request.tool, tempFilePath, command, dynamicTimeout);
         const fixedIssues = parseToolOutput(request.tool, fixedResult.stdout, request.language);
         console.log(`[ToolRevalidator] After fix: ${fixedIssues.length} issues found`);
 
@@ -971,8 +1309,8 @@ export class ToolRevalidator {
         }
       }
     } finally {
-      // Always release rate limiter
-      this.rateLimiter.release();
+      // Always release rate limiter with per-tool tracking
+      this.rateLimiter.release(request.tool);
     }
   }
 
@@ -999,11 +1337,13 @@ export class ToolRevalidator {
   /**
    * Run a tool safely using spawn with args array to prevent command injection
    * SESSION 74: Security hardening - replaces shell command interpolation
+   * SESSION 75: Now uses dynamic timeout based on tool and repo size
    */
   private async runToolSafe(
     tool: string,
     filePath: string,
-    _commandTemplate: string
+    _commandTemplate: string,
+    dynamicTimeout?: number
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     // Get tool-specific configuration for safe execution
     const toolConfig = this.getToolConfig(tool);
@@ -1019,7 +1359,9 @@ export class ToolRevalidator {
     const args = [...toolConfig.args, filePath, ...toolConfig.suffixArgs];
 
     return new Promise((resolve) => {
-      const timeoutMs = this.rateLimiter.getStats().config.timeoutMs;
+      // Use dynamic timeout if provided, otherwise fall back to rate limiter config
+      const timeoutMs = dynamicTimeout || this.rateLimiter.getDynamicTimeout(tool);
+      const startTime = Date.now();
       let stdout = '';
       let stderr = '';
       let timedOut = false;
@@ -1056,6 +1398,18 @@ export class ToolRevalidator {
 
       proc.on('close', (code) => {
         clearTimeout(timeout);
+        const durationMs = Date.now() - startTime;
+
+        // Record metric for monitoring
+        recordExecutionMetric({
+          tool,
+          repoSize: 'medium', // Default - will be updated when repo size is known
+          durationMs,
+          succeeded: !timedOut && code === 0,
+          timedOut,
+          timestamp: Date.now(),
+        });
+
         if (timedOut) {
           resolve({
             stdout,
@@ -1299,6 +1653,63 @@ export class ToolRevalidator {
 }
 
 // ============================================================================
+// Environment-Based Configuration
+// SESSION 75: Load configuration from environment variables
+// ============================================================================
+
+/**
+ * Load rate limit configuration from environment variables
+ * Allows runtime configuration without code changes
+ */
+function loadEnvConfig(): Partial<ToolRevalidatorOptions> {
+  const envConfig: Partial<ToolRevalidatorOptions> = {};
+
+  // User tier from environment
+  const envTier = process.env.CODEQUAL_USER_TIER?.toLowerCase();
+  if (envTier === 'basic' || envTier === 'pro' || envTier === 'enterprise') {
+    envConfig.userTier = envTier;
+  }
+
+  // Repo size from environment
+  const envRepoSize = process.env.CODEQUAL_REPO_SIZE?.toLowerCase();
+  if (envRepoSize === 'small' || envRepoSize === 'medium' || envRepoSize === 'large' || envRepoSize === 'enterprise') {
+    envConfig.repoSize = envRepoSize;
+  }
+
+  // Estimated line count from environment
+  const envLineCount = process.env.CODEQUAL_ESTIMATED_LINES;
+  if (envLineCount) {
+    const parsed = parseInt(envLineCount, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      envConfig.estimatedLineCount = parsed;
+    }
+  }
+
+  // Rate limit overrides from environment
+  const envMaxPerMinute = process.env.CODEQUAL_MAX_PER_MINUTE;
+  const envMaxConcurrent = process.env.CODEQUAL_MAX_CONCURRENT;
+  const envTimeoutMs = process.env.CODEQUAL_TIMEOUT_MS;
+
+  if (envMaxPerMinute || envMaxConcurrent || envTimeoutMs) {
+    envConfig.rateLimitConfig = {};
+    if (envMaxPerMinute) {
+      const parsed = parseInt(envMaxPerMinute, 10);
+      if (!isNaN(parsed) && parsed > 0) envConfig.rateLimitConfig.maxPerMinute = parsed;
+    }
+    if (envMaxConcurrent) {
+      const parsed = parseInt(envMaxConcurrent, 10);
+      if (!isNaN(parsed) && parsed > 0) envConfig.rateLimitConfig.maxConcurrent = parsed;
+    }
+    if (envTimeoutMs) {
+      const parsed = parseInt(envTimeoutMs, 10);
+      if (!isNaN(parsed) && parsed > 0) envConfig.rateLimitConfig.timeoutMs = parsed;
+    }
+  }
+
+  return envConfig;
+}
+
+// ============================================================================
 // Singleton and Factory Functions
 // ============================================================================
 
@@ -1306,10 +1717,21 @@ let revalidatorInstance: ToolRevalidator | null = null;
 
 /**
  * Get the singleton ToolRevalidator instance
+ * SESSION 75: Now uses environment-based configuration
  */
-export function getToolRevalidator(rateLimitConfig?: Partial<RateLimitConfig>): ToolRevalidator {
+export function getToolRevalidator(options?: ToolRevalidatorOptions): ToolRevalidator {
   if (!revalidatorInstance) {
-    revalidatorInstance = new ToolRevalidator(rateLimitConfig);
+    // Merge environment config with provided options (options take precedence)
+    const envConfig = loadEnvConfig();
+    const mergedOptions: ToolRevalidatorOptions = {
+      ...envConfig,
+      ...options,
+      rateLimitConfig: {
+        ...envConfig.rateLimitConfig,
+        ...options?.rateLimitConfig,
+      },
+    };
+    revalidatorInstance = new ToolRevalidator(mergedOptions);
   }
   return revalidatorInstance;
 }
@@ -1317,28 +1739,65 @@ export function getToolRevalidator(rateLimitConfig?: Partial<RateLimitConfig>): 
 /**
  * Create a new ToolRevalidator instance with custom config
  * Use this when you need independent rate limiting
+ * SESSION 75: Now uses environment-based configuration as base
  */
-export function createToolRevalidator(rateLimitConfig?: Partial<RateLimitConfig>): ToolRevalidator {
-  return new ToolRevalidator(rateLimitConfig);
+export function createToolRevalidator(options?: ToolRevalidatorOptions): ToolRevalidator {
+  // Merge environment config with provided options (options take precedence)
+  const envConfig = loadEnvConfig();
+  const mergedOptions: ToolRevalidatorOptions = {
+    ...envConfig,
+    ...options,
+    rateLimitConfig: {
+      ...envConfig.rateLimitConfig,
+      ...options?.rateLimitConfig,
+    },
+  };
+  return new ToolRevalidator(mergedOptions);
+}
+
+/**
+ * Reset the singleton instance (useful for testing)
+ */
+export function resetToolRevalidatorSingleton(): void {
+  revalidatorInstance = null;
 }
 
 /**
  * Get global rate limiter statistics
  */
-export function getRateLimiterStats(): { executionsLastMinute: number; concurrent: number; config: RateLimitConfig } {
+export function getRateLimiterStats(): ReturnType<RateLimiter['getStats']> {
   return globalRateLimiter.getStats();
 }
 
-// Export types, constants, and utility functions
+// Export types (using export type for type aliases)
+export type { RateLimitConfig, ToolAvailability, ToolTimeoutConfig };
+
+// SESSION 75: Export new dynamic configuration types
+export type { UserTier, RepoSize };
+
+// Export constants
 export {
-  RateLimitConfig,
   DEFAULT_RATE_LIMIT,
   SECURE_FILE_MODE,
   SECURE_DIR_MODE,
-  ToolAvailability,
+  // SESSION 75: New configuration constants
+  TOOL_TIMEOUT_CONFIGS,
+  REPO_SIZE_MULTIPLIERS,
+  USER_TIER_QUOTAS,
 };
 
 // Export utility functions
-export { checkToolAvailability, clearToolAvailabilityCache };
+export {
+  checkToolAvailability,
+  clearToolAvailabilityCache,
+  // SESSION 75: New utility functions
+  calculateDynamicTimeout,
+  getToolConcurrencyLimit,
+  classifyRepoSize,
+  getUserTierConfig,
+  // SESSION 75: Monitoring functions
+  flushMetricsToLog,
+  getExecutionMetrics,
+};
 
 export default ToolRevalidator;

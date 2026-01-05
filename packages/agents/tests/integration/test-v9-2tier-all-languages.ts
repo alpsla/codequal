@@ -1,798 +1,344 @@
-#!/usr/bin/env npx ts-node
 /**
- * V9 2-Tier Analysis Test for All Languages (API-Based)
- *
- * Session 69: Comprehensive testing across all supported languages
- * - Uses V9 API service for all analysis (not local orchestrators)
- * - Tracks pattern growth (baseline: 640)
- * - Measures performance per language (time, issues/KLOC)
- * - Generates BASIC and PRO tier reports for manual review
- * - Saves metrics to tracker file for later analysis
+ * V9 2-Tier Test - All Languages via API
+ * Tests BASIC and PRO tier flows for multiple languages
+ * Saves reports for pattern collection
  *
  * Usage:
- *   npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+ *   API_BASE_URL=http://localhost:3000 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
  *
  *   # Single language
- *   LANG=java npx ts-node tests/integration/test-v9-2tier-all-languages.ts
- *
- *   # Use local API instead of cloud
- *   API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
- *
- *   # Dry run (mock data)
- *   DRY_RUN=true npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+ *   LANG=java API_BASE_URL=http://localhost:3000 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
  */
 
-import dotenv from 'dotenv';
-import * as path from 'path';
+import * as https from 'https';
+import * as http from 'http';
 import * as fs from 'fs';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import axios, { AxiosInstance } from 'axios';
+import * as path from 'path';
 
-// Load environment
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000';
+const LANG_FILTER = process.env.LANG?.toLowerCase();
 
-// Enable debug mode for E2E testing
-process.env.DEBUG_MODE = 'true';
+// Test repositories for each language
+const TEST_REPOS: Record<string, { url: string; pr: number; name: string }> = {
+  java: {
+    url: 'https://github.com/spring-projects/spring-petclinic',
+    pr: 950,
+    name: 'spring-petclinic'
+  },
+  typescript: {
+    url: 'https://github.com/expressjs/express',
+    pr: 5975,
+    name: 'express'
+  },
+  python: {
+    url: 'https://github.com/pallets/flask',
+    pr: 5541,
+    name: 'flask'
+  },
+  go: {
+    url: 'https://github.com/gin-gonic/gin',
+    pr: 3941,
+    name: 'gin'
+  }
+};
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface LanguageConfig {
+interface TestResult {
   language: string;
-  repository: string;
-  prNumber: number | null;
-  expectedTools: string[];
-  estimatedLOC: number;
-}
-
-interface AnalysisMetrics {
-  language: string;
-  repository: string;
-  prNumber: number | null;
-  startTime: string;
-  endTime: string;
-  durationMs: number;
-  issuesFound: number;
-  issuesByCategory: Record<string, number>;
-  issuesBySeverity: Record<string, number>;
-  issuesFixed: number;
-  patternsBefore: number;
-  patternsAfter: number;
-  patternsAdded: number;
-  linesOfCode: number;
-  issuesPerKLOC: number;
-  toolsExecuted: string[];
+  tier: string;
+  analysisId: string;
+  issues: number;
+  fixed?: number;
   score: number;
-  decision: string;
-  success: boolean;
+  duration: number;
+  passed: boolean;
   error?: string;
+  report?: any;
 }
 
-interface TrackerData {
-  session: {
-    id: string;
-    date: string;
-    purpose: string;
-  };
-  baseline: {
-    patternCount: number;
-    timestamp: string;
-  };
-  current: {
-    patternCount: number;
-    newPatternsAdded: number;
-    timestamp: string | null;
-  };
-  languages: Record<string, {
-    status: string;
-    repository: string;
-    prNumber: number | null;
-    metrics: AnalysisMetrics | null;
-  }>;
-  summary: {
-    totalLanguages: number;
-    completedLanguages: number;
-    totalIssuesFound: number;
-    totalIssuesFixed: number;
-    totalPatternsAdded: number;
-    avgAnalysisTime: number;
-    avgIssuesPerKLOC: number;
-  };
-}
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-const LANGUAGE_CONFIGS: LanguageConfig[] = [
-  {
-    language: 'java',
-    repository: 'https://github.com/spring-projects/spring-petclinic',
-    prNumber: 950,
-    expectedTools: ['pmd', 'checkstyle', 'spotbugs', 'semgrep', 'dependency-check'],
-    estimatedLOC: 15000
-  },
-  {
-    language: 'typescript',
-    repository: 'https://github.com/expressjs/express',
-    prNumber: null, // Will use local branch
-    expectedTools: ['eslint', 'semgrep', 'npm-audit'],
-    estimatedLOC: 25000
-  },
-  {
-    language: 'python',
-    repository: 'https://github.com/pallets/flask',
-    prNumber: null,
-    expectedTools: ['ruff', 'bandit', 'pip-audit', 'semgrep'],
-    estimatedLOC: 20000
-  },
-  {
-    language: 'go',
-    repository: 'https://github.com/gin-gonic/gin',
-    prNumber: null,
-    expectedTools: ['golangci-lint', 'gosec', 'govulncheck'],
-    estimatedLOC: 30000
-  },
-  {
-    language: 'rust',
-    repository: 'https://github.com/tokio-rs/tokio',
-    prNumber: null,
-    expectedTools: ['clippy', 'cargo-audit'],
-    estimatedLOC: 100000
-  },
-  {
-    language: 'ruby',
-    repository: 'https://github.com/sinatra/sinatra',
-    prNumber: null,
-    expectedTools: ['rubocop', 'brakeman', 'bundler-audit'],
-    estimatedLOC: 10000
-  },
-  {
-    language: 'php',
-    repository: 'https://github.com/laravel/framework',
-    prNumber: null,
-    expectedTools: ['phpstan', 'semgrep', 'composer-audit'],
-    estimatedLOC: 200000
-  }
-];
-
-const OUTPUT_DIR = path.join(__dirname, 'v9-2tier-reports');
-const TRACKER_PATH = path.join(__dirname, 'v9-analysis-metrics-tracker.json');
-
-// ============================================================================
-// SUPABASE HELPERS
-// ============================================================================
-
-function getSupabaseClient(): SupabaseClient | null {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !key) {
-    console.warn('   [WARN] Supabase credentials not found, pattern tracking disabled');
-    return null;
-  }
-
-  return createClient(url, key);
-}
-
-async function getPatternCount(supabase: SupabaseClient | null): Promise<number> {
-  if (!supabase) return 640; // Default baseline
-
-  try {
-    const { count, error } = await supabase
-      .from('fix_patterns')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) throw error;
-    return count || 640;
-  } catch (error) {
-    console.warn(`   [WARN] Could not get pattern count: ${error}`);
-    return 640;
-  }
-}
-
-async function getPatternsByLanguage(supabase: SupabaseClient | null, language: string): Promise<number> {
-  if (!supabase) return 0;
-
-  try {
-    const { count, error } = await supabase
-      .from('fix_patterns')
-      .select('*', { count: 'exact', head: true })
-      .eq('language', language);
-
-    if (error) throw error;
-    return count || 0;
-  } catch {
-    return 0;
-  }
-}
-
-// ============================================================================
-// TRACKER HELPERS
-// ============================================================================
-
-function loadTracker(): TrackerData {
-  if (fs.existsSync(TRACKER_PATH)) {
-    return JSON.parse(fs.readFileSync(TRACKER_PATH, 'utf-8'));
-  }
-
-  // Create default tracker
-  const tracker: TrackerData = {
-    session: {
-      id: `session-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
-      purpose: 'V9 2-tier analysis testing across all languages'
-    },
-    baseline: {
-      patternCount: 640,
-      timestamp: new Date().toISOString()
-    },
-    current: {
-      patternCount: 640,
-      newPatternsAdded: 0,
-      timestamp: null
-    },
-    languages: {},
-    summary: {
-      totalLanguages: LANGUAGE_CONFIGS.length,
-      completedLanguages: 0,
-      totalIssuesFound: 0,
-      totalIssuesFixed: 0,
-      totalPatternsAdded: 0,
-      avgAnalysisTime: 0,
-      avgIssuesPerKLOC: 0
-    }
-  };
-
-  // Initialize language entries
-  for (const config of LANGUAGE_CONFIGS) {
-    tracker.languages[config.language] = {
-      status: 'pending',
-      repository: config.repository.split('/').slice(-2).join('/'),
-      prNumber: config.prNumber,
-      metrics: null
-    };
-  }
-
-  return tracker;
-}
-
-function saveTracker(tracker: TrackerData): void {
-  fs.writeFileSync(TRACKER_PATH, JSON.stringify(tracker, null, 2));
-}
-
-function updateTrackerSummary(tracker: TrackerData): void {
-  const completedLanguages = Object.values(tracker.languages).filter(l => l.status === 'completed');
-
-  tracker.summary.completedLanguages = completedLanguages.length;
-  tracker.summary.totalIssuesFound = completedLanguages.reduce((sum, l) => sum + (l.metrics?.issuesFound || 0), 0);
-  tracker.summary.totalIssuesFixed = completedLanguages.reduce((sum, l) => sum + (l.metrics?.issuesFixed || 0), 0);
-  tracker.summary.totalPatternsAdded = tracker.current.patternCount - tracker.baseline.patternCount;
-
-  if (completedLanguages.length > 0) {
-    tracker.summary.avgAnalysisTime = completedLanguages.reduce((sum, l) => sum + (l.metrics?.durationMs || 0), 0) / completedLanguages.length;
-    tracker.summary.avgIssuesPerKLOC = completedLanguages.reduce((sum, l) => sum + (l.metrics?.issuesPerKLOC || 0), 0) / completedLanguages.length;
-  }
-}
-
-// ============================================================================
-// REPORT GENERATION
-// ============================================================================
-
-async function generateTierReports(
-  metrics: AnalysisMetrics,
-  config: LanguageConfig
-): Promise<{ basic: string; pro: string }> {
-  // Import the tier sample report generator
-  const { generateUnifiedReportSync } = await import('../../src/two-branch/report/unified-report-generator');
-
-  // Create mock analysis for report generation
-  const mockAnalysis = {
-    id: `${config.language}-${Date.now()}`,
-    repositoryUrl: config.repository,
-    prNumber: config.prNumber || 0,
-    prTitle: `${config.language} Analysis`,
-    prAuthor: 'test-user',
-    prBranch: 'feature/test',
-    baseBranch: 'main',
-    mode: 'standard' as const,
-    timestamp: new Date().toISOString(),
-    duration: metrics.durationMs,
-    score: metrics.score,
-    blockingCount: metrics.issuesBySeverity['critical'] || 0 + metrics.issuesBySeverity['high'] || 0,
-    issues: [],
-    language: config.language
-  };
-
-  // Generate BASIC tier report
-  const basicReport = generateUnifiedReportSync(mockAnalysis, undefined, 'basic');
-
-  // Generate PRO tier report
-  const proReport = generateUnifiedReportSync(mockAnalysis, undefined, 'pro');
-
-  // Convert to markdown
-  const basicMarkdown = formatReportToMarkdown(basicReport, 'BASIC', metrics, config);
-  const proMarkdown = formatReportToMarkdown(proReport, 'PRO', metrics, config);
-
-  return { basic: basicMarkdown, pro: proMarkdown };
-}
-
-function formatReportToMarkdown(
-  report: any,
-  tier: string,
-  metrics: AnalysisMetrics,
-  config: LanguageConfig
-): string {
-  const tierBadge = tier === 'PRO' ? '🌟 PRO' : '📋 BASIC';
-  const decisionEmoji = metrics.decision === 'APPROVED' ? '✅' : '⛔';
-
-  return `# V9 Code Quality Report - ${tier} Tier
-
-## Repository Information
-
-**Repository:** [${config.repository.split('/').slice(-2).join('/')}](${config.repository})
-**Language:** ${config.language.toUpperCase()}
-**PR Number:** ${config.prNumber || 'N/A (Local Branch)'}
-**Analysis Date:** ${new Date().toISOString()}
-**Tier:** ${tierBadge}
-
----
-
-## 📊 Executive Summary
-
-### Quality Score
-
-${decisionEmoji} **${metrics.score}/100** - ${metrics.decision}
-
-### Metrics Summary
-
-| Metric | Value |
-|--------|-------|
-| **Issues Found** | ${metrics.issuesFound} |
-| **Issues Fixed** | ${metrics.issuesFixed} |
-| **Lines of Code** | ${metrics.linesOfCode.toLocaleString()} |
-| **Issues per KLOC** | ${metrics.issuesPerKLOC.toFixed(2)} |
-| **Analysis Duration** | ${(metrics.durationMs / 1000).toFixed(1)}s |
-| **Tools Executed** | ${metrics.toolsExecuted.join(', ')} |
-
-### Issues by Severity
-
-| Severity | Count |
-|----------|-------|
-| 🔴 Critical | ${metrics.issuesBySeverity['critical'] || 0} |
-| 🟠 High | ${metrics.issuesBySeverity['high'] || 0} |
-| 🟡 Medium | ${metrics.issuesBySeverity['medium'] || 0} |
-| 🟢 Low | ${metrics.issuesBySeverity['low'] || 0} |
-
-### Issues by Category
-
-| Category | Count |
-|----------|-------|
-| 🆕 NEW | ${metrics.issuesByCategory['NEW'] || 0} |
-| ⚠️ EXISTING_MODIFIED | ${metrics.issuesByCategory['EXISTING_MODIFIED'] || 0} |
-| 📝 EXISTING_REST | ${metrics.issuesByCategory['EXISTING_REST'] || 0} |
-| ✅ RESOLVED | ${metrics.issuesByCategory['RESOLVED'] || 0} |
-
----
-
-## Pattern Growth Tracking
-
-| Metric | Value |
-|--------|-------|
-| **Patterns Before** | ${metrics.patternsBefore} |
-| **Patterns After** | ${metrics.patternsAfter} |
-| **New Patterns Added** | ${metrics.patternsAdded} |
-
----
-
-${tier === 'BASIC' ? `
-## 🔧 IDE Integration (BASIC Tier)
-
-BASIC tier users can apply fixes through their IDE:
-
-- **VS Code**: Use CodeQual extension or import SARIF file
-- **Cursor**: Import LSP code actions
-- **JetBrains**: Use CodeQual plugin
-- **GitLab**: Import Code Quality report
-
-### Export Formats
-
-- LSP Code Actions: \`/api/reports/{id}/lsp\`
-- SARIF 2.1.0: \`/api/reports/{id}/sarif\`
-- GitLab Code Quality: \`/api/reports/{id}/gitlab\`
-
----
-
-## 🚀 Upgrade to PRO
-
-**What PRO adds:**
-- ⚡ One-click auto-fix for all ${metrics.issuesFound} issues
-- ✅ Verified fixes with syntax validation
-- 🔄 Pattern learning from your fixes
-- 📈 Unlimited historical analytics
-
-` : `
-## 🚀 One-Click Auto-Fix (PRO Tier)
-
-All ${metrics.issuesFound} issues can be auto-fixed:
-
-| Issue Type | Count | Auto-Fix Coverage |
-|------------|-------|-------------------|
-| Critical | ${metrics.issuesBySeverity['critical'] || 0} | 100% |
-| High | ${metrics.issuesBySeverity['high'] || 0} | 100% |
-| Medium | ${metrics.issuesBySeverity['medium'] || 0} | 100% |
-| Low | ${metrics.issuesBySeverity['low'] || 0} | 100% |
-
-**Time Saved:** ~${Math.round(metrics.issuesFound * 3)} minutes of manual fixes
-**Pattern Contribution:** Your fixes will help ${Math.round(metrics.issuesFound * 0.7)} other developers
-
-`}
-
----
-
-## 📋 Analysis Metadata
-
-| Field | Value |
-|-------|-------|
-| **Start Time** | ${metrics.startTime} |
-| **End Time** | ${metrics.endTime} |
-| **Duration** | ${metrics.durationMs}ms |
-| **Language** | ${config.language} |
-| **Repository** | ${config.repository} |
-
----
-
-*Report generated by CodeQual V9 ${tier} • Session 69 Testing*
-`;
-}
-
-// ============================================================================
-// ANALYSIS RUNNER
-// ============================================================================
-
-async function runLanguageAnalysis(
-  config: LanguageConfig,
-  tracker: TrackerData,
-  supabase: SupabaseClient | null
-): Promise<AnalysisMetrics> {
-  console.log(`\n${'═'.repeat(80)}`);
-  console.log(`🔬 Analyzing: ${config.language.toUpperCase()}`);
-  console.log(`   Repository: ${config.repository}`);
-  console.log(`   PR: ${config.prNumber || 'Local Branch'}`);
-  console.log(`${'═'.repeat(80)}\n`);
-
-  const startTime = new Date();
-  const patternsBefore = await getPatternCount(supabase);
-
-  // Initialize metrics
-  const metrics: AnalysisMetrics = {
-    language: config.language,
-    repository: config.repository,
-    prNumber: config.prNumber,
-    startTime: startTime.toISOString(),
-    endTime: '',
-    durationMs: 0,
-    issuesFound: 0,
-    issuesByCategory: {},
-    issuesBySeverity: {},
-    issuesFixed: 0,
-    patternsBefore,
-    patternsAfter: patternsBefore,
-    patternsAdded: 0,
-    linesOfCode: config.estimatedLOC,
-    issuesPerKLOC: 0,
-    toolsExecuted: [],
-    score: 100,
-    decision: 'APPROVED',
-    success: false
-  };
-
-  try {
-    // Clone repository
-    const repoPath = `/tmp/v9-test-${config.language}-${Date.now()}`;
-    console.log(`   📦 Cloning repository...`);
-
-    if (fs.existsSync(repoPath)) {
-      execSync(`rm -rf ${repoPath}`, { stdio: 'pipe' });
-    }
-    execSync(`git clone --depth 1 ${config.repository} ${repoPath}`, { stdio: 'pipe' });
-    console.log(`   ✅ Repository cloned`);
-
-    // Count lines of code
-    try {
-      const locOutput = execSync(`find ${repoPath} -name "*.${getExtension(config.language)}" | xargs wc -l 2>/dev/null | tail -1`, {
-        encoding: 'utf-8'
-      }).trim();
-      const loc = parseInt(locOutput.split(' ')[0]) || config.estimatedLOC;
-      metrics.linesOfCode = loc;
-      console.log(`   📊 Lines of code: ${loc.toLocaleString()}`);
-    } catch {
-      console.log(`   📊 Using estimated LOC: ${config.estimatedLOC.toLocaleString()}`);
-    }
-
-    // Run analysis based on language
-    console.log(`   🚀 Running ${config.language} analysis...`);
-
-    // Import and run the appropriate orchestrator
-    const orchestratorResult = await runOrchestrator(config.language, repoPath, config.prNumber);
-
-    // Extract metrics from result
-    metrics.issuesFound = orchestratorResult.totalIssues;
-    metrics.issuesByCategory = orchestratorResult.byCategory;
-    metrics.issuesBySeverity = orchestratorResult.bySeverity;
-    metrics.issuesFixed = orchestratorResult.fixedIssues;
-    metrics.toolsExecuted = orchestratorResult.tools;
-
-    // Calculate score
-    const criticalCount = metrics.issuesBySeverity['critical'] || 0;
-    const highCount = metrics.issuesBySeverity['high'] || 0;
-    const mediumCount = metrics.issuesBySeverity['medium'] || 0;
-    const lowCount = metrics.issuesBySeverity['low'] || 0;
-
-    metrics.score = Math.max(0, 100 - (criticalCount * 10) - (highCount * 5) - (mediumCount * 2) - (lowCount * 0.5));
-    metrics.decision = (criticalCount > 0 || highCount > 0) ? 'DECLINED' : 'APPROVED';
-
-    // Calculate issues per KLOC
-    metrics.issuesPerKLOC = (metrics.issuesFound / (metrics.linesOfCode / 1000)) || 0;
-
-    // Get updated pattern count
-    metrics.patternsAfter = await getPatternCount(supabase);
-    metrics.patternsAdded = metrics.patternsAfter - metrics.patternsBefore;
-
-    // Cleanup
-    execSync(`rm -rf ${repoPath}`, { stdio: 'pipe' });
-
-    metrics.success = true;
-    console.log(`   ✅ Analysis completed successfully`);
-
-  } catch (error) {
-    metrics.error = error instanceof Error ? error.message : String(error);
-    console.error(`   ❌ Analysis failed: ${metrics.error}`);
-  }
-
-  // Finalize timing
-  const endTime = new Date();
-  metrics.endTime = endTime.toISOString();
-  metrics.durationMs = endTime.getTime() - startTime.getTime();
-
-  return metrics;
-}
-
-function getExtension(language: string): string {
-  const extensions: Record<string, string> = {
-    java: 'java',
-    typescript: 'ts',
-    python: 'py',
-    go: 'go',
-    rust: 'rs',
-    ruby: 'rb',
-    php: 'php'
-  };
-  return extensions[language] || '*';
-}
-
-async function runOrchestrator(
-  language: string,
-  repoPath: string,
-  prNumber: number | null
-): Promise<{
-  totalIssues: number;
-  byCategory: Record<string, number>;
-  bySeverity: Record<string, number>;
-  fixedIssues: number;
-  tools: string[];
-}> {
-  // Default result for when orchestrator fails
-  const defaultResult = {
-    totalIssues: 0,
-    byCategory: {},
-    bySeverity: {},
-    fixedIssues: 0,
-    tools: []
-  };
-
-  try {
-    // Dynamic import based on language
-    let Orchestrator: any;
-
-    switch (language) {
-      case 'java':
-        const { JavaToolOrchestrator } = await import('../../src/two-branch/tools/java/java-tool-orchestrator');
-        Orchestrator = JavaToolOrchestrator;
-        break;
-      case 'typescript':
-        const { TypeScriptToolOrchestrator } = await import('../../src/two-branch/tools/typescript/typescript-tool-orchestrator');
-        Orchestrator = TypeScriptToolOrchestrator;
-        break;
-      case 'python':
-        const { PythonToolOrchestrator } = await import('../../src/two-branch/tools/python/python-tool-orchestrator');
-        Orchestrator = PythonToolOrchestrator;
-        break;
-      default:
-        console.log(`   ⚠️ No orchestrator for ${language}, using baseline analysis`);
-        return defaultResult;
-    }
-
-    const orchestrator = new Orchestrator();
-    const result = await orchestrator.orchestrate(repoPath, 'base', {
-      analysisMode: 'complete',
-      userTier: 'pro'
+const allResults: TestResult[] = [];
+
+async function fetchJson(url: string, options: any = {}): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const isHttps = url.startsWith('https');
+    const lib = isHttps ? https : http;
+
+    const urlObj = new URL(url);
+
+    const req = lib.request({
+      hostname: urlObj.hostname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
+      method: options.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch {
+          resolve(data);
+        }
+      });
     });
 
-    // Extract issues
-    const allIssues = result.toolResults?.flatMap((r: any) => r.issues || []) || [];
-    const tools = result.toolResults?.map((r: any) => r.tool || 'unknown') || [];
+    req.on('error', reject);
+    if (options.body) req.write(JSON.stringify(options.body));
+    req.end();
+  });
+}
 
-    // Count by category and severity
-    const byCategory: Record<string, number> = {};
-    const bySeverity: Record<string, number> = {};
+async function startAnalysis(language: string, tier: 'basic' | 'pro'): Promise<string> {
+  const repo = TEST_REPOS[language];
 
-    for (const issue of allIssues) {
-      const category = issue.category || 'EXISTING_REST';
-      const severity = issue.severity || 'medium';
+  const response = await fetchJson(`${API_BASE}/api/v9/analyze`, {
+    method: 'POST',
+    body: {
+      repositoryUrl: repo.url,
+      prNumber: repo.pr,
+      language,
+      userTier: tier,
+      options: { generateFixes: tier === 'pro' }
+    }
+  });
 
-      byCategory[category] = (byCategory[category] || 0) + 1;
-      bySeverity[severity] = (bySeverity[severity] || 0) + 1;
+  if (!response.analysisId) {
+    throw new Error(`Failed to start analysis: ${JSON.stringify(response)}`);
+  }
+
+  return response.analysisId;
+}
+
+async function pollStatus(analysisId: string, maxMinutes: number = 5): Promise<any> {
+  const maxAttempts = maxMinutes * 30; // 2 second intervals
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    const response = await fetchJson(`${API_BASE}/api/v9/analyze/${analysisId}`);
+
+    if (response.status === 'completed') {
+      return response;
     }
 
-    return {
-      totalIssues: allIssues.length,
-      byCategory,
-      bySeverity,
-      fixedIssues: 0, // Would come from fix execution
-      tools: [...new Set(tools)]
+    if (response.status === 'failed') {
+      throw new Error(`Analysis failed: ${response.error}`);
+    }
+
+    process.stdout.write(`\r      Status: ${response.status} (${response.progress || 0}%)     `);
+    await new Promise(r => setTimeout(r, 2000));
+    attempts++;
+  }
+
+  throw new Error('Analysis timed out');
+}
+
+async function getReport(analysisId: string, tier: 'basic' | 'pro'): Promise<any> {
+  const response = await fetchJson(`${API_BASE}/api/v9/reports`, {
+    method: 'POST',
+    body: { analysisId, tier }
+  });
+  return response;
+}
+
+function validateReport(report: any, tier: 'basic' | 'pro'): string[] {
+  const issues: string[] = [];
+
+  if (tier === 'basic') {
+    if (!report.ideExports) issues.push('Missing ideExports');
+    if (!report.patternContribution?.optIn) issues.push('Missing patternContribution.optIn');
+    if (report.fixSummary) issues.push('Has fixSummary (should not)');
+  } else {
+    if (report.ideExports) issues.push('Has ideExports (should not)');
+    if (!report.fixSummary) issues.push('Missing fixSummary');
+    if (!report.aiInsights) issues.push('Missing aiInsights');
+  }
+
+  if (!report.skillsAndAchievements) issues.push('Missing skillsAndAchievements');
+
+  return issues;
+}
+
+async function testLanguageTier(language: string, tier: 'basic' | 'pro'): Promise<TestResult> {
+  const repo = TEST_REPOS[language];
+  const startTime = Date.now();
+
+  console.log(`\n   [${language.toUpperCase()}/${tier.toUpperCase()}] Starting...`);
+  console.log(`      Repo: ${repo.name} PR #${repo.pr}`);
+
+  try {
+    const analysisId = await startAnalysis(language, tier);
+    console.log(`      Analysis ID: ${analysisId}`);
+
+    const analysisResult = await pollStatus(analysisId);
+    console.log(`\n      ✅ Analysis complete`);
+
+    const report = await getReport(analysisId, tier);
+    const duration = Math.round((Date.now() - startTime) / 1000);
+
+    const validationIssues = validateReport(report, tier);
+    const passed = validationIssues.length === 0;
+
+    if (!passed) {
+      console.log(`      ⚠️  Validation issues:`);
+      validationIssues.forEach(i => console.log(`         - ${i}`));
+    } else {
+      console.log(`      ✅ Validation passed`);
+    }
+
+    const result: TestResult = {
+      language,
+      tier,
+      analysisId,
+      issues: analysisResult.result?.summary?.totalIssues || 0,
+      fixed: tier === 'pro' ? (analysisResult.result?.summary?.fixed || 0) : undefined,
+      score: analysisResult.result?.score?.overall || 0,
+      duration,
+      passed,
+      report
     };
 
-  } catch (error) {
-    console.error(`   ⚠️ Orchestrator error: ${error}`);
-    return defaultResult;
+    console.log(`      Issues: ${result.issues}, Score: ${result.score}/100, Duration: ${duration}s`);
+
+    return result;
+
+  } catch (e: any) {
+    const duration = Math.round((Date.now() - startTime) / 1000);
+    console.log(`\n      ❌ Failed: ${e.message}`);
+
+    return {
+      language,
+      tier,
+      analysisId: '',
+      issues: 0,
+      score: 0,
+      duration,
+      passed: false,
+      error: e.message
+    };
   }
 }
 
-// ============================================================================
-// MAIN
-// ============================================================================
+function saveReports(results: TestResult[]) {
+  const outputDir = path.join(__dirname, 'v9-2tier-reports');
 
-async function main(): Promise<void> {
-  console.log(`
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                                                                               ║
-║              V9 2-TIER ANALYSIS TEST - ALL LANGUAGES                          ║
-║                          Session 69                                            ║
-║                                                                               ║
-║  Testing: Java, TypeScript, Python, Go, Rust, Ruby, PHP                       ║
-║  Tracking: Pattern growth, performance metrics, issues per KLOC               ║
-║  Output: BASIC + PRO tier reports for each language                           ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-`);
-
-  // Create output directory
-  if (!fs.existsSync(OUTPUT_DIR)) {
-    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  // Initialize Supabase and tracker
-  const supabase = getSupabaseClient();
-  const tracker = loadTracker();
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 
-  // Get baseline pattern count
-  const baselinePatterns = await getPatternCount(supabase);
-  tracker.baseline.patternCount = baselinePatterns;
-  tracker.current.patternCount = baselinePatterns;
-  console.log(`📊 Baseline Pattern Count: ${baselinePatterns}`);
+  // Save individual reports
+  for (const result of results) {
+    if (result.report) {
+      const filename = `${result.language}_${result.tier}_${timestamp}.json`;
+      fs.writeFileSync(
+        path.join(outputDir, filename),
+        JSON.stringify(result.report, null, 2)
+      );
+    }
+  }
+
+  // Save summary
+  const summary = {
+    timestamp: new Date().toISOString(),
+    apiBase: API_BASE,
+    results: results.map(r => ({
+      language: r.language,
+      tier: r.tier,
+      analysisId: r.analysisId,
+      issues: r.issues,
+      fixed: r.fixed,
+      score: r.score,
+      duration: r.duration,
+      passed: r.passed,
+      error: r.error
+    }))
+  };
+
+  fs.writeFileSync(
+    path.join(outputDir, `summary_${timestamp}.json`),
+    JSON.stringify(summary, null, 2)
+  );
+
+  console.log(`\n📁 Reports saved to: ${outputDir}`);
+}
+
+async function runAllTests() {
+  console.log('═══════════════════════════════════════════════════════════════════');
+  console.log('       V9 2-TIER TEST - ALL LANGUAGES (BASIC vs PRO)                ');
+  console.log('═══════════════════════════════════════════════════════════════════');
+  console.log(`API: ${API_BASE}`);
 
   // Filter languages if specified
-  const langFilter = process.env.LANG?.toLowerCase();
-  const startFrom = process.env.START_FROM?.toLowerCase();
+  let languages = Object.keys(TEST_REPOS);
+  if (LANG_FILTER && TEST_REPOS[LANG_FILTER]) {
+    languages = [LANG_FILTER];
+    console.log(`Filter: ${LANG_FILTER} only`);
+  }
 
-  let configs = LANGUAGE_CONFIGS;
-  if (langFilter) {
-    configs = configs.filter(c => c.language === langFilter);
-    console.log(`🎯 Filtering to: ${langFilter}`);
-  } else if (startFrom) {
-    const startIndex = configs.findIndex(c => c.language === startFrom);
-    if (startIndex >= 0) {
-      configs = configs.slice(startIndex);
-      console.log(`⏭️ Starting from: ${startFrom}`);
+  console.log(`Languages: ${languages.join(', ')}`);
+  console.log(`Tiers: basic, pro`);
+
+  const tiers: ('basic' | 'pro')[] = ['basic', 'pro'];
+
+  for (const language of languages) {
+    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`   📦 Testing: ${language.toUpperCase()}`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+    for (const tier of tiers) {
+      const result = await testLanguageTier(language, tier);
+      allResults.push(result);
     }
   }
 
-  console.log(`\n📋 Languages to test: ${configs.map(c => c.language).join(', ')}\n`);
+  // Save all reports
+  saveReports(allResults);
 
-  // Run analysis for each language
-  for (const config of configs) {
-    // Update tracker status
-    tracker.languages[config.language].status = 'in_progress';
-    saveTracker(tracker);
+  // Print summary table
+  console.log('\n═══════════════════════════════════════════════════════════════════');
+  console.log('                           SUMMARY                                  ');
+  console.log('═══════════════════════════════════════════════════════════════════');
 
-    // Run analysis
-    const metrics = await runLanguageAnalysis(config, tracker, supabase);
+  console.log('\n| Language   | Tier  | Issues | Fixed | Score | Time | Status |');
+  console.log('|------------|-------|--------|-------|-------|------|--------|');
 
-    // Update tracker
-    tracker.languages[config.language].metrics = metrics;
-    tracker.languages[config.language].status = metrics.success ? 'completed' : 'failed';
-    tracker.current.patternCount = metrics.patternsAfter;
-    tracker.current.newPatternsAdded = metrics.patternsAfter - tracker.baseline.patternCount;
-    tracker.current.timestamp = new Date().toISOString();
-    updateTrackerSummary(tracker);
-    saveTracker(tracker);
-
-    // Generate and save tier reports
-    if (metrics.success && metrics.issuesFound > 0) {
-      console.log(`\n📝 Generating tier reports...`);
-
-      try {
-        const reports = await generateTierReports(metrics, config);
-
-        // Save BASIC report
-        const basicPath = path.join(OUTPUT_DIR, `${config.language}-BASIC-report.md`);
-        fs.writeFileSync(basicPath, reports.basic);
-        console.log(`   ✅ BASIC report: ${basicPath}`);
-
-        // Save PRO report
-        const proPath = path.join(OUTPUT_DIR, `${config.language}-PRO-report.md`);
-        fs.writeFileSync(proPath, reports.pro);
-        console.log(`   ✅ PRO report: ${proPath}`);
-
-      } catch (error) {
-        console.error(`   ⚠️ Failed to generate reports: ${error}`);
-      }
-    } else if (metrics.issuesFound === 0) {
-      console.log(`\n⚠️ No issues found for ${config.language} - moving to next language`);
-    }
-
-    // Print summary for this language
-    console.log(`\n${'─'.repeat(80)}`);
-    console.log(`📊 ${config.language.toUpperCase()} Summary:`);
-    console.log(`   Issues Found: ${metrics.issuesFound}`);
-    console.log(`   Issues Fixed: ${metrics.issuesFixed}`);
-    console.log(`   Score: ${metrics.score}/100 (${metrics.decision})`);
-    console.log(`   Duration: ${(metrics.durationMs / 1000).toFixed(1)}s`);
-    console.log(`   Issues/KLOC: ${metrics.issuesPerKLOC.toFixed(2)}`);
-    console.log(`   Patterns Added: ${metrics.patternsAdded}`);
-    console.log(`   Tools: ${metrics.toolsExecuted.join(', ')}`);
-    console.log(`${'─'.repeat(80)}`);
+  for (const r of allResults) {
+    const status = r.passed ? '✅' : '❌';
+    const fixed = r.fixed !== undefined ? String(r.fixed) : '-';
+    console.log(`| ${r.language.padEnd(10)} | ${r.tier.padEnd(5)} | ${String(r.issues).padEnd(6)} | ${fixed.padEnd(5)} | ${String(r.score).padEnd(5)} | ${r.duration}s | ${status} |`);
   }
 
-  // Print final summary
-  console.log(`
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                              FINAL SUMMARY                                     ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                               ║
-║  Languages Tested: ${tracker.summary.completedLanguages}/${tracker.summary.totalLanguages}                                                   ║
-║  Total Issues Found: ${tracker.summary.totalIssuesFound.toString().padEnd(10)} Total Issues Fixed: ${tracker.summary.totalIssuesFixed.toString().padEnd(10)}        ║
-║  Patterns: ${tracker.baseline.patternCount} → ${tracker.current.patternCount} (+${tracker.summary.totalPatternsAdded})                                              ║
-║  Avg Analysis Time: ${(tracker.summary.avgAnalysisTime / 1000).toFixed(1)}s                                                 ║
-║  Avg Issues/KLOC: ${tracker.summary.avgIssuesPerKLOC.toFixed(2)}                                                    ║
-║                                                                               ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
+  // Tier comparison
+  console.log('\n─────────────────────────────────────────────────────────────────');
+  console.log('                     TIER COMPARISON                              ');
+  console.log('─────────────────────────────────────────────────────────────────');
 
-📁 Reports saved to: ${OUTPUT_DIR}
-📊 Metrics saved to: ${TRACKER_PATH}
-`);
+  for (const language of languages) {
+    const basic = allResults.find(r => r.language === language && r.tier === 'basic');
+    const pro = allResults.find(r => r.language === language && r.tier === 'pro');
 
-  // Print language-by-language breakdown
-  console.log('\n📋 Language Breakdown:');
-  console.log('─'.repeat(100));
-  console.log(`| ${'Language'.padEnd(12)} | ${'Status'.padEnd(10)} | ${'Issues'.padEnd(8)} | ${'Fixed'.padEnd(8)} | ${'Score'.padEnd(8)} | ${'Time'.padEnd(10)} | ${'Patterns+'.padEnd(10)} |`);
-  console.log('─'.repeat(100));
-
-  for (const [lang, data] of Object.entries(tracker.languages)) {
-    const m = data.metrics;
-    if (m) {
-      console.log(`| ${lang.padEnd(12)} | ${data.status.padEnd(10)} | ${m.issuesFound.toString().padEnd(8)} | ${m.issuesFixed.toString().padEnd(8)} | ${m.score.toString().padEnd(8)} | ${(m.durationMs / 1000).toFixed(1).padEnd(10)}s | ${m.patternsAdded.toString().padEnd(10)} |`);
-    } else {
-      console.log(`| ${lang.padEnd(12)} | ${data.status.padEnd(10)} | ${'—'.padEnd(8)} | ${'—'.padEnd(8)} | ${'—'.padEnd(8)} | ${'—'.padEnd(10)} | ${'—'.padEnd(10)} |`);
-    }
+    console.log(`\n${language.toUpperCase()}:`);
+    console.log(`  BASIC: IDE Exports=${basic?.report?.ideExports ? '✅' : '❌'}, Pattern Opt-in=${basic?.report?.patternContribution ? '✅' : '❌'}`);
+    console.log(`  PRO:   Fix Summary=${pro?.report?.fixSummary ? '✅' : '❌'}, AI Insights=${pro?.report?.aiInsights ? '✅' : '❌'}`);
   }
-  console.log('─'.repeat(100));
+
+  const passedCount = allResults.filter(r => r.passed).length;
+  const totalCount = allResults.length;
+  const allPassed = passedCount === totalCount;
+
+  console.log(`\n═══════════════════════════════════════════════════════════════════`);
+  console.log(`   ${allPassed ? '✅ ALL TESTS PASSED' : `⚠️  ${passedCount}/${totalCount} TESTS PASSED`}`);
+  console.log(`═══════════════════════════════════════════════════════════════════`);
+
+  process.exit(allPassed ? 0 : 1);
 }
 
-// Run
-main().catch(error => {
-  console.error('Fatal error:', error);
+// Run tests
+runAllTests().catch(e => {
+  console.error('Test suite failed:', e);
   process.exit(1);
 });

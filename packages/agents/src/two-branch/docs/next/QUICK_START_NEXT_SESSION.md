@@ -1,58 +1,86 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 74 (January 4, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Security Hardening Complete
-**Status**: All Session 74 priorities completed and deployed to Oracle Cloud
+**Last Updated**: Session 75 (January 4, 2026)
+**Current Phase**: V9 Two-Branch Analysis - Dynamic Rate Limiting Complete
+**Status**: All Session 75 priorities completed locally (pending deployment)
 
 ---
 
-## Session 74 Completed
+## Session 75 Completed
+
+### Major Features Implemented
+
+1. **Dynamic Timeout System (P0)**
+   - Timeouts now calculated based on tool type AND repository size
+   - Heavy tools (SpotBugs, Clippy): 180s base timeout
+   - Light tools (ESLint, Ruff): 30s base timeout
+   - Repo size multipliers: small (1x), medium (2x), large (4x), enterprise (8x)
+   - Example: SpotBugs on enterprise repo = 180s × 8 = 24 minutes
+   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
+
+2. **Per-Tool Concurrency Limits**
+   - Each tool has its own max concurrent limit
+   - Heavy tools (SpotBugs, Clippy): max 2 concurrent
+   - Medium tools (PMD, TSC, Mypy): max 4 concurrent
+   - Light tools (ESLint, Ruff): max 8 concurrent
+   - Prevents resource contention for expensive tools
+
+3. **CPU-Aware Global Limits**
+   - Global concurrent limit = 75% of available CPUs
+   - Automatically scales with server hardware
+   - Uses `os.cpus().length` for detection
+
+4. **User Tier Quotas**
+   - Basic: 30/min, 3 concurrent
+   - Pro: 100/min, 10 concurrent
+   - Enterprise: 500/min, 50 concurrent
+   - Quotas respect CPU-aware maximums
+
+5. **Environment-Based Configuration**
+   - `CODEQUAL_USER_TIER`: basic | pro | enterprise
+   - `CODEQUAL_REPO_SIZE`: small | medium | large | enterprise
+   - `CODEQUAL_ESTIMATED_LINES`: number (auto-classifies size)
+   - `CODEQUAL_MAX_PER_MINUTE`: override max per minute
+   - `CODEQUAL_MAX_CONCURRENT`: override max concurrent
+   - `CODEQUAL_TIMEOUT_MS`: override base timeout
+
+### Files Modified (Session 75)
+
+| File | Changes |
+|------|---------|
+| `tool-revalidator.ts` | Dynamic timeouts, per-tool limits, user tiers, env config |
+
+---
+
+## Session 74 Completed (Previous)
 
 ### Major Features Implemented
 
 1. **Security Hardening (P0 - Critical)**
    - Secure file permissions: Mode 0600 for temp files, 0700 for temp directories
    - Command injection prevention: Replaced shell execution with `spawn` + args array
-   - Rate limiting: 30 executions/min, 5 concurrent, 30s timeout per tool
    - Path traversal prevention: Validates temp file paths stay within allowed directory
    - Secure random filenames using `crypto.randomBytes()`
-   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
 
 2. **Tool Availability Detection**
    - Added `checkToolAvailability()` - checks if tools (PMD, ESLint, Ruff, etc.) are installed
    - 5-minute cache to avoid repeated checks
-   - Provides helpful error messages when tools are missing
-   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
 
 3. **ESLint/TypeScript Configuration (P1)**
    - Added `--no-config-lookup` flag for standalone temp file validation
    - Relaxed TSC flags for isolated file checking
-   - Added configurations for: Mypy, Clippy, Brakeman, TSC
 
 4. **JSON Output Parsing Improvements (P1)**
-   - New `extractJSON()` with 3 extraction strategies (pure, prefixed, line-by-line)
-   - Text-based fallback parsing for non-JSON tool outputs
+   - New `extractJSON()` with 3 extraction strategies
    - Expanded tool-specific parsers (Mypy, Clippy, Brakeman, PHPStan, etc.)
-   - Handles: empty output, malformed JSON, array outputs, control characters
-   - File: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
 
 5. **Code Snippet Improvements (P2)**
    - GitHub API fallback when local files unavailable
    - 5-minute content cache to reduce API calls
-   - Automatic main/master branch fallback
-   - Repository URL passed through report formatter
-   - File: `packages/agents/src/two-branch/utils/code-snippet-extractor.ts`
 
 6. **Identical Code Detection (P2)**
    - Added `calculateSimilarity()` using Levenshtein distance
    - Detects when before/after code samples are >95% similar
-   - Shows helpful guidance instead of confusing identical diffs
-   - File: `packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts`
-
-7. **Oracle Cloud Deployment**
-   - Pulled latest changes and built successfully
-   - Restarted codequal-api service (PM2)
-   - API is online and running
 
 ### Commits Created (Session 74)
 
@@ -62,41 +90,115 @@
 
 ---
 
-## Session 75 TODO
+## Session 76 TODO
 
-### P0: Production Testing
+### P0: Deploy and Run Full Multi-Language Test Suite
 
-1. **Run full E2E test on Oracle Cloud**
-   ```bash
-   ssh -i "keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
-   cd ~/codequal/packages/agents
-   npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-   ```
+#### Step 1: Deploy to Oracle Cloud
+```bash
+ssh -i "keys/oracle/ssh-key-2025-10-07.key" opc@129.213.49.128
+cd ~/codequal && git pull && npm run build && npx pm2 restart codequal-api
+```
 
-2. **Verify rate limiting is working**
-   - Test with rapid consecutive requests
-   - Ensure 30/min limit is enforced
+#### Step 2: Run All 7 Languages × 2 Tiers Test
+```bash
+cd ~/codequal/packages/agents
+npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+```
 
-3. **Test GitHub fallback for code snippets**
-   - Analyze a PR where local repo is cleaned up
-   - Verify snippets are fetched from GitHub
+**Expected Test Matrix (14 tests total):**
 
-### P1: Caching Improvements
+| Language | BASIC Tier | PRO Tier | Test Repo |
+|----------|-----------|----------|-----------|
+| Java | ✓ Test | ✓ Test | spring-projects/spring-petclinic |
+| TypeScript | ✓ Test | ✓ Test | expressjs/express |
+| Python | ✓ Test | ✓ Test | pallets/flask |
+| Go | ✓ Test | ✓ Test | gin-gonic/gin |
+| Rust | ✓ Test | ✓ Test | tokio-rs/tokio |
+| Ruby | ✓ Test | ✓ Test | sinatra/sinatra |
+| PHP | ✓ Test | ✓ Test | laravel/framework |
 
-1. **Enable Redis caching for analysis results**
-   - Currently Redis is configured but not fully utilized
-   - Cache tool results, code snippets, AI fixes
+#### Step 3: Collect Timing Metrics
+After tests complete, check the rate limit monitoring output:
+```
+[ToolRevalidator] Execution Metrics Summary:
+  pmd:medium: avg=XXms, p95=XXms, max=XXms, timeouts=0/N
+  eslint:small: avg=XXms, p95=XXms, max=XXms, timeouts=0/N
+  ...
+```
 
-2. **Add API rate limiting**
-   - Limit requests per user/IP
-   - Protect against abuse
+#### Step 4: Review Test Reports
+Check generated reports in:
+```
+packages/agents/tests/integration/v9-2tier-reports/
+├── java-BASIC-report.md
+├── java-PRO-report.md
+├── typescript-BASIC-report.md
+├── typescript-PRO-report.md
+├── python-BASIC-report.md
+├── python-PRO-report.md
+├── go-BASIC-report.md
+├── go-PRO-report.md
+├── rust-BASIC-report.md
+├── rust-PRO-report.md
+├── ruby-BASIC-report.md
+├── ruby-PRO-report.md
+├── php-BASIC-report.md
+└── php-PRO-report.md
+```
 
-### P2: Documentation
+#### Step 5: Tune Rate Limits Based on Data
 
-1. **Update API documentation**
-   - Document new security features
-   - Rate limiting behavior
-   - GitHub fallback for snippets
+**What to look for in metrics:**
+1. **Timeouts**: Any tool timing out? Increase base timeout
+2. **Avg vs P95**: Large difference? Some repos are outliers
+3. **Tool comparison**: Which tools are slowest?
+
+**Adjust in** `tool-revalidator.ts`:
+```typescript
+TOOL_TIMEOUT_CONFIGS = {
+  // Adjust based on actual p95 times
+  spotbugs: { baseTimeoutMs: <actual_p95 × 1.5>, maxConcurrent: 4 },
+  pmd: { baseTimeoutMs: <actual_p95 × 1.5>, maxConcurrent: 8 },
+  // ...
+}
+```
+
+### P1: Tier-Specific Report Validation
+
+#### BASIC Tier Reports Should Have:
+- ✅ Full issue detection (same as PRO)
+- ✅ Educational content for all issues
+- ✅ IDE export links (SARIF, GitLab)
+- ✅ XP and achievements
+- ❌ NO auto-fix sections
+- ❌ NO fix verification
+
+#### PRO Tier Reports Should Have:
+- ✅ All BASIC features
+- ✅ Auto-fix sections with applied fixes
+- ✅ Fix verification results
+- ✅ Pattern-based fixes
+- ✅ Direct commit integration info
+
+### P2: Scaling Architecture (for future growth)
+
+1. **Horizontal Scaling Options**
+   - Load balancer (NGINX/HAProxy) in front of multiple API instances
+   - Kubernetes with HPA (Horizontal Pod Autoscaler)
+   - Redis cluster for distributed rate limiting
+
+2. **Job Queue System (for heavy workloads)**
+   - Bull/BullMQ for job queuing
+   - Separate worker processes for tool execution
+   - Priority queues: PRO users processed first
+
+### P2: Production Monitoring
+
+1. **Add metrics collection**
+   - Tool execution times
+   - Rate limit hit rates
+   - Queue depths (if implemented)
 
 2. **Create deployment runbook**
    - Step-by-step Oracle Cloud deployment
@@ -107,11 +209,47 @@
 
 ## Current Architecture
 
+### Dynamic Rate Limiting (Session 75)
+
+```
+Rate Limiting Decision Flow:
+1. Check user tier quota (basic/pro/enterprise)
+   ↓ (Reject if per-minute limit exceeded)
+2. Check global concurrent limit (CPU-aware: 75% of cores)
+   ↓ (Reject if at capacity)
+3. Check per-tool concurrent limit
+   ↓ (e.g., SpotBugs max 2, ESLint max 8)
+4. Calculate dynamic timeout
+   ↓ (baseTimeout × repoSizeMultiplier)
+5. Execute tool with calculated timeout
+   ↓
+6. Release slots on completion
+```
+
+### Timeout Calculation Formula
+
+```
+timeout = baseToolTimeout × repoSizeMultiplier
+
+Tool Base Timeouts:
+- SpotBugs, Clippy: 180s (compilation required)
+- golangci-lint, Brakeman: 90s
+- PMD, TSC, Mypy, PHPStan: 60s
+- Checkstyle, Pylint, Bandit, RuboCop: 45s
+- ESLint, Ruff: 30s
+
+Repo Size Multipliers:
+- Small (<10k lines): 1x
+- Medium (10k-50k): 2x
+- Large (50k-200k): 4x
+- Enterprise (200k+): 8x
+```
+
 ### Security Features (Session 74)
 
 ```
 Tool Re-Validation Security Flow:
-1. Rate Limiter checks (30/min, 5 concurrent)
+1. Rate Limiter checks (dynamic, tier-based)
    ↓ (Reject if exceeded)
 2. Generate secure random filename (crypto.randomBytes)
    ↓

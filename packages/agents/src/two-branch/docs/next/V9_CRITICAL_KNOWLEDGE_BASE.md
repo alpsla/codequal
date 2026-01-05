@@ -1,5 +1,5 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: December 31, 2025**
+**Last Updated: January 4, 2026 (Session 75)**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
 
 ---
@@ -1381,6 +1381,50 @@ After completing pattern collection for all languages, comprehensive UX testing 
 - After pattern collection target reached (500+ patterns/language)
 - Before BASIC tier public launch
 - As part of provider integration milestone
+
+---
+
+## 🔧 PENDING TUNING TASKS (Session 75)
+
+### Rate Limit Tuning (After Multi-Language Tests)
+
+**Status**: GENEROUS DEFAULTS IN PLACE - NEEDS TUNING BASED ON REAL DATA
+
+**Current State (Session 75)**:
+- Dynamic timeouts implemented based on tool type × repo size
+- Per-tool concurrency limits set generously for testing
+- Monitoring enabled via `flushMetricsToLog()` and `getExecutionMetrics()`
+
+**Action Required**:
+1. Run multi-language API tests (all 7 languages)
+2. Review timing metrics from `[ToolRevalidator] Execution Metrics Summary`
+3. Note: avg, p95, max times per tool:repoSize combination
+4. Identify any timeouts that occurred
+5. Adjust `TOOL_TIMEOUT_CONFIGS` and `USER_TIER_QUOTAS` based on data
+
+**Files to Update**:
+- `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
+
+**Current Generous Defaults**:
+```typescript
+// Timeouts (will be reduced based on data)
+spotbugs: 5 min base (× repo size multiplier)
+pmd: 2 min base
+eslint: 1 min base
+
+// Quotas (may be tightened)
+basic: 60/min, 6 concurrent
+pro: 200/min, 20 concurrent
+```
+
+**Monitoring Commands**:
+```bash
+# After running tests
+flushMetricsToLog()  # Shows timing summary
+
+# Or check raw metrics
+getExecutionMetrics()  # Returns full metrics array
+```
 
 ---
 

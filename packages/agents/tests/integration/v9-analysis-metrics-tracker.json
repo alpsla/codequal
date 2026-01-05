@@ -11,7 +11,7 @@
   "current": {
     "patternCount": 640,
     "newPatternsAdded": 0,
-    "timestamp": "2026-01-02T01:53:54.590Z"
+    "timestamp": "2026-01-04T02:16:29.933Z"
   },
   "languages": {
     "java": {
@@ -45,105 +45,501 @@
         "repository": "https://github.com/spring-projects/spring-petclinic",
         "prNumber": 950,
         "tier": "basic",
-        "startTime": "2026-01-02T01:51:53.792Z",
-        "endTime": "2026-01-02T01:52:54.197Z",
-        "durationMs": 60405,
-        "issuesFound": 0,
+        "startTime": "2026-01-04T01:45:58.415Z",
+        "endTime": "2026-01-04T01:49:34.604Z",
+        "durationMs": 216189,
+        "issuesFound": 18,
         "issuesByCategory": {},
-        "issuesBySeverity": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 17,
+          "low": 1
+        },
         "issuesFixed": 0,
         "patternsBefore": 640,
         "patternsAfter": 640,
         "patternsAdded": 0,
         "linesOfCode": 15000,
-        "issuesPerKLOC": 0,
-        "toolsExecuted": [],
-        "score": 0,
-        "decision": "UNKNOWN",
-        "success": false,
-        "error": "connect ETIMEDOUT 129.213.49.128:3001"
+        "issuesPerKLOC": 1.2,
+        "toolsExecuted": [
+          "pmd",
+          "checkstyle",
+          "spotbugs",
+          "semgrep",
+          "dependency-check"
+        ],
+        "score": 83,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/java-BASIC-report.md"
       },
       "proMetrics": {
         "language": "java",
         "repository": "https://github.com/spring-projects/spring-petclinic",
         "prNumber": 950,
         "tier": "pro",
-        "startTime": "2026-01-02T01:52:54.197Z",
-        "endTime": "2026-01-02T01:53:54.590Z",
-        "durationMs": 60393,
-        "issuesFound": 0,
+        "startTime": "2026-01-04T01:49:34.604Z",
+        "endTime": "2026-01-04T01:53:46.017Z",
+        "durationMs": 251413,
+        "issuesFound": 18,
         "issuesByCategory": {},
-        "issuesBySeverity": {},
-        "issuesFixed": 0,
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 17,
+          "low": 1
+        },
+        "issuesFixed": 18,
         "patternsBefore": 640,
         "patternsAfter": 640,
         "patternsAdded": 0,
         "linesOfCode": 15000,
-        "issuesPerKLOC": 0,
-        "toolsExecuted": [],
-        "score": 0,
-        "decision": "UNKNOWN",
-        "success": false,
-        "error": "connect ETIMEDOUT 129.213.49.128:3001"
+        "issuesPerKLOC": 1.2,
+        "toolsExecuted": [
+          "pmd",
+          "checkstyle",
+          "spotbugs",
+          "semgrep",
+          "dependency-check"
+        ],
+        "score": 83,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/java-PRO-report.md"
       }
     },
     "typescript": {
-      "status": "pending",
+      "status": "completed",
       "repository": "expressjs/express",
       "prNumber": null,
       "metrics": null,
-      "basicMetrics": null,
-      "proMetrics": null
+      "basicMetrics": {
+        "language": "typescript",
+        "repository": "https://github.com/expressjs/express",
+        "prNumber": 5678,
+        "tier": "basic",
+        "startTime": "2026-01-04T01:53:46.019Z",
+        "endTime": "2026-01-04T01:55:01.848Z",
+        "durationMs": 75829,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 25000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "eslint",
+          "semgrep",
+          "npm-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/typescript-BASIC-report.md"
+      },
+      "proMetrics": {
+        "language": "typescript",
+        "repository": "https://github.com/expressjs/express",
+        "prNumber": 5678,
+        "tier": "pro",
+        "startTime": "2026-01-04T01:55:01.848Z",
+        "endTime": "2026-01-04T01:56:32.696Z",
+        "durationMs": 90848,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 25000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "eslint",
+          "semgrep",
+          "npm-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/typescript-PRO-report.md"
+      }
     },
     "python": {
-      "status": "pending",
+      "status": "completed",
       "repository": "pallets/flask",
       "prNumber": null,
       "metrics": null,
-      "basicMetrics": null,
-      "proMetrics": null
+      "basicMetrics": {
+        "language": "python",
+        "repository": "https://github.com/pallets/flask",
+        "prNumber": 5432,
+        "tier": "basic",
+        "startTime": "2026-01-04T01:56:32.698Z",
+        "endTime": "2026-01-04T01:59:58.817Z",
+        "durationMs": 206119,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 20000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "ruff",
+          "bandit",
+          "pip-audit",
+          "semgrep"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/python-BASIC-report.md"
+      },
+      "proMetrics": {
+        "language": "python",
+        "repository": "https://github.com/pallets/flask",
+        "prNumber": 5432,
+        "tier": "pro",
+        "startTime": "2026-01-04T01:59:58.817Z",
+        "endTime": "2026-01-04T02:03:35.147Z",
+        "durationMs": 216330,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 20000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "ruff",
+          "bandit",
+          "pip-audit",
+          "semgrep"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/python-PRO-report.md"
+      }
     },
     "go": {
-      "status": "pending",
+      "status": "completed",
       "repository": "gin-gonic/gin",
       "prNumber": null,
       "metrics": null,
-      "basicMetrics": null,
-      "proMetrics": null
+      "basicMetrics": {
+        "language": "go",
+        "repository": "https://github.com/gin-gonic/gin",
+        "prNumber": 3900,
+        "tier": "basic",
+        "startTime": "2026-01-04T02:03:35.151Z",
+        "endTime": "2026-01-04T02:05:05.870Z",
+        "durationMs": 90719,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 30000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "golangci-lint",
+          "gosec",
+          "govulncheck"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/go-BASIC-report.md"
+      },
+      "proMetrics": {
+        "language": "go",
+        "repository": "https://github.com/gin-gonic/gin",
+        "prNumber": 3900,
+        "tier": "pro",
+        "startTime": "2026-01-04T02:05:05.870Z",
+        "endTime": "2026-01-04T02:06:26.499Z",
+        "durationMs": 80629,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 30000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "golangci-lint",
+          "gosec",
+          "govulncheck"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/go-PRO-report.md"
+      }
     },
     "rust": {
-      "status": "pending",
+      "status": "completed",
       "repository": "tokio-rs/tokio",
       "prNumber": null,
       "metrics": null,
-      "basicMetrics": null,
-      "proMetrics": null
+      "basicMetrics": {
+        "language": "rust",
+        "repository": "https://github.com/tokio-rs/tokio",
+        "prNumber": 6500,
+        "tier": "basic",
+        "startTime": "2026-01-04T02:06:26.502Z",
+        "endTime": "2026-01-04T02:08:12.181Z",
+        "durationMs": 105679,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 100000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "clippy",
+          "cargo-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/rust-BASIC-report.md"
+      },
+      "proMetrics": {
+        "language": "rust",
+        "repository": "https://github.com/tokio-rs/tokio",
+        "prNumber": 6500,
+        "tier": "pro",
+        "startTime": "2026-01-04T02:08:12.182Z",
+        "endTime": "2026-01-04T02:09:39.478Z",
+        "durationMs": 87296,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 100000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "clippy",
+          "cargo-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/rust-PRO-report.md"
+      }
     },
     "ruby": {
-      "status": "pending",
+      "status": "completed",
       "repository": "sinatra/sinatra",
       "prNumber": null,
       "metrics": null,
-      "basicMetrics": null,
-      "proMetrics": null
+      "basicMetrics": {
+        "language": "ruby",
+        "repository": "https://github.com/sinatra/sinatra",
+        "prNumber": 1900,
+        "tier": "basic",
+        "startTime": "2026-01-04T02:09:39.481Z",
+        "endTime": "2026-01-04T02:11:20.473Z",
+        "durationMs": 100992,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 10000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "rubocop",
+          "brakeman",
+          "bundler-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/ruby-BASIC-report.md"
+      },
+      "proMetrics": {
+        "language": "ruby",
+        "repository": "https://github.com/sinatra/sinatra",
+        "prNumber": 1900,
+        "tier": "pro",
+        "startTime": "2026-01-04T02:11:20.473Z",
+        "endTime": "2026-01-04T02:13:01.840Z",
+        "durationMs": 101367,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 10000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "rubocop",
+          "brakeman",
+          "bundler-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/ruby-PRO-report.md"
+      }
     },
     "php": {
-      "status": "pending",
+      "status": "completed",
       "repository": "laravel/framework",
       "prNumber": null,
       "metrics": null,
-      "basicMetrics": null,
-      "proMetrics": null
+      "basicMetrics": {
+        "language": "php",
+        "repository": "https://github.com/laravel/framework",
+        "prNumber": 50000,
+        "tier": "basic",
+        "startTime": "2026-01-04T02:13:01.842Z",
+        "endTime": "2026-01-04T02:14:47.782Z",
+        "durationMs": 105940,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 200000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "phpstan",
+          "semgrep",
+          "composer-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/php-BASIC-report.md"
+      },
+      "proMetrics": {
+        "language": "php",
+        "repository": "https://github.com/laravel/framework",
+        "prNumber": 50000,
+        "tier": "pro",
+        "startTime": "2026-01-04T02:14:47.783Z",
+        "endTime": "2026-01-04T02:16:29.933Z",
+        "durationMs": 102150,
+        "issuesFound": 0,
+        "issuesByCategory": {},
+        "issuesBySeverity": {
+          "critical": 0,
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "issuesFixed": 0,
+        "patternsBefore": 640,
+        "patternsAfter": 640,
+        "patternsAdded": 0,
+        "linesOfCode": 200000,
+        "issuesPerKLOC": 0,
+        "toolsExecuted": [
+          "phpstan",
+          "semgrep",
+          "composer-audit"
+        ],
+        "score": 100,
+        "decision": "APPROVED",
+        "success": true,
+        "reportPath": "/Users/alpinro/CodePrjects/codequal/packages/agents/tests/integration/v9-2tier-reports/php-PRO-report.md"
+      }
     }
   },
   "summary": {
     "totalLanguages": 7,
-    "completedLanguages": 0,
-    "totalIssuesFound": 0,
-    "totalIssuesFixed": 0,
+    "completedLanguages": 7,
+    "totalIssuesFound": 18,
+    "totalIssuesFixed": 18,
     "totalPatternsAdded": 0,
     "avgAnalysisTimeBasic": 163.15,
     "avgAnalysisTimePro": 111.56,
-    "avgCostSavings": "96.25%"
+    "avgCostSavings": "96.25%",
+    "avgAnalysisTime": 128781,
+    "avgIssuesPerKLOC": 0.17142857142857143
   }
 }
