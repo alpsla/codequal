@@ -2046,22 +2046,29 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
   }
 
   // Phase 1: Check pattern registry for cached fixes (FREE for all tiers)
+  // OPTIMIZED: Parallel pattern lookups instead of sequential
   if (patternStore) {
-    for (const issue of issues) {
-      try {
-        const pattern = await patternStore.lookupPattern(issue.type, issue.tool);
-        if (pattern && pattern.fix_template) {
-          fixes.set(issue.id, {
-            suggestion: pattern.fix_template.correctedCode || pattern.fix_template.fix,
-            confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
-            cached: true,
-            patternId: pattern.id,
-            educational: `This fix uses a proven pattern from our registry. ${pattern.description || ''}`
-          });
-          patternHits++;
+    const patternResults = await Promise.all(
+      issues.map(async (issue) => {
+        try {
+          const pattern = await patternStore.lookupPattern(issue.type, issue.tool);
+          return { issue, pattern };
+        } catch (e) {
+          return { issue, pattern: null };
         }
-      } catch (e) {
-        // Pattern lookup failed, will try AI generation
+      })
+    );
+
+    for (const { issue, pattern } of patternResults) {
+      if (pattern && pattern.fix_template) {
+        fixes.set(issue.id, {
+          suggestion: pattern.fix_template.correctedCode || pattern.fix_template.fix,
+          confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
+          cached: true,
+          patternId: pattern.id,
+          educational: `This fix uses a proven pattern from our registry. ${pattern.description || ''}`
+        });
+        patternHits++;
       }
     }
   }
@@ -2091,9 +2098,9 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
         }
       }));
 
-      // Process issues in parallel (max 5 at a time)
+      // Process issues in parallel (max 10 at a time - optimized from 5)
       const result = await fixer.processBatch(aiFixerIssues, {
-        parallel: 5,
+        parallel: 10,
         verbose: false
       });
 
@@ -2120,20 +2127,28 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
       // SESSION 73: Submit successful AI fixes to pattern registry for future reuse
       // This is the key optimization: once AI generates a fix, save it so next time
       // the same rule is found, we use the cached pattern instead of calling AI again
-      let patternsSubmitted = 0;
-      for (const enriched of result.enrichedIssues) {
-        if (enriched.fixRecommendation && enriched.fixRecommendation.confidence >= 70) {
+      // OPTIMIZED: Parallel pattern submissions instead of sequential
+      const submitableIssues = result.enrichedIssues.filter(
+        e => e.fixRecommendation && e.fixRecommendation.confidence >= 70
+      );
+
+      const submitResults = await Promise.all(
+        submitableIssues.map(async (enriched) => {
           try {
             const submitted = await fixer.submitFixToRegistry(enriched, enriched.fixRecommendation);
             if (submitted.submitted) {
-              patternsSubmitted++;
               logger.info(`[FixGen] ✅ Pattern saved for ${enriched.ruleId}`);
+              return true;
             }
+            return false;
           } catch (submitErr: any) {
             logger.warn(`[FixGen] Failed to save pattern for ${enriched.ruleId}:`, submitErr.message);
+            return false;
           }
-        }
-      }
+        })
+      );
+
+      const patternsSubmitted = submitResults.filter(Boolean).length;
       if (patternsSubmitted > 0) {
         logger.info(`[FixGen] 📚 Saved ${patternsSubmitted} new patterns to registry for future reuse`);
       }
