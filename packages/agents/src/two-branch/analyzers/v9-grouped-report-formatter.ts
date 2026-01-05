@@ -617,17 +617,13 @@ export class V9GroupedReportFormatter {
 
     console.log(`[Supabase Upload] Starting upload for ${ideFixFiles.length} files to analysis: ${analysisId}`);
 
-    // Upload files sequentially to avoid rate limiting (with small delay between uploads)
+    // OPTIMIZED: Upload files in parallel batches (10 concurrent) instead of sequential
+    const BATCH_SIZE = 10;
     const updatedFiles: IDEFixFile[] = [];
 
-    for (let i = 0; i < ideFixFiles.length; i++) {
-      const file = ideFixFiles[i];
+    // Helper function to upload a single file
+    const uploadSingleFile = async (file: IDEFixFile): Promise<IDEFixFile> => {
       try {
-        // Add delay between uploads to avoid rate limiting (except for first file)
-        if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between uploads
-        }
-
         const filePath = `${analysisId}/${file.filename}`;
         const fileContent = JSON.stringify(file.content, null, 2);
         const fileSizeKB = Math.round(fileContent.length / 1024);
@@ -650,7 +646,6 @@ export class V9GroupedReportFormatter {
 
         if (error) {
           console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error.message || error);
-          console.error(`[Supabase Upload] Error details:`, JSON.stringify(error, null, 2));
 
           // Track upload failure
           if (this.serviceHealthTracker) {
@@ -668,8 +663,7 @@ export class V9GroupedReportFormatter {
             });
           }
 
-          updatedFiles.push(file); // Return original file on error
-          continue;
+          return file; // Return original file on error
         }
 
         // Get public URL
@@ -695,7 +689,7 @@ export class V9GroupedReportFormatter {
           });
         }
 
-        updatedFiles.push(updatedFile);
+        return updatedFile;
       } catch (error) {
         console.error(`[Supabase Upload] Error uploading ${file.filename}:`, error);
 
@@ -714,7 +708,19 @@ export class V9GroupedReportFormatter {
           });
         }
 
-        updatedFiles.push(file); // Return original file on error
+        return file; // Return original file on error
+      }
+    };
+
+    // Process files in parallel batches
+    for (let i = 0; i < ideFixFiles.length; i += BATCH_SIZE) {
+      const batch = ideFixFiles.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map(uploadSingleFile));
+      updatedFiles.push(...batchResults);
+
+      // Small delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < ideFixFiles.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
