@@ -112,7 +112,7 @@ async function startAnalysis(language: string, tier: 'basic' | 'pro'): Promise<s
   return response.analysisId;
 }
 
-async function pollStatus(analysisId: string, maxMinutes: number = 5): Promise<any> {
+async function pollStatus(analysisId: string, maxMinutes: number = 10): Promise<any> {
   const maxAttempts = maxMinutes * 30; // 2 second intervals
   let attempts = 0;
 
