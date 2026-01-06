@@ -1,61 +1,166 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 77 Final (January 6, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Manual Review Handling
-**Status**: Context-aware patterns DEPLOYED, Manual review display logic IMPLEMENTED, AI validation flag PENDING
+**Last Updated**: Session 79 (January 6, 2026)
+**Current Phase**: V9 Two-Branch Analysis - Post-Apply Verification
+**Status**: Parallel validation COMPLETE, Post-apply verification with auto-revert IMPLEMENTED ✅
 
 ---
 
-## 🚨 CRITICAL: Session 78 TODO (P0)
+## 🎉 Session 79 Completed
 
-### P0: Complete Manual Review Flag Implementation
+### P0: Post-Apply Verification with Auto-Revert ✅
 
-**Problem Found in Session 77:**
-When AI generates a fix that FAILS validation, the broken code is still shown to users.
-The display logic to show guidance instead of broken code is IN PLACE, but the
-`manualReview.required` flag is NOT being set when validation fails.
+**Problem Solved:**
+User wanted assurance that fixes applied to their codebase don't introduce regressions. If a fix causes new issues, it should be automatically reverted.
 
-**Current State:**
-- ✅ `v9-analyze.ts`: Checks `manualReview.required` and shows guidance instead of broken code
-- ❌ `ai-fixer-agent.ts`: Does NOT set `manualReview.required` when validation fails
+**Solution: Three-Level Verification System**
 
-**Where to Fix:**
-File: `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts` or `ai-fixer-verifier.ts`
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ NEW FLOW (Session 79)                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ VERIFICATION LEVELS:                                            │
+│                                                                 │
+│ 1. quick_apply      → Apply fixes immediately (fastest)         │
+│ 2. standard_verify  → Scan modified files only (default)        │
+│ 3. full_regression  → Full codebase scan + auto-revert          │
+│                                                                 │
+│ FLOW:                                                           │
+│ 1. Apply verified fixes to files                                │
+│ 2. Run regression scan (based on level)                         │
+│ 3. If new issues found → Revert specific fix that caused them   │
+│ 4. Auto-commit remaining verified fixes                         │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-When `ToolRevalidator` returns `success: false` (score drops from 100 to 70), update the fix:
+**Changes Made:**
+
+1. **`apps/api/src/services/post-apply-verification-service.ts`** (NEW):
+   - `PostApplyVerificationService` class handles fix application
+   - Backup original files before applying
+   - Run regression scan based on verification level
+   - Auto-revert fixes that cause regressions
+   - Auto-commit remaining fixes
+
+2. **`apps/api/src/routes/v9-analyze.ts`:**
+   - Added `POST /api/v9/apply-fixes` endpoint
+   - Added `GET /api/v9/verification-levels` endpoint
+   - Imported `PostApplyVerificationService`
+
+3. **`apps/api/src/routes/users.ts`:**
+   - Added `verification_level` setting (quick_apply | standard_verify | full_regression)
+   - Added `auto_commit_fixes` setting (boolean)
+
+4. **`packages/database/src/migrations/005_add_verification_settings.sql`** (NEW):
+   - Adds `verification_level` column with default 'standard_verify'
+   - Adds `auto_commit_fixes` column with default false
+
+**API Endpoints:**
+
+```bash
+# Apply fixes with verification
+POST /api/v9/apply-fixes
+{
+  "analysisId": "abc123",
+  "fixes": [...],
+  "verificationLevel": "full_regression",
+  "autoCommit": true,
+  "repositoryPath": "/path/to/repo"
+}
+
+# Get verification level options
+GET /api/v9/verification-levels
+```
+
+**User Settings:**
+Users can save their preferred verification level in settings:
+- `verification_level`: 'quick_apply' | 'standard_verify' | 'full_regression'
+- `auto_commit_fixes`: true | false
+
+---
+
+## Session 80 TODO
+
+### P0: Run Database Migrations
+
+Run BOTH migrations on Supabase:
+```sql
+-- Execute in Supabase SQL editor
+
+-- Migration 004: Pattern contribution
+-- File: packages/database/src/migrations/004_add_save_patterns_setting.sql
+
+-- Migration 005: Verification settings
+-- File: packages/database/src/migrations/005_add_verification_settings.sql
+```
+
+### P1: Test Apply-Fixes Endpoint
+
+Test the new endpoint locally:
+```bash
+# Start API
+cd ~/codequal/apps/api
+npm run dev
+
+# Test verification levels endpoint
+curl http://localhost:3000/api/v9/verification-levels
+
+# Test apply-fixes (need analysis results first)
+```
+
+### P2: Integrate Full Tool Scan in Regression Check
+
+The `runFullToolScan()` method in `post-apply-verification-service.ts` is currently a stub.
+Need to integrate with `V9ToolOrchestrator` for real tool execution:
+
 ```typescript
-if (!validationResult.success) {
-  recommendation.manualReview = {
-    required: true,
-    reason: 'VALIDATION_FAILED',
-    remediationSteps: [...],
-    documentationLinks: [...],
-  };
-  recommendation.confidence = 0; // Force manual review
+// In post-apply-verification-service.ts
+private async runFullToolScan(): Promise<...> {
+  // TODO: Integrate with V9ToolOrchestrator
+  // Run PMD, ESLint, etc. on modified files
+  // Compare with baseline to identify new issues
 }
 ```
 
-**Test Case (CloseResource in MavenWrapperDownloader.java):**
-```java
-// Lines 109-112: Multiple unclosed resources
-ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-FileOutputStream fos = new FileOutputStream(destination);
-fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+### P3: Test Parallel Validation (Carried Over)
+
+Deploy and test Session 78's parallel validation:
+```bash
+cd ~/codequal/packages/agents
+API_BASE_URL=http://localhost:3000 LANG=java npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 ```
 
-This is a LEGITIMATE manual-review case:
-- Multi-resource try-with-resources refactoring
-- AI cannot reliably generate correct fix
-- User should see guidance, not broken code
+---
 
-**Correct Fix (for reference):**
-```java
-try (InputStream is = website.openStream();
-     ReadableByteChannel rbc = Channels.newChannel(is);
-     FileOutputStream fos = new FileOutputStream(destination)) {
-    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-}
+## Session 78 Summary (Previous)
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts` | Re-enabled tool revalidation, added VALIDATION_FAILED reason |
+| `apps/api/src/routes/v9-analyze.ts` | Rewrote flow: validate ALL fixes in parallel BEFORE showing |
+
+### Key Architecture Change
+
+**Before (Session 76-77):**
 ```
+Generate fix → Show to user → Maybe validate later
+Risk: Users see broken code
+```
+
+**After (Session 78):**
+```
+Generate fix → Validate in parallel → Only show verified
+Brand safety: Never show unverified code
+```
+
+### Validation Status Field
+
+Each fix now includes `validationStatus`:
+- `verified` - Passed tool revalidation, safe to apply
+- `failed_validation` - AI generated code but it didn't pass validation
+- `failed_generation` - AI couldn't generate valid code at all
 
 ---
 

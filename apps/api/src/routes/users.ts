@@ -49,6 +49,9 @@ const updateSettingsSchema = z.object({
   email_notifications: z.boolean().optional(),
   // SESSION 77: Pattern contribution settings
   save_patterns: z.boolean().optional(),  // Auto-save AI fixes as patterns (PRO feature)
+  // SESSION 79: Fix verification preferences
+  verification_level: z.enum(['quick_apply', 'standard_verify', 'full_regression']).optional(),
+  auto_commit_fixes: z.boolean().optional(),  // Auto-commit verified fixes after regression scan
 });
 
 // Get current user profile
@@ -198,7 +201,7 @@ router.patch('/settings', async (req: Request, res: Response) => {
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id)
-      .select('preferred_language, theme, email_notifications, save_patterns')
+      .select('preferred_language, theme, email_notifications, save_patterns, verification_level, auto_commit_fixes')
       .single();
 
     if (error) {

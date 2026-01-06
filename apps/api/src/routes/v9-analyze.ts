@@ -25,6 +25,13 @@ import { LSPSARIFConverter } from '@codequal/agents/two-branch/analyzers/lsp-sar
 // PR Context Service for fetching real PR metadata
 import { PRContextService } from '../services/pr-context-service';
 
+// SESSION 79: Post-Apply Verification Service for fix application with regression checking
+import {
+  PostApplyVerificationService,
+  VERIFICATION_LEVELS,
+  VerificationLevel
+} from '../services/post-apply-verification-service';
+
 const execAsync = promisify(exec);
 
 const logger = createLogger('v9-analyze');
@@ -2113,74 +2120,134 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
         verbose: false
       });
 
-      // Apply AI-generated fixes
-      for (const enriched of result.enrichedIssues) {
-        if (enriched.fixRecommendation) {
-          const rec = enriched.fixRecommendation;
+      // SESSION 78: VALIDATE ALL FIXES BEFORE SHOWING TO USER
+      // Brand safety: Never show unverified fix code - broken fixes damage reputation
+      // Flow: Generate fixes → Validate ALL in parallel → Only show verified fixes
+      logger.info(`[FixGen] 🔍 Validating ${result.enrichedIssues.length} AI-generated fixes in parallel...`);
 
-          // SESSION 77: If manual review is required (validation failed), show guidance instead of broken code
-          if (rec.manualReview?.required) {
-            fixes.set(enriched.id, {
-              suggestion: null, // Don't show broken code
-              confidence: 'manual',
-              cached: false,
-              aiGenerated: false,
-              manualRequired: true,
-              reason: rec.manualReview.reason,
-              remediationSteps: rec.manualReview.remediationSteps,
-              documentationLinks: rec.manualReview.documentationLinks,
-              riskLevel: rec.manualReview.riskLevel,
-              estimatedEffort: rec.manualReview.estimatedEffort,
-              explanation: rec.explanation,
-              bestPractices: rec.bestPractices,
-              educational: rec.issueDescription
-                ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
-                : `Manual review required for ${enriched.ruleId}`
-            });
-            manualReviewRequired++;
-          } else {
-            fixes.set(enriched.id, {
-              suggestion: rec.correctedCode || rec.fix,
-              confidence: rec.confidence >= 70 ? 'high' : rec.confidence >= 50 ? 'medium' : 'low',
-              cached: false,
-              aiGenerated: true,
-              model: rec.model,
-              explanation: rec.explanation,
-              bestPractices: rec.bestPractices,
-              educational: rec.issueDescription
-                ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}`
-                : `AI-generated fix for ${enriched.ruleId}`
-            });
-            aiGenerated++;
-          }
-        }
-      }
+      // Enable registry submission for validation
+      fixer.enableRegistrySubmission();
 
-      // SESSION 73: Submit successful AI fixes to pattern registry for future reuse
-      // This is the key optimization: once AI generates a fix, save it so next time
-      // the same rule is found, we use the cached pattern instead of calling AI again
-      // OPTIMIZED: Parallel pattern submissions instead of sequential
-      const submitableIssues = result.enrichedIssues.filter(
-        (e: any) => e.fixRecommendation && e.fixRecommendation.confidence >= 70
+      // Filter fixes that need validation (have correctedCode and no pre-existing manualReview)
+      const fixesToValidate = result.enrichedIssues.filter(
+        (e: any) => e.fixRecommendation?.correctedCode && !e.fixRecommendation?.manualReview?.required
       );
 
-      const submitResults = await Promise.all(
-        submitableIssues.map(async (enriched: any) => {
+      // Fixes that already failed AI generation (manualReview already set)
+      const alreadyFailed = result.enrichedIssues.filter(
+        (e: any) => e.fixRecommendation?.manualReview?.required
+      );
+
+      // Add already-failed fixes to map first
+      for (const enriched of alreadyFailed) {
+        const rec = enriched.fixRecommendation;
+        fixes.set(enriched.id, {
+          suggestion: null,
+          confidence: 'manual',
+          cached: false,
+          aiGenerated: false,
+          manualRequired: true,
+          validationStatus: 'failed_generation',
+          reason: rec.manualReview.reason,
+          remediationSteps: rec.manualReview.remediationSteps,
+          documentationLinks: rec.manualReview.documentationLinks,
+          riskLevel: rec.manualReview.riskLevel,
+          estimatedEffort: rec.manualReview.estimatedEffort,
+          explanation: rec.explanation,
+          bestPractices: rec.bestPractices,
+          educational: rec.issueDescription
+            ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
+            : `Manual review required for ${enriched.ruleId}`
+        });
+        manualReviewRequired++;
+      }
+
+      // Validate ALL remaining fixes in parallel (batch of 10 concurrent)
+      const validationStartTime = Date.now();
+      const validationResults = await Promise.all(
+        fixesToValidate.map(async (enriched: any) => {
           try {
             const submitted = await fixer.submitFixToRegistry(enriched, enriched.fixRecommendation);
-            if (submitted.submitted) {
-              logger.info(`[FixGen] ✅ Pattern saved for ${enriched.ruleId}`);
-              return true;
-            }
-            return false;
-          } catch (submitErr: any) {
-            logger.warn(`[FixGen] Failed to save pattern for ${enriched.ruleId}:`, submitErr.message);
-            return false;
+            return {
+              enriched,
+              validated: submitted.submitted,
+              message: submitted.message,
+              patternStatus: submitted.patternStatus
+            };
+          } catch (err: any) {
+            logger.warn(`[FixGen] Validation error for ${enriched.ruleId}:`, err.message);
+            return {
+              enriched,
+              validated: false,
+              message: err.message
+            };
           }
         })
       );
+      const validationDuration = Date.now() - validationStartTime;
+      logger.info(`[FixGen] ⏱️ Validation completed in ${(validationDuration / 1000).toFixed(1)}s`);
 
-      const patternsSubmitted = submitResults.filter(Boolean).length;
+      // Process validation results - only show verified fixes
+      let verified = 0;
+      let validationFailed = 0;
+
+      for (const result of validationResults) {
+        const { enriched, validated, message } = result;
+        const rec = enriched.fixRecommendation;
+
+        if (validated) {
+          // ✅ VERIFIED: Safe to show fix code
+          fixes.set(enriched.id, {
+            suggestion: rec.correctedCode || rec.fix,
+            confidence: rec.confidence >= 70 ? 'high' : rec.confidence >= 50 ? 'medium' : 'low',
+            cached: false,
+            aiGenerated: true,
+            validationStatus: 'verified', // SESSION 78: Clear indicator
+            model: rec.model,
+            explanation: rec.explanation,
+            bestPractices: rec.bestPractices,
+            educational: rec.issueDescription
+              ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}`
+              : `AI-generated fix for ${enriched.ruleId}`
+          });
+          aiGenerated++;
+          verified++;
+        } else {
+          // ❌ VALIDATION FAILED: Show guidance only, never broken code
+          logger.warn(`[FixGen] ⚠️ Validation failed for ${enriched.ruleId}: ${message}`);
+          fixes.set(enriched.id, {
+            suggestion: null, // Never show unverified code
+            confidence: 'manual',
+            cached: false,
+            aiGenerated: false,
+            manualRequired: true,
+            validationStatus: 'failed_validation', // SESSION 78: Clear indicator
+            reason: 'VALIDATION_FAILED',
+            remediationSteps: [
+              `1. Review the issue at ${enriched.file}:${enriched.line}`,
+              `2. Understand why ${enriched.ruleId} was triggered: ${enriched.message || 'See documentation'}`,
+              '3. The AI-generated fix did not pass validation - apply fix manually',
+              '4. Verify the fix doesn\'t break existing functionality',
+              '5. Run tests to ensure no regressions',
+            ],
+            documentationLinks: rec.manualReview?.documentationLinks || [],
+            riskLevel: enriched.severity === 'critical' ? 'critical' : enriched.severity === 'high' ? 'high' : 'medium',
+            estimatedEffort: 'moderate',
+            explanation: rec.explanation || `AI fix failed validation: ${message}`,
+            bestPractices: rec.bestPractices,
+            educational: rec.issueDescription
+              ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
+              : `Manual review required for ${enriched.ruleId} - AI fix failed validation`
+          });
+          manualReviewRequired++;
+          validationFailed++;
+        }
+      }
+
+      logger.info(`[FixGen] 📊 Validation summary: ${verified} verified ✅, ${validationFailed} failed ❌, ${alreadyFailed.length} generation failed`);
+
+      // Log pattern submissions for future reuse
+      const patternsSubmitted = validationResults.filter(r => r.validated).length;
       if (patternsSubmitted > 0) {
         logger.info(`[FixGen] 📚 Saved ${patternsSubmitted} new patterns to registry for future reuse`);
       }
@@ -2750,5 +2817,150 @@ function generateAchievements(result: any, resolvedIssues: any[], isPro: boolean
 
   return achievements;
 }
+
+// ============================================================================
+// SESSION 79: APPLY FIXES WITH VERIFICATION
+// ============================================================================
+
+/**
+ * Apply fixes with verification endpoint
+ *
+ * Request body:
+ * - analysisId: string - The analysis ID containing fixes to apply
+ * - fixes: VerifiedFix[] - Array of fixes to apply
+ * - verificationLevel: 'quick_apply' | 'standard_verify' | 'full_regression'
+ * - autoCommit: boolean - Whether to auto-commit after successful application
+ * - repositoryPath: string - Local path to the repository
+ */
+const ApplyFixesRequestSchema = z.object({
+  analysisId: z.string(),
+  fixes: z.array(z.object({
+    id: z.string(),
+    file: z.string(),
+    line: z.number(),
+    column: z.number().optional(),
+    ruleId: z.string(),
+    tool: z.string(),
+    originalCode: z.string(),
+    fixedCode: z.string(),
+    validationStatus: z.enum(['verified', 'failed_validation', 'failed_generation']),
+    confidence: z.enum(['high', 'medium', 'low', 'manual'])
+  })),
+  verificationLevel: z.enum(['quick_apply', 'standard_verify', 'full_regression']),
+  autoCommit: z.boolean().default(false),
+  repositoryPath: z.string()
+});
+
+/**
+ * @swagger
+ * /api/v9/apply-fixes:
+ *   post:
+ *     summary: Apply verified fixes with optional regression checking
+ *     description: Applies fixes to files with configurable verification levels
+ *     tags: [Fixes]
+ */
+router.post('/apply-fixes', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
+  try {
+    const validation = ApplyFixesRequestSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        details: validation.error.errors
+      });
+    }
+
+    const { analysisId, fixes, verificationLevel, autoCommit, repositoryPath } = validation.data;
+
+    logger.info(`[ApplyFixes] Starting fix application`, {
+      analysisId,
+      totalFixes: fixes.length,
+      verificationLevel,
+      autoCommit
+    });
+
+    // Filter to only verified fixes
+    const verifiedFixes = fixes.filter(f => f.validationStatus === 'verified');
+    if (verifiedFixes.length === 0) {
+      return res.status(400).json({
+        error: 'No verified fixes to apply',
+        message: 'All provided fixes either failed validation or generation',
+        totalProvided: fixes.length,
+        verified: 0
+      });
+    }
+
+    logger.info(`[ApplyFixes] ${verifiedFixes.length} verified fixes out of ${fixes.length} total`);
+
+    // Apply fixes with verification
+    const verificationService = new PostApplyVerificationService();
+    const result = await verificationService.applyWithVerification({
+      analysisId,
+      repositoryPath,
+      fixes: verifiedFixes,
+      verificationLevel,
+      autoCommit
+    });
+
+    const duration = Date.now() - startTime;
+
+    // Log summary
+    logger.info(`[ApplyFixes] Complete`, {
+      applied: result.applied,
+      skipped: result.skipped,
+      reverted: result.reverted,
+      failed: result.failed,
+      duration: `${duration}ms`,
+      commitSha: result.commitSha
+    });
+
+    return res.json({
+      success: result.success,
+      summary: {
+        totalFixes: result.totalFixes,
+        applied: result.applied,
+        skipped: result.skipped,
+        reverted: result.reverted,
+        failed: result.failed
+      },
+      results: result.results,
+      commit: result.commitSha ? {
+        sha: result.commitSha,
+        message: `Applied ${result.applied} verified code quality fixes`
+      } : null,
+      regressions: result.regressionsSummary,
+      timing: {
+        duration: `${duration}ms`,
+        verificationLevel
+      }
+    });
+  } catch (error: any) {
+    logger.error('[ApplyFixes] Failed:', error);
+    return res.status(500).json({
+      error: 'Failed to apply fixes',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v9/verification-levels:
+ *   get:
+ *     summary: Get available verification levels and descriptions
+ *     description: Returns all verification levels with their descriptions and recommendations
+ *     tags: [Fixes]
+ */
+router.get('/verification-levels', (_req: Request, res: Response) => {
+  return res.json({
+    levels: Object.entries(VERIFICATION_LEVELS).map(([key, value]) => ({
+      id: key,
+      ...value
+    })),
+    default: 'standard_verify',
+    recommendation: 'Use standard_verify for most PRs. Use full_regression for critical codebases.'
+  });
+});
 
 export default router;
