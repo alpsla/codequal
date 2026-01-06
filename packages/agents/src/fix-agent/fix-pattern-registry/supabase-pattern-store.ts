@@ -244,7 +244,14 @@ export class SupabasePatternStore {
           }
         }
 
-        // Fall back to generic pattern (without context key)
+        // SESSION 77 FIX: For context-sensitive rules, DON'T fall back to generic patterns
+        // This ensures AI generates context-specific fixes instead of using wrong generic fixes
+        if (contextKey) {
+          console.log(`[SupabasePatternStore] No context-specific pattern for ${ruleId}:${contextKey} - returning null to trigger AI generation`);
+          return null; // Force AI to generate a new context-specific fix
+        }
+
+        // Fall back to generic pattern (only for non-context-sensitive rules)
         const { data, error } = await this.client
           .rpc('lookup_fix_patterns', {
             p_rule_id: ruleId,
