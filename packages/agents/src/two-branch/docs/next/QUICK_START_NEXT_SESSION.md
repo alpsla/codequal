@@ -1,12 +1,108 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 77 Final (January 5, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Production Ready
-**Status**: Java testing COMPLETE (96% AI fix rate), educational URLs for all tools IMPLEMENTED
+**Last Updated**: Session 77 Final (January 6, 2026)
+**Current Phase**: V9 Two-Branch Analysis - Manual Review Handling
+**Status**: Context-aware patterns DEPLOYED, Manual review display logic IMPLEMENTED, AI validation flag PENDING
 
 ---
 
-## Session 77 Continued
+## 🚨 CRITICAL: Session 78 TODO (P0)
+
+### P0: Complete Manual Review Flag Implementation
+
+**Problem Found in Session 77:**
+When AI generates a fix that FAILS validation, the broken code is still shown to users.
+The display logic to show guidance instead of broken code is IN PLACE, but the
+`manualReview.required` flag is NOT being set when validation fails.
+
+**Current State:**
+- ✅ `v9-analyze.ts`: Checks `manualReview.required` and shows guidance instead of broken code
+- ❌ `ai-fixer-agent.ts`: Does NOT set `manualReview.required` when validation fails
+
+**Where to Fix:**
+File: `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts` or `ai-fixer-verifier.ts`
+
+When `ToolRevalidator` returns `success: false` (score drops from 100 to 70), update the fix:
+```typescript
+if (!validationResult.success) {
+  recommendation.manualReview = {
+    required: true,
+    reason: 'VALIDATION_FAILED',
+    remediationSteps: [...],
+    documentationLinks: [...],
+  };
+  recommendation.confidence = 0; // Force manual review
+}
+```
+
+**Test Case (CloseResource in MavenWrapperDownloader.java):**
+```java
+// Lines 109-112: Multiple unclosed resources
+ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+FileOutputStream fos = new FileOutputStream(destination);
+fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+```
+
+This is a LEGITIMATE manual-review case:
+- Multi-resource try-with-resources refactoring
+- AI cannot reliably generate correct fix
+- User should see guidance, not broken code
+
+**Correct Fix (for reference):**
+```java
+try (InputStream is = website.openStream();
+     ReadableByteChannel rbc = Channels.newChannel(is);
+     FileOutputStream fos = new FileOutputStream(destination)) {
+    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+}
+```
+
+---
+
+## Session 77 Final Summary (January 6, 2026)
+
+### Commits Created
+
+| Commit | Description |
+|--------|-------------|
+| `021a65e4` | feat(session-77): Context-aware pattern matching and educational URLs |
+| `02708c68` | fix(session-77): Don't fallback to generic patterns for context-sensitive rules |
+| `79455638` | fix(session-77): Show guidance instead of broken fixes when validation fails |
+
+### Key Accomplishments
+
+1. **Context-Aware Pattern Matching** - DEPLOYED
+   - Patterns now stored with `context_key` (e.g., `CloseResource::pmd::FileInputStream`)
+   - For context-sensitive rules, returns null if no specific pattern exists
+   - Forces AI to generate context-specific fixes instead of using wrong generic patterns
+
+2. **Educational URLs Fixed** - DEPLOYED
+   - All tools now generate specific rule documentation URLs
+   - PMD: 200+ rules mapped to category pages
+   - Checkstyle, SpotBugs, Pylint, golangci-lint, RuboCop, Clippy, PHPStan, Psalm
+
+3. **Manual Review Display Logic** - DEPLOYED (partial)
+   - `v9-analyze.ts` checks `manualReview.required` flag
+   - Shows remediation steps and documentation instead of broken code
+   - **PENDING**: AIFixerAgent needs to SET the flag when validation fails
+
+4. **Database Migrations** - EXECUTED
+   - `003_add_context_key_column.sql` - ✅ Run on Supabase
+   - `004_add_save_patterns_setting.sql` - ⏳ Pending
+
+### Test Results (Java - Final)
+
+| Tier | Issues | Fixed | Fix Rate | Duration |
+|------|--------|-------|----------|----------|
+| BASIC | 102 | N/A | - | ~75s |
+| PRO | 102 | 98 | 96% | ~300s |
+
+- 4 issues require manual review (complex multi-resource patterns)
+- Pattern library: 641 active patterns (no new context-specific yet - validation failing)
+
+---
+
+## Session 77 Continued Details
 
 ### Context-Aware Pattern Matching (NEW FEATURE)
 
