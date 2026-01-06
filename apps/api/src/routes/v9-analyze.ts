@@ -443,10 +443,10 @@ router.post('/reports', async (req: Request, res: Response) => {
     };
 
     // Debug: log the report keys before sending
-    logger.info('[Reports] unifiedReport keys:', Object.keys(unifiedReport));
-    logger.info('[Reports] isPro:', isPro, 'tier:', tier);
-    logger.info('[Reports] Has ideExports:', 'ideExports' in unifiedReport);
-    logger.info('[Reports] Has patternContribution:', 'patternContribution' in unifiedReport);
+    logger.info(`[Reports] unifiedReport keys: ${Object.keys(unifiedReport).join(', ')}`);
+    logger.info(`[Reports] isPro: ${isPro}, tier: ${tier}`);
+    logger.info(`[Reports] Has ideExports: ${'ideExports' in unifiedReport}`);
+    logger.info(`[Reports] Has patternContribution: ${'patternContribution' in unifiedReport}`);
 
     res.json(unifiedReport);
 
@@ -2047,11 +2047,19 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
 
   // Phase 1: Check pattern registry for cached fixes (FREE for all tiers)
   // OPTIMIZED: Parallel pattern lookups instead of sequential
+  // SESSION 77: Pass codeContext for context-aware pattern matching
   if (patternStore) {
     const patternResults = await Promise.all(
       issues.map(async (issue) => {
         try {
-          const pattern = await patternStore.lookupPattern(issue.type, issue.tool);
+          // SESSION 77: Pass codeContext to enable context-aware matching
+          // e.g., CloseResource with FileInputStream vs ReadableByteChannel
+          const pattern = await patternStore.lookupPattern(
+            issue.type,
+            issue.tool,
+            true, // activeOnly
+            issue.codeContext // Code context for extracting resource type
+          );
           return { issue, pattern };
         } catch (e) {
           return { issue, pattern: null };
@@ -2129,11 +2137,11 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
       // the same rule is found, we use the cached pattern instead of calling AI again
       // OPTIMIZED: Parallel pattern submissions instead of sequential
       const submitableIssues = result.enrichedIssues.filter(
-        e => e.fixRecommendation && e.fixRecommendation.confidence >= 70
+        (e: any) => e.fixRecommendation && e.fixRecommendation.confidence >= 70
       );
 
       const submitResults = await Promise.all(
-        submitableIssues.map(async (enriched) => {
+        submitableIssues.map(async (enriched: any) => {
           try {
             const submitted = await fixer.submitFixToRegistry(enriched, enriched.fixRecommendation);
             if (submitted.submitted) {

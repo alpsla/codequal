@@ -823,6 +823,10 @@ export class V9GroupedReportFormatter {
     // This ensures consistent analysisId across all files
     const analysisTimestamp = Date.now();
 
+    // SESSION 77: Fetch pattern count from Supabase before report generation
+    // This ensures we show the real count instead of hardcoded 640
+    await this.fetchPatternCount();
+
     const markdown: string[] = [];
     let ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
 

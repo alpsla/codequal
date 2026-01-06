@@ -1,12 +1,224 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 76 (January 5, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Performance Optimization Complete
-**Status**: Java BASIC + PRO tests passing on Oracle Cloud
+**Last Updated**: Session 77 Final (January 5, 2026)
+**Current Phase**: V9 Two-Branch Analysis - Production Ready
+**Status**: Java testing COMPLETE (96% AI fix rate), educational URLs for all tools IMPLEMENTED
 
 ---
 
-## Session 76 Completed
+## Session 77 Continued
+
+### Context-Aware Pattern Matching (NEW FEATURE)
+
+**Problem Solved**: One rule (e.g., CloseResource) can appear in different code contexts
+that require DIFFERENT fixes. Previous approach stored one pattern per `rule_id + tool`
+which caused wrong fixes to be applied.
+
+**Solution**: Added `context_key` field for context-aware pattern matching:
+- Pattern lookup: `rule_id + tool + context_key`
+- Example keys: `CloseResource::pmd::FileInputStream`, `CloseResource::pmd::ReadableByteChannel`
+- Extracts resource type from code (FileInputStream, Socket, Connection, etc.)
+- Falls back to generic pattern if no context-specific pattern exists
+
+### Files Modified (Session 77 Continued)
+
+| File | Changes |
+|------|---------|
+| `fix-pattern-registry/types.ts` | Added `contextKey` field to FixPattern interface |
+| `fix-pattern-registry/supabase-pattern-store.ts` | Added `extractContextKey()`, context-aware lookup |
+| `fix-pattern-registry/fix-pattern-registry.ts` | Added context key extraction on pattern creation |
+| `fix-pattern-registry/index.ts` | Exported `extractContextKey` |
+| `apps/api/src/routes/v9-analyze.ts` | Added codeContext to pattern lookup calls |
+
+### Database Migration Created
+
+New migration for Supabase: `003_add_context_key_column.sql`
+- Adds `context_key` column to `fix_patterns` table
+- Adds index `idx_fix_patterns_context` on `(rule_id, tool, context_key)`
+- Updates `lookup_fix_patterns()` function to return `context_key`
+- Adds new `lookup_fix_pattern_with_context()` function
+
+**TO RUN MIGRATION:**
+```sql
+-- Execute in Supabase SQL editor
+-- File: packages/agents/src/fix-agent/infrastructure/supabase/migrations/003_add_context_key_column.sql
+```
+
+### Supported Resource Types (Java)
+
+The `extractContextKey()` function recognizes these resource patterns:
+- **Streams**: FileInputStream, FileOutputStream, BufferedReader, BufferedWriter, PrintWriter
+- **Channels**: FileChannel, SocketChannel, DatagramChannel, ReadableByteChannel
+- **Database**: Connection, PreparedStatement, Statement, ResultSet
+- **Sockets**: Socket, ServerSocket, DatagramSocket
+- **Other**: Scanner, RandomAccessFile, ZipFile, JarFile
+
+---
+
+## Session 77 Completed (Earlier)
+
+### Critical Bugs Fixed
+
+1. **Reverted Flawed Grouping Optimization (ai-fixer-agent.ts)**
+   - Session 76 added grouping by `ruleId + tool` to reduce AI calls
+   - BUG: Same rule in different code contexts needs DIFFERENT fixes
+   - Example: CloseResource for ReadableByteChannel vs FileInputStream
+   - Fix: Reverted to per-issue AI calls for context-specific fixes
+   - Impact: PRO tier now takes 311s (vs 257s) but generates CORRECT fixes
+
+2. **Added Case-Insensitive Pattern Lookup (supabase-pattern-store.ts)**
+   - Pattern lookup used exact matching (`WHERE rule_id = p_rule_id`)
+   - BUG: Tool outputs may have different casing than stored patterns
+   - Fix: Added `lookupPatternCaseInsensitive()` fallback with ILIKE query
+   - Impact: More pattern hits, fewer unnecessary AI calls
+
+3. **Deprecated Incorrect CloseResource Pattern (Supabase)**
+   - Pattern was generated from X509CertificateGeneratorApplication.java
+   - BUG: KeyStore fix code applied to ALL CloseResource issues
+   - Fix: Marked pattern as 'deprecated' (id: a811ec63-9733-41eb-89bc-cedfc537a303)
+   - Impact: AI now generates fresh context-specific fixes
+
+4. **Added Missing Java Patterns (scripts/add-missing-patterns.ts)**
+   - UnnecessarySemicolon: Pattern for removing trailing semicolons
+   - UnnecessaryImport: Pattern for removing unused imports
+   - Both now active in Supabase fix_patterns table
+
+### Root Cause Analysis
+
+**Why 88 AI calls when only ~4 should be new?**
+1. Pattern lookup was case-sensitive (exact match only)
+2. Some patterns had wrong fix templates stored (wrong context)
+3. Session 76 grouping was fundamentally flawed
+
+**Why fix recommendations showed wrong code?**
+1. CloseResource pattern stored KeyStore code (wrong codebase)
+2. Grouping optimization applied same fix to different contexts
+3. `adaptFixToContext()` only replaced file paths, not actual code
+
+### Test Results (Java - Session 77 Final)
+
+| Tier | Issues | Fixed | Fix Rate | Score | Duration |
+|------|--------|-------|----------|-------|----------|
+| **BASIC** | 102 | N/A | - | 85/100 | 85.7s |
+| **PRO** | 102 | **98** | **96%** | 85/100 | 551.1s |
+
+**Key Findings:**
+- **AI-fixer fixed 98 out of 102 issues (96% fix rate)**
+- 4 issues remained unfixed (complex edge cases)
+- 642 patterns in library (no new patterns - existing coverage)
+- PRO tier ~6.5x longer due to AI fix generation
+
+### Earlier Test Results (Session 77)
+
+| Tier | Duration | Status | Notes |
+|------|----------|--------|-------|
+| BASIC | 79s | ✅ Passed | Slightly longer due to pattern lookup fallback |
+| PRO | 311s | ✅ Passed | Longer due to per-issue AI calls (correct behavior) |
+
+### Files Modified (Session 77)
+
+| File | Changes |
+|------|---------|
+| `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts` | Reverted grouping, restored per-issue processing |
+| `packages/agents/src/fix-agent/fix-pattern-registry/supabase-pattern-store.ts` | Added case-insensitive fallback lookup |
+| `scripts/add-missing-patterns.ts` | Created script to add missing Java patterns |
+| `scripts/check-patterns.ts` | Created script to verify pattern availability |
+
+### Database Changes (Session 77)
+
+- Added UnnecessarySemicolon pattern (pmd)
+- Added UnnecessaryImport pattern (pmd)
+- Deprecated incorrect CloseResource pattern (id: a811ec63-...)
+
+---
+
+## Session 78 TODO
+
+### P0: Run Database Migration
+
+Run the context_key migration on Supabase:
+```sql
+-- Execute in Supabase SQL editor
+-- File: packages/agents/src/fix-agent/infrastructure/supabase/migrations/003_add_context_key_column.sql
+```
+
+Also run the save_patterns migration:
+```sql
+-- Execute in Supabase SQL editor
+-- File: packages/database/src/migrations/004_add_save_patterns_setting.sql
+```
+
+### P1: Plan Pattern Sharing Feature (Session 77 Note)
+
+**Feature: Community Pattern Sharing**
+
+The `save_patterns` user setting has been added to enable/disable auto-saving of AI-generated fixes as patterns. Planning needed for full implementation:
+
+1. **Frontend Settings Page**
+   - Add toggle for "Share my fix patterns with the community"
+   - Show current contribution stats (patterns contributed, developers helped)
+   - Privacy options (anonymous vs attributed contributions)
+
+2. **Pattern Saving Logic**
+   - Only save patterns when `user.save_patterns === true`
+   - Add user attribution to patterns (optional based on privacy preference)
+   - Add quality threshold (only save fixes that pass validation)
+
+3. **Community Impact Tracking**
+   - Track `usage_count`, `users_helped`, `time_saved_minutes` per pattern
+   - Aggregate stats for user's community impact dashboard
+   - Monthly/weekly leaderboards
+
+4. **API Endpoints Needed**
+   - `GET /api/user/community-impact` - Get user's contribution stats
+   - `GET /api/patterns/leaderboard` - Community leaderboard
+   - `PATCH /api/user/settings` - Already exists, includes `save_patterns`
+
+5. **Database Schema**
+   - Add `contributed_by_user_id` to `fix_patterns` table
+   - Add `is_anonymous` flag to patterns
+   - Create `pattern_usage_stats` table for tracking reuse
+
+**Files to reference:**
+- `packages/agents/src/two-branch/report/community-impact.ts` - Report section generator
+- `apps/api/src/routes/users.ts` - Settings endpoint (save_patterns added)
+- `packages/database/src/migrations/004_add_save_patterns_setting.sql` - Migration
+
+### P1: Test Context-Aware Matching
+
+After migration, test that patterns are stored with context keys:
+```bash
+cd ~/codequal/packages/agents
+API_BASE_URL=http://localhost:3000 LANG=java npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+```
+
+Check logs for context-aware pattern operations:
+```
+[SupabasePatternStore] Found context-specific pattern for CloseResource:FileInputStream
+[SupabasePatternStore] Saved pattern xxx for CloseResource:FileInputStream
+```
+
+### P2: Run Remaining Language Tests
+
+Test all 7 languages (only Java tested so far):
+
+```bash
+cd ~/codequal/packages/agents
+API_BASE_URL=http://localhost:3000 LANG=typescript npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+API_BASE_URL=http://localhost:3000 LANG=python npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+API_BASE_URL=http://localhost:3000 LANG=go npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+```
+
+### P2: Re-enable Grouping with Context Awareness
+
+The grouping optimization saved AI calls but needs improvement:
+1. Only group issues with IDENTICAL code context (same file/function)
+2. Or group only for truly rule-based fixes (format/style rules)
+3. Skip grouping for context-sensitive rules (CloseResource, security)
+
+---
+
+## Session 76 Completed (Previous)
 
 ### Major Performance Optimizations
 

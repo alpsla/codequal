@@ -14,7 +14,8 @@ import { getCuratedResourcesForRule } from './ai-enrichment';
 import {
   getDocumentationLinks,
   getFallbackDocumentation,
-  formatDocumentationLinksAsMarkdown
+  formatDocumentationLinksAsMarkdown,
+  TOOL_DOCUMENTATION  // SESSION 77: For fallback to tool reference pages
 } from './documentation-links';
 
 /**
@@ -448,6 +449,7 @@ function extractCVEId(ruleId: string, title: string, description?: string): stri
  * for critical and high-severity issues.
  *
  * BUG-090 FIX: Now accepts language parameter for language-specific resources
+ * SESSION 77 FIX: Show tool-specific documentation for ALL issues, not just critical/high
  *
  * @param issues - Array of enriched issues
  * @param language - Programming language (python, java, typescript, go)
@@ -458,11 +460,66 @@ export function generateEducationalResources(issues: EnrichedIssue[], language =
   const high = issues.filter(i => i.severity === 'high');
   const priorityIssues = [...critical, ...high];
 
-  // If no priority issues, show general message with language-specific books
-  if (priorityIssues.length === 0) {
-    let generalContent = `## 📚 Educational Resources
+  // SESSION 77 FIX: If no priority issues but other issues exist, show tool-specific docs
+  if (priorityIssues.length === 0 && issues.length > 0) {
+    let content = `## 📚 Educational Resources
 
 ✅ **No critical or high-priority issues found.**
+
+The following resources are based on the ${issues.length} medium/low severity issues detected:
+
+### Tool-Specific Documentation
+`;
+    // Get unique rules and their tools
+    const ruleMap = new Map<string, { tool: string; count: number; category?: string }>();
+    for (const issue of issues) {
+      const key = issue.rule || (issue as any).type || 'unknown';
+      const existing = ruleMap.get(key);
+      if (!existing) {
+        ruleMap.set(key, { tool: issue.tool || '', count: 1, category: issue.detectedCategory });
+      } else {
+        existing.count++;
+      }
+    }
+
+    // Get doc links for top rules (limit to 5 most frequent)
+    const sortedRules = Array.from(ruleMap.entries())
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 5);
+
+    let hasToolDocs = false;
+    for (const [ruleId, { tool, count }] of sortedRules) {
+      const docLinks = getDocumentationLinks(ruleId, tool);
+      if (docLinks.length > 0) {
+        hasToolDocs = true;
+        content += `\n**${ruleId}** (${count} occurrence${count > 1 ? 's' : ''}):\n`;
+        content += formatDocumentationLinksAsMarkdown(docLinks, 2) + '\n';
+      }
+    }
+
+    // If no tool-specific docs found, show tool reference pages
+    if (!hasToolDocs) {
+      const tools = new Set(issues.map(i => i.tool?.toLowerCase()).filter(Boolean));
+      for (const toolName of tools) {
+        const toolInfo = TOOL_DOCUMENTATION[toolName as string];
+        if (toolInfo?.rulesUrl) {
+          content += `- [📚 ${toolInfo.name} Rules Reference](${toolInfo.rulesUrl})\n`;
+        }
+      }
+    }
+
+    content += `\n### General Resources\n`;
+    resources.generalBooks.forEach(book => {
+      content += `- [📚 ${book.title}](${book.url})\n`;
+    });
+    return content;
+  }
+
+  // No issues at all
+  if (issues.length === 0) {
+    let generalContent = `## 📚 Educational Resources
+
+✅ **No issues found - excellent code quality!**
 
 Continue following best practices and consider integrating static analysis into your CI/CD pipeline to maintain this standard.
 

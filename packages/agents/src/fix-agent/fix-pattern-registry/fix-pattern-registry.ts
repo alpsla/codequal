@@ -24,7 +24,7 @@ import {
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { getFixSecurityValidator } from './fix-security-validator';
-import { getSupabasePatternStore, SupabasePatternStore } from './supabase-pattern-store';
+import { getSupabasePatternStore, SupabasePatternStore, extractContextKey } from './supabase-pattern-store';
 
 // =============================================================================
 // In-Memory Pattern Store (with Supabase persistence)
@@ -880,12 +880,16 @@ export class FixPatternRegistry implements IFixPatternRegistry {
       // - If not verified, go to 'pending_review' for manual check
       const isVerified = options.verified ?? false;
 
+      // SESSION 77: Extract context key for context-aware pattern matching
+      const contextKey = extractContextKey(submission.ruleId, submission.beforeCode);
+
       const pattern: FixPattern = {
         id: uuidv4(),
         ruleId: submission.ruleId,
         tool: submission.tool,
-        name: `AI Fix for ${submission.ruleId.split('.').pop()}`,
-        description: `AI-generated fix pattern for ${submission.ruleId}`,
+        contextKey, // SESSION 77: Context-aware pattern matching
+        name: `AI Fix for ${submission.ruleId.split('.').pop()}${contextKey ? ` (${contextKey})` : ''}`,
+        description: `AI-generated fix pattern for ${submission.ruleId}${contextKey ? ` with ${contextKey}` : ''}`,
         transformationType: analysis.transformationType,
         fileTypes: [this.getFileType(submission.filePath)],
         detection: analysis.detection,

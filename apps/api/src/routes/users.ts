@@ -47,6 +47,8 @@ const updateSettingsSchema = z.object({
   preferred_language: z.enum(['en', 'es', 'fr', 'de', 'it', 'pt', 'ja', 'ko', 'zh']).optional(),
   theme: z.enum(['light', 'dark', 'system']).optional(),
   email_notifications: z.boolean().optional(),
+  // SESSION 77: Pattern contribution settings
+  save_patterns: z.boolean().optional(),  // Auto-save AI fixes as patterns (PRO feature)
 });
 
 // Get current user profile
@@ -196,7 +198,7 @@ router.patch('/settings', async (req: Request, res: Response) => {
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id)
-      .select('preferred_language, theme, email_notifications')
+      .select('preferred_language, theme, email_notifications, save_patterns')
       .single();
 
     if (error) {

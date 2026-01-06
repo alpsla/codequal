@@ -25,6 +25,19 @@ export interface FixPattern {
   /** The tool that detects this rule (e.g., "semgrep", "eslint") */
   tool: string;
 
+  /**
+   * Context key for matching similar code contexts (SESSION 77)
+   *
+   * Examples:
+   * - CloseResource with FileInputStream → contextKey: "FileInputStream"
+   * - CloseResource with ReadableByteChannel → contextKey: "ReadableByteChannel"
+   * - CloseResource with Connection → contextKey: "Connection"
+   *
+   * This allows multiple patterns per rule, each for a different context.
+   * Pattern lookup: rule_id + tool + context_key
+   */
+  contextKey?: string;
+
   /** Human-readable name for this fix */
   name: string;
 

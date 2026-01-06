@@ -44,6 +44,7 @@ export {
   SupabasePatternStore,
   getSupabasePatternStore,
   resetSupabasePatternStore,
+  extractContextKey, // SESSION 77: Context-aware pattern matching
 } from './supabase-pattern-store';
 
 // Rule Normalizer (for cross-tool pattern matching)

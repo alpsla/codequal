@@ -246,23 +246,40 @@ export class AIFixerAgent {
 
   /**
    * Process a batch of issues in parallel
+   *
+   * IMPORTANT: Each issue needs its own AI call because:
+   * - Same rule in different code contexts needs different fixes
+   * - CloseResource for InputStream vs Channel vs Socket need different code
+   * - Pattern matching handles generic fixes; AI handles context-specific ones
+   *
+   * SESSION 77 REVERTED: Grouping optimization was flawed - it assumed
+   * same rule = same fix, but different code contexts need different fixes.
    */
   async processBatch(
     issues: AIFixerIssue[],
     options: { parallel?: number; verbose?: boolean } = {}
   ): Promise<AIFixerBatchResult> {
     const startTime = Date.now();
-    const parallel = options.parallel || 3;
+    const parallel = options.parallel || 5;
     const enrichedIssues: EnrichedIssue[] = [];
     const failed: { issue: AIFixerIssue; error: string }[] = [];
     let totalCost = 0;
 
-    // Process in batches
+    console.log(`[AI-Fixer] Processing ${issues.length} issues (parallel: ${parallel})`);
+
+    // Process issues in parallel batches
     for (let i = 0; i < issues.length; i += parallel) {
       const batch = issues.slice(i, i + parallel);
 
       const results = await Promise.allSettled(
-        batch.map((issue) => this.processIssue(issue))
+        batch.map(async (issue) => {
+          if (options.verbose) {
+            console.log(`[AI-Fixer] Processing: ${issue.ruleId} in ${issue.file}:${issue.line}`);
+          }
+
+          const enriched = await this.processIssue(issue);
+          return { enriched, cost: enriched.fixRecommendation.cost || 0 };
+        })
       );
 
       for (let j = 0; j < results.length; j++) {
@@ -270,14 +287,11 @@ export class AIFixerAgent {
         const issue = batch[j];
 
         if (result.status === 'fulfilled') {
-          enrichedIssues.push(result.value);
-          totalCost += result.value.fixRecommendation.cost || 0;
+          enrichedIssues.push(result.value.enriched);
+          totalCost += result.value.cost;
 
           if (options.verbose) {
-            console.log(
-              `[AI-Fixer] Processed ${issue.file}:${issue.line} - ` +
-                `${issue.ruleId} (${result.value.fixRecommendation.confidence}%)`
-            );
+            console.log(`[AI-Fixer] ✅ Fixed: ${issue.ruleId} (confidence: ${result.value.enriched.fixRecommendation.confidence}%)`);
           }
         } else {
           failed.push({
@@ -286,9 +300,7 @@ export class AIFixerAgent {
           });
 
           if (options.verbose) {
-            console.log(
-              `[AI-Fixer] Failed ${issue.file}:${issue.line} - ${result.reason?.message}`
-            );
+            console.log(`[AI-Fixer] ❌ Failed: ${issue.ruleId} - ${result.reason?.message}`);
           }
         }
       }
@@ -302,6 +314,11 @@ export class AIFixerAgent {
             0
           ) / enrichedIssues.length
         : 0;
+
+    console.log(
+      `[AI-Fixer] Batch complete: ${enrichedIssues.length}/${issues.length} fixed, ` +
+      `${issues.length} AI calls, avg confidence: ${Math.round(avgConfidence)}%`
+    );
 
     return {
       enrichedIssues,

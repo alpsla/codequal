@@ -192,9 +192,10 @@ async function testLanguageTier(language: string, tier: 'basic' | 'pro'): Promis
       language,
       tier,
       analysisId,
-      issues: analysisResult.result?.summary?.totalIssues || 0,
-      fixed: tier === 'pro' ? (analysisResult.result?.summary?.fixed || 0) : undefined,
-      score: analysisResult.result?.score?.overall || 0,
+      // SESSION 77: Fixed - summary is at top level, not under .result
+      issues: analysisResult.summary?.totalIssues || 0,
+      fixed: tier === 'pro' ? (analysisResult.summary?.fixed || 0) : undefined,
+      score: analysisResult.score?.overall || 0,
       duration,
       passed,
       report
