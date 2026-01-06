@@ -2024,6 +2024,7 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
   let patternHits = 0;
   let aiGenerated = 0;
   let failed = 0;
+  let manualReviewRequired = 0; // SESSION 77: Track fixes that require manual review
 
   // Try to import the AIFixerAgent and pattern store
   let AIFixerAgent: any = null;
@@ -2116,19 +2117,42 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
       for (const enriched of result.enrichedIssues) {
         if (enriched.fixRecommendation) {
           const rec = enriched.fixRecommendation;
-          fixes.set(enriched.id, {
-            suggestion: rec.correctedCode || rec.fix,
-            confidence: rec.confidence >= 70 ? 'high' : rec.confidence >= 50 ? 'medium' : 'low',
-            cached: false,
-            aiGenerated: true,
-            model: rec.model,
-            explanation: rec.explanation,
-            bestPractices: rec.bestPractices,
-            educational: rec.issueDescription
-              ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}`
-              : `AI-generated fix for ${enriched.ruleId}`
-          });
-          aiGenerated++;
+
+          // SESSION 77: If manual review is required (validation failed), show guidance instead of broken code
+          if (rec.manualReview?.required) {
+            fixes.set(enriched.id, {
+              suggestion: null, // Don't show broken code
+              confidence: 'manual',
+              cached: false,
+              aiGenerated: false,
+              manualRequired: true,
+              reason: rec.manualReview.reason,
+              remediationSteps: rec.manualReview.remediationSteps,
+              documentationLinks: rec.manualReview.documentationLinks,
+              riskLevel: rec.manualReview.riskLevel,
+              estimatedEffort: rec.manualReview.estimatedEffort,
+              explanation: rec.explanation,
+              bestPractices: rec.bestPractices,
+              educational: rec.issueDescription
+                ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
+                : `Manual review required for ${enriched.ruleId}`
+            });
+            manualReviewRequired++;
+          } else {
+            fixes.set(enriched.id, {
+              suggestion: rec.correctedCode || rec.fix,
+              confidence: rec.confidence >= 70 ? 'high' : rec.confidence >= 50 ? 'medium' : 'low',
+              cached: false,
+              aiGenerated: true,
+              model: rec.model,
+              explanation: rec.explanation,
+              bestPractices: rec.bestPractices,
+              educational: rec.issueDescription
+                ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}`
+                : `AI-generated fix for ${enriched.ruleId}`
+            });
+            aiGenerated++;
+          }
         }
       }
 
@@ -2188,15 +2212,17 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
   const patternHitRate = total > 0 ? Math.round((patternHits / total) * 100) : 0;
   const aiRate = total > 0 ? Math.round((aiGenerated / total) * 100) : 0;
 
-  logger.info(`[FixGen] Results: ${patternHits} pattern hits (${patternHitRate}%), ${aiGenerated} AI generated (${aiRate}%), ${failed} failed`);
+  // SESSION 77: Include manual review count in logging
+  logger.info(`[FixGen] Results: ${patternHits} pattern hits (${patternHitRate}%), ${aiGenerated} AI generated (${aiRate}%), ${manualReviewRequired} manual review, ${failed} failed`);
 
   return {
     fixes,
     cacheStats: {
       hits: patternHits,
-      misses: aiGenerated + failed,
+      misses: aiGenerated + failed + manualReviewRequired,
       hitRate: `${patternHitRate}%`,
       aiGenerated,
+      manualReviewRequired, // SESSION 77: Track fixes needing manual review
       failed
     }
   };
