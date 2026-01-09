@@ -4,10 +4,13 @@
  * Saves reports for pattern collection
  *
  * Usage:
- *   API_BASE_URL=http://localhost:3000 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+ *   API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
  *
  *   # Single language
- *   LANG=java API_BASE_URL=http://localhost:3000 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+ *   LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+ *
+ *   # Cost control: Limit PRO tier to 5 issues for testing
+ *   MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
  */
 
 import * as https from 'https';
@@ -17,6 +20,7 @@ import * as path from 'path';
 
 const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000';
 const LANG_FILTER = process.env.LANG?.toLowerCase();
+const MAX_ISSUES = process.env.MAX_ISSUES ? parseInt(process.env.MAX_ISSUES, 10) : undefined;
 
 // Test repositories for each language
 const TEST_REPOS: Record<string, { url: string; pr: number; name: string }> = {
@@ -94,6 +98,12 @@ async function fetchJson(url: string, options: any = {}): Promise<any> {
 async function startAnalysis(language: string, tier: 'basic' | 'pro'): Promise<string> {
   const repo = TEST_REPOS[language];
 
+  const options: any = { generateFixes: tier === 'pro' };
+  if (MAX_ISSUES && tier === 'pro') {
+    options.maxIssuesForFix = MAX_ISSUES;
+    console.log(`      [Cost Control] Limiting PRO tier to ${MAX_ISSUES} issues`);
+  }
+
   const response = await fetchJson(`${API_BASE}/api/v9/analyze`, {
     method: 'POST',
     body: {
@@ -101,7 +111,7 @@ async function startAnalysis(language: string, tier: 'basic' | 'pro'): Promise<s
       prNumber: repo.pr,
       language,
       userTier: tier,
-      options: { generateFixes: tier === 'pro' }
+      options
     }
   });
 

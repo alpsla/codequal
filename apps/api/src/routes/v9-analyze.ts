@@ -84,6 +84,7 @@ const AnalyzeRequestSchema = z.object({
     generateFixes: z.boolean().optional().default(true),
     includeEducational: z.boolean().optional().default(true),
     timeout: z.number().optional().default(300000),
+    maxIssuesForFix: z.number().optional(), // Limit issues for PRO tier fix generation (cost control)
     models: z.object({
       primary: z.string().optional().default('anthropic/claude-3-haiku-20240307'),
       fallback: z.string().optional().default('openai/gpt-3.5-turbo')
@@ -713,7 +714,8 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
 
       const fixResponse = await generateFixesWithHybridAgents(
         toolResults.issues,
-        { repository: repositoryUrl, prNumber, language }
+        { repository: repositoryUrl, prNumber, language },
+        { maxIssuesForFix: options?.maxIssuesForFix }
       );
 
       fixes = fixResponse.fixes;
@@ -2026,12 +2028,17 @@ function parseSpotbugsXML(xmlOutput: string): any[] {
  * 2. For unmatched issues, use AIFixerAgent to generate real fixes
  * 3. Store successful fixes in pattern registry for future reuse
  */
-async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
+async function generateFixesWithHybridAgents(
+  issues: any[],
+  prInfo: any,
+  options?: { maxIssuesForFix?: number }
+) {
   const fixes = new Map();
   let patternHits = 0;
   let aiGenerated = 0;
   let failed = 0;
   let manualReviewRequired = 0; // SESSION 77: Track fixes that require manual review
+  const maxIssues = options?.maxIssuesForFix; // Cost control: limit AI fix generation
 
   // Try to import the AIFixerAgent and pattern store
   let AIFixerAgent: any = null;
@@ -2090,7 +2097,13 @@ async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
   }
 
   // Phase 2: Use AI for remaining issues (PRO tier only)
-  const unmatchedIssues = issues.filter(i => !fixes.has(i.id));
+  let unmatchedIssues = issues.filter(i => !fixes.has(i.id));
+
+  // Apply maxIssuesForFix limit if specified (cost control during testing)
+  if (maxIssues && unmatchedIssues.length > maxIssues) {
+    logger.info(`[FixGen] Limiting AI fix generation from ${unmatchedIssues.length} to ${maxIssues} issues (maxIssuesForFix)`);
+    unmatchedIssues = unmatchedIssues.slice(0, maxIssues);
+  }
 
   if (AIFixerAgent && unmatchedIssues.length > 0) {
     try {
