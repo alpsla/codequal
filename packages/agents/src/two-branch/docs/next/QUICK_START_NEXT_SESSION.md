@@ -1,245 +1,208 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 80 (January 9, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Post-Apply Verification
-**Status**: Real tool scanning for 8 languages IMPLEMENTED, all Session 79 TODO complete
+**Last Updated**: Session 80 (January 9, 2026) - Evening Update
+**Current Phase**: V9 Two-Branch Analysis - Fix Validation & Knowledge Base
+**Status**: Pattern reuse validation FIXED, Knowledge Base architecture PLANNED
 
 ---
 
-## Session 80 Completed
+## Session 80 Completed (Evening)
 
-### All P0-P3 Tasks Complete
+### Critical Bug Fixes for AI Fix Validation
 
-**P0: Database Migrations on Supabase**
-- Migration 004: `save_patterns` column added to `user_profiles`
-- Migration 005: `verification_level` and `auto_commit_fixes` columns added
-- Connection issue resolved: Added `gssencmode=disable` to connection string
+**Bug 1: Pattern-reused fixes incorrectly marked as failed**
+- **Problem**: When pattern reuse succeeded in `verifyAndSubmit()`, it returned `success: true` but no `patternResponse`. The check `if (result.success && result.patternResponse)` failed.
+- **Fix**: Updated `submitFixToRegistry()` to handle `success: true` without `patternResponse`
+- **File**: `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts:1017-1038`
 
-**P1: Apply-Fixes Endpoint Tested**
-- `GET /api/v9/verification-levels` - Returns all 3 verification level options
-- `POST /api/v9/apply-fixes` - Successfully tested with all 3 levels:
-  - `quick_apply` - Applies immediately, no scanning
-  - `standard_verify` - Scans modified files only (default)
-  - `full_regression` - Full codebase scan with auto-revert
+**Bug 2: PMD ParseException for code snippets**
+- **Problem**: AI-generated fixes are code snippets, PMD requires full Java compilation units
+- **Fix**: Added `wrapCodeForValidation()` to wrap snippets in synthetic class, `adjustLineNumbers()` to correct line numbers
+- **File**: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts:576-656`
 
-**P2: Real Tool Scanning for All 8 Languages**
-Major implementation in `apps/api/src/services/post-apply-verification-service.ts`:
-- Language detection from file extensions
-- Baseline issue capture before applying fixes
-- Tool execution for regression detection
+### Test Results Improvement
 
-| Language | Tool | Command |
-|----------|------|---------|
-| Java | PMD | `pmd check --format json` |
-| TypeScript/JS | ESLint | `eslint --format json` |
-| Python | Pylint | `pylint --output-format=json` |
-| Go | golangci-lint | `golangci-lint run --out-format=json` |
-| Ruby | RuboCop | `rubocop --format json` |
-| Rust | Clippy | `cargo clippy --message-format=json` |
-| PHP | PHP_CodeSniffer | `phpcs --report=json` |
-| C#/.NET | dotnet | `dotnet build --verbosity normal` |
+| Metric | Before Fix | After Fix |
+|--------|------------|-----------|
+| Verified fixes | 0/5 | 4/5 |
+| Pattern reuse working | ❌ | ✅ |
+| PMD ParseException | Yes | Fixed |
 
-**P3: Parallel Validation Confirmed Working**
-- Ran `test-v9-2tier-all-languages.ts` for Java
-- BASIC tier: 18 issues, 83/100 score, 207s
-- PRO tier started fix generation with `parallel: 10`
-- Validation summary: `0 verified, 18 failed` (correctly marked for manual review)
-- Session 78 feature confirmed working
+### Regression Reporting (Partially Complete)
 
-### Commit Created
+Added `extractRegressionDetails()` method to `ai-fixer-agent.ts` to provide actionable regression info:
+- Extracts regression rules and messages from verification history
+- Provides specific guidance (e.g., "Add proper exception handling for EmptyCatchBlock")
+- Return type updated to include `regressionDetails` field
 
-```
-181d0bd1 feat(session-80): Real tool scanning for post-apply verification (8 languages)
-```
+**Still needed**: Update `v9-analyze.ts` to include regression details in user report
+
+### Cost Control Feature
+
+Added `maxIssuesForFix` parameter for testing:
+- Limits AI fix generation to N issues for cost control
+- Usage: `MAX_ISSUES=5` environment variable in test
+- Reduces AI calls by 72% (5 vs 18 for Java test)
 
 ---
 
 ## Session 81 TODO
 
-### P0: Complete PRO Tier Test
+### P0: Complete Regression Reporting (IN PROGRESS)
 
-The PRO tier Java test was interrupted mid-analysis. Re-run to confirm full flow:
+Update `v9-analyze.ts` (lines 2228-2257) to include regression details in the fix output:
+
+```typescript
+// Current (line 2231)
+fixes.set(enriched.id, {
+  suggestion: null,
+  confidence: 'manual',
+  reason: 'VALIDATION_FAILED',
+  // ... generic remediation steps
+});
+
+// Add: regressionDetails from submitFixToRegistry result
+if (result.regressionDetails) {
+  // Include specific regression info and guidance
+}
+```
+
+### P1: Create Fix Pattern Knowledge Base
+
+**Architecture decided**: Supabase table for fix pattern guidance
+
+Create migration file `packages/database/src/migrations/006_fix_pattern_guidance.sql`:
+
+```sql
+CREATE TABLE fix_pattern_guidance (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rule_id VARCHAR(100) NOT NULL,
+  language VARCHAR(50) NOT NULL,
+  tool VARCHAR(50) NOT NULL,
+
+  -- Anti-patterns to avoid
+  anti_patterns JSONB NOT NULL DEFAULT '[]',
+  -- Example: [{"pattern": "empty catch block", "why": "swallows errors"}]
+
+  -- Correct patterns to use
+  correct_patterns JSONB NOT NULL DEFAULT '[]',
+  -- Example: [{"pattern": "log and rethrow", "example": "catch(IOException e) { log.error(...); throw new RuntimeException(e); }"}]
+
+  -- Related rules that often conflict
+  related_rules VARCHAR(100)[] DEFAULT '{}',
+  -- Example: {"EmptyCatchBlock", "AvoidCatchingThrowable"}
+
+  -- Additional guidance text
+  guidance_text TEXT,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE(rule_id, language, tool)
+);
+
+CREATE INDEX idx_fix_pattern_guidance_rule ON fix_pattern_guidance(rule_id);
+CREATE INDEX idx_fix_pattern_guidance_language ON fix_pattern_guidance(language);
+```
+
+### P2: Create FixPatternGuidance Service
+
+Create `packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts`:
+
+```typescript
+export interface FixGuidance {
+  ruleId: string;
+  language: string;
+  antiPatterns: Array<{ pattern: string; why: string }>;
+  correctPatterns: Array<{ pattern: string; example: string }>;
+  relatedRules: string[];
+  guidanceText: string;
+}
+
+export async function getFixGuidance(ruleId: string, language: string): Promise<FixGuidance | null>;
+export async function addFixGuidance(guidance: FixGuidance): Promise<void>;
+```
+
+### P3: Integrate Guidance into AI Fixer
+
+Modify `generateFixRecommendation()` in `ai-fixer-agent.ts`:
+1. Query knowledge base for rule-specific guidance
+2. Include anti-patterns in system prompt
+3. Include correct patterns as examples
+
+### P4: Seed Initial Knowledge Base
+
+Add entries for common problematic patterns:
+- CloseResource + EmptyCatchBlock conflict
+- AvoidCatchingThrowable guidance
+- UseUtilityClass patterns
+
+---
+
+## Files Modified This Session
+
+```
+packages/agents/src/fix-agent/agents/ai-fixer-agent.ts
+  - Line 970-983: Updated submitFixToRegistry return type
+  - Line 1040-1047: Handle pattern reuse success without patternResponse
+  - Line 1054-1109: Added extractRegressionDetails() method
+
+packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts
+  - Line 576-656: Added wrapCodeForValidation() and adjustLineNumbers()
+  - Line 1321-1343: Applied wrapper in validateFix()
+
+apps/api/src/routes/v9-analyze.ts
+  - Added maxIssuesForFix parameter support
+
+packages/agents/tests/integration/test-v9-2tier-all-languages.ts
+  - Added MAX_ISSUES env var support for cost control
+```
+
+---
+
+## Quick Test Commands
 
 ```bash
 # Start API
-cd ~/codequal/apps/api && npm run dev
+cd ~/CodePrjects/codequal/apps/api && npm run dev
 
-# Run Java 2-tier test
-cd ~/codequal/packages/agents
-API_BASE_URL=http://localhost:3001 LANG=java npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-```
+# Test with cost control (5 issues only)
+cd ~/CodePrjects/codequal/packages/agents
+MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 
-Expected: PRO tier should complete with parallel fix validation.
-
-### P1: Test Other Languages (2-Tier)
-
-Test remaining languages to verify tool scanners work correctly:
-
-```bash
-# TypeScript
-API_BASE_URL=http://localhost:3001 LANG=typescript npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-
-# Python
-API_BASE_URL=http://localhost:3001 LANG=python npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-
-# Go
-API_BASE_URL=http://localhost:3001 LANG=go npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-```
-
-### P2: Test Apply-Fixes with Real Analysis Results
-
-Test the full flow from analysis to fix application:
-
-1. Run analysis (BASIC or PRO tier)
-2. Get analysis results with fix recommendations
-3. Call `/api/v9/apply-fixes` with real fixes
-4. Verify regression scan executes correctly
-5. Check auto-revert if new issues detected
-
-### P3: Pattern Sharing Feature (Carried Over)
-
-Planning needed for community pattern sharing:
-
-1. **Frontend Settings Page**
-   - Toggle for "Share my fix patterns with the community"
-   - Contribution stats dashboard
-
-2. **API Endpoints**
-   - `GET /api/user/community-impact`
-   - `GET /api/patterns/leaderboard`
-
-3. **Database Schema**
-   - `contributed_by_user_id` in `fix_patterns`
-   - `is_anonymous` flag
-   - `pattern_usage_stats` table
-
----
-
-## Session 79 Summary (Previous)
-
-### Post-Apply Verification with Auto-Revert
-
-Implemented three-level verification system:
-
-```
-VERIFICATION LEVELS:
-1. quick_apply      → Apply fixes immediately (fastest)
-2. standard_verify  → Scan modified files only (default)
-3. full_regression  → Full codebase scan + auto-revert
-
-FLOW:
-1. Apply verified fixes to files
-2. Run regression scan (based on level)
-3. If new issues found → Revert specific fix that caused them
-4. Auto-commit remaining verified fixes
-```
-
-Files created/modified:
-- `apps/api/src/services/post-apply-verification-service.ts` (NEW)
-- `apps/api/src/routes/v9-analyze.ts` (endpoints added)
-- `apps/api/src/routes/users.ts` (settings added)
-- `packages/database/src/migrations/005_add_verification_settings.sql` (NEW)
-
----
-
-## Session 78 Summary (Previous)
-
-### Parallel Validation Before Display
-
-**Key Change**: All fixes validated in parallel BEFORE showing to user
-
-```typescript
-// Validate ALL fixes in parallel (batch of 10 concurrent)
-const validationResults = await Promise.all(
-  fixesToValidate.map(async (enriched) => {
-    const submitted = await fixer.submitFixToRegistry(enriched, enriched.fixRecommendation);
-    return { enriched, validated: submitted.submitted };
-  })
-);
-```
-
-**Validation Status Field:**
-- `verified` - Passed tool revalidation, safe to apply
-- `failed_validation` - AI generated code but didn't pass validation
-- `failed_generation` - AI couldn't generate valid code
-
----
-
-## Quick Commands
-
-```bash
-# Start API (development)
-cd ~/codequal/apps/api && npm run dev
-
-# Run Java 2-tier test
-cd ~/codequal/packages/agents
-API_BASE_URL=http://localhost:3001 LANG=java npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-
-# Test apply-fixes endpoint
-curl http://localhost:3001/api/v9/verification-levels
-
-# Build and type-check
-npm run build && npx tsc --noEmit
-
-# Check git status
-git status
-
-# Push Session 80 commit
-git push origin fix/v9-tool-parsers
+# Full test (all issues)
+LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 ```
 
 ---
 
-## Current Branch
+## Key Insights from Session 80
+
+1. **Pattern reuse is working well** - 4/5 issues used cached patterns successfully
+2. **CloseResource fix quality issue** - AI generates empty catch blocks when fixing resource management
+3. **Knowledge base approach preferred over growing prompts** - More maintainable, modular, searchable
+4. **Tool re-validation catches real regressions** - Correctly rejects fixes that introduce new issues
+
+---
+
+## Branch Status
 
 ```
 Branch: fix/v9-tool-parsers
-Last Commit: 181d0bd1 feat(session-80): Real tool scanning for post-apply verification
+Last commit: Build passes, tests pass
+Uncommitted changes: Yes (regression reporting updates)
 ```
 
----
+To commit current work:
+```bash
+cd ~/CodePrjects/codequal
+git add -A
+git commit -m "feat(session-80): Fix pattern reuse validation, add regression reporting
 
-## Known Issues
+- Fix pattern-reused fixes incorrectly marked as failed
+- Add Java code wrapper for PMD snippet validation
+- Add extractRegressionDetails() for better user reporting
+- Add maxIssuesForFix cost control parameter
 
-| ID | Description | Severity | Status |
-|----|-------------|----------|--------|
-| - | Redis connection timeout on local dev | Low | Expected (no local Redis) |
-| - | `embedding_configurations.is_default` column missing | Low | Using hardcoded defaults |
-
----
-
-## Architecture Reference
-
-### Post-Apply Verification Flow
-
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
-1. Receive fix application request
-   ↓
-2. Detect language from file extensions
-   ↓
-3. Capture baseline issues (BEFORE applying)
-   ↓
-4. Apply fixes to files
-   ↓
-5. Run regression scan (based on verification level)
-   ↓
-6. Compare new issues vs baseline
-   ↓
-7. If regressions found → Auto-revert causing fix
-   ↓
-8. Auto-commit successful fixes (if enabled)
-```
-
-### Supported Languages & Tools
-
-| Language | Detection | Scanner |
-|----------|-----------|---------|
-| Java | `.java` | PMD |
-| TypeScript | `.ts`, `.tsx` | ESLint |
-| JavaScript | `.js`, `.jsx` | ESLint |
-| Python | `.py` | Pylint |
-| Go | `.go` | golangci-lint |
-| Ruby | `.rb` | RuboCop |
-| Rust | `.rs` | Clippy |
-| PHP | `.php` | PHP_CodeSniffer |
-| C#/.NET | `.cs` | dotnet build |

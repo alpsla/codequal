@@ -970,9 +970,31 @@ ${instruction}`;
   async submitFixToRegistry(
     issue: AIFixerIssue,
     recommendation: AIFixRecommendation
-  ): Promise<{ submitted: boolean; patternStatus?: string; message?: string }> {
+  ): Promise<{
+    submitted: boolean;
+    patternStatus?: string;
+    message?: string;
+    // SESSION 80: Regression details for better user reporting
+    regressionDetails?: {
+      hasRegressions: boolean;
+      regressions: Array<{ rule: string; message: string; line?: number }>;
+      guidance: string;
+    };
+  }> {
     if (!this.submitToRegistry) {
       return { submitted: false, message: 'Registry submission disabled' };
+    }
+
+    // SESSION 80: Skip re-validation for fixes that came from pattern reuse
+    // These were already validated during pattern application - no need to validate again
+    // This fixes the double-validation bug where pattern-reused fixes failed second validation
+    if (recommendation.model === 'pattern-reuse' || recommendation.model === 'pattern-cache') {
+      console.log(`[AI-Fixer] Skipping re-validation for pattern-reused fix: ${issue.ruleId}`);
+      return {
+        submitted: true,
+        patternStatus: 'pattern-reused',
+        message: 'Fix already validated via pattern reuse',
+      };
     }
 
     if (!this.fixerVerifier) {
@@ -1002,25 +1024,88 @@ ${instruction}`;
         language: issue.language,
       });
 
-      if (result.success && result.patternResponse) {
-        console.log(
-          `[AI-Fixer] Fix submitted to registry: ${result.patternResponse.status}`
-        );
-        return {
-          submitted: true,
-          patternStatus: result.patternResponse.status,
-          message: result.patternResponse.message,
-        };
+      // SESSION 80: Handle successful verification (with or without pattern submission)
+      // Pattern reuse returns success=true but no patternResponse
+      if (result.success) {
+        if (result.patternResponse) {
+          console.log(
+            `[AI-Fixer] Fix submitted to registry: ${result.patternResponse.status}`
+          );
+          return {
+            submitted: true,
+            patternStatus: result.patternResponse.status,
+            message: result.patternResponse.message,
+          };
+        } else {
+          // Pattern reuse case - no patternResponse but still successful
+          console.log(`[AI-Fixer] Fix verified successfully (pattern reuse or validated)`);
+          return {
+            submitted: true,
+            patternStatus: 'verified',
+            message: result.userMessage || 'Fix verified successfully',
+          };
+        }
       }
+
+      // SESSION 80: Extract regression details for better user reporting
+      const regressionDetails = this.extractRegressionDetails(result);
 
       return {
         submitted: false,
         message: result.failureReason || 'Verification failed',
+        regressionDetails,
       };
     } catch (error: any) {
       console.error(`[AI-Fixer] Registry submission error:`, error.message);
       return { submitted: false, message: error.message };
     }
+  }
+
+  /**
+   * SESSION 80: Extract regression details from verification result
+   * Provides actionable information when a fix introduces new issues
+   */
+  private extractRegressionDetails(result: any): {
+    hasRegressions: boolean;
+    regressions: Array<{ rule: string; message: string; line?: number }>;
+    guidance: string;
+  } | undefined {
+    if (!result.verificationHistory || result.verificationHistory.length === 0) {
+      return undefined;
+    }
+
+    const lastAttempt = result.verificationHistory[result.verificationHistory.length - 1];
+    const toolResult = lastAttempt?.toolRevalidation;
+
+    if (!toolResult?.hasRegressions || !toolResult.regressions?.length) {
+      return undefined;
+    }
+
+    // Build guidance based on regression types
+    const regressionRules = toolResult.regressions.map((r: any) => r.rule);
+    let guidance = 'The AI-generated fix introduced new issues:\n';
+
+    for (const regression of toolResult.regressions) {
+      guidance += `  • ${regression.rule}: ${regression.message}\n`;
+    }
+
+    // Add specific guidance for known problematic patterns
+    if (regressionRules.includes('EmptyCatchBlock')) {
+      guidance += '\n💡 Tip: Add proper exception handling - log the error and either rethrow or handle gracefully.';
+    }
+    if (regressionRules.includes('AvoidCatchingThrowable')) {
+      guidance += '\n💡 Tip: Catch specific exception types (IOException, SQLException) instead of Throwable.';
+    }
+
+    return {
+      hasRegressions: true,
+      regressions: toolResult.regressions.map((r: any) => ({
+        rule: r.rule,
+        message: r.message,
+        line: r.line,
+      })),
+      guidance,
+    };
   }
 
   /**

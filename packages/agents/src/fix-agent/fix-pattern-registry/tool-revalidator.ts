@@ -574,6 +574,88 @@ export interface ToolRevalidationResult {
 }
 
 // ============================================================================
+// Code Wrapper Utilities (SESSION 80)
+// ============================================================================
+
+/**
+ * SESSION 80: Wrap Java code snippets in a valid compilation unit for PMD
+ *
+ * PMD requires valid Java compilation units (package + class declaration).
+ * AI-generated fixes are often code snippets (like try-with-resources blocks).
+ * This wrapper allows PMD to parse and analyze snippets without ParseException.
+ *
+ * @param code - The code to potentially wrap
+ * @param language - The programming language
+ * @returns Object with wrapped code and line offset for adjusting tool output
+ */
+function wrapCodeForValidation(code: string, language: string): { wrappedCode: string; lineOffset: number } {
+  // Only wrap Java code for PMD validation
+  if (language.toLowerCase() !== 'java') {
+    return { wrappedCode: code, lineOffset: 0 };
+  }
+
+  // Check if code already has a package or class declaration (is a full file)
+  const hasPackage = /^\s*package\s+[\w.]+\s*;/m.test(code);
+  const hasClass = /^\s*(public\s+)?(class|interface|enum|abstract\s+class)\s+\w+/m.test(code);
+
+  if (hasPackage || hasClass) {
+    // Already a valid compilation unit, no wrapping needed
+    return { wrappedCode: code, lineOffset: 0 };
+  }
+
+  // Check if it's just an import statement or empty
+  const trimmedCode = code.trim();
+  if (!trimmedCode || /^import\s+[\w.*]+\s*;/.test(trimmedCode)) {
+    return { wrappedCode: code, lineOffset: 0 };
+  }
+
+  // Wrap the snippet in a minimal valid Java class
+  // Use a synthetic class that allows most code constructs
+  const wrapper = `// SESSION 80: Synthetic wrapper for PMD validation
+package synthetic.validation;
+
+public class ValidationWrapper {
+    public void validateMethod() throws Exception {
+`;
+  const wrapperEnd = `
+    }
+}
+`;
+
+  const wrappedCode = wrapper + code + wrapperEnd;
+
+  // Calculate line offset (number of lines before the original code starts)
+  const wrapperLines = wrapper.split('\n').length - 1;
+
+  console.log(`[ToolRevalidator:Wrapper] Wrapped Java snippet in synthetic class (offset: ${wrapperLines} lines)`);
+
+  return {
+    wrappedCode,
+    lineOffset: wrapperLines
+  };
+}
+
+/**
+ * SESSION 80: Adjust issue line numbers after code wrapping
+ *
+ * When code is wrapped, tool output line numbers are relative to the wrapped code.
+ * This function adjusts them back to the original code positions.
+ */
+function adjustLineNumbers(
+  issues: Array<{ rule: string; message: string; line: number }>,
+  lineOffset: number
+): Array<{ rule: string; message: string; line: number }> {
+  if (lineOffset === 0) {
+    return issues;
+  }
+
+  return issues.map(issue => ({
+    ...issue,
+    line: Math.max(1, issue.line - lineOffset)
+  }));
+}
+
+// ============================================================================
 // Tool Command Definitions
 // ============================================================================
 
@@ -1237,18 +1319,27 @@ export class ToolRevalidator {
       validateFilePath(tempFilePath, this.tempDir);
 
       try {
+        // SESSION 80: Wrap code snippets for validation (especially Java for PMD)
+        // This prevents ParseException when validating code fragments
+        const originalWrapped = wrapCodeForValidation(request.originalCode, request.language);
+        const fixedWrapped = wrapCodeForValidation(request.fixedCode, request.language);
+
         // Step 1: Run tool on ORIGINAL code to get baseline
         console.log(`[ToolRevalidator] Step 1: Getting baseline issues from original code`);
-        this.writeSecureFile(tempFilePath, request.originalCode);
+        this.writeSecureFile(tempFilePath, originalWrapped.wrappedCode);
         const originalResult = await this.runToolSafe(request.tool, tempFilePath, command, dynamicTimeout);
-        const originalIssues = parseToolOutput(request.tool, originalResult.stdout, request.language);
+        const rawOriginalIssues = parseToolOutput(request.tool, originalResult.stdout, request.language);
+        // Adjust line numbers if code was wrapped
+        const originalIssues = adjustLineNumbers(rawOriginalIssues, originalWrapped.lineOffset);
         console.log(`[ToolRevalidator] Baseline: ${originalIssues.length} issues found`);
 
         // Step 2: Run tool on FIXED code
         console.log(`[ToolRevalidator] Step 2: Running tool on fixed code`);
-        this.writeSecureFile(tempFilePath, request.fixedCode);
+        this.writeSecureFile(tempFilePath, fixedWrapped.wrappedCode);
         const fixedResult = await this.runToolSafe(request.tool, tempFilePath, command, dynamicTimeout);
-        const fixedIssues = parseToolOutput(request.tool, fixedResult.stdout, request.language);
+        const rawFixedIssues = parseToolOutput(request.tool, fixedResult.stdout, request.language);
+        // Adjust line numbers if code was wrapped
+        const fixedIssues = adjustLineNumbers(rawFixedIssues, fixedWrapped.lineOffset);
         console.log(`[ToolRevalidator] After fix: ${fixedIssues.length} issues found`);
 
         // Step 3: Check if original issue is resolved
