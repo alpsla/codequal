@@ -83,11 +83,12 @@ export interface AIFixRecommendation {
   };
   /**
    * Session 59: Manual review recommendation when AI fix generation fails
+   * Session 78: Added VALIDATION_FAILED for when AI generates a fix but it fails validation
    * Provides structured guidance similar to recommendation-only categories
    */
   manualReview?: {
     required: boolean;
-    reason: 'AI_FIX_FAILED' | 'CORRUPTED_RESPONSE' | 'CONTEXT_INSUFFICIENT' | 'COMPLEX_ISSUE';
+    reason: 'AI_FIX_FAILED' | 'CORRUPTED_RESPONSE' | 'CONTEXT_INSUFFICIENT' | 'COMPLEX_ISSUE' | 'VALIDATION_FAILED';
     remediationSteps: string[];
     documentationLinks: string[];
     riskLevel: 'critical' | 'high' | 'medium' | 'low';
@@ -947,9 +948,10 @@ ${instruction}`;
         maxAttempts: 2,
         minScore: 80,
         dryRun: false,
-        // SESSION 76: Skip tool revalidation for performance
-        // Tool revalidation adds 120-240s per fix which is too slow for real-time analysis
-        skipToolRevalidation: true,
+        // SESSION 78: Re-enabled tool revalidation for brand safety
+        // Never show unverified fix code - broken fixes damage brand reputation
+        // Validation runs in parallel (batch of 10) so total time is ~3-4 min for 100 issues
+        skipToolRevalidation: false,
       });
     }
   }
@@ -978,9 +980,10 @@ ${instruction}`;
         maxAttempts: 2,
         minScore: 80,
         dryRun: false,
-        // SESSION 76: Skip tool revalidation for performance
-        // Tool revalidation adds 120-240s per fix which is too slow for real-time analysis
-        skipToolRevalidation: true,
+        // SESSION 78: Re-enabled tool revalidation for brand safety
+        // Never show unverified fix code - broken fixes damage brand reputation
+        // Validation runs in parallel (batch of 10) so total time is ~3-4 min for 100 issues
+        skipToolRevalidation: false,
       });
     }
 
@@ -1089,7 +1092,34 @@ export async function processIssuesWithAIFixer(
     for (const enriched of result.enrichedIssues) {
       // Only submit high-confidence fixes
       if (enriched.fixRecommendation.confidence >= 70) {
-        await agent.submitFixToRegistry(enriched, enriched.fixRecommendation);
+        const submitResult = await agent.submitFixToRegistry(enriched, enriched.fixRecommendation);
+
+        // SESSION 78: If validation failed, set manualReview.required
+        // This ensures broken code is not shown to users - they get guidance instead
+        // Note: submitToRegistry is enabled at this point, so !submitted means verification failed
+        if (!submitResult.submitted && submitResult.message !== 'Registry submission disabled') {
+          console.log(`[AI-Fixer] Validation failed for ${enriched.ruleId}, marking for manual review`);
+          enriched.fixRecommendation.manualReview = {
+            required: true,
+            reason: 'VALIDATION_FAILED',
+            remediationSteps: [
+              `1. Review the issue at ${enriched.file}:${enriched.line}`,
+              `2. Understand why ${enriched.ruleId} was triggered: ${enriched.message || 'See rule documentation'}`,
+              '3. The AI-generated fix did not pass validation - apply fix manually',
+              '4. Verify the fix doesn\'t break existing functionality',
+              '5. Run tests to ensure no regressions',
+            ],
+            documentationLinks: agent['getDocumentationLinks'](
+              enriched.validatorToolId.toLowerCase(),
+              enriched.ruleId
+            ),
+            riskLevel: enriched.severity === 'critical' ? 'critical' :
+                       enriched.severity === 'high' ? 'high' :
+                       enriched.severity === 'medium' ? 'medium' : 'low',
+            estimatedEffort: 'moderate',
+          };
+          enriched.fixRecommendation.confidence = 0; // Force manual review
+        }
       }
     }
   }
