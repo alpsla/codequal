@@ -59,3 +59,22 @@ export {
   RULE_EQUIVALENTS,
   CWE_TO_CANONICAL,
 } from './rule-normalizer';
+
+// SESSION 80: Fix Pattern Guidance (knowledge base for fix generation)
+// SESSION 81: Added failure tracking for learning loop
+export {
+  FixPatternGuidanceService,
+  fixPatternGuidance,
+  getFixGuidance,
+  addFixGuidance,
+  getPromptAdditions,
+  formatGuidanceForPrompt,
+  // SESSION 81: Failure tracking
+  trackFixFailure,
+  getFailuresNeedingReview,
+  markFailureReviewed,
+  type FixGuidance,
+  type AntiPattern,
+  type CorrectPattern,
+  type FailureRecord,
+} from './fix-pattern-guidance';

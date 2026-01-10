@@ -1,161 +1,192 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 80 (January 9, 2026) - Evening Update
-**Current Phase**: V9 Two-Branch Analysis - Fix Validation & Knowledge Base
-**Status**: Pattern reuse validation FIXED, Knowledge Base architecture PLANNED
+**Last Updated**: Session 81 (January 9, 2026) - Complete
+**Current Phase**: V9 Two-Branch Analysis - Knowledge Base with AI-Assisted Maintenance
+**Status**: All Session 81 tasks COMPLETED including AI-assisted KB maintenance
 
 ---
 
-## Session 80 Completed (Evening)
+## Session 81 Completed
 
-### Critical Bug Fixes for AI Fix Validation
+### P0: Regression Reporting ✅ COMPLETE
 
-**Bug 1: Pattern-reused fixes incorrectly marked as failed**
-- **Problem**: When pattern reuse succeeded in `verifyAndSubmit()`, it returned `success: true` but no `patternResponse`. The check `if (result.success && result.patternResponse)` failed.
-- **Fix**: Updated `submitFixToRegistry()` to handle `success: true` without `patternResponse`
-- **File**: `packages/agents/src/fix-agent/agents/ai-fixer-agent.ts:1017-1038`
+Updated `v9-analyze.ts` to provide specific regression details when fixes fail.
 
-**Bug 2: PMD ParseException for code snippets**
-- **Problem**: AI-generated fixes are code snippets, PMD requires full Java compilation units
-- **Fix**: Added `wrapCodeForValidation()` to wrap snippets in synthetic class, `adjustLineNumbers()` to correct line numbers
-- **File**: `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts:576-656`
+### P1-P3: Knowledge Base Architecture ✅ COMPLETE
 
-### Test Results Improvement
+Created complete knowledge base system with Supabase integration and in-memory fallback.
 
-| Metric | Before Fix | After Fix |
-|--------|------------|-----------|
-| Verified fixes | 0/5 | 4/5 |
-| Pattern reuse working | ❌ | ✅ |
-| PMD ParseException | Yes | Fixed |
+### P4: Learning Loop (Semi-Automatic) ✅ COMPLETE
 
-### Regression Reporting (Partially Complete)
+**How failures get tracked and fixes retried:**
 
-Added `extractRegressionDetails()` method to `ai-fixer-agent.ts` to provide actionable regression info:
-- Extracts regression rules and messages from verification history
-- Provides specific guidance (e.g., "Add proper exception handling for EmptyCatchBlock")
-- Return type updated to include `regressionDetails` field
+```
+1. AI generates a fix for an issue
+2. Tool re-validates the fix
+3. If regression detected:
+   - Feedback from validation fed to AI for retry (up to 3 attempts)
+   - Each attempt's outcome collected
+4. If all 3 attempts fail:
+   - ALL attempts sent to trackFixFailure() with full context
+   - Failure count incremented in database
+5. When failure_count >= 3 across different PRs:
+   - Pattern flagged as "pending" review
+   - Appears in getFailuresNeedingReview()
+```
 
-**Still needed**: Update `v9-analyze.ts` to include regression details in user report
+### P5: AI-Assisted KB Maintenance ✅ COMPLETE
 
-### Cost Control Feature
+**How Claude maintains the KB:**
 
-Added `maxIssuesForFix` parameter for testing:
-- Limits AI fix generation to N issues for cost control
-- Usage: `MAX_ISSUES=5` environment variable in test
-- Reduces AI calls by 72% (5 vs 18 for Java test)
+```bash
+# Run the AI maintainer script
+npx ts-node kb-ai-maintainer.ts --dry-run       # Preview changes
+npx ts-node kb-ai-maintainer.ts --auto-approve  # Apply changes
+npx ts-node kb-ai-maintainer.ts --rule CloseResource  # Specific rule
+```
+
+**Or use the slash command:**
+```
+/maintain-kb                    # Review all pending failures
+/maintain-kb --rule CloseResource  # Review specific rule
+/maintain-kb --dry-run          # Preview without making changes
+```
+
+**Maintenance Flow:**
+1. Fetch failures needing review (3+ failures)
+2. For each failure, analyze ALL attempts
+3. Identify root causes (EmptyCatchBlock, Throwable, etc.)
+4. Generate anti-patterns and correct patterns
+5. Add guidance to KB
+6. Mark failures as resolved
 
 ---
 
-## Session 81 TODO
-
-### P0: Complete Regression Reporting (IN PROGRESS)
-
-Update `v9-analyze.ts` (lines 2228-2257) to include regression details in the fix output:
-
-```typescript
-// Current (line 2231)
-fixes.set(enriched.id, {
-  suggestion: null,
-  confidence: 'manual',
-  reason: 'VALIDATION_FAILED',
-  // ... generic remediation steps
-});
-
-// Add: regressionDetails from submitFixToRegistry result
-if (result.regressionDetails) {
-  // Include specific regression info and guidance
-}
-```
-
-### P1: Create Fix Pattern Knowledge Base
-
-**Architecture decided**: Supabase table for fix pattern guidance
-
-Create migration file `packages/database/src/migrations/006_fix_pattern_guidance.sql`:
-
-```sql
-CREATE TABLE fix_pattern_guidance (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  rule_id VARCHAR(100) NOT NULL,
-  language VARCHAR(50) NOT NULL,
-  tool VARCHAR(50) NOT NULL,
-
-  -- Anti-patterns to avoid
-  anti_patterns JSONB NOT NULL DEFAULT '[]',
-  -- Example: [{"pattern": "empty catch block", "why": "swallows errors"}]
-
-  -- Correct patterns to use
-  correct_patterns JSONB NOT NULL DEFAULT '[]',
-  -- Example: [{"pattern": "log and rethrow", "example": "catch(IOException e) { log.error(...); throw new RuntimeException(e); }"}]
-
-  -- Related rules that often conflict
-  related_rules VARCHAR(100)[] DEFAULT '{}',
-  -- Example: {"EmptyCatchBlock", "AvoidCatchingThrowable"}
-
-  -- Additional guidance text
-  guidance_text TEXT,
-
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-
-  UNIQUE(rule_id, language, tool)
-);
-
-CREATE INDEX idx_fix_pattern_guidance_rule ON fix_pattern_guidance(rule_id);
-CREATE INDEX idx_fix_pattern_guidance_language ON fix_pattern_guidance(language);
-```
-
-### P2: Create FixPatternGuidance Service
-
-Create `packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts`:
-
-```typescript
-export interface FixGuidance {
-  ruleId: string;
-  language: string;
-  antiPatterns: Array<{ pattern: string; why: string }>;
-  correctPatterns: Array<{ pattern: string; example: string }>;
-  relatedRules: string[];
-  guidanceText: string;
-}
-
-export async function getFixGuidance(ruleId: string, language: string): Promise<FixGuidance | null>;
-export async function addFixGuidance(guidance: FixGuidance): Promise<void>;
-```
-
-### P3: Integrate Guidance into AI Fixer
-
-Modify `generateFixRecommendation()` in `ai-fixer-agent.ts`:
-1. Query knowledge base for rule-specific guidance
-2. Include anti-patterns in system prompt
-3. Include correct patterns as examples
-
-### P4: Seed Initial Knowledge Base
-
-Add entries for common problematic patterns:
-- CloseResource + EmptyCatchBlock conflict
-- AvoidCatchingThrowable guidance
-- UseUtilityClass patterns
-
----
-
-## Files Modified This Session
+## Files Created/Modified This Session
 
 ```
-packages/agents/src/fix-agent/agents/ai-fixer-agent.ts
-  - Line 970-983: Updated submitFixToRegistry return type
-  - Line 1040-1047: Handle pattern reuse success without patternResponse
-  - Line 1054-1109: Added extractRegressionDetails() method
-
-packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts
-  - Line 576-656: Added wrapCodeForValidation() and adjustLineNumbers()
-  - Line 1321-1343: Applied wrapper in validateFix()
+Session 81 Complete File List:
 
 apps/api/src/routes/v9-analyze.ts
-  - Added maxIssuesForFix parameter support
+  - Lines 2230-2291: Regression-aware validation output
+  - Lines 2356-2410: getRegressionGuidanceSteps() helper
 
-packages/agents/tests/integration/test-v9-2tier-all-languages.ts
-  - Added MAX_ISSUES env var support for cost control
+packages/agents/src/fix-agent/agents/ai-fixer-agent.ts
+  - Line 26: Import formatGuidanceForPrompt
+  - Lines 354-367: Fetch knowledge base guidance
+  - Lines 679-757: buildSystemPrompt() with guidance
+  - Lines 1078-1200: Retry-with-feedback loop in submitFixToRegistry()
+  - Lines 1210-1280: regenerateFixWithFeedback() method
+
+packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts (NEW)
+  - Complete KB service: guidance + failure tracking
+  - In-memory fallback for 4 common patterns
+  - Supabase integration with lazy init
+  - generateGuidanceFromFailure() for drafts
+
+packages/agents/src/fix-agent/fix-pattern-registry/index.ts
+  - Lines 63-80: Export all KB functions
+
+packages/agents/src/fix-agent/fix-pattern-registry/kb-review-cli.ts (NEW)
+  - CLI tool for human KB review
+
+packages/agents/src/fix-agent/fix-pattern-registry/kb-ai-maintainer.ts (NEW)
+  - AI-assisted KB maintenance script
+  - Analyzes failures and generates guidance
+  - Supports --dry-run and --auto-approve flags
+
+packages/agents/src/fix-agent/fix-pattern-registry/KNOWLEDGE_BASE_MAINTENANCE.md (NEW)
+  - Complete maintenance documentation
+
+.claude/commands/maintain-kb.md (NEW)
+  - Slash command spec for /maintain-kb
+
+database/migrations/20260109_fix_pattern_guidance.sql (NEW)
+  - Schema for fix_pattern_guidance table
+
+database/migrations/20260109_seed_fix_pattern_guidance.sql (NEW)
+  - Initial seed data for 5 common patterns
+
+database/migrations/20260109_fix_failure_tracking.sql (NEW)
+  - Schema for fix_failure_tracking table
+  - View: fix_failures_needing_review
+```
+
+---
+
+## Session 82 TODO
+
+### P0: Verify TypeScript Build
+
+```bash
+cd ~/CodePrjects/codequal/packages/agents
+npm run build
+```
+
+### P1: Run Tests to Verify Complete System
+
+```bash
+cd ~/CodePrjects/codequal/apps/api && npm run dev
+
+cd ~/CodePrjects/codequal/packages/agents
+MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+```
+
+**Expected:**
+- CloseResource should now avoid empty catch blocks (guidance working)
+- Failures should be tracked (check logs for `[FixGuidance] Tracked failure`)
+- Retry-with-feedback should be visible in logs
+- 4/5 or 5/5 fixes should pass validation
+
+### P2: Apply Database Migrations
+
+```bash
+# Run all migrations
+psql $DATABASE_URL -f database/migrations/20260109_fix_pattern_guidance.sql
+psql $DATABASE_URL -f database/migrations/20260109_seed_fix_pattern_guidance.sql
+psql $DATABASE_URL -f database/migrations/20260109_fix_failure_tracking.sql
+```
+
+### P3: Test KB Maintenance Tools
+
+```bash
+# Test the review CLI
+cd ~/CodePrjects/codequal/packages/agents/src/fix-agent/fix-pattern-registry
+npx ts-node kb-review-cli.ts list
+npx ts-node kb-review-cli.ts guidance
+
+# Test AI maintainer (dry run first!)
+npx ts-node kb-ai-maintainer.ts --dry-run
+```
+
+### P4: Commit Session 81 Work
+
+```bash
+cd ~/CodePrjects/codequal
+git add -A
+git commit -m "feat(session-81): Add fix pattern KB with AI-assisted maintenance
+
+Knowledge Base System:
+- Add fix_pattern_guidance Supabase table and seed data
+- Create FixPatternGuidance service with in-memory fallback
+- Integrate knowledge base into AI fixer prompts
+
+Learning Loop:
+- Add fix_failure_tracking table for tracking failures
+- Implement retry-with-feedback loop (up to 3 attempts)
+- All failed attempts sent to KB for comprehensive learning
+- Failures flagged at 3+ occurrences for review
+
+AI-Assisted Maintenance:
+- Create kb-ai-maintainer.ts script for Claude to run
+- Add /maintain-kb slash command
+- Auto-analyze failures and generate guidance
+
+Documentation:
+- Add KNOWLEDGE_BASE_MAINTENANCE.md
+- Update QUICK_START_NEXT_SESSION.md
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
 
 ---
@@ -170,18 +201,81 @@ cd ~/CodePrjects/codequal/apps/api && npm run dev
 cd ~/CodePrjects/codequal/packages/agents
 MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 
-# Full test (all issues)
-LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+# Review KB failures (after running tests)
+cd packages/agents/src/fix-agent/fix-pattern-registry
+npx ts-node kb-review-cli.ts list
+
+# Run AI maintenance
+npx ts-node kb-ai-maintainer.ts --dry-run
 ```
 
 ---
 
-## Key Insights from Session 80
+## Key Architecture Decisions
 
-1. **Pattern reuse is working well** - 4/5 issues used cached patterns successfully
-2. **CloseResource fix quality issue** - AI generates empty catch blocks when fixing resource management
-3. **Knowledge base approach preferred over growing prompts** - More maintainable, modular, searchable
-4. **Tool re-validation catches real regressions** - Correctly rejects fixes that introduce new issues
+1. **Retry-with-Feedback**: Up to 3 validation attempts with previous failure feedback
+2. **Comprehensive Tracking**: ALL failed attempts (not just final) sent to KB
+3. **Semi-automatic Learning**: Failures tracked automatically, AI/human reviews before adding to KB
+4. **In-Memory Fallback**: KB works without Supabase using pre-seeded patterns
+5. **Threshold of 3**: Patterns flagged for review after 3+ failures (configurable)
+6. **AI-Assisted Maintenance**: Claude can run kb-ai-maintainer.ts to fix KB patterns
+7. **Success Rate Tracking**: Each pattern tracks its effectiveness over time
+
+---
+
+## System Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                       FIX GENERATION FLOW                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. Issue Detected                                                  │
+│        ↓                                                            │
+│  2. Fetch KB Guidance (getGuidance)                                 │
+│        ↓                                                            │
+│  3. Build System Prompt with anti-patterns                          │
+│        ↓                                                            │
+│  4. AI Generates Fix                                                │
+│        ↓                                                            │
+│  5. Tool Re-validates ──────────────┐                               │
+│        ↓                            │                               │
+│  [PASS] → Submit to Registry        │                               │
+│        ↓                            │                               │
+│  [FAIL] → Regression Detected       │                               │
+│        ↓                            │                               │
+│  6. Collect Feedback ←──────────────┘                               │
+│        ↓                                                            │
+│  7. Retry with Feedback (up to 3x)                                  │
+│        ↓                                                            │
+│  [ALL FAIL] → Track ALL attempts to KB                              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    KB MAINTENANCE FLOW                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. Failures accumulate (3+ for same rule/language/tool)            │
+│        ↓                                                            │
+│  2. Run: npx ts-node kb-ai-maintainer.ts                            │
+│        ↓                                                            │
+│  3. Fetch failures needing review                                   │
+│        ↓                                                            │
+│  4. Analyze ALL attempts for each failure                           │
+│        ↓                                                            │
+│  5. Identify root causes and patterns                               │
+│        ↓                                                            │
+│  6. Generate anti-patterns + correct patterns                       │
+│        ↓                                                            │
+│  7. Add guidance to KB (with --auto-approve)                        │
+│        ↓                                                            │
+│  8. Mark failures as resolved                                       │
+│        ↓                                                            │
+│  9. Future fixes use new guidance automatically                     │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -189,20 +283,6 @@ LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-
 
 ```
 Branch: fix/v9-tool-parsers
-Last commit: Build passes, tests pass
-Uncommitted changes: Yes (regression reporting updates)
-```
-
-To commit current work:
-```bash
-cd ~/CodePrjects/codequal
-git add -A
-git commit -m "feat(session-80): Fix pattern reuse validation, add regression reporting
-
-- Fix pattern-reused fixes incorrectly marked as failed
-- Add Java code wrapper for PMD snippet validation
-- Add extractRegressionDetails() for better user reporting
-- Add maxIssuesForFix cost control parameter
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+Last commit: b56b3119 (feat(session-79))
+Uncommitted changes: Yes - Session 81 work (knowledge base + AI maintenance)
 ```

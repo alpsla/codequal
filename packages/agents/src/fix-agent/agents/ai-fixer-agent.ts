@@ -23,6 +23,7 @@ import {
   getFixPatternRegistry,
   createAIFixerVerifier,
   AIFixerVerifier,
+  formatGuidanceForPrompt,  // SESSION 80: Knowledge base integration
 } from '../fix-pattern-registry';
 import { OpenRouterKeyManager } from '../../two-branch/services/openrouter-key-manager';
 
@@ -350,8 +351,23 @@ export class AIFixerAgent {
   ): Promise<AIFixRecommendation> {
     this.retryStats.total++;
 
+    // SESSION 80: Fetch knowledge base guidance for this rule
+    let knowledgeBaseGuidance = '';
+    try {
+      knowledgeBaseGuidance = await formatGuidanceForPrompt(
+        issue.ruleId,
+        issue.language,
+        issue.validatorToolId
+      );
+      if (knowledgeBaseGuidance) {
+        console.log(`[AI-Fixer] Found knowledge base guidance for ${issue.ruleId}`);
+      }
+    } catch (e: any) {
+      console.log(`[AI-Fixer] Knowledge base lookup failed: ${e.message}`);
+    }
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
-      const systemPrompt = this.buildSystemPrompt(issue, attempt > 1);
+      const systemPrompt = this.buildSystemPrompt(issue, attempt > 1, knowledgeBaseGuidance);
       const userPrompt = this.buildUserPrompt(issue, attempt > 1);
 
       try {
@@ -663,8 +679,9 @@ export class AIFixerAgent {
   /**
    * Build system prompt for AI
    * SESSION 49: Added isRetry parameter for stronger prompt on retry
+   * SESSION 80: Added knowledgeBaseGuidance for pattern-specific guidance
    */
-  private buildSystemPrompt(issue: AIFixerIssue, isRetry = false): string {
+  private buildSystemPrompt(issue: AIFixerIssue, isRetry = false, knowledgeBaseGuidance = ''): string {
     // SESSION 49: Critical constraint to prevent corrupted responses
     const neverAskConstraint = isRetry
       ? `CRITICAL - YOU MUST NEVER:
@@ -683,6 +700,12 @@ YOU MUST ALWAYS:
 - Never ask for more context
 - Generate a fix based on rule documentation`;
 
+    // SESSION 80: Include knowledge base guidance if available
+    const guidanceSection = knowledgeBaseGuidance
+      ? `CRITICAL FIX GUIDANCE (from knowledge base - MUST follow):
+${knowledgeBaseGuidance}`
+      : '';
+
     return `You are an expert code fixer. Generate precise, compilable fixes for code issues.
 
 ${neverAskConstraint}
@@ -692,6 +715,8 @@ CONTEXT:
 - Validator Tool: ${issue.validatorToolId}
 - Rule: ${issue.ruleId}
 - Severity: ${issue.severity}
+
+${guidanceSection}
 
 ${
   issue.toolContext?.toolSuggestion
@@ -963,9 +988,18 @@ ${instruction}`;
     this.submitToRegistry = false;
   }
 
+  // ==========================================================================
+  // SESSION 81: Retry-with-feedback validation loop
+  // ==========================================================================
+
   /**
-   * Submit a generated fix to the pattern registry
-   * The fix goes through verification and then the approval workflow
+   * Submit a generated fix to the pattern registry with retry-on-failure
+   *
+   * SESSION 81: Implements retry-with-feedback loop:
+   * 1. Validate the fix
+   * 2. If failed with regressions, regenerate fix with feedback
+   * 3. Retry up to 3 times
+   * 4. On final failure, send ALL attempts to KB for learning
    */
   async submitFixToRegistry(
     issue: AIFixerIssue,
@@ -980,14 +1014,14 @@ ${instruction}`;
       regressions: Array<{ rule: string; message: string; line?: number }>;
       guidance: string;
     };
+    // SESSION 81: All attempts for transparency
+    attempts?: number;
   }> {
     if (!this.submitToRegistry) {
       return { submitted: false, message: 'Registry submission disabled' };
     }
 
     // SESSION 80: Skip re-validation for fixes that came from pattern reuse
-    // These were already validated during pattern application - no need to validate again
-    // This fixes the double-validation bug where pattern-reused fixes failed second validation
     if (recommendation.model === 'pattern-reuse' || recommendation.model === 'pattern-cache') {
       console.log(`[AI-Fixer] Skipping re-validation for pattern-reused fix: ${issue.ruleId}`);
       return {
@@ -1002,62 +1036,249 @@ ${instruction}`;
         maxAttempts: 2,
         minScore: 80,
         dryRun: false,
-        // SESSION 78: Re-enabled tool revalidation for brand safety
-        // Never show unverified fix code - broken fixes damage brand reputation
-        // Validation runs in parallel (batch of 10) so total time is ~3-4 min for 100 issues
         skipToolRevalidation: false,
       });
     }
 
-    try {
-      const result = await this.fixerVerifier.verifyAndSubmit({
-        ruleId: issue.ruleId,
-        tool: issue.validatorToolId,
-        filePath: issue.file,
-        originalCode: issue.codeContext || '',
-        fixedCode: recommendation.correctedCode,
-        lineNumber: issue.line,
-        issueMessage: issue.message,
-        aiModel: recommendation.model,
-        attemptNumber: 1,
-        // SESSION 73: Pass language for tool re-validation
-        language: issue.language,
-      });
+    // SESSION 81: Collect all attempts for KB learning
+    const allAttempts: Array<{
+      attemptNumber: number;
+      fixCode: string;
+      validationPassed: boolean;
+      regressions?: Array<{ rule: string; message: string }>;
+      failureReason?: string;
+    }> = [];
 
-      // SESSION 80: Handle successful verification (with or without pattern submission)
-      // Pattern reuse returns success=true but no patternResponse
-      if (result.success) {
-        if (result.patternResponse) {
-          console.log(
-            `[AI-Fixer] Fix submitted to registry: ${result.patternResponse.status}`
+    const MAX_VALIDATION_RETRIES = 3;
+    let currentFix = recommendation.correctedCode;
+    let lastRegressionDetails: ReturnType<typeof this.extractRegressionDetails> = undefined;
+
+    for (let attempt = 1; attempt <= MAX_VALIDATION_RETRIES; attempt++) {
+      console.log(`[AI-Fixer] Validation attempt ${attempt}/${MAX_VALIDATION_RETRIES} for ${issue.ruleId}`);
+
+      try {
+        const result = await this.fixerVerifier.verifyAndSubmit({
+          ruleId: issue.ruleId,
+          tool: issue.validatorToolId,
+          filePath: issue.file,
+          originalCode: issue.codeContext || '',
+          fixedCode: currentFix,
+          lineNumber: issue.line,
+          issueMessage: issue.message,
+          aiModel: recommendation.model,
+          attemptNumber: attempt,
+          language: issue.language,
+        });
+
+        // Success!
+        if (result.success) {
+          allAttempts.push({
+            attemptNumber: attempt,
+            fixCode: currentFix,
+            validationPassed: true,
+          });
+
+          if (attempt > 1) {
+            console.log(`[AI-Fixer] ✅ Fix succeeded on attempt ${attempt} after feedback`);
+          }
+
+          if (result.patternResponse) {
+            return {
+              submitted: true,
+              patternStatus: result.patternResponse.status,
+              message: result.patternResponse.message,
+              attempts: attempt,
+            };
+          } else {
+            return {
+              submitted: true,
+              patternStatus: 'verified',
+              message: result.userMessage || 'Fix verified successfully',
+              attempts: attempt,
+            };
+          }
+        }
+
+        // Failed - extract regression details
+        lastRegressionDetails = this.extractRegressionDetails(result);
+
+        allAttempts.push({
+          attemptNumber: attempt,
+          fixCode: currentFix,
+          validationPassed: false,
+          regressions: lastRegressionDetails?.regressions?.map(r => ({
+            rule: r.rule,
+            message: r.message,
+          })),
+          failureReason: result.failureReason,
+        });
+
+        // If we have more attempts and there are regressions, regenerate with feedback
+        if (attempt < MAX_VALIDATION_RETRIES && lastRegressionDetails?.hasRegressions) {
+          console.log(`[AI-Fixer] ⚠️ Attempt ${attempt} failed with regressions: ${
+            lastRegressionDetails.regressions.map(r => r.rule).join(', ')
+          }. Regenerating with feedback...`);
+
+          // Generate new fix with feedback about what went wrong
+          const newRecommendation = await this.regenerateFixWithFeedback(
+            issue,
+            recommendation.model,
+            allAttempts
           );
-          return {
-            submitted: true,
-            patternStatus: result.patternResponse.status,
-            message: result.patternResponse.message,
-          };
-        } else {
-          // Pattern reuse case - no patternResponse but still successful
-          console.log(`[AI-Fixer] Fix verified successfully (pattern reuse or validated)`);
-          return {
-            submitted: true,
-            patternStatus: 'verified',
-            message: result.userMessage || 'Fix verified successfully',
-          };
+
+          if (newRecommendation.correctedCode && newRecommendation.correctedCode !== currentFix) {
+            currentFix = newRecommendation.correctedCode;
+            continue; // Retry with new fix
+          } else {
+            console.log(`[AI-Fixer] AI could not generate a different fix. Stopping retries.`);
+            break;
+          }
+        } else if (attempt < MAX_VALIDATION_RETRIES) {
+          // Non-regression failure, don't retry
+          console.log(`[AI-Fixer] Validation failed (non-regression). Not retrying.`);
+          break;
+        }
+
+      } catch (error: any) {
+        console.error(`[AI-Fixer] Validation error on attempt ${attempt}:`, error.message);
+        allAttempts.push({
+          attemptNumber: attempt,
+          fixCode: currentFix,
+          validationPassed: false,
+          failureReason: error.message,
+        });
+        break; // Don't retry on errors
+      }
+    }
+
+    // All attempts failed - send ALL attempts to KB for learning
+    console.log(`[AI-Fixer] ❌ All ${allAttempts.length} attempts failed for ${issue.ruleId}`);
+
+    try {
+      const { trackFixFailure } = await import('../fix-pattern-registry');
+
+      // Collect all regression rules from all attempts
+      const allRegressionRules = new Set<string>();
+      for (const attempt of allAttempts) {
+        for (const reg of attempt.regressions || []) {
+          allRegressionRules.add(reg.rule);
         }
       }
 
-      // SESSION 80: Extract regression details for better user reporting
-      const regressionDetails = this.extractRegressionDetails(result);
+      await trackFixFailure({
+        ruleId: issue.ruleId,
+        language: issue.language,
+        tool: issue.validatorToolId,
+        failureType: 'regression',
+        regressionRules: Array.from(allRegressionRules),
+        failureMessage: `Failed after ${allAttempts.length} attempts. Regressions: ${Array.from(allRegressionRules).join(', ')}`,
+        originalCode: issue.codeContext,
+        // SESSION 81: Include ALL attempted fixes for KB learning
+        attemptedFix: JSON.stringify(allAttempts.map(a => ({
+          attempt: a.attemptNumber,
+          fix: a.fixCode,
+          regressions: a.regressions,
+          reason: a.failureReason,
+        })), null, 2),
+        codeContext: `Total attempts: ${allAttempts.length}`,
+      });
+    } catch (e: any) {
+      console.log(`[AI-Fixer] Failed to track failure: ${e.message}`);
+    }
+
+    return {
+      submitted: false,
+      message: `Validation failed after ${allAttempts.length} attempts`,
+      regressionDetails: lastRegressionDetails,
+      attempts: allAttempts.length,
+    };
+  }
+
+  /**
+   * SESSION 81: Regenerate fix with feedback from previous failed attempts
+   */
+  private async regenerateFixWithFeedback(
+    issue: AIFixerIssue,
+    model: string,
+    previousAttempts: Array<{
+      attemptNumber: number;
+      fixCode: string;
+      regressions?: Array<{ rule: string; message: string }>;
+      failureReason?: string;
+    }>
+  ): Promise<AIFixRecommendation> {
+    // Build feedback from previous attempts
+    let feedbackSection = '\n\n=== PREVIOUS ATTEMPTS THAT FAILED ===\n';
+    feedbackSection += 'Your previous fixes introduced new issues. AVOID these patterns:\n\n';
+
+    for (const attempt of previousAttempts) {
+      feedbackSection += `ATTEMPT ${attempt.attemptNumber} (FAILED):\n`;
+      feedbackSection += '```\n' + attempt.fixCode + '\n```\n';
+      if (attempt.regressions && attempt.regressions.length > 0) {
+        feedbackSection += 'PROBLEMS:\n';
+        for (const reg of attempt.regressions) {
+          feedbackSection += `  ❌ ${reg.rule}: ${reg.message}\n`;
+        }
+      }
+      feedbackSection += '\n';
+    }
+
+    feedbackSection += '=== YOUR TASK ===\n';
+    feedbackSection += 'Generate a DIFFERENT fix that avoids ALL the problems listed above.\n';
+    feedbackSection += 'You MUST NOT repeat any of the failed patterns.\n';
+
+    // Get knowledge base guidance
+    let knowledgeBaseGuidance = '';
+    try {
+      knowledgeBaseGuidance = await formatGuidanceForPrompt(
+        issue.ruleId,
+        issue.language,
+        issue.validatorToolId
+      );
+    } catch (e: any) {
+      // Ignore
+    }
+
+    // Build enhanced prompt with feedback
+    const systemPrompt = this.buildSystemPrompt(issue, true, knowledgeBaseGuidance + feedbackSection);
+    const userPrompt = this.buildUserPrompt(issue, true);
+
+    try {
+      const response = await this.executeOpenRouterCall(async (client) => {
+        return client.chat.completions.create({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.5, // Slightly higher to encourage different solutions
+          max_tokens: 2500,
+        });
+      });
+
+      const content = response.choices[0]?.message?.content || '';
+
+      if (isCorruptedResponse(content)) {
+        return this.buildManualReviewRecommendation(issue, model, 'CORRUPTED_RESPONSE');
+      }
+
+      const parsed = this.parseAIResponse(content, issue);
+      const usage = {
+        promptTokens: response.usage?.prompt_tokens || 0,
+        completionTokens: response.usage?.completion_tokens || 0,
+        totalTokens: response.usage?.total_tokens || 0,
+      };
 
       return {
-        submitted: false,
-        message: result.failureReason || 'Verification failed',
-        regressionDetails,
+        ...parsed,
+        confidence: this.calculateConfidence(parsed, issue),
+        model,
+        cost: this.estimateCost(model, usage),
+        usage,
       };
     } catch (error: any) {
-      console.error(`[AI-Fixer] Registry submission error:`, error.message);
-      return { submitted: false, message: error.message };
+      console.error(`[AI-Fixer] Failed to regenerate fix with feedback:`, error.message);
+      return this.buildManualReviewRecommendation(issue, model, 'AI_FIX_FAILED', error.message);
     }
   }
 

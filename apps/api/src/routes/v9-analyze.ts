@@ -2185,7 +2185,9 @@ async function generateFixesWithHybridAgents(
               enriched,
               validated: submitted.submitted,
               message: submitted.message,
-              patternStatus: submitted.patternStatus
+              patternStatus: submitted.patternStatus,
+              // SESSION 80: Include regression details for better user reporting
+              regressionDetails: submitted.regressionDetails
             };
           } catch (err: any) {
             logger.warn(`[FixGen] Validation error for ${enriched.ruleId}:`, err.message);
@@ -2227,30 +2229,62 @@ async function generateFixesWithHybridAgents(
           verified++;
         } else {
           // ❌ VALIDATION FAILED: Show guidance only, never broken code
-          logger.warn(`[FixGen] ⚠️ Validation failed for ${enriched.ruleId}: ${message}`);
+          // SESSION 80: Check for regression details to provide specific guidance
+          const regressionDetails = result.regressionDetails;
+          const hasRegressions = regressionDetails?.hasRegressions;
+
+          if (hasRegressions) {
+            // Log detailed regression info
+            logger.warn(`[FixGen] ⚠️ Fix for ${enriched.ruleId} caused regressions:`,
+              regressionDetails.regressions.map((r: any) => r.rule).join(', '));
+          } else {
+            logger.warn(`[FixGen] ⚠️ Validation failed for ${enriched.ruleId}: ${message}`);
+          }
+
+          // Build remediation steps - specific if regression, generic otherwise
+          const remediationSteps = hasRegressions
+            ? [
+                `1. Review the issue at ${enriched.file}:${enriched.line}`,
+                `2. The AI fix introduced new issues: ${regressionDetails.regressions.map((r: any) => r.rule).join(', ')}`,
+                ...regressionDetails.regressions.map((r: any, i: number) =>
+                  `   ${i === 0 ? '→' : '  '} ${r.rule}: ${r.message}`),
+                `3. Apply fix manually, ensuring you handle these cases:`,
+                ...getRegressionGuidanceSteps(regressionDetails.regressions),
+                '4. Run static analysis to verify no new issues'
+              ]
+            : [
+                `1. Review the issue at ${enriched.file}:${enriched.line}`,
+                `2. Understand why ${enriched.ruleId} was triggered: ${enriched.message || 'See documentation'}`,
+                '3. The AI-generated fix did not pass validation - apply fix manually',
+                '4. Verify the fix doesn\'t break existing functionality',
+                '5. Run tests to ensure no regressions',
+              ];
+
           fixes.set(enriched.id, {
             suggestion: null, // Never show unverified code
             confidence: 'manual',
             cached: false,
             aiGenerated: false,
             manualRequired: true,
-            validationStatus: 'failed_validation', // SESSION 78: Clear indicator
-            reason: 'VALIDATION_FAILED',
-            remediationSteps: [
-              `1. Review the issue at ${enriched.file}:${enriched.line}`,
-              `2. Understand why ${enriched.ruleId} was triggered: ${enriched.message || 'See documentation'}`,
-              '3. The AI-generated fix did not pass validation - apply fix manually',
-              '4. Verify the fix doesn\'t break existing functionality',
-              '5. Run tests to ensure no regressions',
-            ],
+            validationStatus: hasRegressions ? 'regression_detected' : 'failed_validation', // SESSION 80
+            reason: hasRegressions ? 'FIX_CAUSES_REGRESSION' : 'VALIDATION_FAILED',
+            regressionInfo: hasRegressions ? {
+              regressions: regressionDetails.regressions,
+              guidance: regressionDetails.guidance
+            } : undefined,
+            remediationSteps,
             documentationLinks: rec.manualReview?.documentationLinks || [],
             riskLevel: enriched.severity === 'critical' ? 'critical' : enriched.severity === 'high' ? 'high' : 'medium',
-            estimatedEffort: 'moderate',
-            explanation: rec.explanation || `AI fix failed validation: ${message}`,
+            estimatedEffort: hasRegressions ? 'moderate' : 'moderate',
+            explanation: hasRegressions
+              ? `AI fix validation detected that the proposed fix introduces new issues (${regressionDetails.regressions.map((r: any) => r.rule).join(', ')}). Manual fix required.`
+              : rec.explanation || `AI fix failed validation: ${message}`,
             bestPractices: rec.bestPractices,
-            educational: rec.issueDescription
-              ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
-              : `Manual review required for ${enriched.ruleId} - AI fix failed validation`
+            educational: hasRegressions
+              ? `**Why Fix Failed**: The AI-generated fix would introduce new code quality issues.\n\n**Regressions Detected**:\n${regressionDetails.regressions.map((r: any) => `• **${r.rule}**: ${r.message}`).join('\n')}\n\n**Guidance**: ${regressionDetails.guidance}`
+              : rec.issueDescription
+                ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
+                : `Manual review required for ${enriched.ruleId} - AI fix failed validation`
           });
           manualReviewRequired++;
           validationFailed++;
@@ -2317,6 +2351,62 @@ function mapToAISeverity(severity: string): 'critical' | 'high' | 'medium' | 'lo
   if (s === 'high' || s === 'warning') return 'high';
   if (s === 'medium' || s === 'moderate') return 'medium';
   return 'low';
+}
+
+/**
+ * SESSION 80: Generate specific guidance steps for regressions
+ * Provides actionable steps based on the type of regression detected
+ */
+function getRegressionGuidanceSteps(regressions: Array<{ rule: string; message: string; line?: number }>): string[] {
+  const steps: string[] = [];
+  const seenGuidance = new Set<string>();
+
+  for (const regression of regressions) {
+    const rule = regression.rule.toLowerCase();
+
+    // EmptyCatchBlock - most common regression
+    if (rule.includes('emptycatch') || rule.includes('empty_catch')) {
+      if (!seenGuidance.has('emptycatch')) {
+        steps.push('   • For catch blocks: Log the exception, then either rethrow or handle gracefully');
+        steps.push('     Example: catch(IOException e) { logger.error("Failed", e); throw new RuntimeException(e); }');
+        seenGuidance.add('emptycatch');
+      }
+    }
+
+    // AvoidCatchingThrowable
+    if (rule.includes('avoidcatchingthrowable') || rule.includes('catching_throwable')) {
+      if (!seenGuidance.has('throwable')) {
+        steps.push('   • Catch specific exceptions (IOException, SQLException) instead of Throwable');
+        steps.push('     Catching Throwable also catches Errors like OutOfMemoryError');
+        seenGuidance.add('throwable');
+      }
+    }
+
+    // CloseResource
+    if (rule.includes('closeresource') || rule.includes('resource_leak')) {
+      if (!seenGuidance.has('resource')) {
+        steps.push('   • Use try-with-resources for auto-closing: try (var stream = new FileInputStream(f)) { ... }');
+        steps.push('     Ensure resources implement AutoCloseable');
+        seenGuidance.add('resource');
+      }
+    }
+
+    // UseUtilityClass
+    if (rule.includes('useutilityclass') || rule.includes('utility')) {
+      if (!seenGuidance.has('utility')) {
+        steps.push('   • Add private constructor to utility class to prevent instantiation');
+        steps.push('     Example: private ClassName() { throw new UnsupportedOperationException(); }');
+        seenGuidance.add('utility');
+      }
+    }
+
+    // Generic fallback
+    if (steps.length === 0) {
+      steps.push(`   • Review documentation for ${regression.rule}`);
+    }
+  }
+
+  return steps;
 }
 
 /**

@@ -85,6 +85,112 @@ const TEST_SCENARIOS: TestScenario[] = [
 - Follow the EXACT pattern from Java canonical test
 - DO NOT try to "simplify" or "improve" the logic
 
+## 🧠 Fix Pattern Knowledge Base (Session 81)
+
+The Knowledge Base (KB) stores learned patterns for AI fix generation, improving fix quality over time.
+
+### KB Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                       FIX GENERATION FLOW                           │
+├─────────────────────────────────────────────────────────────────────┤
+│  1. Issue Detected → 2. Fetch KB Guidance → 3. Build Prompt         │
+│  4. AI Generates Fix → 5. Tool Re-validates                         │
+│  [PASS] → Submit │ [FAIL] → Retry with Feedback (up to 3x)          │
+│  [ALL FAIL] → Track ALL attempts to KB for learning                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `fix-pattern-guidance.ts` | `packages/agents/src/fix-agent/fix-pattern-registry/` | KB service with Supabase + in-memory fallback |
+| `kb-review-cli.ts` | Same directory | Human review CLI for KB maintenance |
+| `kb-ai-maintainer.ts` | Same directory | AI-assisted KB maintenance script |
+| `/maintain-kb` | `.claude/commands/maintain-kb.md` | Slash command for Claude to maintain KB |
+
+### Using the Knowledge Base
+
+```typescript
+import {
+  getGuidance,
+  formatGuidanceForPrompt,
+  trackFixFailure,
+  getFailuresNeedingReview,
+  markFailureReviewed,
+  addFixGuidance,
+} from './fix-pattern-registry';
+
+// Fetch guidance for a rule
+const guidance = await getGuidance('CloseResource', 'java', 'pmd');
+
+// Format for AI prompt
+const promptSection = formatGuidanceForPrompt(guidance);
+
+// Track a failure (automatic in AI fixer)
+await trackFixFailure({
+  ruleId: 'CloseResource',
+  language: 'java',
+  tool: 'pmd',
+  failureType: 'regression',
+  regressionRules: ['EmptyCatchBlock'],
+  originalCode: '...',
+  attemptedFix: JSON.stringify(allAttempts),
+});
+```
+
+### KB Maintenance Commands
+
+```bash
+# List failures needing review (3+ failures)
+cd packages/agents/src/fix-agent/fix-pattern-registry
+npx ts-node kb-review-cli.ts list
+
+# Review a specific failure
+npx ts-node kb-review-cli.ts review <failure-id>
+
+# AI-assisted maintenance (Claude runs this)
+npx ts-node kb-ai-maintainer.ts --dry-run       # Preview
+npx ts-node kb-ai-maintainer.ts --auto-approve  # Apply changes
+npx ts-node kb-ai-maintainer.ts --rule CloseResource  # Specific rule
+```
+
+### Slash Command for AI Maintenance
+
+Use `/maintain-kb` to have Claude review and fix failed patterns:
+
+```
+/maintain-kb                       # Review all pending failures
+/maintain-kb --rule CloseResource  # Review specific rule
+/maintain-kb --dry-run             # Preview without changes
+```
+
+### Database Tables (Supabase)
+
+| Table | Purpose |
+|-------|---------|
+| `fix_pattern_guidance` | Anti-patterns, correct patterns, prompt additions |
+| `fix_failure_tracking` | Failed fix attempts with full context |
+| `fix_failures_needing_review` | View of patterns with 3+ failures |
+
+### In-Memory Fallback
+
+The KB works without Supabase using pre-seeded patterns for:
+- `EmptyCatchBlock` - Proper exception handling
+- `CloseResource` - Try-with-resources pattern
+- `AvoidCatchingThrowable` - Specific exception types
+- `UseUtilityClass` - Private constructor pattern
+
+### Key Design Decisions
+
+1. **Retry-with-Feedback**: Up to 3 validation attempts per fix
+2. **Comprehensive Tracking**: ALL failed attempts (not just final) sent to KB
+3. **Semi-Automatic Learning**: Failures tracked automatically, AI/human reviews
+4. **Threshold of 3**: Patterns flagged after 3+ failures across PRs
+5. **Success Rate Tracking**: Each pattern tracks effectiveness over time
+
 ## 🔄 SESSION TRANSITION DOCUMENTATION (CRITICAL)
 
 **⚠️ MANDATORY: Session Continuity Protocol**
