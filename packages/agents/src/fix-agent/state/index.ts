@@ -18,4 +18,14 @@ export {
   type DecompositionConfig,
 } from './story-decomposer';
 
+export {
+  FreshContextFixService,
+  formatPriorAttemptsForPrompt,
+  type FreshContextIssue,
+  type FixAttempt,
+  type StoryFixContext,
+  type FixResult,
+  type FreshContextConfig,
+} from './fresh-context-fixer';
+
 export { default } from './pr-fix-state';
