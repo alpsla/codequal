@@ -714,12 +714,13 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
     let fixes = new Map<string, any>();
     let cacheStats = { hits: 0, misses: 0, hitRate: '0%' };
     let fixGenerationTime = 0;
+    let fixSessionInfo: { storiesCompleted: number; storiesFailed: number; totalAttempts: number; learningsSaved: number } | undefined;
 
     if (generateFixes && toolResults.issues.length > 0) {
       updateState(analysisId, 'generating_fixes', 50, 'Generating fixes', 'AI generating code fixes...');
       const fixStart = Date.now();
 
-      const fixResponse = await generateFixesWithHybridAgents(
+      const fixResponse = await generateFixesWithFreshContext(
         toolResults.issues,
         { repository: repositoryUrl, prNumber, language },
         { maxIssuesForFix: options?.maxIssuesForFix }
@@ -728,6 +729,22 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
       fixes = fixResponse.fixes;
       cacheStats = fixResponse.cacheStats;
       fixGenerationTime = Date.now() - fixStart;
+      fixSessionInfo = fixResponse.sessionInfo;
+
+      // Log session info if available (fresh context fix flow)
+      if (fixResponse.sessionInfo) {
+        logger.info('[FreshContext] Fix session complete', {
+          analysisId,
+          ...fixResponse.sessionInfo
+        });
+        if (fixResponse.sessionInfo.storiesFailed > 0) {
+          logger.warn('[FreshContext] Some fixes required manual review', {
+            analysisId,
+            failed: fixResponse.sessionInfo.storiesFailed,
+            total: fixResponse.sessionInfo.storiesCompleted + fixResponse.sessionInfo.storiesFailed
+          });
+        }
+      }
 
       updateState(analysisId, 'generating_fixes', 70, 'Generating fixes', `Generated ${fixes.size} fixes`);
     } else {
@@ -803,7 +820,15 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
         toolsExecutionTime: toolResults.executionTime,
         fixGenerationTime,
         cacheHitRate: cacheStats.hitRate,
-        costEstimate: calculateCostEstimate(issuesWithFixes.length, cacheStats)
+        costEstimate: calculateCostEstimate(issuesWithFixes.length, cacheStats),
+        ...(fixSessionInfo && {
+          freshContextSession: {
+            storiesCompleted: fixSessionInfo.storiesCompleted,
+            storiesFailed: fixSessionInfo.storiesFailed,
+            totalAttempts: fixSessionInfo.totalAttempts,
+            learningsSaved: fixSessionInfo.learningsSaved
+          }
+        })
       },
       report,
       cloudServices: {

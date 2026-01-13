@@ -18,3 +18,20 @@ Learnings:
   - FreshContextFixService expects callbacks for generateFix and validateFix
   - The service handles story decomposition, retry logic, and learning accumulation internally
 
+=== ITERATION 3 ===
+Story: Replace generateFixesWithHybridAgents call
+Status: COMPLETE
+Changes:
+  - apps/api/src/routes/v9-analyze.ts: Replaced generateFixesWithHybridAgents call with generateFixesWithFreshContext (line 722)
+  - apps/api/src/routes/v9-analyze.ts: Added fixSessionInfo variable to capture session info
+  - apps/api/src/routes/v9-analyze.ts: Added logging for session completion and partial failure warnings
+  - apps/api/src/routes/v9-analyze.ts: Added freshContextSession to metrics in result object
+Quality gates:
+  - turbo run build --filter=@codequal/agents: PASS (cached)
+  - cd packages/agents && npx tsc --noEmit --skipLibCheck: PASS
+  - cd packages/agents && npx ts-node tests/integration/test-fix-flow-framework-e2e.ts: PASS (6/6 tests)
+Learnings:
+  - generateFixesWithFreshContext returns same interface as generateFixesWithHybridAgents + sessionInfo
+  - sessionInfo provides story completion tracking useful for API responses
+  - Partial failures should be logged as warnings but not fail the overall fix generation
+
