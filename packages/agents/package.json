@@ -64,6 +64,11 @@
       "types": "./dist/fix-agent/fix-pattern-registry/index.d.ts",
       "require": "./dist/fix-agent/fix-pattern-registry/index.js",
       "import": "./dist/fix-agent/fix-pattern-registry/index.js"
+    },
+    "./fix-agent/state": {
+      "types": "./dist/fix-agent/state/index.d.ts",
+      "require": "./dist/fix-agent/state/index.js",
+      "import": "./dist/fix-agent/state/index.js"
     }
   },
   "scripts": {

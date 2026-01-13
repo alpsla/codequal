@@ -52,3 +52,23 @@ Notes:
   - Test command: API_BASE_URL=http://localhost:3001 LANG=java MAX_ISSUES=3 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
   - All 5 stories now complete - feature ready for final manual verification
 
+=== ITERATION 5 ===
+Story: Real API Integration Test (Session 83)
+Status: COMPLETE
+Changes:
+  - packages/agents/package.json: Added "./fix-agent/state" export for proper module resolution
+  - Fixed MODULE_NOT_FOUND error for @codequal/agents/dist/fix-agent/state.js
+Verification:
+  - API server started on port 3001 (with Redis fallback to in-memory)
+  - V9 2-tier test executed with LANG=java MAX_ISSUES=3
+  - BASIC tier: 18 issues, Score 83/100, Duration 219s ✅
+  - PRO tier: 18 issues, 3 fixed, Score 83/100, Duration 235s ✅
+  - PRO tier correctly entered generating_fixes phase (50%)
+Quality gates:
+  - All automated tests pass
+  - Real API integration test: PASS (both tiers)
+Learnings:
+  - Package.json exports wildcards (./fix-agent/*) don't resolve folder indexes (state/index.js)
+  - Must add explicit exports for subfolders: "./fix-agent/state" → "./dist/fix-agent/state/index.js"
+  - Redis connection timeouts are non-fatal - API uses in-memory fallback
+
