@@ -33,11 +33,15 @@ import {
 } from '../services/post-apply-verification-service';
 
 // SESSION 83: Fresh Context Fix Service (Ralph-inspired per-attempt fresh context)
+// SESSION 83b: Pattern-Aware Fix Service (KB-first + pattern propagation)
 import {
   FreshContextFixService,
+  PatternAwareFixService,
   type FreshContextIssue,
   type StoryFixContext,
+  type PatternExample,
 } from '@codequal/agents/fix-agent/state';
+import { getFixGuidance, type FixGuidance } from '@codequal/agents/fix-agent/fix-pattern-registry';
 
 const execAsync = promisify(exec);
 
@@ -2412,6 +2416,7 @@ async function generateFixesWithFreshContext(
     storiesFailed: number;
     totalAttempts: number;
     learningsSaved: number;
+    aiCallsSaved: number; // Session 83b: AI calls saved via KB pattern propagation
   };
 }> {
   const fixes = new Map<string, any>();
@@ -2486,6 +2491,7 @@ async function generateFixesWithFreshContext(
     storiesFailed: number;
     totalAttempts: number;
     learningsSaved: number;
+    aiCallsSaved: number;
   } | undefined;
 
   if (AIFixerAgent && unmatchedIssues.length > 0) {
@@ -2510,8 +2516,9 @@ async function generateFixesWithFreshContext(
       const orgMatch = prInfo.repository.match(/github\.com\/([^/]+)/);
       const organization = orgMatch ? orgMatch[1] : 'unknown';
 
-      // Initialize Fresh Context Fix Service
-      const freshContextService = new FreshContextFixService(
+      // Initialize Pattern-Aware Fix Service (Session 83b)
+      // Uses KB-first + pattern propagation to reduce AI calls
+      const freshContextService = new PatternAwareFixService(
         prInfo.repository,
         prInfo.prNumber,
         prInfo.repository,
@@ -2519,6 +2526,49 @@ async function generateFixesWithFreshContext(
         {
           maxAttemptsPerStory: 3,
           repositoryInfo: { organization },
+          minKBSuccessRate: 60, // Try KB pattern if 60%+ success rate
+          enablePropagation: true, // Propagate successful patterns to similar issues
+
+          // Apply pattern callback - lightweight AI call to apply KB pattern
+          applyPattern: async (pattern: PatternExample, issue: FreshContextIssue, kbGuidance?: FixGuidance) => {
+            logger.info(`[PatternAware] Applying pattern for ${issue.ruleId} to ${issue.file}:${issue.line}`);
+
+            // Build a focused prompt that applies the known pattern
+            const patternPrompt = kbGuidance
+              ? `Apply this fix pattern:\n${kbGuidance.promptAdditions}\n\nExample:\n${pattern.fixedCode}`
+              : `Apply this fix pattern:\n${pattern.fixedCode}`;
+
+            // Use AIFixerAgent with pattern context (simpler than full generation)
+            const aiIssue = {
+              id: issue.id,
+              validatorToolId: issue.tool,
+              ruleId: issue.ruleId,
+              file: issue.file,
+              line: issue.line,
+              message: issue.message,
+              severity: issue.severity,
+              language: issue.language,
+              originalConfidence: 30,
+              codeContext: issue.codeContext,
+              toolContext: { ruleDescription: issue.message }
+            };
+
+            const result = await fixer.processBatch([aiIssue], {
+              parallel: 1,
+              verbose: false,
+              additionalContext: patternPrompt
+            });
+
+            if (result.enrichedIssues.length > 0) {
+              const enriched = result.enrichedIssues[0];
+              const rec = enriched.fixRecommendation;
+              if (rec?.correctedCode) {
+                return { fixCode: rec.correctedCode, success: true };
+              }
+            }
+
+            return { fixCode: '', success: false };
+          },
 
           // Generate fix callback - uses AIFixerAgent
           generateFix: async (context: StoryFixContext) => {
@@ -2643,9 +2693,10 @@ async function generateFixesWithFreshContext(
         storiesFailed: result.failed,
         totalAttempts: result.totalAttempts,
         learningsSaved,
+        aiCallsSaved: result.aiCallsSaved || 0, // Session 83b: Track AI calls saved via pattern propagation
       };
 
-      logger.info(`[FreshContext] Completed: ${result.completed} stories fixed, ${result.failed} failed, ${result.totalAttempts} total attempts, ${learningsSaved} learnings saved`);
+      logger.info(`[PatternAware] Completed: ${result.completed} stories fixed, ${result.failed} failed, ${result.totalAttempts} total attempts, ${learningsSaved} learnings saved, ${result.aiCallsSaved || 0} AI calls saved`);
 
       // Get the state to extract fixes
       const state = freshContextService.getState();

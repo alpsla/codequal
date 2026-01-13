@@ -36,4 +36,11 @@ export {
   type RelevantLearning,
 } from './repository-learnings';
 
+export {
+  PatternAwareFixService,
+  type PatternExample,
+  type PatternAwareConfig,
+  type PatternAwareResult,
+} from './pattern-aware-fixer';
+
 export { default } from './pr-fix-state';
