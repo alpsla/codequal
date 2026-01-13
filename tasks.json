@@ -1,0 +1,65 @@
+{
+  "feature": "Fresh Context Fix Flow Integration",
+  "branchName": "feature/fresh-context-fix-integration",
+  "specPath": ".agent-os/specs/2026-01-12-fresh-context-fix-integration/",
+  "qualityGates": [
+    "turbo run build",
+    "turbo run typecheck",
+    "cd packages/agents && npx ts-node tests/integration/test-fix-flow-framework-e2e.ts"
+  ],
+  "stories": [
+    {
+      "id": 1,
+      "title": "Verify E2E test framework passes with mocks",
+      "description": "Run test-fix-flow-framework-e2e.ts and verify all 6 tests pass. Fix any import/type errors. Verify story decomposition and fresh context building work correctly.",
+      "files": [
+        "packages/agents/tests/integration/test-fix-flow-framework-e2e.ts",
+        "packages/agents/src/fix-agent/state/index.ts"
+      ],
+      "passes": true,
+      "attempts": 1,
+      "completedAt": "2026-01-12T23:55:00-05:00"
+    },
+    {
+      "id": 2,
+      "title": "Apply database migrations",
+      "description": "Verify migration files exist and apply them: 20260109_fix_pattern_guidance.sql, 20260109_seed_fix_pattern_guidance.sql, 20260109_fix_failure_tracking.sql, 20260112_repository_learnings.sql. Verify tables exist.",
+      "files": [
+        "database/migrations/20260109_fix_pattern_guidance.sql",
+        "database/migrations/20260112_repository_learnings.sql"
+      ],
+      "passes": true,
+      "attempts": 1
+    },
+    {
+      "id": 3,
+      "title": "Create generateFixesWithFreshContext function",
+      "description": "Add imports for FreshContextFixService. Create generateFixesWithFreshContext function in v9-analyze.ts. Implement issue conversion, initialize service, wire callbacks to AIFixerAgent and verifier, call processAllStories and saveLearningsToRepository.",
+      "files": [
+        "apps/api/src/routes/v9-analyze.ts"
+      ],
+      "passes": false,
+      "attempts": 0
+    },
+    {
+      "id": 4,
+      "title": "Replace generateFixesWithHybridAgents call",
+      "description": "Replace the call to generateFixesWithHybridAgents (~line 711) with generateFixesWithFreshContext. Add session info to response. Handle partial failure warnings.",
+      "files": [
+        "apps/api/src/routes/v9-analyze.ts"
+      ],
+      "passes": false,
+      "attempts": 0
+    },
+    {
+      "id": 5,
+      "title": "Integration test with real API",
+      "description": "Start API server, run 2-tier test with Java (LANG=java MAX_ISSUES=3). Verify PRO tier uses fresh context, verify learnings are saved to database.",
+      "files": [],
+      "passes": false,
+      "attempts": 0
+    }
+  ],
+  "currentIteration": 2,
+  "lastRun": "2026-01-12T23:38:57-05:00"
+}
