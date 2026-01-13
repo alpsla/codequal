@@ -1205,6 +1205,82 @@ KillShell(shell_id)
    - Check for circular dependencies
    - Ensure all packages are built in correct order
 
+## 🔄 Ralph Autonomous Iteration (Session 82)
+
+This project supports Ralph autonomous iteration loops for complex features.
+
+### What is Ralph?
+
+Ralph is an autonomous AI agent loop that:
+- Spawns fresh Claude context per story (no drift)
+- Re-reads CLAUDE.md every iteration (respects forbidden patterns)
+- Implements ONE story at a time (focused, atomic)
+- Requires ALL quality gates to pass before advancing
+- Accumulates learnings in progress.txt
+
+### Quick Start
+
+```bash
+# 1. Create tasks.json for your feature
+cat > tasks.json << 'EOF'
+{
+  "feature": "Your Feature Name",
+  "branchName": "feature/your-feature",
+  "stories": [
+    { "id": 1, "title": "First task", "passes": false, "attempts": 0 },
+    { "id": 2, "title": "Second task", "passes": false, "attempts": 0 }
+  ]
+}
+EOF
+
+# 2. Run the Ralph loop
+~/.claude/scripts/codequal-ralph.sh 10
+```
+
+### Quality Gates (Must ALL Pass)
+
+```bash
+turbo run build        # Build all packages
+turbo run typecheck    # Type checking
+turbo run lint         # Linting
+
+# For agents/ package changes:
+npx tsx packages/agents/tests/integration/test-v9-lite-e2e.ts
+```
+
+### State Files
+
+| File | Purpose |
+|------|---------|
+| `tasks.json` | Story status tracking (DO NOT edit during loop) |
+| `progress.txt` | Accumulated learnings across iterations |
+
+### Per-Iteration Requirements
+
+Each Ralph iteration:
+1. Reads `CLAUDE.md` for forbidden patterns
+2. Reads `V9_CRITICAL_KNOWLEDGE_BASE.md` for V9 facts
+3. Implements ONE story only
+4. Runs ALL quality gates
+5. Only marks complete if ALL pass
+6. Appends learnings to progress.txt
+
+### When to Use Ralph
+
+- Complex features spanning multiple packages
+- Bug fixes requiring test-driven development
+- Refactoring with quality verification
+- Any task with 3+ discrete stories
+
+### Files Location
+
+```
+~/.claude/prompts/codequal-ralph-prompt.txt  # Iteration prompt
+~/.claude/scripts/codequal-ralph.sh          # Loop script
+./tasks.json                                  # Per-feature state
+./progress.txt                                # Per-feature learnings
+```
+
 ---
 
 _This document is a living guide. Update it as the project evolves and new patterns emerge._
