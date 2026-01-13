@@ -1,166 +1,201 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 81 (January 9, 2026) - Complete
-**Current Phase**: V9 Two-Branch Analysis - Knowledge Base with AI-Assisted Maintenance
-**Status**: All Session 81 tasks COMPLETED including AI-assisted KB maintenance
+**Last Updated**: Session 82 (January 12, 2026) - Complete
+**Current Phase**: V9 Two-Branch Analysis - Ralph-Inspired State Management
+**Status**: All Session 82 tasks COMPLETED
 
 ---
 
-## Session 81 Completed
+## Session 82 Completed
 
-### P0: Regression Reporting ✅ COMPLETE
+### Ralph Integration Analysis ✅ COMPLETE
 
-Updated `v9-analyze.ts` to provide specific regression details when fixes fail.
+Analyzed how Ralph autonomous iteration patterns can enhance CodeQual in two ways:
+1. **Development Process**: Using Ralph to develop CodeQual (codequal-ralph.sh)
+2. **App Enhancement**: Using Ralph patterns in PR analysis fix flow
 
-### P1-P3: Knowledge Base Architecture ✅ COMPLETE
+### Part 1: Process Enhancement ✅ COMPLETE
 
-Created complete knowledge base system with Supabase integration and in-memory fallback.
+Created Ralph-style autonomous iteration system for CodeQual development:
 
-### P4: Learning Loop (Semi-Automatic) ✅ COMPLETE
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `codequal-ralph-prompt.txt` | `~/.claude/prompts/` | Iteration instructions |
+| `codequal-ralph.sh` | `~/.claude/scripts/` | Loop script |
+| `RALPH_DEVELOPMENT_GUIDE.md` | `docs/development/` | Usage documentation |
 
-**How failures get tracked and fixes retried:**
+### Part 2: App Enhancement ✅ COMPLETE
 
-```
-1. AI generates a fix for an issue
-2. Tool re-validates the fix
-3. If regression detected:
-   - Feedback from validation fed to AI for retry (up to 3 attempts)
-   - Each attempt's outcome collected
-4. If all 3 attempts fail:
-   - ALL attempts sent to trackFixFailure() with full context
-   - Failure count incremented in database
-5. When failure_count >= 3 across different PRs:
-   - Pattern flagged as "pending" review
-   - Appears in getFailuresNeedingReview()
-```
+Created Ralph-inspired state management for PR fix operations:
 
-### P5: AI-Assisted KB Maintenance ✅ COMPLETE
+| Component | Purpose |
+|-----------|---------|
+| `PRFixStateManager` | Explicit state tracking (pr-fix-state.json) |
+| `StoryDecomposer` | Group related issues into atomic fix stories |
+| `FreshContextFixService` | Fresh context per attempt (A5) |
+| `formatPriorAttemptsForPrompt` | Structured failure summaries |
 
-**How Claude maintains the KB:**
+### A5: Fresh Context Per Fix Attempt ✅ COMPLETE
 
-```bash
-# Run the AI maintainer script
-npx ts-node kb-ai-maintainer.ts --dry-run       # Preview changes
-npx ts-node kb-ai-maintainer.ts --auto-approve  # Apply changes
-npx ts-node kb-ai-maintainer.ts --rule CloseResource  # Specific rule
-```
+**The Problem:**
+Current retry loop appends failures → context grows → AI gets stuck
 
-**Or use the slash command:**
-```
-/maintain-kb                    # Review all pending failures
-/maintain-kb --rule CloseResource  # Review specific rule
-/maintain-kb --dry-run          # Preview without making changes
-```
-
-**Maintenance Flow:**
-1. Fetch failures needing review (3+ failures)
-2. For each failure, analyze ALL attempts
-3. Identify root causes (EmptyCatchBlock, Throwable, etc.)
-4. Generate anti-patterns and correct patterns
-5. Add guidance to KB
-6. Mark failures as resolved
+**The Ralph Solution:**
+Each fix attempt spawns completely new AI API call with:
+- Full 200K context available
+- Structured summary of what didn't work (not raw feedback)
+- Cross-fix awareness (later fixes know about earlier ones)
+- Within-PR learnings accumulated so far
 
 ---
 
-## Files Created/Modified This Session
+## Files Created Session 82
 
 ```
-Session 81 Complete File List:
+Part 1 (Process Enhancement):
+~/.claude/prompts/codequal-ralph-prompt.txt (NEW)
+  - Ralph iteration prompt with CodeQual-specific rules
 
-apps/api/src/routes/v9-analyze.ts
-  - Lines 2230-2291: Regression-aware validation output
-  - Lines 2356-2410: getRegressionGuidanceSteps() helper
+~/.claude/scripts/codequal-ralph.sh (NEW)
+  - Executable loop script for autonomous iteration
 
-packages/agents/src/fix-agent/agents/ai-fixer-agent.ts
-  - Line 26: Import formatGuidanceForPrompt
-  - Lines 354-367: Fetch knowledge base guidance
-  - Lines 679-757: buildSystemPrompt() with guidance
-  - Lines 1078-1200: Retry-with-feedback loop in submitFixToRegistry()
-  - Lines 1210-1280: regenerateFixWithFeedback() method
+docs/development/RALPH_DEVELOPMENT_GUIDE.md (NEW)
+  - Comprehensive 500+ line usage guide
 
-packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts (NEW)
-  - Complete KB service: guidance + failure tracking
-  - In-memory fallback for 4 common patterns
-  - Supabase integration with lazy init
-  - generateGuidanceFromFailure() for drafts
+CLAUDE.md
+  - Added Ralph section and updated KB section
 
-packages/agents/src/fix-agent/fix-pattern-registry/index.ts
-  - Lines 63-80: Export all KB functions
+Part 2 (App Enhancement):
+packages/agents/src/fix-agent/state/index.ts (NEW)
+  - Exports all state management components
 
-packages/agents/src/fix-agent/fix-pattern-registry/kb-review-cli.ts (NEW)
-  - CLI tool for human KB review
+packages/agents/src/fix-agent/state/pr-fix-state.ts (NEW)
+  - PRFixStateManager class
+  - FixStory, PRLearning types
+  - Cross-fix awareness methods
+  - Within-PR learnings system
 
-packages/agents/src/fix-agent/fix-pattern-registry/kb-ai-maintainer.ts (NEW)
-  - AI-assisted KB maintenance script
-  - Analyzes failures and generates guidance
-  - Supports --dry-run and --auto-approve flags
+packages/agents/src/fix-agent/state/story-decomposer.ts (NEW)
+  - StoryDecomposer class
+  - Groups by file then rule
+  - Splits large groups, merges tiny ones
+  - Priority by severity and security
 
-packages/agents/src/fix-agent/fix-pattern-registry/KNOWLEDGE_BASE_MAINTENANCE.md (NEW)
-  - Complete maintenance documentation
+packages/agents/src/fix-agent/state/fresh-context-fixer.ts (NEW)
+  - FreshContextFixService class
+  - Implements Ralph's fresh context pattern
+  - Resumable state across invocations
 
-.claude/commands/maintain-kb.md (NEW)
-  - Slash command spec for /maintain-kb
-
-database/migrations/20260109_fix_pattern_guidance.sql (NEW)
-  - Schema for fix_pattern_guidance table
-
-database/migrations/20260109_seed_fix_pattern_guidance.sql (NEW)
-  - Initial seed data for 5 common patterns
-
-database/migrations/20260109_fix_failure_tracking.sql (NEW)
-  - Schema for fix_failure_tracking table
-  - View: fix_failures_needing_review
+packages/agents/src/fix-agent/state/example-integration.ts (NEW)
+  - Integration example with AIFixerAgent
+  - Usage patterns for state management
 ```
 
 ---
 
-## Session 82 TODO
+## Session 83 TODO
 
-### P0: Verify TypeScript Build ✅ DONE
-
-TypeScript build verified - no errors.
-
-### P1: Run Tests to Verify Complete System
+### P0: Test Ralph Development Workflow
 
 ```bash
-cd ~/CodePrjects/codequal/apps/api && npm run dev
+# Create a simple test task
+cd ~/CodePrjects/codequal
+cat > tasks.json << 'EOF'
+{
+  "feature": "Test Ralph workflow",
+  "branchName": "test/ralph-workflow",
+  "stories": [
+    {
+      "id": 1,
+      "title": "Add test file",
+      "description": "Create a simple test file to verify Ralph works",
+      "passes": false,
+      "attempts": 0
+    }
+  ]
+}
+EOF
 
-cd ~/CodePrjects/codequal/packages/agents
-MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+# Run Ralph (single iteration)
+~/.claude/scripts/codequal-ralph.sh 1
 ```
 
-**Expected:**
-- CloseResource should now avoid empty catch blocks (guidance working)
-- Failures should be tracked (check logs for `[FixGuidance] Tracked failure`)
-- Retry-with-feedback should be visible in logs
-- 4/5 or 5/5 fixes should pass validation
+### P1: Integrate FreshContextFixService with v9-analyze.ts
 
-### P2: Apply Database Migrations
+The FreshContextFixService is ready but needs integration with the main fix flow:
+
+```typescript
+// In v9-analyze.ts PRO tier fix section
+import { FreshContextFixService } from '../fix-agent/state';
+
+// Use fresh context pattern for fix attempts
+const fixService = new FreshContextFixService(
+  prUrl, prNumber, repository, language,
+  {
+    maxAttemptsPerStory: 3,
+    generateFix: async (context) => { /* use AIFixerAgent */ },
+    validateFix: async (fixCode, issues) => { /* use verifier */ },
+  }
+);
+```
+
+### P2: Apply Database Migrations (from Session 81)
 
 ```bash
-# Run all migrations
 psql $DATABASE_URL -f database/migrations/20260109_fix_pattern_guidance.sql
 psql $DATABASE_URL -f database/migrations/20260109_seed_fix_pattern_guidance.sql
 psql $DATABASE_URL -f database/migrations/20260109_fix_failure_tracking.sql
 ```
 
-### P3: Test KB Maintenance Tools
+### P3: Run Full E2E Test
 
 ```bash
-# Test the review CLI
-cd ~/CodePrjects/codequal/packages/agents/src/fix-agent/fix-pattern-registry
-npx ts-node kb-review-cli.ts list
-npx ts-node kb-review-cli.ts guidance
+cd ~/CodePrjects/codequal/apps/api && npm run dev
 
-# Test AI maintainer (dry run first!)
-npx ts-node kb-ai-maintainer.ts --dry-run
+cd ~/CodePrjects/codequal/packages/agents
+MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 \
+  npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 ```
 
-### P4: Commit Session 81 Work ✅ DONE
+---
+
+## Ralph-Inspired Fix Flow (New Architecture)
 
 ```
-b66980c2 feat(session-81): Add fix pattern KB with AI-assisted maintenance
-13 files changed, 2888 insertions(+), 192 deletions(-)
+┌─────────────────────────────────────────────────────────────────────┐
+│                    RALPH-INSPIRED FIX FLOW                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. Issues Detected → StoryDecomposer                               │
+│        ↓                                                            │
+│  2. Group into Fix Stories (related issues together)                │
+│        ↓                                                            │
+│  3. Initialize PRFixStateManager                                    │
+│        ↓                                                            │
+│  4. For each story (priority order):                                │
+│     │                                                               │
+│     ├─→ FRESH CONTEXT (new AI call)                                 │
+│     │   • Full system prompt with KB guidance                       │
+│     │   • Structured prior attempt summary                          │
+│     │   • Cross-fix awareness                                       │
+│     │   • Within-PR learnings                                       │
+│     │                                                               │
+│     ├─→ Generate Fix (AIFixerAgent)                                 │
+│     │                                                               │
+│     ├─→ Validate (tool re-validation)                               │
+│     │                                                               │
+│     └─→ [PASS] Complete story, add learning                         │
+│         [FAIL] Mark failure, retry with fresh context (max 3x)      │
+│                                                                     │
+│  5. All stories processed → markComplete()                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+Key Benefits:
+• Fresh 200K context each attempt (no bloat)
+• Resumable via state files (pr-fix-state.json)
+• Related issues fixed together (stories)
+• Accumulated learnings help later fixes
 ```
 
 ---
@@ -168,87 +203,24 @@ b66980c2 feat(session-81): Add fix pattern KB with AI-assisted maintenance
 ## Quick Test Commands
 
 ```bash
+# Build check
+cd ~/CodePrjects/codequal/packages/agents
+npx tsc --skipLibCheck --noEmit
+
 # Start API
 cd ~/CodePrjects/codequal/apps/api && npm run dev
 
+# Test Ralph workflow
+~/.claude/scripts/codequal-ralph.sh 1
+
 # Test with cost control (5 issues only)
 cd ~/CodePrjects/codequal/packages/agents
-MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 npx ts-node tests/integration/test-v9-2tier-all-languages.ts
+MAX_ISSUES=5 LANG=java API_BASE_URL=http://localhost:3001 \
+  npx ts-node tests/integration/test-v9-2tier-all-languages.ts
 
-# Review KB failures (after running tests)
+# Review KB failures
 cd packages/agents/src/fix-agent/fix-pattern-registry
 npx ts-node kb-review-cli.ts list
-
-# Run AI maintenance
-npx ts-node kb-ai-maintainer.ts --dry-run
-```
-
----
-
-## Key Architecture Decisions
-
-1. **Retry-with-Feedback**: Up to 3 validation attempts with previous failure feedback
-2. **Comprehensive Tracking**: ALL failed attempts (not just final) sent to KB
-3. **Semi-automatic Learning**: Failures tracked automatically, AI/human reviews before adding to KB
-4. **In-Memory Fallback**: KB works without Supabase using pre-seeded patterns
-5. **Threshold of 3**: Patterns flagged for review after 3+ failures (configurable)
-6. **AI-Assisted Maintenance**: Claude can run kb-ai-maintainer.ts to fix KB patterns
-7. **Success Rate Tracking**: Each pattern tracks its effectiveness over time
-
----
-
-## System Flow Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                       FIX GENERATION FLOW                           │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. Issue Detected                                                  │
-│        ↓                                                            │
-│  2. Fetch KB Guidance (getGuidance)                                 │
-│        ↓                                                            │
-│  3. Build System Prompt with anti-patterns                          │
-│        ↓                                                            │
-│  4. AI Generates Fix                                                │
-│        ↓                                                            │
-│  5. Tool Re-validates ──────────────┐                               │
-│        ↓                            │                               │
-│  [PASS] → Submit to Registry        │                               │
-│        ↓                            │                               │
-│  [FAIL] → Regression Detected       │                               │
-│        ↓                            │                               │
-│  6. Collect Feedback ←──────────────┘                               │
-│        ↓                                                            │
-│  7. Retry with Feedback (up to 3x)                                  │
-│        ↓                                                            │
-│  [ALL FAIL] → Track ALL attempts to KB                              │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                    KB MAINTENANCE FLOW                              │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. Failures accumulate (3+ for same rule/language/tool)            │
-│        ↓                                                            │
-│  2. Run: npx ts-node kb-ai-maintainer.ts                            │
-│        ↓                                                            │
-│  3. Fetch failures needing review                                   │
-│        ↓                                                            │
-│  4. Analyze ALL attempts for each failure                           │
-│        ↓                                                            │
-│  5. Identify root causes and patterns                               │
-│        ↓                                                            │
-│  6. Generate anti-patterns + correct patterns                       │
-│        ↓                                                            │
-│  7. Add guidance to KB (with --auto-approve)                        │
-│        ↓                                                            │
-│  8. Mark failures as resolved                                       │
-│        ↓                                                            │
-│  9. Future fixes use new guidance automatically                     │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -257,6 +229,23 @@ npx ts-node kb-ai-maintainer.ts --dry-run
 
 ```
 Branch: fix/v9-tool-parsers
-Last commit: b66980c2 (feat(session-81): Add fix pattern KB with AI-assisted maintenance)
+Last commit: 68df497b (feat(session-82): Implement A5 fresh context per fix attempt)
 Uncommitted changes: None
+
+Recent commits:
+68df497b feat(session-82): Implement A5 fresh context per fix attempt
+72a560e0 feat(session-82): Add Ralph-inspired state management for PR fixes
+b66980c2 feat(session-81): Add fix pattern KB with AI-assisted maintenance
+a8d7583b feat(session-80): Fix pattern reuse validation, add regression reporting
 ```
+
+---
+
+## Key Architecture Decisions (Session 82)
+
+1. **Fresh Context Per Attempt**: Each fix attempt = new AI API call with full context
+2. **Story Decomposition**: Related issues grouped for atomic processing
+3. **Explicit State Machine**: pr-fix-state.json enables inspection and resumption
+4. **Within-PR Learnings**: Insights accumulated during single PR session
+5. **Cross-Fix Awareness**: Later fixes in same file know about earlier ones
+6. **Structured Failure Summaries**: Concise "what to avoid" vs raw feedback
