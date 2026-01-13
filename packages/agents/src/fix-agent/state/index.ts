@@ -28,4 +28,12 @@ export {
   type FreshContextConfig,
 } from './fresh-context-fixer';
 
+export {
+  RepositoryLearningService,
+  getRepositoryLearningService,
+  type RepositoryLearning,
+  type LearningQuery,
+  type RelevantLearning,
+} from './repository-learnings';
+
 export { default } from './pr-fix-state';

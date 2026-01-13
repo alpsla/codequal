@@ -55,7 +55,19 @@ export async function processPRWithFreshContext(
     skipToolRevalidation: false,
   });
 
-  // Create the Fresh Context Fix Service
+  // Detect frameworks from file patterns
+  const { getRepositoryLearningService } = await import('./repository-learnings');
+  const repoLearnings = getRepositoryLearningService();
+  const detectedFrameworks = repoLearnings.detectFrameworks(
+    issues.map(i => i.file)
+  );
+  console.log(`[Example] Detected frameworks: ${detectedFrameworks.join(', ') || 'none'}`);
+
+  // Extract organization from repository
+  const orgMatch = repository.match(/github\.com\/([^/]+)/);
+  const organization = orgMatch ? orgMatch[1] : 'unknown';
+
+  // Create the Fresh Context Fix Service with repository info
   const fixService = new FreshContextFixService(
     prUrl,
     prNumber,
@@ -63,6 +75,12 @@ export async function processPRWithFreshContext(
     language,
     {
       maxAttemptsPerStory: 3,
+
+      // Repository info for cross-repo learnings
+      repositoryInfo: {
+        organization,
+        frameworks: detectedFrameworks,
+      },
 
       // Generate fix using completely fresh AI context
       generateFix: async (context: StoryFixContext) => {
@@ -81,7 +99,10 @@ export async function processPRWithFreshContext(
 
           // Include learnings and prior fixes in tool context
           toolContext: {
-            bestPractices: context.learnings || undefined,
+            bestPractices: [
+              context.learnings,
+              context.repositoryLearnings,  // Cross-repo learnings from KB
+            ].filter(Boolean).join('\n') || undefined,
             toolSuggestion: context.priorFixesInFiles
               ? 'Prior fixes in this file:\n' + context.priorFixesInFiles
               : undefined,
@@ -156,6 +177,11 @@ export async function processPRWithFreshContext(
 
   console.log(`[Example] Complete: ${result.completed} fixed, ${result.failed} failed, ${result.skipped} skipped`);
   console.log(`[Example] Total attempts: ${result.totalAttempts}`);
+
+  // Save valuable learnings to repository KB for future PRs
+  // This enables cross-PR and cross-repo knowledge sharing
+  const savedLearnings = await fixService.saveLearningsToRepository();
+  console.log(`[Example] Saved ${savedLearnings} learnings to repository KB for future use`);
 
   return result;
 }

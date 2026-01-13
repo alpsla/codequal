@@ -16,6 +16,7 @@
 
 import { PRFixStateManager, FixStory } from './pr-fix-state';
 import { StoryDecomposer, IssueForGrouping, FixStoryGroup } from './story-decomposer';
+import { RepositoryLearningService, getRepositoryLearningService } from './repository-learnings';
 
 // ============================================================================
 // Types
@@ -47,8 +48,9 @@ export interface StoryFixContext {
   story: FixStory;
   issues: FreshContextIssue[];
   priorAttempts: FixAttempt[];
-  priorFixesInFiles: string; // For cross-fix awareness
-  learnings: string;         // Within-PR learnings
+  priorFixesInFiles: string;    // For cross-fix awareness
+  learnings: string;            // Within-PR learnings
+  repositoryLearnings: string;  // Cross-repo learnings from KB
 }
 
 export interface FixResult {
@@ -63,6 +65,11 @@ export interface FixResult {
 export interface FreshContextConfig {
   maxAttemptsPerStory?: number;
   stateDir?: string;
+  /** Repository info for cross-repo learnings */
+  repositoryInfo?: {
+    organization: string;
+    frameworks?: string[];
+  };
   generateFix: (context: StoryFixContext) => Promise<{
     fixCode: string;
     confidence: number;
@@ -91,8 +98,11 @@ export interface FreshContextConfig {
 export class FreshContextFixService {
   private stateManager: PRFixStateManager;
   private decomposer: StoryDecomposer;
-  private config: Required<FreshContextConfig>;
+  private repoLearnings: RepositoryLearningService;
+  private config: Required<Omit<FreshContextConfig, 'repositoryInfo'>> & { repositoryInfo?: FreshContextConfig['repositoryInfo'] };
   private issueMap: Map<string, FreshContextIssue> = new Map();
+  private repository: string;
+  private language: string;
 
   constructor(
     prUrl: string,
@@ -101,6 +111,9 @@ export class FreshContextFixService {
     language: string,
     config: FreshContextConfig
   ) {
+    this.repository = repository;
+    this.language = language;
+
     this.stateManager = new PRFixStateManager(
       prUrl,
       prNumber,
@@ -116,9 +129,12 @@ export class FreshContextFixService {
       prioritizeBySeverity: true,
     });
 
+    this.repoLearnings = getRepositoryLearningService();
+
     this.config = {
       maxAttemptsPerStory: config.maxAttemptsPerStory ?? 3,
       stateDir: config.stateDir ?? process.cwd(),
+      repositoryInfo: config.repositoryInfo,
       generateFix: config.generateFix,
       validateFix: config.validateFix,
     };
@@ -231,7 +247,7 @@ export class FreshContextFixService {
     this.stateManager.startStory(storyId);
 
     // Build FRESH context for this attempt
-    const context = this.buildFreshContext(story);
+    const context = await this.buildFreshContext(story);
 
     try {
       // Generate fix with COMPLETELY NEW AI call
@@ -308,7 +324,7 @@ export class FreshContextFixService {
    * This is the key Ralph pattern: instead of appending failures,
    * we build a fresh context with STRUCTURED summaries of what didn't work.
    */
-  private buildFreshContext(story: FixStory): StoryFixContext {
+  private async buildFreshContext(story: FixStory): Promise<StoryFixContext> {
     // Get the actual issues for this story
     const issues = story.issueIds
       .map(id => this.issueMap.get(id))
@@ -329,12 +345,22 @@ export class FreshContextFixService {
     // Get accumulated learnings from this PR session
     const learnings = this.stateManager.getLearningsForPrompt();
 
+    // Get cross-repo learnings from KB
+    const repositoryLearnings = await this.repoLearnings.formatLearningsForPrompt({
+      repository: this.repository,
+      organization: this.config.repositoryInfo?.organization,
+      language: this.language,
+      frameworks: this.config.repositoryInfo?.frameworks,
+      ruleIds: story.ruleIds,
+    });
+
     return {
       story,
       issues,
       priorAttempts,
       priorFixesInFiles,
       learnings,
+      repositoryLearnings,
     };
   }
 
@@ -396,6 +422,48 @@ export class FreshContextFixService {
    */
   cleanup(): void {
     this.stateManager.cleanup();
+  }
+
+  /**
+   * Save valuable learnings to repository KB for future use
+   *
+   * Call this after a successful PR fix session to persist
+   * insights that could help future PRs in this and similar repos.
+   */
+  async saveLearningsToRepository(): Promise<number> {
+    const state = this.stateManager.getState();
+
+    // Filter learnings worth persisting (pattern and codebase categories)
+    const worthSaving = state.learnings.filter(l =>
+      l.category === 'pattern' ||
+      l.category === 'codebase' ||
+      l.category === 'success'
+    );
+
+    if (worthSaving.length === 0) {
+      console.log('[FreshContextFixer] No learnings to persist to repository KB');
+      return 0;
+    }
+
+    // Determine organization from repository path
+    const orgMatch = this.repository.match(/github\.com\/([^/]+)/);
+    const organization = this.config.repositoryInfo?.organization ||
+      (orgMatch ? orgMatch[1] : 'unknown');
+
+    // Save to repository KB
+    const saved = await this.repoLearnings.saveLearningsFromSession(
+      this.repository,
+      organization,
+      this.language,
+      this.config.repositoryInfo?.frameworks || [],
+      worthSaving.map(l => ({
+        insight: l.insight,
+        category: l.category === 'success' ? 'pattern' : l.category as any,
+      }))
+    );
+
+    console.log(`[FreshContextFixer] Saved ${saved} learnings to repository KB`);
+    return saved;
   }
 }
 
