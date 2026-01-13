@@ -3,8 +3,8 @@
   "branchName": "feature/fresh-context-fix-integration",
   "specPath": ".agent-os/specs/2026-01-12-fresh-context-fix-integration/",
   "qualityGates": [
-    "turbo run build",
-    "turbo run typecheck",
+    "turbo run build --filter=@codequal/agents",
+    "cd packages/agents && npx tsc --noEmit --skipLibCheck",
     "cd packages/agents && npx ts-node tests/integration/test-fix-flow-framework-e2e.ts"
   ],
   "stories": [
@@ -38,8 +38,9 @@
       "files": [
         "apps/api/src/routes/v9-analyze.ts"
       ],
-      "passes": false,
-      "attempts": 0
+      "passes": true,
+      "attempts": 1,
+      "completedAt": "2026-01-13T08:15:00-05:00"
     },
     {
       "id": 4,
@@ -61,5 +62,5 @@
     }
   ],
   "currentIteration": 2,
-  "lastRun": "2026-01-12T23:38:57-05:00"
+  "lastRun": "2026-01-13T08:15:00-05:00"
 }

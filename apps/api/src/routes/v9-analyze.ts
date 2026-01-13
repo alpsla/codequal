@@ -32,6 +32,13 @@ import {
   VerificationLevel
 } from '../services/post-apply-verification-service';
 
+// SESSION 83: Fresh Context Fix Service (Ralph-inspired per-attempt fresh context)
+import {
+  FreshContextFixService,
+  type FreshContextIssue,
+  type StoryFixContext,
+} from '@codequal/agents/fix-agent/state';
+
 const execAsync = promisify(exec);
 
 const logger = createLogger('v9-analyze');
@@ -2339,6 +2346,381 @@ async function generateFixesWithHybridAgents(
       manualReviewRequired, // SESSION 77: Track fixes needing manual review
       failed
     }
+  };
+}
+
+// ============================================================================
+// SESSION 83: Fresh Context Fix Generation (Ralph-Inspired)
+// ============================================================================
+
+/**
+ * Generate fixes using Fresh Context pattern (Ralph-inspired).
+ *
+ * This approach:
+ * 1. Decomposes issues into "stories" (groups by file + rule)
+ * 2. Each fix attempt gets completely fresh AI context (no drift)
+ * 3. Accumulated learnings guide subsequent attempts
+ * 4. Failed patterns are tracked to prevent repetition
+ *
+ * Benefits over generateFixesWithHybridAgents:
+ * - Fresh 200K context per attempt (no conversation bloat)
+ * - Cross-fix awareness (Story 2 knows what Story 1 did)
+ * - Within-PR learnings (what worked/failed in this PR)
+ * - Cross-repo learnings (patterns from similar repos)
+ */
+async function generateFixesWithFreshContext(
+  issues: any[],
+  prInfo: { repository: string; prNumber: number; language: string },
+  options?: { maxIssuesForFix?: number }
+): Promise<{
+  fixes: Map<string, any>;
+  cacheStats: {
+    hits: number;
+    misses: number;
+    hitRate: string;
+    aiGenerated: number;
+    manualReviewRequired: number;
+    failed: number;
+  };
+  sessionInfo?: {
+    storiesCompleted: number;
+    storiesFailed: number;
+    totalAttempts: number;
+    learningsSaved: number;
+  };
+}> {
+  const fixes = new Map<string, any>();
+  let patternHits = 0;
+  let aiGenerated = 0;
+  let failed = 0;
+  let manualReviewRequired = 0;
+  const maxIssues = options?.maxIssuesForFix;
+
+  // Try to import dependencies
+  let AIFixerAgent: any = null;
+  let patternStore: any = null;
+
+  try {
+    const fixAgentModule = await import('@codequal/agents/fix-agent/agents/ai-fixer-agent');
+    AIFixerAgent = fixAgentModule.AIFixerAgent;
+    logger.info('[FreshContext] AIFixerAgent loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FreshContext] AIFixerAgent not available:', e.message);
+  }
+
+  try {
+    const patternModule = await import('@codequal/agents/fix-agent/fix-pattern-registry');
+    patternStore = patternModule.getSupabasePatternStore();
+    logger.info('[FreshContext] Pattern store loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FreshContext] Pattern store not available:', e.message);
+  }
+
+  // Phase 1: Check pattern registry for cached fixes (FREE for all tiers)
+  if (patternStore) {
+    const patternResults = await Promise.all(
+      issues.map(async (issue) => {
+        try {
+          const pattern = await patternStore.lookupPattern(
+            issue.type,
+            issue.tool,
+            true,
+            issue.codeContext
+          );
+          return { issue, pattern };
+        } catch (e) {
+          return { issue, pattern: null };
+        }
+      })
+    );
+
+    for (const { issue, pattern } of patternResults) {
+      if (pattern && pattern.fix_template) {
+        fixes.set(issue.id, {
+          suggestion: pattern.fix_template.correctedCode || pattern.fix_template.fix,
+          confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
+          cached: true,
+          patternId: pattern.id,
+          educational: `This fix uses a proven pattern from our registry. ${pattern.description || ''}`
+        });
+        patternHits++;
+      }
+    }
+  }
+
+  // Phase 2: Use Fresh Context for remaining issues
+  let unmatchedIssues = issues.filter(i => !fixes.has(i.id));
+
+  if (maxIssues && unmatchedIssues.length > maxIssues) {
+    logger.info(`[FreshContext] Limiting from ${unmatchedIssues.length} to ${maxIssues} issues (maxIssuesForFix)`);
+    unmatchedIssues = unmatchedIssues.slice(0, maxIssues);
+  }
+
+  let sessionInfo: {
+    storiesCompleted: number;
+    storiesFailed: number;
+    totalAttempts: number;
+    learningsSaved: number;
+  } | undefined;
+
+  if (AIFixerAgent && unmatchedIssues.length > 0) {
+    try {
+      const fixer = new AIFixerAgent({ submitToRegistry: true });
+
+      // Convert issues to FreshContextIssue format
+      const freshIssues: FreshContextIssue[] = unmatchedIssues.map(issue => ({
+        id: issue.id,
+        ruleId: issue.type || issue.rule || 'unknown',
+        file: issue.file || 'unknown',
+        line: issue.line || 1,
+        column: issue.column,
+        message: issue.message || 'No message',
+        severity: mapToAISeverity(issue.severity),
+        codeContext: issue.codeContext,
+        language: prInfo.language || 'java',
+        tool: issue.tool || 'unknown',
+      }));
+
+      // Extract organization from repository URL
+      const orgMatch = prInfo.repository.match(/github\.com\/([^/]+)/);
+      const organization = orgMatch ? orgMatch[1] : 'unknown';
+
+      // Initialize Fresh Context Fix Service
+      const freshContextService = new FreshContextFixService(
+        prInfo.repository,
+        prInfo.prNumber,
+        prInfo.repository,
+        prInfo.language || 'java',
+        {
+          maxAttemptsPerStory: 3,
+          repositoryInfo: { organization },
+
+          // Generate fix callback - uses AIFixerAgent
+          generateFix: async (context: StoryFixContext) => {
+            logger.info(`[FreshContext] Generating fix for story ${context.story.id}: ${context.story.groupName}`);
+
+            // Convert context issues to AIFixerAgent format
+            const aiIssues = context.issues.map(issue => ({
+              id: issue.id,
+              validatorToolId: issue.tool,
+              ruleId: issue.ruleId,
+              file: issue.file,
+              line: issue.line,
+              message: issue.message,
+              severity: issue.severity,
+              language: issue.language,
+              originalConfidence: 30,
+              codeContext: issue.codeContext,
+              toolContext: { ruleDescription: issue.message }
+            }));
+
+            // Build enhanced prompt with context from fresh context service
+            const enhancedContext = [
+              context.repositoryLearnings,
+              context.learnings,
+              context.priorFixesInFiles,
+              context.priorAttempts.length > 0
+                ? `\n=== PRIOR ATTEMPTS (AVOID THESE) ===\n${context.priorAttempts.map(a =>
+                    `Attempt ${a.attemptNumber}: ${a.failureReason || 'Failed'}${a.regressions?.length ? ` - Regressions: ${a.regressions.map(r => r.rule).join(', ')}` : ''}`
+                  ).join('\n')}\n`
+                : ''
+            ].filter(Boolean).join('\n');
+
+            // Process with AI
+            const result = await fixer.processBatch(aiIssues, {
+              parallel: 1,
+              verbose: false,
+              additionalContext: enhancedContext
+            });
+
+            if (result.enrichedIssues.length > 0) {
+              const enriched = result.enrichedIssues[0];
+              const rec = enriched.fixRecommendation;
+              if (rec?.correctedCode) {
+                return {
+                  fixCode: rec.correctedCode,
+                  confidence: rec.confidence || 50,
+                };
+              }
+            }
+
+            throw new Error('AI did not generate fix code');
+          },
+
+          // Validate fix callback - uses PostApplyVerificationService
+          validateFix: async (fixCode: string, issues: FreshContextIssue[]) => {
+            logger.info(`[FreshContext] Validating fix for ${issues.length} issues`);
+
+            // Use the fixer's submitFixToRegistry which does validation
+            fixer.enableRegistrySubmission();
+
+            // Build a mock enriched issue for validation
+            const mockEnriched = {
+              id: issues[0].id,
+              ruleId: issues[0].ruleId,
+              file: issues[0].file,
+              line: issues[0].line,
+              message: issues[0].message,
+              severity: issues[0].severity,
+              language: issues[0].language,
+            };
+
+            const mockRec = {
+              correctedCode: fixCode,
+              confidence: 70,
+              explanation: 'Fresh context generated fix',
+            };
+
+            try {
+              const validation = await fixer.submitFixToRegistry(mockEnriched, mockRec);
+              if (validation.submitted) {
+                return { passed: true };
+              }
+
+              // Check for regressions
+              if (validation.regressionDetails?.hasRegressions) {
+                return {
+                  passed: false,
+                  regressions: validation.regressionDetails.regressions.map((r: any) => ({
+                    rule: r.rule,
+                    message: r.message,
+                  })),
+                  error: 'Fix caused regressions',
+                };
+              }
+
+              return {
+                passed: false,
+                error: validation.message || 'Validation failed',
+              };
+            } catch (e: any) {
+              return {
+                passed: false,
+                error: e.message || 'Validation error',
+              };
+            }
+          },
+        }
+      );
+
+      // Initialize with issues
+      freshContextService.initialize(freshIssues);
+
+      // Process all stories
+      logger.info(`[FreshContext] Starting fresh context processing for ${freshIssues.length} issues`);
+      const result = await freshContextService.processAllStories();
+
+      // Save learnings to repository KB
+      const learningsSaved = await freshContextService.saveLearningsToRepository();
+
+      sessionInfo = {
+        storiesCompleted: result.completed,
+        storiesFailed: result.failed,
+        totalAttempts: result.totalAttempts,
+        learningsSaved,
+      };
+
+      logger.info(`[FreshContext] Completed: ${result.completed} stories fixed, ${result.failed} failed, ${result.totalAttempts} total attempts, ${learningsSaved} learnings saved`);
+
+      // Get the state to extract fixes
+      const state = freshContextService.getState();
+
+      for (const story of state.fixStories) {
+        if (story.status === 'fixed' && story.fixCode) {
+          // Story completed successfully
+          for (const issueId of story.issueIds) {
+            fixes.set(issueId, {
+              suggestion: story.fixCode,
+              confidence: 'high',
+              cached: false,
+              aiGenerated: true,
+              validationStatus: 'verified',
+              freshContext: true,
+              storyId: story.id,
+              educational: `AI-generated fix using fresh context pattern for ${story.ruleIds.join(', ')}`
+            });
+            aiGenerated++;
+          }
+        } else {
+          // Story failed - provide manual guidance
+          for (const issueId of story.issueIds) {
+            const issue = unmatchedIssues.find(i => i.id === issueId);
+            fixes.set(issueId, {
+              suggestion: null,
+              confidence: 'manual',
+              cached: false,
+              aiGenerated: false,
+              manualRequired: true,
+              validationStatus: story.status === 'failed' ? 'failed_validation' : 'skipped',
+              reason: story.lastError || 'Fix generation failed after multiple attempts',
+              remediationSteps: [
+                `1. Review the issue at ${issue?.file || 'unknown'}:${issue?.line || 0}`,
+                `2. Rule: ${story.ruleIds.join(', ')}`,
+                '3. AI fix generation failed - apply fix manually',
+                '4. Run static analysis to verify no new issues'
+              ],
+              riskLevel: 'medium',
+              estimatedEffort: 'moderate',
+              educational: `Manual review required for ${story.ruleIds.join(', ')} - AI fix attempts failed`
+            });
+            manualReviewRequired++;
+          }
+        }
+      }
+
+      // Cleanup state files
+      freshContextService.cleanup();
+
+    } catch (e: any) {
+      logger.error('[FreshContext] Fresh context fix generation failed:', e.message);
+      failed = unmatchedIssues.length;
+
+      // Fall back to manual guidance
+      for (const issue of unmatchedIssues) {
+        fixes.set(issue.id, {
+          suggestion: null,
+          confidence: 'none',
+          cached: false,
+          aiGenerated: false,
+          requiresManualFix: true,
+          educational: `This issue requires manual review. Check the ${issue.tool || 'tool'} documentation for ${issue.type || 'this rule'}.`,
+          guidance: getManualFixGuidance(issue)
+        });
+      }
+    }
+  } else if (unmatchedIssues.length > 0) {
+    // No AI available - provide guidance
+    for (const issue of unmatchedIssues) {
+      fixes.set(issue.id, {
+        suggestion: null,
+        confidence: 'none',
+        cached: false,
+        aiGenerated: false,
+        requiresManualFix: true,
+        educational: `This issue requires manual review. Check the ${issue.tool || 'tool'} documentation for ${issue.type || 'this rule'}.`,
+        guidance: getManualFixGuidance(issue)
+      });
+      failed++;
+    }
+  }
+
+  const total = issues.length;
+  const patternHitRate = total > 0 ? Math.round((patternHits / total) * 100) : 0;
+  const aiRate = total > 0 ? Math.round((aiGenerated / total) * 100) : 0;
+
+  logger.info(`[FreshContext] Results: ${patternHits} pattern hits (${patternHitRate}%), ${aiGenerated} AI generated (${aiRate}%), ${manualReviewRequired} manual review, ${failed} failed`);
+
+  return {
+    fixes,
+    cacheStats: {
+      hits: patternHits,
+      misses: aiGenerated + failed + manualReviewRequired,
+      hitRate: `${patternHitRate}%`,
+      aiGenerated,
+      manualReviewRequired,
+      failed
+    },
+    sessionInfo,
   };
 }
 
