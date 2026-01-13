@@ -1,5 +1,5 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: January 4, 2026 (Session 75)**
+**Last Updated: January 12, 2026 (Session 82)**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
 
 ---
@@ -1424,6 +1424,84 @@ flushMetricsToLog()  # Shows timing summary
 
 # Or check raw metrics
 getExecutionMetrics()  # Returns full metrics array
+```
+
+---
+
+## 🔄 RALPH-INSPIRED STATE MANAGEMENT (Session 82)
+
+### Overview
+
+Session 82 added Ralph-inspired patterns for improved fix operations:
+1. **Fresh context per attempt** - No context bloat
+2. **Story decomposition** - Related issues grouped
+3. **Cross-repo learning** - KB shared across repos
+
+### Three-Layer Knowledge Base
+
+```
+Layer 1: fix_pattern_guidance (Session 81)
+  └─→ Global rule-specific patterns (CloseResource, EmptyCatchBlock)
+  └─→ Applies to ALL repositories
+
+Layer 2: repository_learnings (Session 82)
+  └─→ Repository-specific insights
+  └─→ Cross-repo sharing: org (80%), language (60%), framework (60%)
+
+Layer 3: pr-learnings.json (Session 82)
+  └─→ Within-PR accumulated insights
+  └─→ Promoted to Layer 2 after successful session
+```
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `PRFixStateManager` | `fix-agent/state/pr-fix-state.ts` | Explicit state tracking |
+| `StoryDecomposer` | `fix-agent/state/story-decomposer.ts` | Group related issues |
+| `FreshContextFixService` | `fix-agent/state/fresh-context-fixer.ts` | Fresh context per attempt |
+| `RepositoryLearningService` | `fix-agent/state/repository-learnings.ts` | Cross-repo learning |
+
+### Usage
+
+```typescript
+import {
+  FreshContextFixService,
+  getRepositoryLearningService
+} from '@codequal/agents/fix-agent/state';
+
+// Detect frameworks
+const repoLearnings = getRepositoryLearningService();
+const frameworks = repoLearnings.detectFrameworks(files);
+
+// Create fix service
+const fixService = new FreshContextFixService(
+  prUrl, prNumber, repository, language,
+  {
+    maxAttemptsPerStory: 3,
+    repositoryInfo: { organization, frameworks },
+    generateFix: async (context) => { /* AI call */ },
+    validateFix: async (fixCode, issues) => { /* verify */ },
+  }
+);
+
+// Process stories
+await fixService.processAllStories();
+
+// Save learnings for future PRs
+await fixService.saveLearningsToRepository();
+```
+
+### Database Migrations Required
+
+```bash
+# Session 81 - Fix pattern guidance
+psql $DATABASE_URL -f database/migrations/20260109_fix_pattern_guidance.sql
+psql $DATABASE_URL -f database/migrations/20260109_seed_fix_pattern_guidance.sql
+psql $DATABASE_URL -f database/migrations/20260109_fix_failure_tracking.sql
+
+# Session 82 - Repository learnings
+psql $DATABASE_URL -f database/migrations/20260112_repository_learnings.sql
 ```
 
 ---
