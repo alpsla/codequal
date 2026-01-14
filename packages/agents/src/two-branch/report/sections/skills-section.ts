@@ -34,6 +34,10 @@ const XP_REWARDS = {
   PATTERN_CONTRIBUTED: 50,
   PERFECT_SCORE: 100,
   SCORE_IMPROVEMENT: 25,
+  // SESSION 69: XP for developer-resolved issues (issues they fixed in their PR)
+  ISSUE_RESOLVED_BY_DEV: 5,           // Base XP per resolved issue
+  CRITICAL_RESOLVED_BY_DEV: 20,       // Bonus for resolving critical issues
+  SECURITY_RESOLVED_BY_DEV: 10,       // Bonus for resolving security issues
 };
 
 /**
@@ -154,6 +158,44 @@ function calculateXPEarned(
     description: 'Completed code analysis',
     amount: XP_REWARDS.ANALYSIS_COMPLETED,
   });
+
+  // SESSION 69: XP for issues the developer resolved BEFORE analysis (proactive fixes)
+  // These are issues that existed in the codebase but the developer fixed in their PR
+  const resolvedIssues = analysis.issues.filter((i) => i.status === 'resolved');
+  if (resolvedIssues.length > 0) {
+    // Base XP for all resolved issues
+    const resolvedXp = resolvedIssues.length * XP_REWARDS.ISSUE_RESOLVED_BY_DEV;
+    total += resolvedXp;
+    breakdown.push({
+      action: 'issues_resolved_by_dev',
+      description: `Proactively resolved ${resolvedIssues.length} issues`,
+      amount: resolvedXp,
+    });
+
+    // Bonus XP for critical issues resolved by developer
+    const criticalResolved = resolvedIssues.filter((i) => i.severity === 'critical').length;
+    if (criticalResolved > 0) {
+      const bonusXp = criticalResolved * XP_REWARDS.CRITICAL_RESOLVED_BY_DEV;
+      total += bonusXp;
+      breakdown.push({
+        action: 'critical_resolved_by_dev',
+        description: `Proactively resolved ${criticalResolved} critical issues`,
+        amount: bonusXp,
+      });
+    }
+
+    // Bonus XP for security issues resolved by developer
+    const securityResolved = resolvedIssues.filter((i) => i.category === 'security').length;
+    if (securityResolved > 0) {
+      const bonusXp = securityResolved * XP_REWARDS.SECURITY_RESOLVED_BY_DEV;
+      total += bonusXp;
+      breakdown.push({
+        action: 'security_resolved_by_dev',
+        description: `Proactively resolved ${securityResolved} security issues`,
+        amount: bonusXp,
+      });
+    }
+  }
 
   if (fixResult) {
     // XP for fixed issues

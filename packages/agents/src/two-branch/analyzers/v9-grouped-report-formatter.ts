@@ -313,6 +313,8 @@ export class V9GroupedReportFormatter {
   private SHOW_PERF_SUBMETRICS = false;
   private skillScoreManager: SkillScoreManager | null = null;
   private repoPath: string | undefined = undefined;  // Local repo path for snippet extraction
+  private repositoryUrl: string | undefined = undefined;  // SESSION 74: GitHub URL for remote snippet fetching
+  private userTier: 'basic' | 'pro' | 'enterprise' = 'basic';  // User tier for report differentiation
   // BUG-76: AI enrichment dependencies
   private modelConfigResolver: any = null;
   private detectedLanguage = 'java';
@@ -322,9 +324,60 @@ export class V9GroupedReportFormatter {
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
   private readonly SHOW_SYSTEM_INFO: boolean = false;
-  private readonly SHOW_AGENT_PERFORMANCE: boolean = true;  // BUG #9 FIX: Enable AI performance tracking
+  private readonly SHOW_AGENT_PERFORMANCE: boolean = false;  // BUG-110: Disabled - not useful for users
   private readonly SHOW_TOOL_PERFORMANCE: boolean = true;   // BUG #8 FIX: Enable tool performance tracking
   private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = true; // BUG #10 FIX: Enable cost analysis
+  private readonly SHOW_FOCUS_AREAS: boolean = false;        // BUG-110: Disabled - not useful for users
+  // BUG-105 FIX: Cached pattern count (fetched from Supabase once per session)
+  private cachedPatternCount: number | null = null;
+
+  /**
+   * BUG-105 FIX: Get pattern count from cache or Supabase
+   * Returns cached value if available, otherwise fetches from DB and caches
+   */
+  private getPatternCountFromCache(): number {
+    // Return cached value if available
+    if (this.cachedPatternCount !== null) {
+      return this.cachedPatternCount;
+    }
+    // Default to 640 if no Supabase connection
+    // The actual count will be set during formatGroupedReport() initialization
+    return 640;
+  }
+
+  /**
+   * BUG-105 FIX: Fetch and cache pattern count from Supabase
+   */
+  private async fetchPatternCount(): Promise<number> {
+    if (this.cachedPatternCount !== null) {
+      return this.cachedPatternCount;
+    }
+
+    if (!this.supabase) {
+      this.cachedPatternCount = 640;
+      return 640;
+    }
+
+    try {
+      const { count, error } = await this.supabase
+        .from('fix_patterns')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.warn('[V9Formatter] Error fetching pattern count:', error.message);
+        this.cachedPatternCount = 640;
+        return 640;
+      }
+
+      this.cachedPatternCount = count || 640;
+      console.log(`[V9Formatter] Pattern count: ${this.cachedPatternCount}`);
+      return this.cachedPatternCount;
+    } catch (e) {
+      console.warn('[V9Formatter] Failed to fetch pattern count:', e);
+      this.cachedPatternCount = 640;
+      return 640;
+    }
+  }
 
   /**
    * Template patterns that indicate AI error responses (not actual code)
@@ -564,17 +617,13 @@ export class V9GroupedReportFormatter {
 
     console.log(`[Supabase Upload] Starting upload for ${ideFixFiles.length} files to analysis: ${analysisId}`);
 
-    // Upload files sequentially to avoid rate limiting (with small delay between uploads)
+    // OPTIMIZED: Upload files in parallel batches (10 concurrent) instead of sequential
+    const BATCH_SIZE = 10;
     const updatedFiles: IDEFixFile[] = [];
 
-    for (let i = 0; i < ideFixFiles.length; i++) {
-      const file = ideFixFiles[i];
+    // Helper function to upload a single file
+    const uploadSingleFile = async (file: IDEFixFile): Promise<IDEFixFile> => {
       try {
-        // Add delay between uploads to avoid rate limiting (except for first file)
-        if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between uploads
-        }
-
         const filePath = `${analysisId}/${file.filename}`;
         const fileContent = JSON.stringify(file.content, null, 2);
         const fileSizeKB = Math.round(fileContent.length / 1024);
@@ -597,7 +646,6 @@ export class V9GroupedReportFormatter {
 
         if (error) {
           console.error(`[Supabase Upload] Failed to upload ${file.filename}:`, error.message || error);
-          console.error(`[Supabase Upload] Error details:`, JSON.stringify(error, null, 2));
 
           // Track upload failure
           if (this.serviceHealthTracker) {
@@ -615,8 +663,7 @@ export class V9GroupedReportFormatter {
             });
           }
 
-          updatedFiles.push(file); // Return original file on error
-          continue;
+          return file; // Return original file on error
         }
 
         // Get public URL
@@ -642,7 +689,7 @@ export class V9GroupedReportFormatter {
           });
         }
 
-        updatedFiles.push(updatedFile);
+        return updatedFile;
       } catch (error) {
         console.error(`[Supabase Upload] Error uploading ${file.filename}:`, error);
 
@@ -661,7 +708,19 @@ export class V9GroupedReportFormatter {
           });
         }
 
-        updatedFiles.push(file); // Return original file on error
+        return file; // Return original file on error
+      }
+    };
+
+    // Process files in parallel batches
+    for (let i = 0; i < ideFixFiles.length; i += BATCH_SIZE) {
+      const batch = ideFixFiles.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map(uploadSingleFile));
+      updatedFiles.push(...batchResults);
+
+      // Small delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < ideFixFiles.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
@@ -754,12 +813,19 @@ export class V9GroupedReportFormatter {
       agentPerformance?: Array<any>;
       toolPerformance?: Array<any>;
       modelsUsed?: Array<any> | Record<string, any>;
+
+      // SESSION 73: User tier for tier-specific report content
+      userTier?: 'basic' | 'pro' | 'enterprise';
     }
   ): Promise<GroupedReportOutput> {
 
     // BUG-DOG-04 FIX: Generate single timestamp for ALL uploads (manifest, LSP, SARIF)
     // This ensures consistent analysisId across all files
     const analysisTimestamp = Date.now();
+
+    // SESSION 77: Fetch pattern count from Supabase before report generation
+    // This ensures we show the real count instead of hardcoded 640
+    await this.fetchPatternCount();
 
     const markdown: string[] = [];
     let ideFixFiles: IDEFixFile[] = [];  // BUG FIX #33: Removed separate location attachments
@@ -820,8 +886,13 @@ export class V9GroupedReportFormatter {
     console.log(`[BUG #89]   - UNKNOWN/MISSING: ${categoryCounts.UNKNOWN}`);
     console.log(`[BUG #89] ====================================\n`);
 
-    // Store repoPath for snippet extraction
+    // Store repoPath and repositoryUrl for snippet extraction
+    // SESSION 74: Also store repositoryUrl for GitHub API fallback
     this.repoPath = metadata.repoPath || undefined;
+    this.repositoryUrl = metadata.repoUrl || metadata.repository || undefined;
+
+    // Store userTier for tier-specific report sections
+    this.userTier = (metadata.userTier as 'basic' | 'pro' | 'enterprise') || 'basic';
 
     // BUG-095 FIX: Calculate real repo stats if not provided or if values look hardcoded
     // This ensures we show real file counts and LOC instead of placeholder values
@@ -1130,7 +1201,15 @@ export class V9GroupedReportFormatter {
 
       // SESSION 25-27: Generate LSP, SARIF, and GitLab formats
       // BUG-DOG-04 FIX: Pass analysisTimestamp to ensure consistent IDs across all files
-      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(enrichedIssues, updatedGroups, metadata, analysisTimestamp);
+      // SESSION 69 FIX: Exclude RESOLVED issues from fix files - they're already fixed in the PR!
+      const activeIssuesForFix = enrichedIssues.filter(i => i.category !== 'RESOLVED');
+      const activeGroupsForFix = updatedGroups.filter(g => {
+        // Group is active if it has at least one non-RESOLVED issue
+        const groupIssues = activeIssuesForFix.filter(i => i.rule === g.rule);
+        return groupIssues.length > 0;
+      });
+      console.log(`[LSP/SARIF] Filtering: ${enrichedIssues.length} total → ${activeIssuesForFix.length} active (excluding RESOLVED)`);
+      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(activeIssuesForFix, activeGroupsForFix, metadata, analysisTimestamp);
 
       // SESSION 26-27: Store URLs for metadata footer (type assertion needed for dynamic properties)
       if (lspUrl) (metadata as any).lspUrl = lspUrl;
@@ -1318,11 +1397,13 @@ export class V9GroupedReportFormatter {
           }
 
           const fullPath = path.join(this.repoPath!, fileToExtract);
-          if (fs.existsSync(fullPath)) {
-            snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line, 3) || '';
-          } else {
-            snippet = '';
-          }
+          // SESSION 74: Try local file first, then GitHub API fallback
+          snippet = await CodeSnippetExtractor.extractSnippet(
+            fullPath,
+            issue.line,
+            3,
+            this.repositoryUrl  // GitHub fallback URL
+          ) || '';
         } catch (error) {
           // Extraction failed - use empty snippet
           snippet = '';
@@ -2165,7 +2246,11 @@ ${qualityResult.breakdown.resolutionBonus > 0 ? `
 
 ### Issue Summary
 
-**Total Issues**: ${issues.length.toLocaleString()} (${groups.length} unique types)
+${(() => {
+        const activeCount = issues.filter(i => i.category !== 'RESOLVED').length;
+        const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
+        return `**Active Issues**: ${activeCount.toLocaleString()} (${groups.length} unique types)${resolvedCount > 0 ? `\n**Resolved in PR**: ${resolvedCount.toLocaleString()} ✅` : ''}`;
+      })()}
 
 ${(() => {
         // BUG-083 FIX: Clear distinction between Manual Review and Auto-Fixable
@@ -2179,11 +2264,22 @@ ${(() => {
         return '';
       })()}
 
-**By Severity**:
-- 🔴 Critical: ${bySeverity.critical} (${((bySeverity.critical / issues.length) * 100).toFixed(1)}%)
-- 🟠 High: ${bySeverity.high} (${((bySeverity.high / issues.length) * 100).toFixed(1)}%)
-- 🟡 Medium: ${bySeverity.medium} (${((bySeverity.medium / issues.length) * 100).toFixed(1)}%)
-- 🟢 Low: ${bySeverity.low} (${((bySeverity.low / issues.length) * 100).toFixed(1)}%)
+${(() => {
+        // BUG-103 FIX: Show active issues only (exclude RESOLVED) since that's what affects the score
+        const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+        const activeBySeverity = {
+          critical: activeIssues.filter(i => i.severity === 'critical').length,
+          high: activeIssues.filter(i => i.severity === 'high').length,
+          medium: activeIssues.filter(i => i.severity === 'medium').length,
+          low: activeIssues.filter(i => i.severity === 'low').length
+        };
+        const total = activeIssues.length || 1; // Prevent division by zero
+        return `**By Severity** (active issues):
+- 🔴 Critical: ${activeBySeverity.critical} (${((activeBySeverity.critical / total) * 100).toFixed(1)}%)
+- 🟠 High: ${activeBySeverity.high} (${((activeBySeverity.high / total) * 100).toFixed(1)}%)
+- 🟡 Medium: ${activeBySeverity.medium} (${((activeBySeverity.medium / total) * 100).toFixed(1)}%)
+- 🟢 Low: ${activeBySeverity.low} (${((activeBySeverity.low / total) * 100).toFixed(1)}%)`;
+      })()}
 
 **By Category & Severity**:
 
@@ -2226,7 +2322,10 @@ ${(() => {
           'Code Quality': { critical: 0, high: 0, medium: 0, low: 0, total: 0 }
         };
 
-        issues.forEach(issue => {
+        // BUG-102 FIX: Only count ACTIVE issues (not RESOLVED) since RESOLVED gives bonus, not penalty
+        // This makes the table counts match the score deductions
+        const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+        activeIssues.forEach(issue => {
           const cat = issue.detectedCategory || 'Code Quality';
           if (byDetectedCategory[cat]) {
             const sev = issue.severity;
@@ -2242,10 +2341,12 @@ ${(() => {
 | 🏗️ Architecture | ${byDetectedCategory['Architecture'].critical} | ${byDetectedCategory['Architecture'].high} | ${byDetectedCategory['Architecture'].medium} | ${byDetectedCategory['Architecture'].low} | **${byDetectedCategory['Architecture'].total}** | **${qualityResult.breakdown?.categoryScores?.architecture ?? qualityResult.categoryScores?.architecture ?? 'N/A'}/100** |
 | 📦 Dependencies | ${byDetectedCategory['Dependencies'].critical} | ${byDetectedCategory['Dependencies'].high} | ${byDetectedCategory['Dependencies'].medium} | ${byDetectedCategory['Dependencies'].low} | **${byDetectedCategory['Dependencies'].total}** | **${qualityResult.breakdown?.categoryScores?.dependency ?? qualityResult.categoryScores?.dependency ?? 'N/A'}/100** |
 | ✨ Code Quality | ${byDetectedCategory['Code Quality'].critical} | ${byDetectedCategory['Code Quality'].high} | ${byDetectedCategory['Code Quality'].medium} | ${byDetectedCategory['Code Quality'].low} | **${byDetectedCategory['Code Quality'].total}** | **${qualityResult.breakdown?.categoryScores?.codeQuality ?? qualityResult.categoryScores?.codeQuality ?? 'N/A'}/100** |
-| **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** | - |`;
+| **TOTAL** | **${byDetectedCategory['Security'].critical + byDetectedCategory['Performance'].critical + byDetectedCategory['Architecture'].critical + byDetectedCategory['Dependencies'].critical + byDetectedCategory['Code Quality'].critical}** | **${byDetectedCategory['Security'].high + byDetectedCategory['Performance'].high + byDetectedCategory['Architecture'].high + byDetectedCategory['Dependencies'].high + byDetectedCategory['Code Quality'].high}** | **${byDetectedCategory['Security'].medium + byDetectedCategory['Performance'].medium + byDetectedCategory['Architecture'].medium + byDetectedCategory['Dependencies'].medium + byDetectedCategory['Code Quality'].medium}** | **${byDetectedCategory['Security'].low + byDetectedCategory['Performance'].low + byDetectedCategory['Architecture'].low + byDetectedCategory['Dependencies'].low + byDetectedCategory['Code Quality'].low}** | **${activeIssues.length}** | - |`;
       })()}
 
-> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Overall APP Score = MIN(all categories). *Note: Developer skill scores (baseScore=50) are shown in the "Skills Growth Tracker" section.*
+> **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Table shows active issues only (excludes RESOLVED). APP Score = MIN(all categories).
+>
+> 💡 **Tip:** RESOLVED issues (ones you fixed) earn XP instead of penalties! [📖 Full Scoring Guide](https://codequal.dev/docs/scoring-guide)
 
 ---
 
@@ -2278,28 +2379,25 @@ ${(() => {
         const patternFixable = breakdown.tier1.issues + breakdown.tier2.issues;
         const patternPercent = issues.length > 0 ? (patternFixable / issues.length * 100).toFixed(1) : '0.0';
         const guidanceNeeded = issues.length - patternFixable;
-        const guidancePercent = issues.length > 0 ? (guidanceNeeded / issues.length * 100).toFixed(1) : '0.0';
+
+        // BUG-105 FIX: Get pattern count dynamically (no longer hardcoded 500)
+        const patternCount = this.getPatternCountFromCache() || 640;
+        // BUG-103 FIX: Exclude resolved issues from counts
+        const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
+        const activeIssueCount = issues.length - resolvedCount;
+        const activeIssuesNeedingGuidance = Math.max(0, guidanceNeeded - resolvedCount);
 
         return `**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
-- 📚 **Pattern Fixes**: ${patternFixable.toLocaleString()} issues (${patternPercent}%) - Pre-learned fixes from 500+ patterns in Supabase
+- 📚 **Pattern Fixes**: ${patternFixable.toLocaleString()} issues (${patternPercent}%) - Pre-learned fixes from ${patternCount}+ patterns in Supabase
 - 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
-- 📖 **Actionable Guidance**: Clear instructions for ${guidanceNeeded.toLocaleString()} issues needing manual attention
+- 📖 **Actionable Guidance**: Clear instructions for ${activeIssuesNeedingGuidance.toLocaleString()} active issues needing manual attention
 
 **⭐ PRO Tier** (Full AI-Powered Analysis):
-- 🤖 **AI Auto-Fix**: All ${issues.length.toLocaleString()} issues analyzed with contextual AI fixes
+- 🤖 **AI Auto-Fix**: All ${activeIssueCount.toLocaleString()} active issues analyzed with contextual AI fixes
 - 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
 - ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
-- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions
-
-**Pattern Reuse Efficiency** (Cost Savings):
-- Pattern library contains ${breakdown.autoFixable.toLocaleString()}+ learned fixes
-- Each pattern reuse = FREE (no AI API call needed)
-- Estimated savings: 60-80% reduction in AI calls for recurring issues`;
+- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions`;
       })()}
-
-> 💡 **This is better than competitors** (SonarQube, Snyk) who only provide fixes for ~20-30% of issues!
->
-> **All issues have guidance** - you're never left wondering how to fix something.
 
 ---
 
@@ -2323,8 +2421,6 @@ ${this.generateQuickWins(groups, autoFixableGroups)}
 
 ### 📈 Trends & Recommendations
 
-<!-- NOTE: This section will be enhanced later when API service and CI/CD integration is complete -->
-<!-- For now, keeping minimal recommendations only -->
 ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
   }
 
@@ -2558,7 +2654,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     const autoFixPercent = activeIssues.length > 0 ? Math.round((autoFixableIssues.length / activeIssues.length) * 100) : 0;
 
     if (autoFixableIssues.length > 0) {
-      content += `🚀 **Quick Win**: ${autoFixableIssues.length.toLocaleString()} active issues (${autoFixPercent}%) have auto-fix available via IDE integration (see **How to Apply Fixes** section for LSP, SARIF, or GitLab options).\n\n`;
+      // SESSION 73: Tier-aware messaging - PRO shows fixes applied, BASIC shows IDE instructions
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        content += `✅ **Fixes Applied**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) have been auto-fixed. Review changes in the **Applied Fixes** section below.\n\n`;
+      } else {
+        content += `🚀 **Easy Fixes Available**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) can be auto-fixed using your IDE or linter. See **How to Apply Fixes** below.\n\n`;
+      }
     }
 
     if (blockingCount > 0) {
@@ -2590,7 +2691,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
     if (autoFixable.length > issues.length * 0.3) {
-      content += `4. **Automation Opportunity**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues auto-fixable - consider pre-commit hooks\n`;
+      // SESSION 73: Tier-aware messaging
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        content += `4. **Fixes Applied**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues were auto-fixed. Review and commit when ready.\n`;
+      } else {
+        content += `4. **Automation Opportunity**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues auto-fixable - consider pre-commit hooks\n`;
+      }
     } else {
       if (issues.length > 0) {
         content += `4. **Code Quality**: Most issues require manual attention - allocate development time accordingly\n`;
@@ -4452,6 +4558,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
     const representative = groupIssues[0];
     const canAutoFix = this.canAutoFix(group);
+    let alreadyShowedAICode = false; // BUG FIX: Track if we showed AI code to avoid duplication
 
     // Phase D: User-friendly title
     const friendlyTitle = this.getUserFriendlyTitle(group.rule, group.tool);
@@ -4588,7 +4695,13 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
           // Build full file path if repoPath is available
           const fullPath = this.repoPath ? path.join(this.repoPath, relativePath) : relativePath;
-          snippet = await CodeSnippetExtractor.extractSnippet(fullPath, exampleIssue.line, 3) || undefined;
+          // SESSION 74: Try local file first, then GitHub API fallback
+          snippet = await CodeSnippetExtractor.extractSnippet(
+            fullPath,
+            exampleIssue.line,
+            3,
+            this.repositoryUrl  // GitHub fallback URL
+          ) || undefined;
 
           if (!snippet || snippet.trim().length === 0) {
             console.warn(`[V9GroupedReportFormatter] Empty snippet extracted for ${displayPath}:${exampleIssue.line}`);
@@ -4617,6 +4730,7 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           section += `\`\`\`${language}\n`;
           section += cleanCode;
           section += '\n```\n\n';
+          alreadyShowedAICode = true; // Track that we showed AI code here
         } else {
           section += `> Code snippet unavailable. See fix recommendation below.\n\n`;
         }
@@ -4648,20 +4762,46 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
           // If after cleaning, the code is valid, show it
           if (cleanCorrectedCode && cleanCorrectedCode.length >= 20) {
             if (hasValidSnippet) {
-              section += `**Suggested Change**:\n\n`;
-              section += '```diff\n';
-              section += '- // Before:\n';
-              section += (representative.snippet || '').split('\n').map(line => `- ${line}`).join('\n');
-              section += '\n\n';
-              section += '+ // After:\n';
-              section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
-              section += '\n```\n\n';
-            } else {
-              section += `**Recommended Code**:\n\n`;
-              const language = representative?.file ? this.getLanguageFromFile(representative.file) : 'text';
-              section += `\`\`\`${language}\n`;
-              section += cleanCorrectedCode;
-              section += '\n```\n\n';
+              // SESSION 74 FIX: Check if before and after are identical to avoid confusing diffs
+              const snippetNormalized = (representative.snippet || '').trim().replace(/\s+/g, ' ');
+              const correctedNormalized = cleanCorrectedCode.trim().replace(/\s+/g, ' ');
+              const areIdentical = snippetNormalized === correctedNormalized ||
+                this.calculateSimilarity(snippetNormalized, correctedNormalized) > 0.95;
+
+              if (areIdentical) {
+                // Before and after are essentially the same - show a helpful message instead
+                section += `> 💡 **Note**: The AI-suggested fix involves changes that may require context beyond the displayed snippet. `;
+                section += `Please review the specific fix guidance above and apply it manually to the affected locations.\n\n`;
+              } else {
+                section += `**Suggested Change**:\n\n`;
+                section += '```diff\n';
+                section += '- // Before:\n';
+                section += (representative.snippet || '').split('\n').map(line => `- ${line}`).join('\n');
+                section += '\n\n';
+                section += '+ // After:\n';
+                section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
+                section += '\n```\n\n';
+              }
+            } else if (!alreadyShowedAICode) {
+              // BUG FIX: Only show "Recommended Code" if we didn't already show it as "Code (AI-generated example)"
+              // SESSION 73 FIX: Validate that corrected code matches the representative file
+              // Extract class name from exampleIssue file to check if code is for the right file
+              const exampleFileName = exampleIssue?.file?.split('/').pop()?.replace('.java', '').replace('.ts', '').replace('.py', '') || '';
+              const codeMatchesFile = !exampleFileName ||
+                cleanCorrectedCode.includes(exampleFileName) ||
+                cleanCorrectedCode.includes(`class ${exampleFileName}`) ||
+                cleanCorrectedCode.length < 200; // Short generic patterns are OK
+
+              if (codeMatchesFile) {
+                section += `**Recommended Code**:\n\n`;
+                const language = representative?.file ? this.getLanguageFromFile(representative.file) : 'text';
+                section += `\`\`\`${language}\n`;
+                section += cleanCorrectedCode;
+                section += '\n```\n\n';
+              } else {
+                // Code doesn't match the representative example - show generic guidance instead
+                section += `> 💡 **Pattern-Based Fix**: This fix pattern applies to all occurrences. Adapt the principle to each specific file.\n\n`;
+              }
             }
           } else {
             // BUG-LSP-001: Fix was rejected (template pattern detected) - show manual review message
@@ -4692,7 +4832,12 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     section += `This issue appears in **${group.count} ${group.count === 1 ? 'file' : 'files'}** across your codebase.\n\n`;
 
     if (canAutoFix) {
-      section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
+      // SESSION 73: Tier-aware messaging
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        section += `> ✅ **Auto-fixed**: This issue has been automatically fixed. See the **Applied Fixes** section below for details.\n\n`;
+      } else {
+        section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
+      }
     }
 
     section += '---\n\n';
@@ -4707,6 +4852,54 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
    */
   private cleanAIContent(content: string): string {
     return cleanAIContent(content);
+  }
+
+  /**
+   * Calculate text similarity (0-1) using Levenshtein distance ratio
+   * SESSION 74: Added to detect identical before/after code samples
+   */
+  private calculateSimilarity(text1: string, text2: string): number {
+    if (text1 === text2) return 1;
+    if (!text1 || !text2) return 0;
+
+    const len1 = text1.length;
+    const len2 = text2.length;
+    const maxLen = Math.max(len1, len2);
+
+    if (maxLen === 0) return 1;
+
+    // For very long strings, use a simpler character overlap check
+    if (maxLen > 1000) {
+      const set1 = new Set(text1.split(' '));
+      const set2 = new Set(text2.split(' '));
+      const intersection = [...set1].filter(x => set2.has(x)).length;
+      const union = new Set([...set1, ...set2]).size;
+      return union > 0 ? intersection / union : 0;
+    }
+
+    // Levenshtein distance for smaller strings
+    const matrix: number[][] = [];
+
+    for (let i = 0; i <= len1; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= len2; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= len1; i++) {
+      for (let j = 1; j <= len2; j++) {
+        const cost = text1[i - 1] === text2[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost
+        );
+      }
+    }
+
+    const distance = matrix[len1][len2];
+    return 1 - distance / maxLen;
   }
 
   /**
@@ -5795,9 +5988,10 @@ mvn spotless:check  # Verify (use in CI)
   /**
    * Generate Business Impact Analysis with real financial calculations
    * SESSION 50 FIX: Pass detected language for language-specific recommendations
+   * SESSION 73 FIX: Pass userTier for tier-specific sections (Upgrade to PRO, etc.)
    */
   private generateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
-    return generateBusinessImpact(issues, groups, this.detectedLanguage);
+    return generateBusinessImpact(issues, groups, this.detectedLanguage, this.userTier);
   }
 
   private _REMOVED_legacyGenerateBusinessImpact(issues: EnrichedIssue[], groups: IssueGroup[]): string {
@@ -6602,7 +6796,8 @@ Continue following best practices and consider integrating static analysis into 
       if (categoryScores.dependencies < teamAvg) weakCategories.push('Dependencies');
       if (categoryScores.codeQuality < teamAvg) weakCategories.push('Code Quality');
 
-      if (weakCategories.length > 0) {
+      // BUG-110 FIX: Only show Focus Areas if enabled
+      if (this.SHOW_FOCUS_AREAS && weakCategories.length > 0) {
         content += `### 🎯 Focus Areas\n\n`;
         content += `Consider improving these categories where you're below team average:\n\n`;
         weakCategories.forEach(cat => {
@@ -6947,6 +7142,10 @@ Continue following best practices and consider integrating static analysis into 
       content += `| 💙 Rare | ${tierCounts.rare} |\n`;
       content += `| ⚪ Common | ${tierCounts.common} |\n\n`;
 
+      // SESSION 69: Add link to scoring guide for transparency
+      content += `> 💡 **How to earn more XP:** Fix issues in your PR before analysis! Each resolved issue = +5 XP, critical = +20 XP bonus.\n`;
+      content += `> [📖 Full Scoring Guide](https://codequal.dev/docs/scoring-guide)\n\n`;
+
       // Show achievements using the imported function
       if (achievements.length > 0) {
         content += generateAchievementsSection(achievements, achievementStyle, 3);
@@ -7034,7 +7233,8 @@ Continue following best practices and consider integrating static analysis into 
       const privacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false };
 
       // Generate the section using imported function
-      return generateCommunityImpactSection(impact, privacyPrefs);
+      // SESSION 73: Pass userTier for tier-specific messaging
+      return generateCommunityImpactSection(impact, privacyPrefs, this.userTier);
     } catch (error) {
       console.error('[V9GroupedReportFormatter] Error generating Community Impact:', error);
       return ''; // Silent fail - optional section

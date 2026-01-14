@@ -349,6 +349,117 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserSkillsAndAchievements'
 
+  /api/v9/apply-fixes:
+    post:
+      summary: Apply Verified Fixes with Verification
+      description: |
+        Applies verified fixes to the codebase with configurable verification levels.
+
+        **Verification Levels:**
+        - `quick_apply`: Apply fixes immediately without additional scanning (fastest)
+        - `standard_verify`: Apply and scan modified files only for regressions (default)
+        - `full_regression`: Apply, run full codebase scan, and auto-revert any fix causing regressions (safest)
+
+        **Flow:**
+        1. Apply verified fixes to files
+        2. Run regression scan (based on verification level)
+        3. If new issues found → Revert the specific fix that caused them
+        4. Auto-commit remaining verified fixes (if enabled)
+      tags: [V9 Fixes]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyFixesRequest'
+            examples:
+              quickApply:
+                summary: Quick apply without scanning
+                value:
+                  analysisId: "abc-123"
+                  fixes:
+                    - id: "fix-1"
+                      file: "src/Main.java"
+                      line: 42
+                      ruleId: "CloseResource"
+                      tool: "pmd"
+                      originalCode: "InputStream is = new FileInputStream(file);"
+                      fixedCode: "try (InputStream is = new FileInputStream(file)) {"
+                      validationStatus: "verified"
+                      confidence: "high"
+                  verificationLevel: "quick_apply"
+                  autoCommit: false
+                  repositoryPath: "/tmp/repo-clone"
+              fullRegression:
+                summary: Full regression scan with auto-revert
+                value:
+                  analysisId: "abc-123"
+                  fixes: []
+                  verificationLevel: "full_regression"
+                  autoCommit: true
+                  repositoryPath: "/tmp/repo-clone"
+      responses:
+        '200':
+          description: Fixes applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplyFixesResult'
+        '400':
+          description: Invalid request or no verified fixes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          description: Failed to apply fixes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v9/verification-levels:
+    get:
+      summary: Get Available Verification Levels
+      description: |
+        Returns all available verification levels with their descriptions,
+        estimated times, risk levels, and recommendations.
+      tags: [V9 Fixes]
+      responses:
+        '200':
+          description: Verification levels
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationLevelsResponse'
+              example:
+                levels:
+                  - id: "quick_apply"
+                    name: "Quick Apply"
+                    description: "Apply verified fixes immediately without additional scanning. Fastest option."
+                    estimatedTime: "< 30 seconds"
+                    riskLevel: "low"
+                    recommendation: "Use for small PRs with < 10 fixes"
+                  - id: "standard_verify"
+                    name: "Standard Verification"
+                    description: "Apply fixes and scan modified files only for regressions."
+                    estimatedTime: "1-3 minutes"
+                    riskLevel: "very_low"
+                    recommendation: "Recommended for most PRs"
+                  - id: "full_regression"
+                    name: "Full Regression Scan"
+                    description: "Apply fixes and run FULL codebase scan. Automatically reverts any fix that causes regressions."
+                    estimatedTime: "5-15 minutes"
+                    riskLevel: "minimal"
+                    recommendation: "Use for critical codebases or large architectural changes"
+                default: "standard_verify"
+                recommendation: "Use standard_verify for most PRs. Use full_regression for critical codebases."
+
 tags:
   - name: V9 Analysis
     description: |
@@ -358,6 +469,11 @@ tags:
     description: |
       Unified report generation and retrieval.
       Supports BASIC and PRO tiers with tier-specific content.
+  - name: V9 Fixes
+    description: |
+      Fix application with verification and regression checking.
+      Supports three verification levels: quick_apply, standard_verify, full_regression.
+      PRO tier feature with auto-revert for fixes causing regressions.
   - name: V9 User
     description: |
       User preferences, history, skills, and achievements.
@@ -1192,6 +1308,209 @@ components:
           type: string
         costEstimate:
           type: number
+
+    # SESSION 79: Apply Fixes Schemas
+    ApplyFixesRequest:
+      type: object
+      required:
+        - analysisId
+        - fixes
+        - verificationLevel
+        - repositoryPath
+      properties:
+        analysisId:
+          type: string
+          description: The analysis ID containing fixes to apply
+        fixes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerifiedFix'
+          description: Array of verified fixes to apply
+        verificationLevel:
+          type: string
+          enum: [quick_apply, standard_verify, full_regression]
+          description: |
+            Verification level for fix application:
+            - quick_apply: Apply immediately (fastest)
+            - standard_verify: Scan modified files (default)
+            - full_regression: Full codebase scan with auto-revert (safest)
+        autoCommit:
+          type: boolean
+          default: false
+          description: Whether to auto-commit after successful application
+        repositoryPath:
+          type: string
+          description: Local path to the repository
+
+    VerifiedFix:
+      type: object
+      required:
+        - id
+        - file
+        - line
+        - ruleId
+        - tool
+        - originalCode
+        - fixedCode
+        - validationStatus
+        - confidence
+      properties:
+        id:
+          type: string
+          description: Unique fix identifier
+        file:
+          type: string
+          description: File path relative to repository root
+        line:
+          type: integer
+          description: Line number of the issue
+        column:
+          type: integer
+          description: Column number (optional)
+        ruleId:
+          type: string
+          description: Rule ID that triggered the fix
+        tool:
+          type: string
+          description: Tool that detected the issue (e.g., pmd, eslint)
+        originalCode:
+          type: string
+          description: Original code to be replaced
+        fixedCode:
+          type: string
+          description: Fixed code to apply
+        validationStatus:
+          type: string
+          enum: [verified, failed_validation, failed_generation]
+          description: Validation status of the fix
+        confidence:
+          type: string
+          enum: [high, medium, low, manual]
+          description: Confidence level of the fix
+
+    ApplyFixesResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation completed successfully
+        summary:
+          type: object
+          properties:
+            totalFixes:
+              type: integer
+              description: Total fixes provided
+            applied:
+              type: integer
+              description: Successfully applied fixes
+            skipped:
+              type: integer
+              description: Skipped fixes (file not found, pattern not matched)
+            reverted:
+              type: integer
+              description: Fixes reverted due to regression
+            failed:
+              type: integer
+              description: Failed fix applications
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixApplicationResult'
+        commit:
+          type: object
+          nullable: true
+          properties:
+            sha:
+              type: string
+              description: Git commit SHA
+            message:
+              type: string
+              description: Commit message
+        regressions:
+          $ref: '#/components/schemas/RegressionsSummary'
+        timing:
+          type: object
+          properties:
+            duration:
+              type: string
+              description: Total duration (e.g., "1250ms")
+            verificationLevel:
+              type: string
+              description: Verification level used
+
+    FixApplicationResult:
+      type: object
+      properties:
+        fixId:
+          type: string
+        status:
+          type: string
+          enum: [applied, skipped, reverted, failed]
+        file:
+          type: string
+        reason:
+          type: string
+          nullable: true
+          description: Reason for skip/revert/failure
+
+    RegressionsSummary:
+      type: object
+      nullable: true
+      properties:
+        detected:
+          type: boolean
+          description: Whether any regressions were detected
+        totalNewIssues:
+          type: integer
+          description: Total new issues caused by fixes
+        fixesReverted:
+          type: integer
+          description: Number of fixes reverted
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              fixId:
+                type: string
+              causedIssues:
+                type: integer
+
+    VerificationLevelsResponse:
+      type: object
+      properties:
+        levels:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationLevel'
+        default:
+          type: string
+          description: Default verification level
+        recommendation:
+          type: string
+          description: General recommendation
+
+    VerificationLevel:
+      type: object
+      properties:
+        id:
+          type: string
+          enum: [quick_apply, standard_verify, full_regression]
+        name:
+          type: string
+          description: Human-readable name
+        description:
+          type: string
+          description: Detailed description
+        estimatedTime:
+          type: string
+          description: Estimated time (e.g., "< 30 seconds")
+        riskLevel:
+          type: string
+          enum: [low, very_low, minimal]
+        recommendation:
+          type: string
+          description: When to use this level
 
     Error:
       type: object

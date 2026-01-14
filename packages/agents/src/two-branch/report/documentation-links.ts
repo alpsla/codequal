@@ -452,7 +452,315 @@ const SEMGREP_RULES: Record<string, DocumentationLink[]> = {
 };
 
 /**
+ * PMD rule-to-category mapping
+ * SESSION 77: Comprehensive mapping to generate specific rule documentation URLs
+ * Categories: bestpractices, codestyle, design, documentation, errorprone, multithreading, performance, security
+ */
+const PMD_RULE_CATEGORIES: Record<string, string> = {
+  // Best Practices
+  'AvoidReassigningParameters': 'bestpractices',
+  'AvoidStringBufferField': 'bestpractices',
+  'AvoidUsingHardCodedIP': 'bestpractices',
+  'CheckResultSet': 'bestpractices',
+  'ConstantsInInterface': 'bestpractices',
+  'DefaultLabelNotLastInSwitchStmt': 'bestpractices',
+  'ForLoopCanBeForeach': 'bestpractices',
+  'ForLoopVariableCount': 'bestpractices',
+  'GuardLogStatement': 'bestpractices',
+  'JUnit4SuitesShouldUseSuiteAnnotation': 'bestpractices',
+  'JUnit4TestShouldUseAfterAnnotation': 'bestpractices',
+  'JUnit4TestShouldUseBeforeAnnotation': 'bestpractices',
+  'JUnit4TestShouldUseTestAnnotation': 'bestpractices',
+  'JUnitAssertionsShouldIncludeMessage': 'bestpractices',
+  'JUnitTestContainsTooManyAsserts': 'bestpractices',
+  'JUnitTestsShouldIncludeAssert': 'bestpractices',
+  'JUnitUseExpected': 'bestpractices',
+  'LooseCoupling': 'bestpractices',
+  'MethodReturnsInternalArray': 'bestpractices',
+  'MissingOverride': 'bestpractices',
+  'OneDeclarationPerLine': 'bestpractices',
+  'PositionLiteralsFirstInCaseInsensitiveComparisons': 'bestpractices',
+  'PositionLiteralsFirstInComparisons': 'bestpractices',
+  'PreserveStackTrace': 'bestpractices',
+  'ReplaceEnumerationWithIterator': 'bestpractices',
+  'ReplaceHashtableWithMap': 'bestpractices',
+  'ReplaceVectorWithList': 'bestpractices',
+  'SwitchStmtsShouldHaveDefault': 'bestpractices',
+  'SystemPrintln': 'bestpractices',
+  'UnusedFormalParameter': 'bestpractices',
+  'UnusedLocalVariable': 'bestpractices',
+  'UnusedPrivateField': 'bestpractices',
+  'UnusedPrivateMethod': 'bestpractices',
+  'UseAssertEqualsInsteadOfAssertTrue': 'bestpractices',
+  'UseAssertNullInsteadOfAssertTrue': 'bestpractices',
+  'UseAssertSameInsteadOfAssertTrue': 'bestpractices',
+  'UseAssertTrueInsteadOfAssertEquals': 'bestpractices',
+  'UseCollectionIsEmpty': 'bestpractices',
+  'UseVarargs': 'bestpractices',
+  'WhileLoopWithLiteralBoolean': 'bestpractices',
+
+  // Code Style
+  'AtLeastOneConstructor': 'codestyle',
+  'AvoidDollarSigns': 'codestyle',
+  'AvoidProtectedFieldInFinalClass': 'codestyle',
+  'AvoidProtectedMethodInFinalClassNotExtending': 'codestyle',
+  'AvoidUsingNativeCode': 'codestyle',
+  'BooleanGetMethodName': 'codestyle',
+  'CallSuperInConstructor': 'codestyle',
+  'ClassNamingConventions': 'codestyle',
+  'CommentDefaultAccessModifier': 'codestyle',
+  'ConfusingTernary': 'codestyle',
+  'ControlStatementBraces': 'codestyle',
+  'EmptyMethodInAbstractClassShouldBeAbstract': 'codestyle',
+  'ExtendsObject': 'codestyle',
+  'FieldDeclarationsShouldBeAtStartOfClass': 'codestyle',
+  'FieldNamingConventions': 'codestyle',
+  'FinalParameterInAbstractMethod': 'codestyle',
+  'ForLoopShouldBeWhileLoop': 'codestyle',
+  'FormalParameterNamingConventions': 'codestyle',
+  'GenericsNaming': 'codestyle',
+  'IdenticalCatchBranches': 'codestyle',
+  'LinguisticNaming': 'codestyle',
+  'LocalHomeNamingConvention': 'codestyle',
+  'LocalInterfaceSessionNamingConvention': 'codestyle',
+  'LocalVariableCouldBeFinal': 'codestyle',
+  'LocalVariableNamingConventions': 'codestyle',
+  'LongVariable': 'codestyle',
+  'MDBAndSessionBeanNamingConvention': 'codestyle',
+  'MethodArgumentCouldBeFinal': 'codestyle',
+  'MethodNamingConventions': 'codestyle',
+  'NoPackage': 'codestyle',
+  'OnlyOneReturn': 'codestyle',
+  'PackageCase': 'codestyle',
+  'PrematureDeclaration': 'codestyle',
+  'RemoteInterfaceNamingConvention': 'codestyle',
+  'RemoteSessionInterfaceNamingConvention': 'codestyle',
+  'ShortClassName': 'codestyle',
+  'ShortMethodName': 'codestyle',
+  'ShortVariable': 'codestyle',
+  'TooManyStaticImports': 'codestyle',
+  'UnnecessaryAnnotationValueElement': 'codestyle',
+  'UnnecessaryBoxing': 'codestyle',
+  'UnnecessaryCast': 'codestyle',
+  'UnnecessaryConstructor': 'codestyle',
+  'UnnecessaryFullyQualifiedName': 'codestyle',
+  'UnnecessaryImport': 'codestyle',
+  'UnnecessaryLocalBeforeReturn': 'codestyle',
+  'UnnecessaryModifier': 'codestyle',
+  'UnnecessaryReturn': 'codestyle',
+  'UnnecessarySemicolon': 'codestyle',
+  'UseDiamondOperator': 'codestyle',
+  'UselessParentheses': 'codestyle',
+  'UselessQualifiedThis': 'codestyle',
+  'UseShortArrayInitializer': 'codestyle',
+  'UseUnderscoresInNumericLiterals': 'codestyle',
+
+  // Design
+  'AbstractClassWithoutAbstractMethod': 'design',
+  'AbstractClassWithoutAnyMethod': 'design',
+  'AvoidCatchingGenericException': 'design',
+  'AvoidDeeplyNestedIfStmts': 'design',
+  'AvoidRethrowingException': 'design',
+  'AvoidThrowingNewInstanceOfSameException': 'design',
+  'AvoidThrowingNullPointerException': 'design',
+  'AvoidThrowingRawExceptionTypes': 'design',
+  'AvoidUncheckedExceptionsInSignatures': 'design',
+  'ClassWithOnlyPrivateConstructorsShouldBeFinal': 'design',
+  'CognitiveComplexity': 'design',
+  'CollapsibleIfStatements': 'design',
+  'CouplingBetweenObjects': 'design',
+  'CyclomaticComplexity': 'design',
+  'DataClass': 'design',
+  'DoNotExtendJavaLangError': 'design',
+  'ExceptionAsFlowControl': 'design',
+  'ExcessiveClassLength': 'design',
+  'ExcessiveImports': 'design',
+  'ExcessiveMethodLength': 'design',
+  'ExcessiveParameterList': 'design',
+  'ExcessivePublicCount': 'design',
+  'FinalFieldCouldBeStatic': 'design',
+  'GodClass': 'design',
+  'ImmutableField': 'design',
+  'InvalidJavaBean': 'design',
+  'LawOfDemeter': 'design',
+  'LogicInversion': 'design',
+  'LoosePackageCoupling': 'design',
+  'MutableStaticState': 'design',
+  'NcssCount': 'design',
+  'NPathComplexity': 'design',
+  'SignatureDeclareThrowsException': 'design',
+  'SimplifiedTernary': 'design',
+  'SimplifyBooleanAssertion': 'design',
+  'SimplifyBooleanExpressions': 'design',
+  'SimplifyBooleanReturns': 'design',
+  'SimplifyConditional': 'design',
+  'SingularField': 'design',
+  'SwitchDensity': 'design',
+  'TooManyFields': 'design',
+  'TooManyMethods': 'design',
+  'UselessOverridingMethod': 'design',
+  'UseObjectForClearerAPI': 'design',
+  'UseUtilityClass': 'design',
+
+  // Documentation
+  'CommentContent': 'documentation',
+  'CommentRequired': 'documentation',
+  'CommentSize': 'documentation',
+  'UncommentedEmptyConstructor': 'documentation',
+  'UncommentedEmptyMethodBody': 'documentation',
+
+  // Error Prone
+  'AssignmentInOperand': 'errorprone',
+  'AssignmentToNonFinalStatic': 'errorprone',
+  'AvoidAccessibilityAlteration': 'errorprone',
+  'AvoidAssertAsIdentifier': 'errorprone',
+  'AvoidBranchingStatementAsLastInLoop': 'errorprone',
+  'AvoidCallingFinalize': 'errorprone',
+  'AvoidCatchingNPE': 'errorprone',
+  'AvoidCatchingThrowable': 'errorprone',
+  'AvoidDecimalLiteralsInBigDecimalConstructor': 'errorprone',
+  'AvoidDuplicateLiterals': 'errorprone',
+  'AvoidEnumAsIdentifier': 'errorprone',
+  'AvoidFieldNameMatchingMethodName': 'errorprone',
+  'AvoidFieldNameMatchingTypeName': 'errorprone',
+  'AvoidInstanceofChecksInCatchClause': 'errorprone',
+  'AvoidLiteralsInIfCondition': 'errorprone',
+  'AvoidLosingExceptionInformation': 'errorprone',
+  'AvoidMultipleUnaryOperators': 'errorprone',
+  'AvoidUsingOctalValues': 'errorprone',
+  'BadComparison': 'errorprone',
+  'BrokenNullCheck': 'errorprone',
+  'CallSuperFirst': 'errorprone',
+  'CallSuperLast': 'errorprone',
+  'CheckSkipResult': 'errorprone',
+  'ClassCastExceptionWithToArray': 'errorprone',
+  'CloneMethodMustBePublic': 'errorprone',
+  'CloneMethodMustImplementCloneable': 'errorprone',
+  'CloneMethodReturnTypeMustMatchClassName': 'errorprone',
+  'CloneThrowsCloneNotSupportedException': 'errorprone',
+  'CloseResource': 'errorprone',
+  'CompareObjectsWithEquals': 'errorprone',
+  'ComparisonWithNaN': 'errorprone',
+  'ConstructorCallsOverridableMethod': 'errorprone',
+  'DetachedTestCase': 'errorprone',
+  'DoNotCallGarbageCollectionExplicitly': 'errorprone',
+  'DoNotCallSystemExit': 'errorprone',
+  'DoNotExtendJavaLangThrowable': 'errorprone',
+  'DoNotHardCodeSDCard': 'errorprone',
+  'DoNotTerminateVM': 'errorprone',
+  'DoNotThrowExceptionInFinally': 'errorprone',
+  'DontImportSun': 'errorprone',
+  'DontUseFloatTypeForLoopIndices': 'errorprone',
+  'EmptyCatchBlock': 'errorprone',
+  'EmptyFinalizer': 'errorprone',
+  'EmptyFinallyBlock': 'errorprone',
+  'EmptyIfStmt': 'errorprone',
+  'EmptyInitializer': 'errorprone',
+  'EmptyStatementBlock': 'errorprone',
+  'EmptyStatementNotInLoop': 'errorprone',
+  'EmptySwitchStatements': 'errorprone',
+  'EmptySynchronizedBlock': 'errorprone',
+  'EmptyTryBlock': 'errorprone',
+  'EmptyWhileStmt': 'errorprone',
+  'EqualsNull': 'errorprone',
+  'FinalizeDoesNotCallSuperFinalize': 'errorprone',
+  'FinalizeOnlyCallsSuperFinalize': 'errorprone',
+  'FinalizeOverloaded': 'errorprone',
+  'FinalizeShouldBeProtected': 'errorprone',
+  'IdempotentOperations': 'errorprone',
+  'ImplicitSwitchFallThrough': 'errorprone',
+  'InstantiationToGetClass': 'errorprone',
+  'InvalidLogMessageFormat': 'errorprone',
+  'JumbledIncrementer': 'errorprone',
+  'JUnitSpelling': 'errorprone',
+  'JUnitStaticSuite': 'errorprone',
+  'MethodWithSameNameAsEnclosingClass': 'errorprone',
+  'MisplacedNullCheck': 'errorprone',
+  'MissingBreakInSwitch': 'errorprone',
+  'MissingSerialVersionUID': 'errorprone',
+  'MissingStaticMethodInNonInstantiatableClass': 'errorprone',
+  'MoreThanOneLogger': 'errorprone',
+  'NonCaseLabelInSwitchStatement': 'errorprone',
+  'NonStaticInitializer': 'errorprone',
+  'NullAssignment': 'errorprone',
+  'OverrideBothEqualsAndHashcode': 'errorprone',
+  'ProperCloneImplementation': 'errorprone',
+  'ProperLogger': 'errorprone',
+  'ReturnEmptyCollectionRatherThanNull': 'errorprone',
+  'ReturnFromFinallyBlock': 'errorprone',
+  'SimpleDateFormatNeedsLocale': 'errorprone',
+  'SingleMethodSingleton': 'errorprone',
+  'SingletonClassReturningNewInstance': 'errorprone',
+  'StaticEJBFieldShouldBeFinal': 'errorprone',
+  'StringBufferInstantiationWithChar': 'errorprone',
+  'SuspiciousEqualsMethodName': 'errorprone',
+  'SuspiciousHashcodeMethodName': 'errorprone',
+  'SuspiciousOctalEscape': 'errorprone',
+  'TestClassWithoutTestCases': 'errorprone',
+  'UnconditionalIfStatement': 'errorprone',
+  'UnnecessaryBooleanAssertion': 'errorprone',
+  'UnnecessaryCaseChange': 'errorprone',
+  'UnnecessaryConversionTemporary': 'errorprone',
+  'UnusedNullCheckInEquals': 'errorprone',
+  'UseCorrectExceptionLogging': 'errorprone',
+  'UseEqualsToCompareStrings': 'errorprone',
+  'UselessOperationOnImmutable': 'errorprone',
+  'UseLocaleWithCaseConversions': 'errorprone',
+  'UseProperClassLoader': 'errorprone',
+
+  // Multithreading
+  'AvoidSynchronizedAtMethodLevel': 'multithreading',
+  'AvoidThreadGroup': 'multithreading',
+  'AvoidUsingVolatile': 'multithreading',
+  'DoNotUseThreads': 'multithreading',
+  'DontCallThreadRun': 'multithreading',
+  'DoubleCheckedLocking': 'multithreading',
+  'NonThreadSafeSingleton': 'multithreading',
+  'UnsynchronizedStaticFormatter': 'multithreading',
+  'UseConcurrentHashMap': 'multithreading',
+  'UseNotifyAllInsteadOfNotify': 'multithreading',
+
+  // Performance
+  'AddEmptyString': 'performance',
+  'AppendCharacterWithChar': 'performance',
+  'AvoidArrayLoops': 'performance',
+  'AvoidCalendarDateCreation': 'performance',
+  'AvoidFileStream': 'performance',
+  'AvoidInstantiatingObjectsInLoops': 'performance',
+  'BigIntegerInstantiation': 'performance',
+  'BooleanInstantiation': 'performance',
+  'ByteInstantiation': 'performance',
+  'ConsecutiveAppendsShouldReuse': 'performance',
+  'ConsecutiveLiteralAppends': 'performance',
+  'InefficientEmptyStringCheck': 'performance',
+  'InefficientStringBuffering': 'performance',
+  'InsufficientStringBufferDeclaration': 'performance',
+  'IntegerInstantiation': 'performance',
+  'LongInstantiation': 'performance',
+  'OptimizableToArrayCall': 'performance',
+  'RedundantFieldInitializer': 'performance',
+  'ShortInstantiation': 'performance',
+  'SimplifyStartsWith': 'performance',
+  'StringInstantiation': 'performance',
+  'StringToString': 'performance',
+  'TooFewBranchesForASwitchStatement': 'performance',
+  'UnnecessaryWrapperObjectCreation': 'performance',
+  'UseArrayListInsteadOfVector': 'performance',
+  'UseArraysAsList': 'performance',
+  'UseIndexOfChar': 'performance',
+  'UseIOStreamsWithApacheCommonsFileItem': 'performance',
+  'UselessStringValueOf': 'performance',
+  'UseStringBufferForStringAppends': 'performance',
+  'UseStringBufferLength': 'performance',
+
+  // Security
+  'HardCodedCryptoKey': 'security',
+  'InsecureCryptoIv': 'security',
+};
+
+/**
  * PMD rule documentation mapping
+ * Includes pre-defined links for common rules
  */
 const PMD_RULES: Record<string, DocumentationLink[]> = {
   'AvoidThrowingRawExceptionTypes': [
@@ -484,6 +792,31 @@ const PMD_RULES: Record<string, DocumentationLink[]> = {
     { title: 'PMD: UseUtilityClass', url: 'https://pmd.github.io/latest/pmd_rules_java_design.html#useutilityclass', type: 'official' }
   ]
 };
+
+/**
+ * Generate PMD documentation URL using category mapping
+ * SESSION 77: Uses PMD_RULE_CATEGORIES to generate specific rule URLs
+ */
+function generatePMDDocUrl(ruleId: string): DocumentationLink[] {
+  // Extract just the rule name from full path like "com.puppycrawl.tools.checkstyle.checks.coding.HiddenFieldCheck"
+  const ruleName = ruleId.split('.').pop() || ruleId;
+
+  // Look up the category for this rule
+  const category = PMD_RULE_CATEGORIES[ruleName];
+
+  if (category) {
+    // Generate specific URL with category and rule anchor
+    const url = `https://pmd.github.io/latest/pmd_rules_java_${category}.html#${ruleName.toLowerCase()}`;
+    return [
+      { title: `PMD: ${ruleName}`, url, type: 'official' }
+    ];
+  }
+
+  // Fallback to generic rules page if category not found
+  return [
+    { title: `PMD: ${ruleName}`, url: 'https://pmd.github.io/latest/pmd_rules_java.html', type: 'official' }
+  ];
+}
 
 /**
  * Checkstyle rule documentation mapping
@@ -573,6 +906,516 @@ const MYPY_RULES: Record<string, DocumentationLink[]> = {
     { title: 'Mypy: assignment', url: 'https://mypy.readthedocs.io/en/stable/error_code_list.html#check-that-assigned-value-is-compatible-assignment', type: 'official' }
   ]
 };
+
+/**
+ * SpotBugs bug pattern categories
+ * SESSION 77: Comprehensive mapping for specific SpotBugs documentation URLs
+ * https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html
+ */
+const SPOTBUGS_CATEGORIES: Record<string, string> = {
+  // Bad Practice
+  'BC': 'BAD_PRACTICE',
+  'BIT': 'BAD_PRACTICE',
+  'CN': 'BAD_PRACTICE',
+  'DE': 'BAD_PRACTICE',
+  'DMI': 'BAD_PRACTICE',
+  'DP': 'BAD_PRACTICE',
+  'Dm': 'BAD_PRACTICE',
+  'ES': 'BAD_PRACTICE',
+  'EQ': 'BAD_PRACTICE',
+  'FI': 'BAD_PRACTICE',
+  'HE': 'BAD_PRACTICE',
+  'IC': 'BAD_PRACTICE',
+  'IMSE': 'BAD_PRACTICE',
+  'ISC': 'BAD_PRACTICE',
+  'IT': 'BAD_PRACTICE',
+  'ME': 'BAD_PRACTICE',
+  'NP': 'BAD_PRACTICE',
+  'OBL': 'BAD_PRACTICE',
+  'OS': 'BAD_PRACTICE',
+  'RC': 'BAD_PRACTICE',
+  'RR': 'BAD_PRACTICE',
+  'RV': 'BAD_PRACTICE',
+  'SE': 'BAD_PRACTICE',
+  'SI': 'BAD_PRACTICE',
+  'SW': 'BAD_PRACTICE',
+  // Correctness
+  'CO': 'CORRECTNESS',
+  'DLS': 'CORRECTNESS',
+  'EC': 'CORRECTNESS',
+  'Eq': 'CORRECTNESS',
+  'INT': 'CORRECTNESS',
+  'NM': 'CORRECTNESS',
+  'QBA': 'CORRECTNESS',
+  'RE': 'CORRECTNESS',
+  'SA': 'CORRECTNESS',
+  'SQL': 'CORRECTNESS',
+  'STI': 'CORRECTNESS',
+  'TQ': 'CORRECTNESS',
+  'VA': 'CORRECTNESS',
+  // Internationalization
+  'Dm_I18N': 'I18N',
+  // Malicious Code Vulnerability
+  'EI': 'MALICIOUS_CODE',
+  'MS': 'MALICIOUS_CODE',
+  // Multithreaded Correctness
+  'AT': 'MT_CORRECTNESS',
+  'DC': 'MT_CORRECTNESS',
+  'DL': 'MT_CORRECTNESS',
+  'JLM': 'MT_CORRECTNESS',
+  'LI': 'MT_CORRECTNESS',
+  'ML': 'MT_CORRECTNESS',
+  'MWN': 'MT_CORRECTNESS',
+  'NN': 'MT_CORRECTNESS',
+  'No': 'MT_CORRECTNESS',
+  'RS': 'MT_CORRECTNESS',
+  'Ru': 'MT_CORRECTNESS',
+  'SC': 'MT_CORRECTNESS',
+  'SP': 'MT_CORRECTNESS',
+  'TLW': 'MT_CORRECTNESS',
+  'UG': 'MT_CORRECTNESS',
+  'UL': 'MT_CORRECTNESS',
+  'UW': 'MT_CORRECTNESS',
+  'VO': 'MT_CORRECTNESS',
+  'WL': 'MT_CORRECTNESS',
+  'WS': 'MT_CORRECTNESS',
+  // Performance
+  'Bx': 'PERFORMANCE',
+  'SIC': 'PERFORMANCE',
+  'SS': 'PERFORMANCE',
+  'UM': 'PERFORMANCE',
+  'WMI': 'PERFORMANCE',
+  // Security
+  'HRS': 'SECURITY',
+  'PT': 'SECURITY',
+  'XSS': 'SECURITY',
+  'SECB': 'SECURITY',
+  'SECCI': 'SECURITY',
+  'SECHCP': 'SECURITY',
+  'SECPTI': 'SECURITY',
+  'SECSQLC': 'SECURITY',
+  'SECSQLI': 'SECURITY',
+  'SECXPI': 'SECURITY',
+  // Style/Dodgy
+  'CI': 'STYLE',
+  'DB': 'STYLE',
+  'RI': 'STYLE',
+  'UC': 'STYLE',
+  'UPM': 'STYLE',
+  'URF': 'STYLE',
+  'UuF': 'STYLE',
+};
+
+/**
+ * Generate SpotBugs documentation URL
+ * SESSION 77: Uses bug pattern prefix to generate specific URLs
+ */
+function generateSpotBugsDocUrl(ruleId: string): DocumentationLink[] {
+  // Extract prefix (e.g., "NP" from "NP_NULL_ON_SOME_PATH")
+  const prefix = ruleId.split('_')[0];
+  const category = SPOTBUGS_CATEGORIES[prefix];
+
+  if (category) {
+    // SpotBugs uses anchors like #NP_NULL_ON_SOME_PATH
+    return [
+      { title: `SpotBugs: ${ruleId}`, url: `https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#${ruleId.toLowerCase().replace(/_/g, '-')}`, type: 'official' }
+    ];
+  }
+
+  // Try direct anchor
+  return [
+    { title: `SpotBugs: ${ruleId}`, url: `https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#${ruleId.toLowerCase().replace(/_/g, '-')}`, type: 'official' }
+  ];
+}
+
+/**
+ * Pylint message categories
+ * SESSION 77: Comprehensive mapping for Pylint documentation URLs
+ * Format: {category}/{message-id}.html
+ */
+const PYLINT_CATEGORIES: Record<string, string> = {
+  'C': 'convention',   // Convention violations
+  'R': 'refactor',     // Refactoring suggestions
+  'W': 'warning',      // Warnings
+  'E': 'error',        // Errors
+  'F': 'fatal',        // Fatal errors
+  'I': 'informational' // Informational messages
+};
+
+/**
+ * Generate Pylint documentation URL
+ * SESSION 77: Uses message code to generate specific URLs
+ */
+function generatePylintDocUrl(ruleId: string): DocumentationLink[] {
+  // Pylint codes like C0114, W0611, E1101
+  const match = ruleId.match(/^([CRWEFI])(\d{4})$/);
+
+  if (match) {
+    const categoryCode = match[1];
+    const category = PYLINT_CATEGORIES[categoryCode];
+    if (category) {
+      return [
+        { title: `Pylint: ${ruleId}`, url: `https://pylint.readthedocs.io/en/latest/user_guide/messages/${category}/${ruleId.toLowerCase()}.html`, type: 'official' }
+      ];
+    }
+  }
+
+  // Named rules like "missing-module-docstring"
+  return [
+    { title: `Pylint: ${ruleId}`, url: `https://pylint.readthedocs.io/en/latest/user_guide/messages/messages_overview.html`, type: 'official' }
+  ];
+}
+
+/**
+ * Checkstyle rule-to-category mapping
+ * SESSION 77: Comprehensive mapping for Checkstyle rules
+ */
+const CHECKSTYLE_RULE_CATEGORIES: Record<string, string> = {
+  // Annotation checks
+  'AnnotationLocation': 'annotation',
+  'AnnotationOnSameLine': 'annotation',
+  'AnnotationUseStyle': 'annotation',
+  'MissingDeprecated': 'annotation',
+  'MissingOverride': 'annotation',
+  'PackageAnnotation': 'annotation',
+  'SuppressWarnings': 'annotation',
+  'SuppressWarningsHolder': 'annotation',
+
+  // Block checks
+  'AvoidNestedBlocks': 'blocks',
+  'EmptyBlock': 'blocks',
+  'EmptyCatchBlock': 'blocks',
+  'LeftCurly': 'blocks',
+  'NeedBraces': 'blocks',
+  'RightCurly': 'blocks',
+
+  // Coding checks
+  'ArrayTrailingComma': 'coding',
+  'AvoidDoubleBraceInitialization': 'coding',
+  'AvoidInlineConditionals': 'coding',
+  'AvoidNoArgumentSuperConstructorCall': 'coding',
+  'CovariantEquals': 'coding',
+  'DeclarationOrder': 'coding',
+  'DefaultComesLast': 'coding',
+  'EmptyStatement': 'coding',
+  'EqualsAvoidNull': 'coding',
+  'EqualsHashCode': 'coding',
+  'ExplicitInitialization': 'coding',
+  'FallThrough': 'coding',
+  'FinalLocalVariable': 'coding',
+  'HiddenField': 'coding',
+  'IllegalCatch': 'coding',
+  'IllegalInstantiation': 'coding',
+  'IllegalThrows': 'coding',
+  'IllegalToken': 'coding',
+  'IllegalTokenText': 'coding',
+  'IllegalType': 'coding',
+  'InnerAssignment': 'coding',
+  'MagicNumber': 'coding',
+  'MatchXpath': 'coding',
+  'MissingCtor': 'coding',
+  'MissingSwitchDefault': 'coding',
+  'ModifiedControlVariable': 'coding',
+  'MultipleStringLiterals': 'coding',
+  'MultipleVariableDeclarations': 'coding',
+  'NestedForDepth': 'coding',
+  'NestedIfDepth': 'coding',
+  'NestedTryDepth': 'coding',
+  'NoArrayTrailingComma': 'coding',
+  'NoClone': 'coding',
+  'NoEnumTrailingComma': 'coding',
+  'NoFinalizer': 'coding',
+  'OneStatementPerLine': 'coding',
+  'OverloadMethodsDeclarationOrder': 'coding',
+  'PackageDeclaration': 'coding',
+  'ParameterAssignment': 'coding',
+  'RequireThis': 'coding',
+  'ReturnCount': 'coding',
+  'SimplifyBooleanExpression': 'coding',
+  'SimplifyBooleanReturn': 'coding',
+  'StringLiteralEquality': 'coding',
+  'SuperClone': 'coding',
+  'SuperFinalize': 'coding',
+  'UnnecessaryParentheses': 'coding',
+  'UnnecessarySemicolonAfterOuterTypeDeclaration': 'coding',
+  'UnnecessarySemicolonAfterTypeMemberDeclaration': 'coding',
+  'UnnecessarySemicolonInEnumeration': 'coding',
+  'UnnecessarySemicolonInTryWithResources': 'coding',
+  'VariableDeclarationUsageDistance': 'coding',
+
+  // Design checks
+  'DesignForExtension': 'design',
+  'FinalClass': 'design',
+  'HideUtilityClassConstructor': 'design',
+  'InnerTypeLast': 'design',
+  'InterfaceIsType': 'design',
+  'MutableException': 'design',
+  'OneTopLevelClass': 'design',
+  'ThrowsCount': 'design',
+  'VisibilityModifier': 'design',
+
+  // Imports checks
+  'AvoidStarImport': 'imports',
+  'AvoidStaticImport': 'imports',
+  'CustomImportOrder': 'imports',
+  'IllegalImport': 'imports',
+  'ImportControl': 'imports',
+  'ImportOrder': 'imports',
+  'RedundantImport': 'imports',
+  'UnusedImports': 'imports',
+
+  // Javadoc checks
+  'AtclauseOrder': 'javadoc',
+  'InvalidJavadocPosition': 'javadoc',
+  'JavadocBlockTagLocation': 'javadoc',
+  'JavadocContentLocation': 'javadoc',
+  'JavadocMethod': 'javadoc',
+  'JavadocMissingLeadingAsterisk': 'javadoc',
+  'JavadocMissingWhitespaceAfterAsterisk': 'javadoc',
+  'JavadocPackage': 'javadoc',
+  'JavadocParagraph': 'javadoc',
+  'JavadocStyle': 'javadoc',
+  'JavadocTagContinuationIndentation': 'javadoc',
+  'JavadocType': 'javadoc',
+  'JavadocVariable': 'javadoc',
+  'MissingJavadocMethod': 'javadoc',
+  'MissingJavadocPackage': 'javadoc',
+  'MissingJavadocType': 'javadoc',
+  'NonEmptyAtclauseDescription': 'javadoc',
+  'RequireEmptyLineBeforeBlockTagGroup': 'javadoc',
+  'SingleLineJavadoc': 'javadoc',
+  'SummaryJavadoc': 'javadoc',
+  'WriteTag': 'javadoc',
+
+  // Metrics checks
+  'BooleanExpressionComplexity': 'metrics',
+  'ClassDataAbstractionCoupling': 'metrics',
+  'ClassFanOutComplexity': 'metrics',
+  'CyclomaticComplexity': 'metrics',
+  'JavaNCSS': 'metrics',
+  'NPathComplexity': 'metrics',
+
+  // Misc checks
+  'ArrayTypeStyle': 'misc',
+  'AvoidEscapedUnicodeCharacters': 'misc',
+  'CommentsIndentation': 'misc',
+  'DescendantToken': 'misc',
+  'FinalParameters': 'misc',
+  'Indentation': 'misc',
+  'NewlineAtEndOfFile': 'misc',
+  'NoCodeInFile': 'misc',
+  'OrderedProperties': 'misc',
+  'OuterTypeFilename': 'misc',
+  'TodoComment': 'misc',
+  'TrailingComment': 'misc',
+  'Translation': 'misc',
+  'UncommentedMain': 'misc',
+  'UniqueProperties': 'misc',
+  'UpperEll': 'misc',
+
+  // Modifier checks
+  'ClassMemberImpliedModifier': 'modifier',
+  'InterfaceMemberImpliedModifier': 'modifier',
+  'ModifierOrder': 'modifier',
+  'RedundantModifier': 'modifier',
+
+  // Naming checks
+  'AbbreviationAsWordInName': 'naming',
+  'AbstractClassName': 'naming',
+  'CatchParameterName': 'naming',
+  'ClassTypeParameterName': 'naming',
+  'ConstantName': 'naming',
+  'IllegalIdentifierName': 'naming',
+  'InterfaceTypeParameterName': 'naming',
+  'LambdaParameterName': 'naming',
+  'LocalFinalVariableName': 'naming',
+  'LocalVariableName': 'naming',
+  'MemberName': 'naming',
+  'MethodName': 'naming',
+  'MethodTypeParameterName': 'naming',
+  'PackageName': 'naming',
+  'ParameterName': 'naming',
+  'PatternVariableName': 'naming',
+  'RecordComponentName': 'naming',
+  'RecordTypeParameterName': 'naming',
+  'StaticVariableName': 'naming',
+  'TypeName': 'naming',
+
+  // Regexp checks
+  'Regexp': 'regexp',
+  'RegexpMultiline': 'regexp',
+  'RegexpOnFilename': 'regexp',
+  'RegexpSingleline': 'regexp',
+  'RegexpSinglelineJava': 'regexp',
+
+  // Size checks
+  'AnonInnerLength': 'sizes',
+  'ExecutableStatementCount': 'sizes',
+  'FileLength': 'sizes',
+  'LambdaBodyLength': 'sizes',
+  'LineLength': 'sizes',
+  'MethodCount': 'sizes',
+  'MethodLength': 'sizes',
+  'OuterTypeNumber': 'sizes',
+  'ParameterNumber': 'sizes',
+  'RecordComponentNumber': 'sizes',
+
+  // Whitespace checks
+  'EmptyForInitializerPad': 'whitespace',
+  'EmptyForIteratorPad': 'whitespace',
+  'EmptyLineSeparator': 'whitespace',
+  'FileTabCharacter': 'whitespace',
+  'GenericWhitespace': 'whitespace',
+  'MethodParamPad': 'whitespace',
+  'NoLineWrap': 'whitespace',
+  'NoWhitespaceAfter': 'whitespace',
+  'NoWhitespaceBefore': 'whitespace',
+  'NoWhitespaceBeforeCaseDefaultColon': 'whitespace',
+  'OperatorWrap': 'whitespace',
+  'ParenPad': 'whitespace',
+  'SeparatorWrap': 'whitespace',
+  'SingleSpaceSeparator': 'whitespace',
+  'TypecastParenPad': 'whitespace',
+  'WhitespaceAfter': 'whitespace',
+  'WhitespaceAround': 'whitespace',
+};
+
+/**
+ * Generate Checkstyle documentation URL
+ * SESSION 77: Uses rule-to-category mapping for specific URLs
+ */
+function generateCheckstyleDocUrl(ruleId: string): DocumentationLink[] {
+  // Extract rule name (remove "Check" suffix and package prefix)
+  let ruleName = ruleId.split('.').pop() || ruleId;
+  ruleName = ruleName.replace(/Check$/, '');
+
+  // Look up category
+  const category = CHECKSTYLE_RULE_CATEGORIES[ruleName];
+
+  if (category) {
+    return [
+      { title: `Checkstyle: ${ruleName}`, url: `https://checkstyle.org/checks/${category}/${ruleName.toLowerCase()}.html`, type: 'official' }
+    ];
+  }
+
+  // Fallback to general checks page
+  return [
+    { title: `Checkstyle: ${ruleName}`, url: 'https://checkstyle.org/checks.html', type: 'official' }
+  ];
+}
+
+/**
+ * Golangci-lint linter mapping
+ * SESSION 77: Maps linter names to documentation
+ */
+function generateGolangciLintDocUrl(ruleId: string): DocumentationLink[] {
+  // Golangci-lint rules are often prefixed with linter name
+  // e.g., "errcheck", "staticcheck", "gosec"
+  const linterDocs: Record<string, string> = {
+    'errcheck': 'https://github.com/kisielk/errcheck',
+    'staticcheck': 'https://staticcheck.io/docs/checks/',
+    'gosec': 'https://github.com/securego/gosec#available-rules',
+    'govet': 'https://pkg.go.dev/cmd/vet',
+    'ineffassign': 'https://github.com/gordonklaus/ineffassign',
+    'unused': 'https://staticcheck.io/docs/checks/#U1000',
+    'gosimple': 'https://staticcheck.io/docs/checks/',
+    'typecheck': 'https://golang.org/ref/spec',
+    'gocritic': 'https://go-critic.com/overview',
+    'revive': 'https://revive.run/r',
+    'gofmt': 'https://pkg.go.dev/cmd/gofmt',
+    'goimports': 'https://pkg.go.dev/golang.org/x/tools/cmd/goimports',
+    'misspell': 'https://github.com/client9/misspell',
+    'unparam': 'https://github.com/mvdan/unparam',
+    'unconvert': 'https://github.com/mdempsky/unconvert',
+    'prealloc': 'https://github.com/alexkohler/prealloc',
+    'bodyclose': 'https://github.com/timakin/bodyclose',
+    'noctx': 'https://github.com/sonatard/noctx',
+    'exhaustive': 'https://github.com/nishanths/exhaustive',
+    'dupl': 'https://github.com/mibk/dupl',
+    'gocyclo': 'https://github.com/fzipp/gocyclo',
+    'gocognit': 'https://github.com/uudashr/gocognit',
+    'nestif': 'https://github.com/nakabonne/nestif',
+    'funlen': 'https://github.com/ultraware/funlen',
+    'lll': 'https://github.com/walle/lll',
+  };
+
+  // Try to match linter name
+  for (const [linter, url] of Object.entries(linterDocs)) {
+    if (ruleId.toLowerCase().includes(linter)) {
+      return [
+        { title: `${linter}: ${ruleId}`, url, type: 'official' }
+      ];
+    }
+  }
+
+  // Staticcheck rules (SA, S, ST, QF prefixes)
+  if (ruleId.match(/^(SA|S|ST|QF)\d+/)) {
+    return [
+      { title: `Staticcheck: ${ruleId}`, url: `https://staticcheck.io/docs/checks/#${ruleId}`, type: 'official' }
+    ];
+  }
+
+  // General fallback
+  return [
+    { title: `golangci-lint: ${ruleId}`, url: 'https://golangci-lint.run/usage/linters/', type: 'official' }
+  ];
+}
+
+/**
+ * RuboCop cop-to-department mapping
+ * SESSION 77: Maps cops to their documentation
+ */
+function generateRuboCopDocUrl(ruleId: string): DocumentationLink[] {
+  // RuboCop cops are formatted as "Department/CopName"
+  // e.g., "Style/StringLiterals", "Lint/UselessAssignment"
+  const parts = ruleId.split('/');
+
+  if (parts.length === 2) {
+    const department = parts[0].toLowerCase();
+    const cop = parts[1];
+    return [
+      { title: `RuboCop: ${ruleId}`, url: `https://docs.rubocop.org/rubocop/cops_${department}.html#${department}${cop.toLowerCase()}`, type: 'official' }
+    ];
+  }
+
+  return [
+    { title: `RuboCop: ${ruleId}`, url: 'https://docs.rubocop.org/rubocop/cops.html', type: 'official' }
+  ];
+}
+
+/**
+ * Clippy lint-to-category mapping
+ * SESSION 77: Maps Clippy lints to documentation
+ */
+function generateClippyDocUrl(ruleId: string): DocumentationLink[] {
+  // Clippy lints are lowercase with underscores
+  // e.g., "clippy::unwrap_used", "clippy::expect_used"
+  const lintName = ruleId.replace('clippy::', '');
+  return [
+    { title: `Clippy: ${lintName}`, url: `https://rust-lang.github.io/rust-clippy/stable/index.html#${lintName}`, type: 'official' }
+  ];
+}
+
+/**
+ * PHPStan rule documentation
+ * SESSION 77: Maps PHPStan rules to documentation
+ */
+function generatePHPStanDocUrl(ruleId: string): DocumentationLink[] {
+  return [
+    { title: `PHPStan: ${ruleId}`, url: `https://phpstan.org/user-guide/rule-levels`, type: 'official' }
+  ];
+}
+
+/**
+ * Psalm issue documentation
+ * SESSION 77: Maps Psalm issues to documentation
+ */
+function generatePsalmDocUrl(ruleId: string): DocumentationLink[] {
+  // Psalm issues are PascalCase like "MissingReturnType", "InvalidArgument"
+  return [
+    { title: `Psalm: ${ruleId}`, url: `https://psalm.dev/docs/running_psalm/issues/${ruleId}/`, type: 'official' }
+  ];
+}
 
 /**
  * Architecture tool rule documentation (Scanner-only tools)
@@ -706,41 +1549,35 @@ export function getDocumentationLinks(ruleId: string, tool: string): Documentati
           return value;
         }
       }
-      // Generate dynamic PMD link
-      return [
-        { title: `PMD: ${ruleId}`, url: `https://pmd.github.io/latest/pmd_rules_java.html`, type: 'official' }
-      ];
+      // SESSION 77: Use category mapping to generate specific rule documentation URLs
+      return generatePMDDocUrl(ruleId);
 
     case 'checkstyle': {
       // Try exact match first
       const ruleName = ruleId.replace('Check', '').split('.').pop() || ruleId;
       if (CHECKSTYLE_RULES[ruleId]) return CHECKSTYLE_RULES[ruleId];
       if (CHECKSTYLE_RULES[`${ruleName}Check`]) return CHECKSTYLE_RULES[`${ruleName}Check`];
-      
+
       // Try partial match
       for (const [key, value] of Object.entries(CHECKSTYLE_RULES)) {
-        if (normalizedRule.includes(key.toLowerCase().replace('check', '')) || 
+        if (normalizedRule.includes(key.toLowerCase().replace('check', '')) ||
             key.toLowerCase().includes(normalizedRule.replace('check', ''))) {
           return value;
         }
       }
-      
-      // SESSION 26: Generate specific URL by detecting category from rule ID
-      // e.g., "com.puppycrawl.tools.checkstyle.checks.coding.HiddenFieldCheck" → config_coding.html#HiddenField
-      for (const [category, path] of Object.entries(CHECKSTYLE_CATEGORY_PATHS)) {
-        if (ruleId.toLowerCase().includes(`.${category}.`)) {
-          const cleanRuleName = ruleName.replace('Check', '');
-          return [
-            { title: `Checkstyle: ${cleanRuleName}`, url: `https://checkstyle.org/${path}.html#${cleanRuleName}`, type: 'official' }
-          ];
-        }
-      }
-      
-      // Fallback: General checks page (last resort)
-      return [
-        { title: `Checkstyle: ${ruleName}`, url: 'https://checkstyle.org/checks.html', type: 'official' }
-      ];
+
+      // SESSION 77: Use comprehensive rule-to-category mapping for specific URLs
+      return generateCheckstyleDocUrl(ruleId);
     }
+
+    // SESSION 77: SpotBugs support
+    case 'spotbugs':
+    case 'findbugs':
+      return generateSpotBugsDocUrl(ruleId);
+
+    // SESSION 77: Pylint support
+    case 'pylint':
+      return generatePylintDocUrl(ruleId);
 
     case 'mypy':
       if (MYPY_RULES[ruleId]) return MYPY_RULES[ruleId];
@@ -769,6 +1606,30 @@ export function getDocumentationLinks(ruleId: string, tool: string): Documentati
       return [
         { title: `ESLint: ${ruleId}`, url: `https://eslint.org/docs/latest/rules/${ruleId}`, type: 'official' }
       ];
+
+    // SESSION 77: Go tools
+    case 'golangci-lint':
+    case 'golint':
+    case 'staticcheck':
+    case 'gosec':
+    case 'govet':
+      return generateGolangciLintDocUrl(ruleId);
+
+    // SESSION 77: Ruby tools
+    case 'rubocop':
+      return generateRuboCopDocUrl(ruleId);
+
+    // SESSION 77: Rust tools
+    case 'clippy':
+    case 'rust-clippy':
+      return generateClippyDocUrl(ruleId);
+
+    // SESSION 77: PHP tools
+    case 'phpstan':
+      return generatePHPStanDocUrl(ruleId);
+
+    case 'psalm':
+      return generatePsalmDocUrl(ruleId);
 
     // Architecture Scanner Tools (no auto-fix)
     case 'madge':

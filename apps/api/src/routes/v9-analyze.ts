@@ -15,6 +15,34 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 
+// V9 Comprehensive Report Formatter
+import { V9GroupedReportFormatter } from '@codequal/agents/two-branch/analyzers/v9-grouped-report-formatter';
+import { groupIssues } from '@codequal/agents/two-branch/utils/issue-grouping';
+
+// LSP and SARIF converter for IDE exports
+import { LSPSARIFConverter } from '@codequal/agents/two-branch/analyzers/lsp-sarif-converter';
+
+// PR Context Service for fetching real PR metadata
+import { PRContextService } from '../services/pr-context-service';
+
+// SESSION 79: Post-Apply Verification Service for fix application with regression checking
+import {
+  PostApplyVerificationService,
+  VERIFICATION_LEVELS,
+  VerificationLevel
+} from '../services/post-apply-verification-service';
+
+// SESSION 83: Fresh Context Fix Service (Ralph-inspired per-attempt fresh context)
+// SESSION 83b: Pattern-Aware Fix Service (KB-first + pattern propagation)
+import {
+  FreshContextFixService,
+  PatternAwareFixService,
+  type FreshContextIssue,
+  type StoryFixContext,
+  type PatternExample,
+} from '@codequal/agents/fix-agent/state';
+import { getFixGuidance, type FixGuidance } from '@codequal/agents/fix-agent/fix-pattern-registry';
+
 const execAsync = promisify(exec);
 
 const logger = createLogger('v9-analyze');
@@ -24,8 +52,8 @@ const router = Router();
 // CONFIGURATION
 // ============================================================================
 // SIMULATION_MODE: When true, generates mock results for testing API flow
-// Set to false and configure real endpoints for production analysis
-const SIMULATION_MODE = process.env.V9_SIMULATION_MODE !== 'false';
+// Default is FALSE (real analysis) - set V9_SIMULATION_MODE=true only for testing
+const SIMULATION_MODE = process.env.V9_SIMULATION_MODE === 'true';
 
 // Cloud service endpoints (used when SIMULATION_MODE=false)
 const HYBRID_AGENT_URL = process.env.HYBRID_AGENT_URL || 'http://129.212.136.24';
@@ -67,6 +95,7 @@ const AnalyzeRequestSchema = z.object({
     generateFixes: z.boolean().optional().default(true),
     includeEducational: z.boolean().optional().default(true),
     timeout: z.number().optional().default(300000),
+    maxIssuesForFix: z.number().optional(), // Limit issues for PRO tier fix generation (cost control)
     models: z.object({
       primary: z.string().optional().default('anthropic/claude-3-haiku-20240307'),
       fallback: z.string().optional().default('openai/gpt-3.5-turbo')
@@ -357,6 +386,9 @@ router.post('/reports', async (req: Request, res: Response) => {
 
     const isPro = tier === 'pro' || tier === 'enterprise';
 
+    // SESSION 70: Calculate REAL gamification data based on analysis results
+    const gamification = calculateRealGamification(state.result, isPro);
+
     // Generate unified report with gamification and historical data
     const unifiedReport = {
       analysisId,
@@ -369,33 +401,19 @@ router.post('/reports', async (req: Request, res: Response) => {
       issues: state.result.issues,
       report: state.result.report,
 
-      // Gamification - available for ALL tiers
-      skillsAndAchievements: {
-        skills: [
-          { name: 'Security Analysis', level: 3, xp: 750, nextLevelXp: 1000 },
-          { name: 'Code Quality', level: 2, xp: 450, nextLevelXp: 500 },
-          { name: 'Performance', level: 2, xp: 380, nextLevelXp: 500 }
-        ],
-        achievements: [
-          { id: 'first-analysis', name: 'First Analysis', description: 'Completed your first PR analysis', earned: true },
-          { id: 'security-champion', name: 'Security Champion', description: 'Fixed 10 security issues', earned: false, progress: 4 }
-        ],
-        streaks: {
-          current: 3,
-          longest: 7,
-          lastActivity: new Date().toISOString()
-        }
-      },
+      // Gamification - available for ALL tiers (SESSION 70: Real calculations)
+      skillsAndAchievements: gamification.skills,
 
       // Historical progress - available for ALL tiers
       progressHistory: {
         recentAnalyses: [
-          { date: new Date(Date.now() - 86400000).toISOString(), score: 85, issues: 12 },
-          { date: new Date(Date.now() - 172800000).toISOString(), score: 78, issues: 18 },
           { date: new Date().toISOString(), score: state.result.score.overall, issues: state.result.summary.totalIssues }
         ],
-        trendDirection: 'improving',
-        averageScore: (85 + 78 + state.result.score.overall) / 3
+        trendDirection: gamification.xp.totalXP > 50 ? 'improving' : 'stable',
+        averageScore: state.result.score.overall,
+        // XP details
+        xpEarned: gamification.xp.totalXP,
+        xpBreakdown: gamification.xp.breakdown
       },
 
       // PRO tier features
@@ -412,15 +430,29 @@ router.post('/reports', async (req: Request, res: Response) => {
         }
       } : {}),
 
-      // BASIC tier features
+      // BASIC tier features - IDE exports for manual fixing
       ...(!isPro ? {
+        ideExports: {
+          sarif: `/api/v9/reports/${analysisId}/export/sarif`,
+          gitlab: `/api/v9/reports/${analysisId}/export/gitlab`,
+          lsp: `/api/v9/reports/${analysisId}/export/lsp`,
+          description: 'Export issues to your IDE for manual fixing'
+        },
         ideIntegration: {
           vscode: { available: true, installUrl: 'https://marketplace.visualstudio.com/items?itemName=codequal' },
           jetbrains: { available: true, installUrl: 'https://plugins.jetbrains.com/plugin/codequal' }
         },
+        patternContribution: {
+          enabled: true,
+          optIn: true,
+          xpReward: 50,
+          description: 'Contribute fix patterns after manually fixing issues to earn XP',
+          contributeUrl: `/api/v9/patterns/contribute`
+        },
         upgradePrompt: {
-          message: 'Upgrade to PRO for AI-powered auto-fixes and advanced insights',
-          features: ['Automatic code fixes', 'AI-powered recommendations', 'Priority support']
+          message: 'Upgrade to PRO for AI-powered auto-fixes',
+          features: ['Automatic code fixes', 'Fix verification', 'Direct commit integration'],
+          estimatedTimeSaved: `${state.result.summary.totalIssues * 15} minutes per PR`
         }
       } : {}),
 
@@ -428,6 +460,12 @@ router.post('/reports', async (req: Request, res: Response) => {
       generatedAt: new Date().toISOString(),
       version: '9.0.0'
     };
+
+    // Debug: log the report keys before sending
+    logger.info(`[Reports] unifiedReport keys: ${Object.keys(unifiedReport).join(', ')}`);
+    logger.info(`[Reports] isPro: ${isPro}, tier: ${tier}`);
+    logger.info(`[Reports] Has ideExports: ${'ideExports' in unifiedReport}`);
+    logger.info(`[Reports] Has patternContribution: ${'patternContribution' in unifiedReport}`);
 
     res.json(unifiedReport);
 
@@ -439,6 +477,193 @@ router.post('/reports', async (req: Request, res: Response) => {
     });
   }
 });
+
+// =============================================================================
+// IDE EXPORT ENDPOINTS (SARIF, GitLab Code Quality, LSP)
+// =============================================================================
+
+/**
+ * SARIF 2.1.0 Export
+ * Industry standard format for static analysis results
+ * Supported by VSCode, JetBrains, GitHub Actions, and most IDEs
+ *
+ * GET /api/v9/reports/:analysisId/export/sarif
+ */
+router.get('/reports/:analysisId/export/sarif', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+
+    const state = analysisStore.get(analysisId);
+    if (!state || state.status !== 'completed' || !state.result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Analysis not found or not completed'
+      });
+    }
+
+    const converter = new LSPSARIFConverter();
+    const issues = state.result.issues || [];
+    const groupingResult = groupIssues(issues);
+
+    // Extract repository info from request
+    const repoUrl = state.request.repositoryUrl || '';
+    const repoName = repoUrl.split('/').slice(-2).join('/').replace('.git', '');
+
+    const sarifReport = converter.generateSARIFReport(issues, groupingResult.groups, {
+      repository: repoName,
+      version: '9.0.0',
+      analyzedAt: state.result.report?.generatedAt || new Date().toISOString()
+    });
+
+    // Set appropriate headers for SARIF file download
+    res.setHeader('Content-Type', 'application/sarif+json');
+    res.setHeader('Content-Disposition', `attachment; filename="${analysisId}-sarif.json"`);
+    res.json(sarifReport);
+
+  } catch (error) {
+    logger.error('Failed to generate SARIF export', error as any);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate SARIF export'
+    });
+  }
+});
+
+/**
+ * GitLab Code Quality Export
+ * Format compatible with GitLab CI/CD Code Quality reports
+ * Shows issues inline in merge requests
+ *
+ * GET /api/v9/reports/:analysisId/export/gitlab
+ */
+router.get('/reports/:analysisId/export/gitlab', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+
+    const state = analysisStore.get(analysisId);
+    if (!state || state.status !== 'completed' || !state.result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Analysis not found or not completed'
+      });
+    }
+
+    const issues = state.result.issues || [];
+
+    // Convert to GitLab Code Quality format
+    // https://docs.gitlab.com/ee/ci/testing/code_quality.html#implement-a-custom-tool
+    const gitlabIssues = issues.map((issue: any) => ({
+      type: 'issue',
+      check_name: issue.rule || issue.type || 'unknown',
+      description: issue.message || issue.description || 'Issue detected',
+      content: {
+        body: issue.fixSuggestion?.explanation || issue.educationalContent || ''
+      },
+      categories: [mapCategoryToGitLab(issue.category || issue.detectedCategory)],
+      location: {
+        path: cleanFilePath(issue.file || ''),
+        lines: {
+          begin: issue.line || 1,
+          end: issue.line || 1
+        }
+      },
+      severity: mapSeverityToGitLab(issue.severity),
+      fingerprint: generateFingerprint(issue)
+    }));
+
+    // Set headers for GitLab Code Quality JSON
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="gl-code-quality-report.json"`);
+    res.json(gitlabIssues);
+
+  } catch (error) {
+    logger.error('Failed to generate GitLab Code Quality export', error as any);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate GitLab Code Quality export'
+    });
+  }
+});
+
+/**
+ * LSP Code Actions Export
+ * For Cursor, VSCode, and other LSP-compatible editors
+ * Provides quick-fix actions directly in the IDE
+ *
+ * GET /api/v9/reports/:analysisId/export/lsp
+ */
+router.get('/reports/:analysisId/export/lsp', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const workspaceRoot = req.query.workspaceRoot as string || '/';
+
+    const state = analysisStore.get(analysisId);
+    if (!state || state.status !== 'completed' || !state.result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Analysis not found or not completed'
+      });
+    }
+
+    const converter = new LSPSARIFConverter();
+    const issues = state.result.issues || [];
+
+    const codeActions = converter.generateLSPCodeActions(issues, workspaceRoot);
+
+    res.json({
+      version: '1.0.0',
+      analysisId,
+      workspaceRoot,
+      totalActions: codeActions.length,
+      codeActions
+    });
+
+  } catch (error) {
+    logger.error('Failed to generate LSP export', error as any);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate LSP export'
+    });
+  }
+});
+
+// Helper functions for GitLab Code Quality format
+function mapSeverityToGitLab(severity: string): 'blocker' | 'critical' | 'major' | 'minor' | 'info' {
+  switch (severity?.toLowerCase()) {
+    case 'critical': return 'blocker';
+    case 'high': return 'critical';
+    case 'medium': return 'major';
+    case 'low': return 'minor';
+    default: return 'info';
+  }
+}
+
+function mapCategoryToGitLab(category: string): string {
+  const cat = category?.toLowerCase() || 'bug risk';
+  if (cat.includes('security')) return 'Security';
+  if (cat.includes('performance')) return 'Performance';
+  if (cat.includes('style') || cat.includes('lint')) return 'Style';
+  if (cat.includes('complexity')) return 'Complexity';
+  return 'Bug Risk';
+}
+
+function cleanFilePath(file: string): string {
+  // Remove leading ./ or / for GitLab
+  return file.replace(/^\.\//, '').replace(/^\//, '');
+}
+
+function generateFingerprint(issue: any): string {
+  // Generate a unique fingerprint for deduplication
+  const content = `${issue.rule}:${issue.file}:${issue.line}:${issue.message}`;
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
 
 // =============================================================================
 // BACKGROUND ANALYSIS EXECUTION
@@ -453,6 +678,33 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
     const isPro = userTier === 'pro' || userTier === 'enterprise';
     const generateFixes = isPro && (options?.generateFixes !== false);
 
+    // Fetch real PR metadata from GitHub
+    let prMetadata = {
+      author: 'unknown',
+      authorEmail: 'unknown@example.com',
+      title: `PR #${prNumber}`,
+      additions: 0,
+      deletions: 0
+    };
+
+    try {
+      const prContextService = new PRContextService();
+      const prDetails = await prContextService.fetchPRDetails(repositoryUrl, prNumber);
+      prMetadata = {
+        author: prDetails.author || 'unknown',
+        authorEmail: `${prDetails.author}@github.com`,
+        title: prDetails.title || `PR #${prNumber}`,
+        additions: prDetails.additions || 0,
+        deletions: prDetails.deletions || 0
+      };
+      logger.info('Fetched PR metadata', { author: prMetadata.author, title: prMetadata.title });
+    } catch (prError) {
+      logger.warn('Failed to fetch PR metadata, using defaults', { error: (prError as Error).message });
+    }
+
+    // Store PR metadata in state for report generation
+    state.request.prMetadata = prMetadata;
+
     // Phase 1: Analyzing (0-40%)
     updateState(analysisId, 'analyzing', 10, 'Running tool analysis', 'Initializing analyzers...');
     await delay(500);
@@ -466,19 +718,37 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
     let fixes = new Map<string, any>();
     let cacheStats = { hits: 0, misses: 0, hitRate: '0%' };
     let fixGenerationTime = 0;
+    let fixSessionInfo: { storiesCompleted: number; storiesFailed: number; totalAttempts: number; learningsSaved: number } | undefined;
 
     if (generateFixes && toolResults.issues.length > 0) {
       updateState(analysisId, 'generating_fixes', 50, 'Generating fixes', 'AI generating code fixes...');
       const fixStart = Date.now();
 
-      const fixResponse = await generateFixesWithHybridAgents(
+      const fixResponse = await generateFixesWithFreshContext(
         toolResults.issues,
-        { repository: repositoryUrl, prNumber, language }
+        { repository: repositoryUrl, prNumber, language },
+        { maxIssuesForFix: options?.maxIssuesForFix }
       );
 
       fixes = fixResponse.fixes;
       cacheStats = fixResponse.cacheStats;
       fixGenerationTime = Date.now() - fixStart;
+      fixSessionInfo = fixResponse.sessionInfo;
+
+      // Log session info if available (fresh context fix flow)
+      if (fixResponse.sessionInfo) {
+        logger.info('[FreshContext] Fix session complete', {
+          analysisId,
+          ...fixResponse.sessionInfo
+        });
+        if (fixResponse.sessionInfo.storiesFailed > 0) {
+          logger.warn('[FreshContext] Some fixes required manual review', {
+            analysisId,
+            failed: fixResponse.sessionInfo.storiesFailed,
+            total: fixResponse.sessionInfo.storiesCompleted + fixResponse.sessionInfo.storiesFailed
+          });
+        }
+      }
 
       updateState(analysisId, 'generating_fixes', 70, 'Generating fixes', `Generated ${fixes.size} fixes`);
     } else {
@@ -509,14 +779,27 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
     updateState(analysisId, 'finalizing', 90, 'Finalizing report', 'Generating report...');
 
     const analysisTime = Date.now() - state.startTime;
-    const report = generateV9Report({
+    const finalPrMetadata = state.request.prMetadata || { author: 'unknown', authorEmail: 'unknown@example.com', title: `PR #${prNumber}`, additions: 0, deletions: 0 };
+
+    // Reconstruct repoPath for snippet extraction (same formula used in runCloudTools)
+    const repoName = repositoryUrl.split('/').pop()?.replace('.git', '') || 'repo';
+    const repoPath = `/tmp/${repoName}-pr${prNumber}`;
+
+    const report = await generateV9Report({
       analysisId,
       repository: repositoryUrl,
       prNumber,
       language,
+      repoPath, // Pass repoPath for code snippet extraction
       issues: issuesWithFixes,
       scores,
       summary,
+      prAuthor: finalPrMetadata.author,
+      prAuthorEmail: finalPrMetadata.authorEmail,
+      prTitle: finalPrMetadata.title,
+      linesAdded: finalPrMetadata.additions,
+      linesDeleted: finalPrMetadata.deletions,
+      toolPerformance: (toolResults as any).toolPerformance || [],
       metrics: {
         analysisTime,
         toolsExecutionTime: toolResults.executionTime,
@@ -524,7 +807,7 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
         cacheHitRate: cacheStats.hitRate,
         costEstimate: calculateCostEstimate(issuesWithFixes.length, cacheStats)
       }
-    });
+    }, userTier as 'basic' | 'pro');
 
     // Complete!
     const result = {
@@ -541,7 +824,15 @@ async function runAnalysisInBackground(analysisId: string): Promise<void> {
         toolsExecutionTime: toolResults.executionTime,
         fixGenerationTime,
         cacheHitRate: cacheStats.hitRate,
-        costEstimate: calculateCostEstimate(issuesWithFixes.length, cacheStats)
+        costEstimate: calculateCostEstimate(issuesWithFixes.length, cacheStats),
+        ...(fixSessionInfo && {
+          freshContextSession: {
+            storiesCompleted: fixSessionInfo.storiesCompleted,
+            storiesFailed: fixSessionInfo.storiesFailed,
+            totalAttempts: fixSessionInfo.totalAttempts,
+            learningsSaved: fixSessionInfo.learningsSaved
+          }
+        })
       },
       report,
       cloudServices: {
@@ -608,10 +899,39 @@ async function detectLanguageFromRepo(repoUrl: string): Promise<string> {
   if (!match) throw new Error('Invalid GitHub URL');
 
   const [, owner, repo] = match;
+  const cleanRepo = repo.replace('.git', '');
+
+  // Map of GitHub language names to our tool language codes
+  const languageMap: Record<string, string> = {
+    'java': 'java',
+    'python': 'python',
+    'javascript': 'javascript',
+    'typescript': 'typescript',
+    'rust': 'rust',
+    'go': 'go',
+    'c++': 'cpp',
+    'c': 'c',
+    'c#': 'csharp',
+    'ruby': 'ruby',
+    'php': 'php',
+    'swift': 'swift',
+    'kotlin': 'kotlin',
+    'scala': 'scala'
+  };
+
+  // These are NOT programming languages - skip them when detecting
+  const nonProgrammingLanguages = new Set([
+    'css', 'scss', 'sass', 'less',  // Stylesheets
+    'html', 'xml', 'svg',            // Markup
+    'json', 'yaml', 'toml',          // Data formats
+    'markdown', 'restructuredtext',  // Documentation
+    'dockerfile', 'makefile', 'shell', 'powershell'  // Build/config
+  ]);
 
   try {
-    const response = await axios.get(
-      `https://api.github.com/repos/${owner}/${repo}`,
+    // First try: Get languages breakdown (more accurate than primary language)
+    const langResponse = await axios.get(
+      `https://api.github.com/repos/${owner}/${cleanRepo}/languages`,
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -621,26 +941,43 @@ async function detectLanguageFromRepo(repoUrl: string): Promise<string> {
       }
     );
 
-    const primaryLanguage = response.data.language?.toLowerCase() || 'unknown';
+    // Sort languages by bytes (descending)
+    const languages = Object.entries(langResponse.data as Record<string, number>)
+      .sort(([, a], [, b]) => b - a);
 
-    const languageMap: Record<string, string> = {
-      'java': 'java',
-      'python': 'python',
-      'javascript': 'javascript',
-      'typescript': 'typescript',
-      'rust': 'rust',
-      'go': 'go',
-      'c++': 'cpp',
-      'c': 'c',
-      'c#': 'csharp',
-      'ruby': 'ruby',
-      'php': 'php',
-      'swift': 'swift',
-      'kotlin': 'kotlin',
-      'scala': 'scala'
-    };
+    // Find the first PROGRAMMING language (skip CSS, HTML, etc.)
+    for (const [lang] of languages) {
+      const langLower = lang.toLowerCase();
+      if (!nonProgrammingLanguages.has(langLower)) {
+        const mapped = languageMap[langLower];
+        if (mapped) {
+          logger.info(`Detected programming language: ${lang} → ${mapped}`);
+          return mapped;
+        }
+      }
+    }
 
-    return languageMap[primaryLanguage] || 'javascript';
+    // Fallback: Use primary language from repo metadata
+    const repoResponse = await axios.get(
+      `https://api.github.com/repos/${owner}/${cleanRepo}`,
+      {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'CodeQual-V9-API'
+        },
+        timeout: 5000
+      }
+    );
+
+    const primaryLanguage = repoResponse.data.language?.toLowerCase() || 'unknown';
+    const mapped = languageMap[primaryLanguage];
+    if (mapped) {
+      logger.info(`Using primary language: ${primaryLanguage} → ${mapped}`);
+      return mapped;
+    }
+
+    logger.warn(`Could not map language "${primaryLanguage}", defaulting to JavaScript`);
+    return 'javascript';
   } catch (error) {
     logger.warn('Could not auto-detect language, defaulting to JavaScript');
     return 'javascript';
@@ -701,21 +1038,37 @@ async function runCloudTools(repoUrl: string, prNumber: number, language: string
   return {
     issues,
     executionTime: Math.floor(1000 + Math.random() * 4000),
-    toolsPods: tools.map(t => `${t}-host-native`)
+    toolsPods: tools.map(t => `${t}-host-native`),
+    toolPerformance: tools.map(t => ({
+      tool: t,
+      duration: Math.floor(Math.random() * 3000),
+      issuesFound: Math.floor(Math.random() * 3)
+    }))
   };
 }
 
 /**
- * Run analysis using host-native tools (no Docker)
- * Tools are pre-installed on Oracle Cloud ARM64 instance
+ * Run TWO-BRANCH analysis using host-native tools
+ *
+ * V9 Canonical Flow:
+ * 1. Clone repository with full history for PR
+ * 2. Run tools on BASE branch (main/master) → baseIssues
+ * 3. Run tools on PR branch → prIssues
+ * 4. Compare issues to categorize:
+ *    - NEW: In PR but not in main (introduced by PR)
+ *    - RESOLVED: In main but not in PR (fixed by PR)
+ *    - EXISTING_MODIFIED: In both, in modified files
+ *    - EXISTING_REST: In both, unchanged
+ *
+ * This enables proper detection of issues introduced vs. pre-existing
  */
 async function runHostNativeAnalysis(
   repoUrl: string,
   prNumber: number,
   language: string
-): Promise<{ issues: any[]; executionTime: number; toolsPods: string[] }> {
+): Promise<{ issues: any[]; executionTime: number; toolsPods: string[]; toolPerformance: any[] }> {
   const startTime = Date.now();
-  logger.info(`Running HOST-NATIVE analysis for ${language}`);
+  logger.info(`Running TWO-BRANCH HOST-NATIVE analysis for ${language}`);
 
   // ==========================================================================
   // COMPREHENSIVE TOOL MATRIX (49 unique tools across 7 categories)
@@ -844,73 +1197,328 @@ async function runHostNativeAnalysis(
   const repoName = repoUrl.split('/').pop()?.replace('.git', '') || 'repo';
   const repoPath = `/tmp/${repoName}-pr${prNumber}`;
 
-  // Clone repository if needed
+  // ==========================================================================
+  // STEP 1: Clone repository with enough depth for PR analysis
+  // ==========================================================================
   try {
-    await execAsync(`git clone --depth 1 ${repoUrl} ${repoPath} 2>/dev/null || (cd ${repoPath} && git pull)`, {
+    // Remove old repo if exists to get fresh clone
+    await execAsync(`rm -rf ${repoPath}`, { timeout: 30000 });
+
+    // Clone with depth 50 to get PR commits
+    await execAsync(`git clone --depth 50 ${repoUrl} ${repoPath}`, {
+      timeout: 120000
+    });
+
+    // Fetch PR ref
+    await execAsync(`git -C ${repoPath} fetch origin pull/${prNumber}/head:pr-${prNumber}`, {
       timeout: 60000
     });
-    logger.info(`Repository ready at ${repoPath}`);
+
+    logger.info(`Repository cloned with PR #${prNumber} ref at ${repoPath}`);
   } catch (error) {
-    logger.warn('Repository clone/update failed, continuing with existing repo');
-  }
-
-  // Execute tools in parallel batches (4 tools at a time to avoid overwhelming system)
-  const batchSize = 4;
-  const toolResults: Array<{ tool: string; output: string; success: boolean; category: string }> = [];
-
-  for (let i = 0; i < allTools.length; i += batchSize) {
-    const batch = allTools.slice(i, i + batchSize);
-    const batchResults = await Promise.all(
-      batch.map(async (tool) => {
-        const toolStart = Date.now();
-        try {
-          const { stdout } = await execAsync(tool.command, {
-            cwd: repoPath,
-            timeout: 45000, // 45 sec per tool
-            maxBuffer: 20 * 1024 * 1024, // 20MB buffer
-            env: {
-              ...process.env,
-              PATH: `/home/opc/.local/bin:/opt/codequal-tools/bin:/usr/local/bin:${process.env.PATH}`,
-              HOME: '/home/opc'
-            }
-          });
-          logger.info(`✅ ${tool.name}: completed in ${Date.now() - toolStart}ms`);
-          return { tool: tool.name, output: stdout, success: true, category: tool.category };
-        } catch (error: any) {
-          // Many tools return non-zero exit code when issues are found
-          if (error.stdout) {
-            logger.info(`⚠️ ${tool.name}: completed with issues in ${Date.now() - toolStart}ms`);
-            return { tool: tool.name, output: error.stdout, success: true, category: tool.category };
-          }
-          logger.warn(`❌ ${tool.name}: failed after ${Date.now() - toolStart}ms - ${error.message?.substring(0, 100)}`);
-          return { tool: tool.name, output: '', success: false, category: tool.category };
-        }
-      })
-    );
-    toolResults.push(...batchResults);
-  }
-
-  // Parse outputs and collect issues
-  const allIssues: any[] = [];
-  for (const result of toolResults) {
-    if (result.success && result.output) {
-      const parsed = parseToolOutput(result.tool, result.output);
-      // Add category to each issue
-      parsed.forEach(issue => {
-        issue.category = result.category;
-      });
-      allIssues.push(...parsed);
+    logger.warn('Repository clone/PR fetch failed, attempting basic clone');
+    try {
+      await execAsync(`git clone --depth 1 ${repoUrl} ${repoPath} 2>/dev/null || true`, { timeout: 60000 });
+    } catch {
+      logger.warn('Repository clone failed completely');
     }
   }
 
+  // ==========================================================================
+  // STEP 2: Detect base branch and get modified files
+  // ==========================================================================
+  let baseBranch = 'main';
+  let modifiedFiles: string[] = [];
+
+  try {
+    // Detect default branch
+    const { stdout: defaultBranchOutput } = await execAsync(
+      `git -C ${repoPath} symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo 'main'`,
+      { timeout: 5000 }
+    );
+    baseBranch = defaultBranchOutput.trim() || 'main';
+    logger.info(`Detected base branch: ${baseBranch}`);
+
+    // CRITICAL: Explicitly fetch base branch (shallow clone may not have it)
+    try {
+      await execAsync(`git -C ${repoPath} fetch origin ${baseBranch}:refs/remotes/origin/${baseBranch} --depth 50`, {
+        timeout: 60000
+      });
+      logger.info(`✅ Fetched base branch: origin/${baseBranch}`);
+    } catch (fetchError) {
+      logger.warn(`⚠️ Could not fetch base branch ${baseBranch}: ${(fetchError as Error).message}`);
+      // Try without depth limit as fallback
+      try {
+        await execAsync(`git -C ${repoPath} fetch origin ${baseBranch}`, { timeout: 60000 });
+        logger.info(`✅ Fetched base branch (fallback): origin/${baseBranch}`);
+      } catch {
+        logger.error(`❌ Failed to fetch base branch ${baseBranch} - two-branch comparison may fail!`);
+      }
+    }
+
+    // Get list of modified files in PR from GitHub API (more reliable than git diff with shallow clone)
+    try {
+      // Extract owner/repo from URL
+      const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (match) {
+        const [, owner, repo] = match;
+        const cleanRepo = repo.replace('.git', '');
+        const prFilesResponse = await axios.get(
+          `https://api.github.com/repos/${owner}/${cleanRepo}/pulls/${prNumber}/files`,
+          {
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'CodeQual-V9-API'
+            },
+            timeout: 10000
+          }
+        );
+        modifiedFiles = prFilesResponse.data.map((f: any) => f.filename);
+        logger.info(`PR modifies ${modifiedFiles.length} files (via GitHub API)`);
+      }
+    } catch (apiError) {
+      // Fallback to git diff
+      logger.warn('GitHub API failed for modified files, trying git diff');
+      try {
+        const { stdout: diffOutput } = await execAsync(
+          `git -C ${repoPath} diff --name-only origin/${baseBranch} pr-${prNumber} 2>/dev/null || echo ''`,
+          { timeout: 10000 }
+        );
+        modifiedFiles = diffOutput.trim().split('\n').filter(f => f.length > 0);
+        logger.info(`PR modifies ${modifiedFiles.length} files (via git diff)`);
+      } catch {
+        logger.warn('Could not get modified files list');
+      }
+    }
+  } catch (error) {
+    logger.warn('Branch detection failed, using main');
+  }
+
+  // Helper to run tools on a specific branch
+  // Returns { issues, toolStats } where toolStats contains per-tool durations and issue counts
+  const runToolsOnBranch = async (branch: string, branchType: 'base' | 'pr'): Promise<{ issues: any[]; toolStats: Array<{ tool: string; duration: number; issuesFound: number; success: boolean }> }> => {
+    const branchStart = Date.now();
+
+    // Checkout the branch
+    let checkoutSuccess = false;
+    try {
+      if (branchType === 'pr') {
+        await execAsync(`git -C ${repoPath} checkout pr-${prNumber}`, { timeout: 30000 });
+        checkoutSuccess = true;
+        logger.info(`✅ Checked out PR #${prNumber} branch`);
+      } else {
+        // For base branch, try detached HEAD checkout (more reliable)
+        await execAsync(`git -C ${repoPath} checkout origin/${baseBranch}`, { timeout: 30000 });
+        checkoutSuccess = true;
+        logger.info(`✅ Checked out BASE branch: origin/${baseBranch}`);
+      }
+    } catch (error: any) {
+      const errorMsg = error.message || 'Unknown error';
+      if (branchType === 'base') {
+        logger.error(`❌ CRITICAL: Failed to checkout BASE branch (origin/${baseBranch}): ${errorMsg}`);
+        logger.error(`   This will cause all issues to appear as NEW instead of proper categorization!`);
+      } else {
+        logger.warn(`⚠️ Could not checkout PR branch: ${errorMsg}`);
+      }
+    }
+
+    // Log branch state for debugging
+    try {
+      const { stdout: branchInfo } = await execAsync(`git -C ${repoPath} rev-parse --abbrev-ref HEAD 2>/dev/null || git -C ${repoPath} rev-parse --short HEAD`, { timeout: 5000 });
+      logger.info(`   Current HEAD: ${branchInfo.trim()} (checkout ${checkoutSuccess ? 'succeeded' : 'FAILED'})`);
+    } catch { /* ignore */ }
+
+    // Execute tools in parallel batches
+    const batchSize = 4;
+    const toolResults: Array<{ tool: string; output: string; success: boolean; category: string; duration: number }> = [];
+
+    for (let i = 0; i < allTools.length; i += batchSize) {
+      const batch = allTools.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (tool) => {
+          const toolStart = Date.now();
+          try {
+            const { stdout } = await execAsync(tool.command, {
+              cwd: repoPath,
+              timeout: 45000,
+              maxBuffer: 20 * 1024 * 1024,
+              env: {
+                ...process.env,
+                PATH: `/home/opc/.local/bin:/opt/codequal-tools/bin:/usr/local/bin:${process.env.PATH}`,
+                HOME: '/home/opc'
+              }
+            });
+            const duration = Date.now() - toolStart;
+            return { tool: tool.name, output: stdout, success: true, category: tool.category, duration };
+          } catch (error: any) {
+            const duration = Date.now() - toolStart;
+            if (error.stdout) {
+              return { tool: tool.name, output: error.stdout, success: true, category: tool.category, duration };
+            }
+            return { tool: tool.name, output: '', success: false, category: tool.category, duration };
+          }
+        })
+      );
+      toolResults.push(...batchResults);
+    }
+
+    // Parse and collect issues
+    const branchIssues: any[] = [];
+    for (const result of toolResults) {
+      if (result.success && result.output) {
+        const parsed = parseToolOutput(result.tool, result.output);
+        parsed.forEach(issue => {
+          issue.toolCategory = result.category;
+          // Map toolCategory to detectedCategory for scoring
+          const categoryMap: Record<string, string> = {
+            'security': 'Security',
+            'secrets': 'Security',
+            'iac': 'Security',
+            'quality': 'Code Quality',
+            'dependency': 'Dependencies',
+            'architecture': 'Architecture',
+            'fixer': 'Code Quality',
+            'api': 'Architecture'
+          };
+          issue.detectedCategory = categoryMap[result.category] || 'Code Quality';
+        });
+        branchIssues.push(...parsed);
+      }
+    }
+
+    const branchDuration = Date.now() - branchStart;
+    const successCount = toolResults.filter(r => r.success).length;
+    logger.info(`${branchType.toUpperCase()} branch analysis: ${branchIssues.length} issues from ${successCount}/${allTools.length} tools in ${branchDuration}ms`);
+
+    // Build per-tool stats for this branch
+    const toolStats = toolResults.map(r => ({
+      tool: r.tool,
+      duration: r.duration,
+      issuesFound: branchIssues.filter(i => i.tool === r.tool).length,
+      success: r.success
+    }));
+
+    return { issues: branchIssues, toolStats };
+  };
+
+  // ==========================================================================
+  // STEP 3: Run tools on BOTH branches
+  // ==========================================================================
+  logger.info('📊 Running TWO-BRANCH COMPARISON...');
+
+  // Run on base branch first
+  const baseResult = await runToolsOnBranch(baseBranch, 'base');
+  const baseIssues = baseResult.issues;
+  logger.info(`BASE (${baseBranch}): ${baseIssues.length} issues`);
+
+  // Run on PR branch
+  const prResult = await runToolsOnBranch(`pr-${prNumber}`, 'pr');
+  const prIssues = prResult.issues;
+  const prToolStats = prResult.toolStats;  // Use PR branch stats for reporting
+  logger.info(`PR #${prNumber}: ${prIssues.length} issues`);
+
+  // ==========================================================================
+  // STEP 4: Categorize issues using signature comparison
+  // ==========================================================================
+  const normalizePath = (filePath: string): string => {
+    return filePath.replace(/^\.\//, '').replace(/^\//, '');
+  };
+
+  // Full signature for display (includes line number)
+  const getFullSig = (issue: any): string => {
+    const file = normalizePath(issue.file || 'unknown');
+    const line = issue.line || 0;
+    const rule = issue.rule || issue.type || issue.tool || 'unknown';
+    return `${file}:${line}:${rule}`;
+  };
+
+  // Categorization signature (file:rule only - ignores line number shifts)
+  // This allows matching issues even when line numbers change between branches
+  const getCategorySig = (issue: any): string => {
+    const file = normalizePath(issue.file || 'unknown');
+    const rule = issue.rule || issue.type || issue.tool || 'unknown';
+    return `${file}:${rule}`;
+  };
+
+  // Create signature sets for categorization (using file:rule only)
+  const baseSigs = new Set(baseIssues.map(getCategorySig));
+  const prSigs = new Set(prIssues.map(getCategorySig));
+  const modifiedFilesSet = new Set(modifiedFiles.map(normalizePath));
+
+  // Categorize all issues
+  const categorizedIssues: any[] = [];
+
+  // NEW: In PR but NOT in base (introduced by this PR)
+  // Uses file:rule signature to match issues regardless of line number changes
+  const newIssues = prIssues.filter(i => !baseSigs.has(getCategorySig(i)));
+  newIssues.forEach(issue => {
+    issue.category = 'NEW';
+    categorizedIssues.push(issue);
+  });
+
+  // RESOLVED: In base but NOT in PR AND in a modified file (fixed by this PR)
+  const resolvedIssues = baseIssues.filter(i => {
+    const sig = getCategorySig(i);
+    const normalizedFile = normalizePath(i.file || '');
+    return !prSigs.has(sig) && modifiedFilesSet.has(normalizedFile);
+  });
+  resolvedIssues.forEach(issue => {
+    issue.category = 'RESOLVED';
+    categorizedIssues.push(issue);
+  });
+
+  // EXISTING_MODIFIED: In BOTH branches AND in modified files
+  // Uses file:rule signature to match issues regardless of line number changes
+  const existingModified = prIssues.filter(i => {
+    const sig = getCategorySig(i);
+    const normalizedFile = normalizePath(i.file || '');
+    return baseSigs.has(sig) && modifiedFilesSet.has(normalizedFile);
+  });
+  existingModified.forEach(issue => {
+    issue.category = 'EXISTING_MODIFIED';
+    categorizedIssues.push(issue);
+  });
+
+  // EXISTING_REST: In BOTH branches, NOT in modified files (pre-existing, untouched)
+  // Uses file:rule signature to match issues regardless of line number changes
+  const existingRest = prIssues.filter(i => {
+    const sig = getCategorySig(i);
+    const normalizedFile = normalizePath(i.file || '');
+    return baseSigs.has(sig) && !modifiedFilesSet.has(normalizedFile);
+  });
+  existingRest.forEach(issue => {
+    issue.category = 'EXISTING_REST';
+    categorizedIssues.push(issue);
+  });
+
   const executionTime = Date.now() - startTime;
-  const successCount = toolResults.filter(r => r.success).length;
-  logger.info(`Host-native analysis complete: ${allIssues.length} issues from ${successCount}/${allTools.length} tools in ${executionTime}ms`);
+
+  // Log categorization summary
+  logger.info(`📊 Issue Categorization Summary:`);
+  logger.info(`   🆕 NEW (introduced by PR): ${newIssues.length}`);
+  logger.info(`   ✅ RESOLVED (fixed by PR): ${resolvedIssues.length}`);
+  logger.info(`   📝 EXISTING_MODIFIED: ${existingModified.length}`);
+  logger.info(`   📦 EXISTING_REST: ${existingRest.length}`);
+  logger.info(`   📈 Total: ${categorizedIssues.length} issues in ${executionTime}ms`);
+
+  // Build tool performance data using actual stats from PR branch analysis
+  const toolPerformance = prToolStats.map(stat => ({
+    tool: stat.tool,
+    duration: stat.duration,
+    issuesFound: categorizedIssues.filter(i => i.tool === stat.tool).length,
+    success: stat.success
+  }));
+
+  // Log tool performance summary
+  const successfulTools = toolPerformance.filter(t => t.success);
+  const toolsWithIssues = toolPerformance.filter(t => t.issuesFound > 0);
+  logger.info(`📊 Tool Performance: ${successfulTools.length}/${toolPerformance.length} tools ran, ${toolsWithIssues.length} found issues`);
 
   return {
-    issues: allIssues,
+    issues: categorizedIssues,
     executionTime,
-    toolsPods: allTools.map(t => `${t.name}-host-native`)
+    toolsPods: allTools.map(t => `${t.name}-host-native`),
+    toolPerformance
   };
 }
 
@@ -983,6 +1591,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `semgrep-${i}-${Date.now()}`,
           tool: 'semgrep',
           type: r.check_id,
+          rule: r.check_id,  // Add rule for grouping/display
           severity: mapSeverity(r.extra?.severity || 'WARNING'),
           message: r.extra?.message || r.check_id,
           file: r.path,
@@ -994,6 +1603,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `gitleaks-${i}-${Date.now()}`,
           tool: 'gitleaks',
           type: r.RuleID || 'secret',
+          rule: r.RuleID || 'secret',  // Add rule for grouping/display
           severity: 'critical',
           message: `Secret detected: ${r.Description || r.Match?.substring(0, 50)}`,
           file: r.File,
@@ -1005,6 +1615,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `trufflehog-${i}-${Date.now()}`,
           tool: 'trufflehog',
           type: r.DetectorType || 'secret',
+          rule: r.DetectorType || 'secret',  // Add rule for grouping/display
           severity: 'critical',
           message: `Secret found: ${r.DetectorType || 'credential'}`,
           file: r.SourceMetadata?.Data?.Filesystem?.file || 'unknown',
@@ -1020,6 +1631,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `trivy-${vuln.VulnerabilityID}-${Date.now()}`,
               tool: 'trivy',
               type: vuln.VulnerabilityID,
+              rule: vuln.VulnerabilityID,  // Add rule for grouping/display (CVE ID)
               severity: mapSeverity(vuln.Severity),
               message: vuln.Title || vuln.Description?.substring(0, 200),
               file: result.Target,
@@ -1032,6 +1644,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `trivy-${misconf.ID}-${Date.now()}`,
               tool: 'trivy',
               type: misconf.ID,
+              rule: misconf.ID,  // Add rule for grouping/display (check ID)
               severity: mapSeverity(misconf.Severity),
               message: misconf.Title || misconf.Description,
               file: result.Target,
@@ -1047,6 +1660,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `grype-${m.vulnerability?.id || i}-${Date.now()}`,
           tool: 'grype',
           type: m.vulnerability?.id || 'CVE',
+          rule: m.vulnerability?.id || 'CVE',  // Add rule for grouping/display
           severity: mapSeverity(m.vulnerability?.severity),
           message: m.vulnerability?.description?.substring(0, 200) || m.vulnerability?.id,
           file: m.artifact?.name || 'unknown',
@@ -1063,6 +1677,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `checkov-${check.check_id}-${Date.now()}`,
               tool: 'checkov',
               type: check.check_id,
+              rule: check.check_id,  // Add rule for grouping/display
               severity: mapSeverity(check.severity || 'MEDIUM'),
               message: check.check_name || check.check_id,
               file: check.file_path,
@@ -1084,6 +1699,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `pmd-${pmdIssues.length}-${Date.now()}`,
               tool: 'pmd',
               type: violation.rule,
+              rule: violation.rule,  // Add rule for grouping/display
               severity: mapPMDPriority(violation.priority),
               message: violation.description,
               file: file.filename,
@@ -1102,6 +1718,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `eslint-${eslintIssues.length}-${Date.now()}`,
               tool: 'eslint',
               type: msg.ruleId,
+              rule: msg.ruleId,  // Add rule for grouping/display
               severity: msg.severity === 2 ? 'high' : 'medium',
               message: msg.message,
               file: file.filePath,
@@ -1117,6 +1734,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `ruff-${i}-${Date.now()}`,
           tool: 'ruff',
           type: r.code,
+          rule: r.code,  // Add rule for grouping/display
           severity: 'medium',
           message: r.message,
           file: r.filename,
@@ -1128,6 +1746,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `bandit-${i}-${Date.now()}`,
           tool: 'bandit',
           type: r.test_id,
+          rule: r.test_id,  // Add rule for grouping/display
           severity: mapSeverity(r.issue_severity),
           message: r.issue_text,
           file: r.filename,
@@ -1139,6 +1758,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `golangci-${idx}-${Date.now()}`,
           tool: 'golangci-lint',
           type: i.FromLinter,
+          rule: i.FromLinter,  // Add rule for grouping/display
           severity: mapSeverity(i.Severity),
           message: i.Text,
           file: i.Pos?.Filename || 'unknown',
@@ -1150,6 +1770,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `gosec-${idx}-${Date.now()}`,
           tool: 'gosec',
           type: i.rule_id,
+          rule: i.rule_id,  // Add rule for grouping/display
           severity: mapSeverity(i.severity),
           message: i.details,
           file: i.file,
@@ -1160,10 +1781,12 @@ function parseToolOutput(toolName: string, output: string): any[] {
         const npmIssues: any[] = [];
         for (const [name, vuln] of Object.entries(data.vulnerabilities || {})) {
           const v = vuln as any;
+          const ruleId = v.via?.[0]?.name || name;
           npmIssues.push({
             id: `npm-${name}-${Date.now()}`,
             tool: 'npm-audit',
-            type: v.via?.[0]?.name || name,
+            type: ruleId,
+            rule: ruleId,  // Add rule for grouping/display
             severity: mapSeverity(v.severity),
             message: v.via?.[0]?.title || `Vulnerability in ${name}`,
             file: 'package.json',
@@ -1181,6 +1804,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `dc-${vuln.name}-${Date.now()}`,
               tool: 'dependency-check',
               type: vuln.name,
+              rule: vuln.name,  // Add rule for grouping/display (CVE ID)
               severity: mapCVSS(vuln.cvssv3?.baseScore || vuln.cvssv2?.score || 0),
               message: vuln.description?.substring(0, 200) || vuln.name,
               file: dep.fileName,
@@ -1200,6 +1824,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `pylint-${i}-${Date.now()}`,
           tool: 'pylint',
           type: r.symbol || r.message_id,
+          rule: r.symbol || r.message_id,  // Add rule for grouping/display
           severity: mapPylintType(r.type),
           message: r.message,
           file: r.path,
@@ -1211,6 +1836,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `staticcheck-${i}-${Date.now()}`,
           tool: 'staticcheck',
           type: r.code,
+          rule: r.code,  // Add rule for grouping/display
           severity: r.severity === 'error' ? 'high' : 'medium',
           message: r.message,
           file: r.location?.file || 'unknown',
@@ -1222,6 +1848,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `biome-${i}-${Date.now()}`,
           tool: 'biome',
           type: d.category,
+          rule: d.category,  // Add rule for grouping/display
           severity: mapSeverity(d.severity),
           message: d.description || d.message,
           file: d.location?.path?.file || 'unknown',
@@ -1236,6 +1863,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `rubocop-${rubocopIssues.length}-${Date.now()}`,
               tool: 'rubocop',
               type: offense.cop_name,
+              rule: offense.cop_name,  // Add rule for grouping/display
               severity: mapSeverity(offense.severity),
               message: offense.message,
               file: file.path,
@@ -1251,6 +1879,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `brakeman-${i}-${Date.now()}`,
           tool: 'brakeman',
           type: w.warning_type,
+          rule: w.warning_type,  // Add rule for grouping/display
           severity: w.confidence === 'High' ? 'high' : w.confidence === 'Medium' ? 'medium' : 'low',
           message: w.message,
           file: w.file,
@@ -1262,6 +1891,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `bundler-audit-${i}-${Date.now()}`,
           tool: 'bundler-audit',
           type: r.advisory?.cve || r.advisory?.id,
+          rule: r.advisory?.cve || r.advisory?.id,  // Add rule for grouping/display
           severity: mapSeverity(r.advisory?.criticality),
           message: r.advisory?.title || r.advisory?.description,
           file: 'Gemfile.lock',
@@ -1276,6 +1906,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
               id: `phpstan-${phpstanIssues.length}-${Date.now()}`,
               tool: 'phpstan',
               type: 'phpstan',
+              rule: msg.identifier || 'phpstan',  // Add rule for grouping/display
               severity: 'medium',
               message: msg.message,
               file: file,
@@ -1295,6 +1926,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `cargo-audit-${i}-${Date.now()}`,
           tool: 'cargo-audit',
           type: v.advisory?.id,
+          rule: v.advisory?.id,  // Add rule for grouping/display
           severity: mapSeverity(v.advisory?.severity),
           message: v.advisory?.title || v.advisory?.description,
           file: 'Cargo.toml',
@@ -1306,6 +1938,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `pip-audit-${i}-${Date.now()}`,
           tool: 'pip-audit',
           type: v.vulns?.[0]?.id || v.name,
+          rule: v.vulns?.[0]?.id || v.name,  // Add rule for grouping/display
           severity: mapSeverity(v.vulns?.[0]?.severity),
           message: v.vulns?.[0]?.description || `Vulnerability in ${v.name}`,
           file: 'requirements.txt',
@@ -1317,6 +1950,7 @@ function parseToolOutput(toolName: string, output: string): any[] {
           id: `govulncheck-${i}-${Date.now()}`,
           tool: 'govulncheck',
           type: v.osv?.id,
+          rule: v.osv?.id,  // Add rule for grouping/display
           severity: 'high',
           message: v.osv?.summary || v.osv?.details,
           file: 'go.mod',
@@ -1420,42 +2054,854 @@ function parseSpotbugsXML(xmlOutput: string): any[] {
   return issues;
 }
 
-async function generateFixesWithHybridAgents(issues: any[], prInfo: any) {
-  // Simulate fix generation with cache behavior
-  await delay(500 + Math.random() * 1500);
-
+/**
+ * Generate REAL fixes using the AIFixerAgent
+ *
+ * SESSION 70: Replaced fake template placeholders with real AI fix generation
+ *
+ * Flow:
+ * 1. Check pattern registry first (FREE, instant) - cached patterns from previous PRO analyses
+ * 2. For unmatched issues, use AIFixerAgent to generate real fixes
+ * 3. Store successful fixes in pattern registry for future reuse
+ */
+async function generateFixesWithHybridAgents(
+  issues: any[],
+  prInfo: any,
+  options?: { maxIssuesForFix?: number }
+) {
   const fixes = new Map();
-  let hits = 0;
-  let misses = 0;
+  let patternHits = 0;
+  let aiGenerated = 0;
+  let failed = 0;
+  let manualReviewRequired = 0; // SESSION 77: Track fixes that require manual review
+  const maxIssues = options?.maxIssuesForFix; // Cost control: limit AI fix generation
 
-  for (const issue of issues) {
-    const cached = Math.random() > 0.3; // 70% cache hit rate
-    if (cached) hits++;
-    else misses++;
+  // Try to import the AIFixerAgent and pattern store
+  let AIFixerAgent: any = null;
+  let patternStore: any = null;
 
-    fixes.set(issue.id, {
-      suggestion: `// Fix for ${issue.message}\n// Replace the problematic code with the corrected version`,
-      confidence: cached ? 'high' : 'medium',
-      cached,
-      educational: `Learn more about ${issue.type} issues and best practices for ${prInfo.language}.`
-    });
+  try {
+    const fixAgentModule = await import('@codequal/agents/fix-agent/agents/ai-fixer-agent');
+    AIFixerAgent = fixAgentModule.AIFixerAgent;
+    logger.info('[FixGen] AIFixerAgent loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FixGen] AIFixerAgent not available:', e.message);
   }
 
-  const hitRate = issues.length > 0 ? Math.round((hits / issues.length) * 100) : 0;
+  try {
+    const patternModule = await import('@codequal/agents/fix-agent/fix-pattern-registry');
+    patternStore = patternModule.getSupabasePatternStore();
+    logger.info('[FixGen] Pattern store loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FixGen] Pattern store not available:', e.message);
+  }
+
+  // Phase 1: Check pattern registry for cached fixes (FREE for all tiers)
+  // OPTIMIZED: Parallel pattern lookups instead of sequential
+  // SESSION 77: Pass codeContext for context-aware pattern matching
+  if (patternStore) {
+    const patternResults = await Promise.all(
+      issues.map(async (issue) => {
+        try {
+          // SESSION 77: Pass codeContext to enable context-aware matching
+          // e.g., CloseResource with FileInputStream vs ReadableByteChannel
+          const pattern = await patternStore.lookupPattern(
+            issue.type,
+            issue.tool,
+            true, // activeOnly
+            issue.codeContext // Code context for extracting resource type
+          );
+          return { issue, pattern };
+        } catch (e) {
+          return { issue, pattern: null };
+        }
+      })
+    );
+
+    for (const { issue, pattern } of patternResults) {
+      if (pattern && pattern.fix_template) {
+        fixes.set(issue.id, {
+          suggestion: pattern.fix_template.correctedCode || pattern.fix_template.fix,
+          confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
+          cached: true,
+          patternId: pattern.id,
+          educational: `This fix uses a proven pattern from our registry. ${pattern.description || ''}`
+        });
+        patternHits++;
+      }
+    }
+  }
+
+  // Phase 2: Use AI for remaining issues (PRO tier only)
+  let unmatchedIssues = issues.filter(i => !fixes.has(i.id));
+
+  // Apply maxIssuesForFix limit if specified (cost control during testing)
+  if (maxIssues && unmatchedIssues.length > maxIssues) {
+    logger.info(`[FixGen] Limiting AI fix generation from ${unmatchedIssues.length} to ${maxIssues} issues (maxIssuesForFix)`);
+    unmatchedIssues = unmatchedIssues.slice(0, maxIssues);
+  }
+
+  if (AIFixerAgent && unmatchedIssues.length > 0) {
+    try {
+      const fixer = new AIFixerAgent({ submitToRegistry: true });
+
+      // Convert issues to AIFixerAgent format
+      const aiFixerIssues = unmatchedIssues.map(issue => ({
+        id: issue.id,
+        validatorToolId: issue.tool || 'unknown',
+        ruleId: issue.type || issue.rule || 'unknown',
+        file: issue.file || 'unknown',
+        line: issue.line || 1,
+        message: issue.message || 'No message',
+        severity: mapToAISeverity(issue.severity),
+        language: prInfo.language || 'java',
+        originalConfidence: 30, // Low confidence to trigger AI
+        codeContext: issue.codeContext || undefined,
+        toolContext: {
+          toolSuggestion: issue.suggestion,
+          ruleDescription: issue.message
+        }
+      }));
+
+      // Process issues in parallel (max 10 at a time - optimized from 5)
+      const result = await fixer.processBatch(aiFixerIssues, {
+        parallel: 10,
+        verbose: false
+      });
+
+      // SESSION 78: VALIDATE ALL FIXES BEFORE SHOWING TO USER
+      // Brand safety: Never show unverified fix code - broken fixes damage reputation
+      // Flow: Generate fixes → Validate ALL in parallel → Only show verified fixes
+      logger.info(`[FixGen] 🔍 Validating ${result.enrichedIssues.length} AI-generated fixes in parallel...`);
+
+      // Enable registry submission for validation
+      fixer.enableRegistrySubmission();
+
+      // Filter fixes that need validation (have correctedCode and no pre-existing manualReview)
+      const fixesToValidate = result.enrichedIssues.filter(
+        (e: any) => e.fixRecommendation?.correctedCode && !e.fixRecommendation?.manualReview?.required
+      );
+
+      // Fixes that already failed AI generation (manualReview already set)
+      const alreadyFailed = result.enrichedIssues.filter(
+        (e: any) => e.fixRecommendation?.manualReview?.required
+      );
+
+      // Add already-failed fixes to map first
+      for (const enriched of alreadyFailed) {
+        const rec = enriched.fixRecommendation;
+        fixes.set(enriched.id, {
+          suggestion: null,
+          confidence: 'manual',
+          cached: false,
+          aiGenerated: false,
+          manualRequired: true,
+          validationStatus: 'failed_generation',
+          reason: rec.manualReview.reason,
+          remediationSteps: rec.manualReview.remediationSteps,
+          documentationLinks: rec.manualReview.documentationLinks,
+          riskLevel: rec.manualReview.riskLevel,
+          estimatedEffort: rec.manualReview.estimatedEffort,
+          explanation: rec.explanation,
+          bestPractices: rec.bestPractices,
+          educational: rec.issueDescription
+            ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
+            : `Manual review required for ${enriched.ruleId}`
+        });
+        manualReviewRequired++;
+      }
+
+      // Validate ALL remaining fixes in parallel (batch of 10 concurrent)
+      const validationStartTime = Date.now();
+      const validationResults = await Promise.all(
+        fixesToValidate.map(async (enriched: any) => {
+          try {
+            const submitted = await fixer.submitFixToRegistry(enriched, enriched.fixRecommendation);
+            return {
+              enriched,
+              validated: submitted.submitted,
+              message: submitted.message,
+              patternStatus: submitted.patternStatus,
+              // SESSION 80: Include regression details for better user reporting
+              regressionDetails: submitted.regressionDetails
+            };
+          } catch (err: any) {
+            logger.warn(`[FixGen] Validation error for ${enriched.ruleId}:`, err.message);
+            return {
+              enriched,
+              validated: false,
+              message: err.message
+            };
+          }
+        })
+      );
+      const validationDuration = Date.now() - validationStartTime;
+      logger.info(`[FixGen] ⏱️ Validation completed in ${(validationDuration / 1000).toFixed(1)}s`);
+
+      // Process validation results - only show verified fixes
+      let verified = 0;
+      let validationFailed = 0;
+
+      for (const result of validationResults) {
+        const { enriched, validated, message } = result;
+        const rec = enriched.fixRecommendation;
+
+        if (validated) {
+          // ✅ VERIFIED: Safe to show fix code
+          fixes.set(enriched.id, {
+            suggestion: rec.correctedCode || rec.fix,
+            confidence: rec.confidence >= 70 ? 'high' : rec.confidence >= 50 ? 'medium' : 'low',
+            cached: false,
+            aiGenerated: true,
+            validationStatus: 'verified', // SESSION 78: Clear indicator
+            model: rec.model,
+            explanation: rec.explanation,
+            bestPractices: rec.bestPractices,
+            educational: rec.issueDescription
+              ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}`
+              : `AI-generated fix for ${enriched.ruleId}`
+          });
+          aiGenerated++;
+          verified++;
+        } else {
+          // ❌ VALIDATION FAILED: Show guidance only, never broken code
+          // SESSION 80: Check for regression details to provide specific guidance
+          const regressionDetails = result.regressionDetails;
+          const hasRegressions = regressionDetails?.hasRegressions;
+
+          if (hasRegressions) {
+            // Log detailed regression info
+            logger.warn(`[FixGen] ⚠️ Fix for ${enriched.ruleId} caused regressions:`,
+              regressionDetails.regressions.map((r: any) => r.rule).join(', '));
+          } else {
+            logger.warn(`[FixGen] ⚠️ Validation failed for ${enriched.ruleId}: ${message}`);
+          }
+
+          // Build remediation steps - specific if regression, generic otherwise
+          const remediationSteps = hasRegressions
+            ? [
+                `1. Review the issue at ${enriched.file}:${enriched.line}`,
+                `2. The AI fix introduced new issues: ${regressionDetails.regressions.map((r: any) => r.rule).join(', ')}`,
+                ...regressionDetails.regressions.map((r: any, i: number) =>
+                  `   ${i === 0 ? '→' : '  '} ${r.rule}: ${r.message}`),
+                `3. Apply fix manually, ensuring you handle these cases:`,
+                ...getRegressionGuidanceSteps(regressionDetails.regressions),
+                '4. Run static analysis to verify no new issues'
+              ]
+            : [
+                `1. Review the issue at ${enriched.file}:${enriched.line}`,
+                `2. Understand why ${enriched.ruleId} was triggered: ${enriched.message || 'See documentation'}`,
+                '3. The AI-generated fix did not pass validation - apply fix manually',
+                '4. Verify the fix doesn\'t break existing functionality',
+                '5. Run tests to ensure no regressions',
+              ];
+
+          fixes.set(enriched.id, {
+            suggestion: null, // Never show unverified code
+            confidence: 'manual',
+            cached: false,
+            aiGenerated: false,
+            manualRequired: true,
+            validationStatus: hasRegressions ? 'regression_detected' : 'failed_validation', // SESSION 80
+            reason: hasRegressions ? 'FIX_CAUSES_REGRESSION' : 'VALIDATION_FAILED',
+            regressionInfo: hasRegressions ? {
+              regressions: regressionDetails.regressions,
+              guidance: regressionDetails.guidance
+            } : undefined,
+            remediationSteps,
+            documentationLinks: rec.manualReview?.documentationLinks || [],
+            riskLevel: enriched.severity === 'critical' ? 'critical' : enriched.severity === 'high' ? 'high' : 'medium',
+            estimatedEffort: hasRegressions ? 'moderate' : 'moderate',
+            explanation: hasRegressions
+              ? `AI fix validation detected that the proposed fix introduces new issues (${regressionDetails.regressions.map((r: any) => r.rule).join(', ')}). Manual fix required.`
+              : rec.explanation || `AI fix failed validation: ${message}`,
+            bestPractices: rec.bestPractices,
+            educational: hasRegressions
+              ? `**Why Fix Failed**: The AI-generated fix would introduce new code quality issues.\n\n**Regressions Detected**:\n${regressionDetails.regressions.map((r: any) => `• **${r.rule}**: ${r.message}`).join('\n')}\n\n**Guidance**: ${regressionDetails.guidance}`
+              : rec.issueDescription
+                ? `**What**: ${rec.issueDescription.what}\n**Why**: ${rec.issueDescription.why}\n**Common Causes**: ${rec.issueDescription.causes?.join(', ')}`
+                : `Manual review required for ${enriched.ruleId} - AI fix failed validation`
+          });
+          manualReviewRequired++;
+          validationFailed++;
+        }
+      }
+
+      logger.info(`[FixGen] 📊 Validation summary: ${verified} verified ✅, ${validationFailed} failed ❌, ${alreadyFailed.length} generation failed`);
+
+      // Log pattern submissions for future reuse
+      const patternsSubmitted = validationResults.filter(r => r.validated).length;
+      if (patternsSubmitted > 0) {
+        logger.info(`[FixGen] 📚 Saved ${patternsSubmitted} new patterns to registry for future reuse`);
+      }
+
+      // Track failed issues
+      failed = result.failed.length;
+
+    } catch (e: any) {
+      logger.error('[FixGen] AI fix generation failed:', e.message);
+      failed = unmatchedIssues.length;
+    }
+  } else if (unmatchedIssues.length > 0) {
+    // No AI available - provide guidance instead of fake fixes
+    for (const issue of unmatchedIssues) {
+      fixes.set(issue.id, {
+        suggestion: null, // No actual fix available
+        confidence: 'none',
+        cached: false,
+        aiGenerated: false,
+        requiresManualFix: true,
+        educational: `This issue requires manual review. Check the ${issue.tool || 'tool'} documentation for ${issue.type || 'this rule'}.`,
+        guidance: getManualFixGuidance(issue)
+      });
+      failed++;
+    }
+  }
+
+  const total = issues.length;
+  const patternHitRate = total > 0 ? Math.round((patternHits / total) * 100) : 0;
+  const aiRate = total > 0 ? Math.round((aiGenerated / total) * 100) : 0;
+
+  // SESSION 77: Include manual review count in logging
+  logger.info(`[FixGen] Results: ${patternHits} pattern hits (${patternHitRate}%), ${aiGenerated} AI generated (${aiRate}%), ${manualReviewRequired} manual review, ${failed} failed`);
 
   return {
     fixes,
-    cacheStats: { hits, misses, hitRate: `${hitRate}%` }
+    cacheStats: {
+      hits: patternHits,
+      misses: aiGenerated + failed + manualReviewRequired,
+      hitRate: `${patternHitRate}%`,
+      aiGenerated,
+      manualReviewRequired, // SESSION 77: Track fixes needing manual review
+      failed
+    }
   };
 }
 
+// ============================================================================
+// SESSION 83: Fresh Context Fix Generation (Ralph-Inspired)
+// ============================================================================
+
+/**
+ * Generate fixes using Fresh Context pattern (Ralph-inspired).
+ *
+ * This approach:
+ * 1. Decomposes issues into "stories" (groups by file + rule)
+ * 2. Each fix attempt gets completely fresh AI context (no drift)
+ * 3. Accumulated learnings guide subsequent attempts
+ * 4. Failed patterns are tracked to prevent repetition
+ *
+ * Benefits over generateFixesWithHybridAgents:
+ * - Fresh 200K context per attempt (no conversation bloat)
+ * - Cross-fix awareness (Story 2 knows what Story 1 did)
+ * - Within-PR learnings (what worked/failed in this PR)
+ * - Cross-repo learnings (patterns from similar repos)
+ */
+async function generateFixesWithFreshContext(
+  issues: any[],
+  prInfo: { repository: string; prNumber: number; language: string },
+  options?: { maxIssuesForFix?: number }
+): Promise<{
+  fixes: Map<string, any>;
+  cacheStats: {
+    hits: number;
+    misses: number;
+    hitRate: string;
+    aiGenerated: number;
+    manualReviewRequired: number;
+    failed: number;
+  };
+  sessionInfo?: {
+    storiesCompleted: number;
+    storiesFailed: number;
+    totalAttempts: number;
+    learningsSaved: number;
+    aiCallsSaved: number; // Session 83b: AI calls saved via KB pattern propagation
+  };
+}> {
+  const fixes = new Map<string, any>();
+  let patternHits = 0;
+  let aiGenerated = 0;
+  let failed = 0;
+  let manualReviewRequired = 0;
+  const maxIssues = options?.maxIssuesForFix;
+
+  // Try to import dependencies
+  let AIFixerAgent: any = null;
+  let patternStore: any = null;
+
+  try {
+    const fixAgentModule = await import('@codequal/agents/fix-agent/agents/ai-fixer-agent');
+    AIFixerAgent = fixAgentModule.AIFixerAgent;
+    logger.info('[FreshContext] AIFixerAgent loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FreshContext] AIFixerAgent not available:', e.message);
+  }
+
+  try {
+    const patternModule = await import('@codequal/agents/fix-agent/fix-pattern-registry');
+    patternStore = patternModule.getSupabasePatternStore();
+    logger.info('[FreshContext] Pattern store loaded successfully');
+  } catch (e: any) {
+    logger.warn('[FreshContext] Pattern store not available:', e.message);
+  }
+
+  // Phase 1: Check pattern registry for cached fixes (FREE for all tiers)
+  if (patternStore) {
+    const patternResults = await Promise.all(
+      issues.map(async (issue) => {
+        try {
+          const pattern = await patternStore.lookupPattern(
+            issue.type,
+            issue.tool,
+            true,
+            issue.codeContext
+          );
+          return { issue, pattern };
+        } catch (e) {
+          return { issue, pattern: null };
+        }
+      })
+    );
+
+    for (const { issue, pattern } of patternResults) {
+      if (pattern && pattern.fix_template) {
+        fixes.set(issue.id, {
+          suggestion: pattern.fix_template.correctedCode || pattern.fix_template.fix,
+          confidence: pattern.confidence >= 0.8 ? 'high' : 'medium',
+          cached: true,
+          patternId: pattern.id,
+          educational: `This fix uses a proven pattern from our registry. ${pattern.description || ''}`
+        });
+        patternHits++;
+      }
+    }
+  }
+
+  // Phase 2: Use Fresh Context for remaining issues
+  let unmatchedIssues = issues.filter(i => !fixes.has(i.id));
+
+  if (maxIssues && unmatchedIssues.length > maxIssues) {
+    logger.info(`[FreshContext] Limiting from ${unmatchedIssues.length} to ${maxIssues} issues (maxIssuesForFix)`);
+    unmatchedIssues = unmatchedIssues.slice(0, maxIssues);
+  }
+
+  let sessionInfo: {
+    storiesCompleted: number;
+    storiesFailed: number;
+    totalAttempts: number;
+    learningsSaved: number;
+    aiCallsSaved: number;
+  } | undefined;
+
+  if (AIFixerAgent && unmatchedIssues.length > 0) {
+    try {
+      const fixer = new AIFixerAgent({ submitToRegistry: true });
+
+      // Convert issues to FreshContextIssue format
+      const freshIssues: FreshContextIssue[] = unmatchedIssues.map(issue => ({
+        id: issue.id,
+        ruleId: issue.type || issue.rule || 'unknown',
+        file: issue.file || 'unknown',
+        line: issue.line || 1,
+        column: issue.column,
+        message: issue.message || 'No message',
+        severity: mapToAISeverity(issue.severity),
+        codeContext: issue.codeContext,
+        language: prInfo.language || 'java',
+        tool: issue.tool || 'unknown',
+      }));
+
+      // Extract organization from repository URL
+      const orgMatch = prInfo.repository.match(/github\.com\/([^/]+)/);
+      const organization = orgMatch ? orgMatch[1] : 'unknown';
+
+      // Initialize Pattern-Aware Fix Service (Session 83b)
+      // Uses KB-first + pattern propagation to reduce AI calls
+      const freshContextService = new PatternAwareFixService(
+        prInfo.repository,
+        prInfo.prNumber,
+        prInfo.repository,
+        prInfo.language || 'java',
+        {
+          maxAttemptsPerStory: 3,
+          repositoryInfo: { organization },
+          minKBSuccessRate: 60, // Try KB pattern if 60%+ success rate
+          enablePropagation: true, // Propagate successful patterns to similar issues
+
+          // Apply pattern callback - lightweight AI call to apply KB pattern
+          applyPattern: async (pattern: PatternExample, issue: FreshContextIssue, kbGuidance?: FixGuidance) => {
+            logger.info(`[PatternAware] Applying pattern for ${issue.ruleId} to ${issue.file}:${issue.line}`);
+
+            // Build a focused prompt that applies the known pattern
+            const patternPrompt = kbGuidance
+              ? `Apply this fix pattern:\n${kbGuidance.promptAdditions}\n\nExample:\n${pattern.fixedCode}`
+              : `Apply this fix pattern:\n${pattern.fixedCode}`;
+
+            // Use AIFixerAgent with pattern context (simpler than full generation)
+            const aiIssue = {
+              id: issue.id,
+              validatorToolId: issue.tool,
+              ruleId: issue.ruleId,
+              file: issue.file,
+              line: issue.line,
+              message: issue.message,
+              severity: issue.severity,
+              language: issue.language,
+              originalConfidence: 30,
+              codeContext: issue.codeContext,
+              toolContext: { ruleDescription: issue.message }
+            };
+
+            const result = await fixer.processBatch([aiIssue], {
+              parallel: 1,
+              verbose: false,
+              additionalContext: patternPrompt
+            });
+
+            if (result.enrichedIssues.length > 0) {
+              const enriched = result.enrichedIssues[0];
+              const rec = enriched.fixRecommendation;
+              if (rec?.correctedCode) {
+                return { fixCode: rec.correctedCode, success: true };
+              }
+            }
+
+            return { fixCode: '', success: false };
+          },
+
+          // Generate fix callback - uses AIFixerAgent
+          generateFix: async (context: StoryFixContext) => {
+            logger.info(`[FreshContext] Generating fix for story ${context.story.id}: ${context.story.groupName}`);
+
+            // Convert context issues to AIFixerAgent format
+            const aiIssues = context.issues.map(issue => ({
+              id: issue.id,
+              validatorToolId: issue.tool,
+              ruleId: issue.ruleId,
+              file: issue.file,
+              line: issue.line,
+              message: issue.message,
+              severity: issue.severity,
+              language: issue.language,
+              originalConfidence: 30,
+              codeContext: issue.codeContext,
+              toolContext: { ruleDescription: issue.message }
+            }));
+
+            // Build enhanced prompt with context from fresh context service
+            const enhancedContext = [
+              context.repositoryLearnings,
+              context.learnings,
+              context.priorFixesInFiles,
+              context.priorAttempts.length > 0
+                ? `\n=== PRIOR ATTEMPTS (AVOID THESE) ===\n${context.priorAttempts.map(a =>
+                    `Attempt ${a.attemptNumber}: ${a.failureReason || 'Failed'}${a.regressions?.length ? ` - Regressions: ${a.regressions.map(r => r.rule).join(', ')}` : ''}`
+                  ).join('\n')}\n`
+                : ''
+            ].filter(Boolean).join('\n');
+
+            // Process with AI
+            const result = await fixer.processBatch(aiIssues, {
+              parallel: 1,
+              verbose: false,
+              additionalContext: enhancedContext
+            });
+
+            if (result.enrichedIssues.length > 0) {
+              const enriched = result.enrichedIssues[0];
+              const rec = enriched.fixRecommendation;
+              if (rec?.correctedCode) {
+                return {
+                  fixCode: rec.correctedCode,
+                  confidence: rec.confidence || 50,
+                };
+              }
+            }
+
+            throw new Error('AI did not generate fix code');
+          },
+
+          // Validate fix callback - uses PostApplyVerificationService
+          validateFix: async (fixCode: string, issues: FreshContextIssue[]) => {
+            logger.info(`[FreshContext] Validating fix for ${issues.length} issues`);
+
+            // Use the fixer's submitFixToRegistry which does validation
+            fixer.enableRegistrySubmission();
+
+            // Build a mock enriched issue for validation
+            const mockEnriched = {
+              id: issues[0].id,
+              ruleId: issues[0].ruleId,
+              file: issues[0].file,
+              line: issues[0].line,
+              message: issues[0].message,
+              severity: issues[0].severity,
+              language: issues[0].language,
+            };
+
+            const mockRec = {
+              correctedCode: fixCode,
+              confidence: 70,
+              explanation: 'Fresh context generated fix',
+            };
+
+            try {
+              const validation = await fixer.submitFixToRegistry(mockEnriched, mockRec);
+              if (validation.submitted) {
+                return { passed: true };
+              }
+
+              // Check for regressions
+              if (validation.regressionDetails?.hasRegressions) {
+                return {
+                  passed: false,
+                  regressions: validation.regressionDetails.regressions.map((r: any) => ({
+                    rule: r.rule,
+                    message: r.message,
+                  })),
+                  error: 'Fix caused regressions',
+                };
+              }
+
+              return {
+                passed: false,
+                error: validation.message || 'Validation failed',
+              };
+            } catch (e: any) {
+              return {
+                passed: false,
+                error: e.message || 'Validation error',
+              };
+            }
+          },
+        }
+      );
+
+      // Initialize with issues
+      freshContextService.initialize(freshIssues);
+
+      // Process all stories
+      logger.info(`[FreshContext] Starting fresh context processing for ${freshIssues.length} issues`);
+      const result = await freshContextService.processAllStories();
+
+      // Save learnings to repository KB
+      const learningsSaved = await freshContextService.saveLearningsToRepository();
+
+      sessionInfo = {
+        storiesCompleted: result.completed,
+        storiesFailed: result.failed,
+        totalAttempts: result.totalAttempts,
+        learningsSaved,
+        aiCallsSaved: result.aiCallsSaved || 0, // Session 83b: Track AI calls saved via pattern propagation
+      };
+
+      logger.info(`[PatternAware] Completed: ${result.completed} stories fixed, ${result.failed} failed, ${result.totalAttempts} total attempts, ${learningsSaved} learnings saved, ${result.aiCallsSaved || 0} AI calls saved`);
+
+      // Get the state to extract fixes
+      const state = freshContextService.getState();
+
+      for (const story of state.fixStories) {
+        if (story.status === 'fixed' && story.fixCode) {
+          // Story completed successfully
+          for (const issueId of story.issueIds) {
+            fixes.set(issueId, {
+              suggestion: story.fixCode,
+              confidence: 'high',
+              cached: false,
+              aiGenerated: true,
+              validationStatus: 'verified',
+              freshContext: true,
+              storyId: story.id,
+              educational: `AI-generated fix using fresh context pattern for ${story.ruleIds.join(', ')}`
+            });
+            aiGenerated++;
+          }
+        } else {
+          // Story failed - provide manual guidance
+          for (const issueId of story.issueIds) {
+            const issue = unmatchedIssues.find(i => i.id === issueId);
+            fixes.set(issueId, {
+              suggestion: null,
+              confidence: 'manual',
+              cached: false,
+              aiGenerated: false,
+              manualRequired: true,
+              validationStatus: story.status === 'failed' ? 'failed_validation' : 'skipped',
+              reason: story.lastError || 'Fix generation failed after multiple attempts',
+              remediationSteps: [
+                `1. Review the issue at ${issue?.file || 'unknown'}:${issue?.line || 0}`,
+                `2. Rule: ${story.ruleIds.join(', ')}`,
+                '3. AI fix generation failed - apply fix manually',
+                '4. Run static analysis to verify no new issues'
+              ],
+              riskLevel: 'medium',
+              estimatedEffort: 'moderate',
+              educational: `Manual review required for ${story.ruleIds.join(', ')} - AI fix attempts failed`
+            });
+            manualReviewRequired++;
+          }
+        }
+      }
+
+      // Cleanup state files
+      freshContextService.cleanup();
+
+    } catch (e: any) {
+      logger.error('[FreshContext] Fresh context fix generation failed:', e.message);
+      failed = unmatchedIssues.length;
+
+      // Fall back to manual guidance
+      for (const issue of unmatchedIssues) {
+        fixes.set(issue.id, {
+          suggestion: null,
+          confidence: 'none',
+          cached: false,
+          aiGenerated: false,
+          requiresManualFix: true,
+          educational: `This issue requires manual review. Check the ${issue.tool || 'tool'} documentation for ${issue.type || 'this rule'}.`,
+          guidance: getManualFixGuidance(issue)
+        });
+      }
+    }
+  } else if (unmatchedIssues.length > 0) {
+    // No AI available - provide guidance
+    for (const issue of unmatchedIssues) {
+      fixes.set(issue.id, {
+        suggestion: null,
+        confidence: 'none',
+        cached: false,
+        aiGenerated: false,
+        requiresManualFix: true,
+        educational: `This issue requires manual review. Check the ${issue.tool || 'tool'} documentation for ${issue.type || 'this rule'}.`,
+        guidance: getManualFixGuidance(issue)
+      });
+      failed++;
+    }
+  }
+
+  const total = issues.length;
+  const patternHitRate = total > 0 ? Math.round((patternHits / total) * 100) : 0;
+  const aiRate = total > 0 ? Math.round((aiGenerated / total) * 100) : 0;
+
+  logger.info(`[FreshContext] Results: ${patternHits} pattern hits (${patternHitRate}%), ${aiGenerated} AI generated (${aiRate}%), ${manualReviewRequired} manual review, ${failed} failed`);
+
+  return {
+    fixes,
+    cacheStats: {
+      hits: patternHits,
+      misses: aiGenerated + failed + manualReviewRequired,
+      hitRate: `${patternHitRate}%`,
+      aiGenerated,
+      manualReviewRequired,
+      failed
+    },
+    sessionInfo,
+  };
+}
+
+/**
+ * Map severity to AI-compatible format
+ */
+function mapToAISeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+  const s = (severity || '').toLowerCase();
+  if (s === 'critical' || s === 'error') return 'critical';
+  if (s === 'high' || s === 'warning') return 'high';
+  if (s === 'medium' || s === 'moderate') return 'medium';
+  return 'low';
+}
+
+/**
+ * SESSION 80: Generate specific guidance steps for regressions
+ * Provides actionable steps based on the type of regression detected
+ */
+function getRegressionGuidanceSteps(regressions: Array<{ rule: string; message: string; line?: number }>): string[] {
+  const steps: string[] = [];
+  const seenGuidance = new Set<string>();
+
+  for (const regression of regressions) {
+    const rule = regression.rule.toLowerCase();
+
+    // EmptyCatchBlock - most common regression
+    if (rule.includes('emptycatch') || rule.includes('empty_catch')) {
+      if (!seenGuidance.has('emptycatch')) {
+        steps.push('   • For catch blocks: Log the exception, then either rethrow or handle gracefully');
+        steps.push('     Example: catch(IOException e) { logger.error("Failed", e); throw new RuntimeException(e); }');
+        seenGuidance.add('emptycatch');
+      }
+    }
+
+    // AvoidCatchingThrowable
+    if (rule.includes('avoidcatchingthrowable') || rule.includes('catching_throwable')) {
+      if (!seenGuidance.has('throwable')) {
+        steps.push('   • Catch specific exceptions (IOException, SQLException) instead of Throwable');
+        steps.push('     Catching Throwable also catches Errors like OutOfMemoryError');
+        seenGuidance.add('throwable');
+      }
+    }
+
+    // CloseResource
+    if (rule.includes('closeresource') || rule.includes('resource_leak')) {
+      if (!seenGuidance.has('resource')) {
+        steps.push('   • Use try-with-resources for auto-closing: try (var stream = new FileInputStream(f)) { ... }');
+        steps.push('     Ensure resources implement AutoCloseable');
+        seenGuidance.add('resource');
+      }
+    }
+
+    // UseUtilityClass
+    if (rule.includes('useutilityclass') || rule.includes('utility')) {
+      if (!seenGuidance.has('utility')) {
+        steps.push('   • Add private constructor to utility class to prevent instantiation');
+        steps.push('     Example: private ClassName() { throw new UnsupportedOperationException(); }');
+        seenGuidance.add('utility');
+      }
+    }
+
+    // Generic fallback
+    if (steps.length === 0) {
+      steps.push(`   • Review documentation for ${regression.rule}`);
+    }
+  }
+
+  return steps;
+}
+
+/**
+ * Generate manual fix guidance when AI is not available
+ */
+function getManualFixGuidance(issue: any): string {
+  const tool = (issue.tool || '').toLowerCase();
+  const type = issue.type || issue.rule || '';
+
+  const toolDocs: Record<string, string> = {
+    semgrep: `https://semgrep.dev/r?q=${encodeURIComponent(type)}`,
+    eslint: `https://eslint.org/docs/rules/${type}`,
+    pmd: 'https://pmd.github.io/latest/pmd_rules_java.html',
+    checkstyle: 'https://checkstyle.sourceforge.io/checks.html',
+    spotbugs: 'https://spotbugs.readthedocs.io/en/stable/bugDescriptions.html',
+    bandit: 'https://bandit.readthedocs.io/en/latest/plugins/',
+    ruff: `https://docs.astral.sh/ruff/rules/${type}`,
+    trivy: 'https://aquasecurity.github.io/trivy/',
+    checkov: 'https://www.checkov.io/5.Policy%20Index/all.html'
+  };
+
+  return toolDocs[tool] || `Search for: "${tool} ${type} fix"`;
+}
+
+/**
+ * Calculate scores based on issue categorization
+ *
+ * SESSION 70: Fixed score calculation - now properly maps issues to categories
+ * based on tool type and issue characteristics, not just issue.type
+ */
 function calculateScores(issues: any[]) {
   const baseScore = 100;
   const deductions: Record<string, number> = {
-    critical: 10,
-    high: 5,
-    medium: 2,
-    low: 1
+    critical: 5,   // Reduced from 10 for more realistic scores
+    high: 3,       // Reduced from 5
+    medium: 1,     // Reduced from 2
+    low: 0.5       // Reduced from 1
   };
 
   const scores: Record<string, number> = {
@@ -1466,18 +2912,94 @@ function calculateScores(issues: any[]) {
     dependencies: baseScore
   };
 
+  // Issue counts per category for debugging
+  const categoryCounts: Record<string, number> = {
+    security: 0,
+    quality: 0,
+    performance: 0,
+    architecture: 0,
+    dependencies: 0
+  };
+
   issues.forEach(issue => {
-    const deduction = deductions[issue.severity] || 0;
-    if (scores[issue.type] !== undefined) {
-      scores[issue.type] = Math.max(0, scores[issue.type] - deduction);
+    const deduction = deductions[issue.severity] || 1;
+    const category = categorizeIssueForScoring(issue);
+
+    if (scores[category] !== undefined) {
+      scores[category] = Math.max(0, scores[category] - deduction);
+      categoryCounts[category]++;
     }
   });
 
-  const overall = Math.round(
-    Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length
-  );
+  // Round scores to 1 decimal
+  Object.keys(scores).forEach(key => {
+    scores[key] = Math.round(scores[key] * 10) / 10;
+  });
+
+  // Overall score is the MINIMUM (weakest link) - same as V9 production
+  const overall = Math.round(Math.min(
+    scores.security,
+    scores.quality,
+    scores.performance,
+    scores.architecture,
+    scores.dependencies
+  ));
+
+  logger.debug('[Score] Category breakdown:', categoryCounts);
+  logger.debug('[Score] Scores:', scores);
 
   return { overall, ...scores };
+}
+
+/**
+ * Categorize an issue into one of the 5 scoring categories
+ * Based on tool type and issue characteristics
+ */
+function categorizeIssueForScoring(issue: any): string {
+  const tool = (issue.tool || '').toLowerCase();
+  const type = (issue.type || issue.rule || '').toLowerCase();
+  const category = (issue.category || '').toLowerCase();
+  const message = (issue.message || '').toLowerCase();
+
+  // Security tools and patterns
+  const securityTools = ['semgrep', 'gitleaks', 'trufflehog', 'bandit', 'gosec', 'brakeman', 'trivy', 'grype', 'checkov'];
+  const securityPatterns = ['security', 'inject', 'xss', 'csrf', 'secret', 'auth', 'crypto', 'sql', 'path-traversal', 'command-injection', 'cwe-'];
+
+  if (securityTools.includes(tool) || category === 'secrets' || category === 'iac') {
+    return 'security';
+  }
+  if (securityPatterns.some(p => type.includes(p) || message.includes(p))) {
+    return 'security';
+  }
+
+  // Dependency/vulnerability tools
+  const depTools = ['dependency-check', 'npm-audit', 'pip-audit', 'bundler-audit', 'cargo-audit', 'govulncheck'];
+  if (depTools.includes(tool) || category === 'dependency') {
+    return 'dependencies';
+  }
+  if (type.includes('cve-') || type.includes('vulnerability') || message.includes('vulnerable')) {
+    return 'dependencies';
+  }
+
+  // Architecture tools
+  const archTools = ['jdepend', 'madge', 'dependency-cruiser', 'pydeps', 'import-linter', 'go-arch-lint', 'packwerk', 'deptrac', 'cargo-modules'];
+  if (archTools.includes(tool)) {
+    return 'architecture';
+  }
+  if (type.includes('circular') || type.includes('coupling') || type.includes('architecture')) {
+    return 'architecture';
+  }
+
+  // Performance patterns
+  if (type.includes('performance') || type.includes('complexity') || type.includes('n+1') || type.includes('slow')) {
+    return 'performance';
+  }
+  if (message.includes('performance') || message.includes('complexity') || message.includes('expensive')) {
+    return 'performance';
+  }
+
+  // Default to quality for linting and style tools
+  return 'quality';
 }
 
 function generateSummary(issues: any[], fixes: Map<string, any>) {
@@ -1510,68 +3032,496 @@ function calculateCostEstimate(issueCount: number, cacheStats: any): number {
   return apiCalls * costPerApiCall;
 }
 
-function generateV9Report(data: any) {
+/**
+ * Generate comprehensive V9 report using V9GroupedReportFormatter
+ * This produces the full 2000+ line report with all sections
+ */
+async function generateV9Report(data: any, userTier: 'basic' | 'pro' = 'basic') {
   const grade = data.scores.overall >= 90 ? 'A' :
                 data.scores.overall >= 80 ? 'B' :
                 data.scores.overall >= 70 ? 'C' :
                 data.scores.overall >= 60 ? 'D' : 'F';
 
-  const markdown = `
-# V9 Analysis Report
+  try {
+    // Convert issues to format expected by groupIssues
+    // All issues from single-branch analysis are categorized as EXISTING_REST (pre-existing in codebase)
+    // For proper NEW/EXISTING categorization, we need two-branch comparison (main vs PR)
+    const enrichedIssues = (data.issues || []).map((issue: any) => {
+      // Determine category: use provided category, or default to EXISTING_REST for tool findings
+      let category = issue.category;
+      if (!category || !['NEW', 'EXISTING_MODIFIED', 'RESOLVED', 'EXISTING_REST'].includes(category)) {
+        // Default: issues from tool scans are existing in the codebase
+        category = 'EXISTING_REST';
+      }
 
-## Repository: ${data.repository}
-## PR #${data.prNumber}
-## Language: ${data.language.toUpperCase()}
+      return {
+        file: issue.file || 'unknown',
+        line: issue.line || 1,
+        column: issue.column,
+        rule: issue.rule || issue.ruleId || 'unknown',
+        tool: issue.tool || 'unknown',
+        severity: issue.severity || 'medium',
+        message: issue.message || issue.description || '',
+        category: category,
+        detectedCategory: issue.detectedCategory || 'code_quality',
+        snippet: issue.snippet || '',
+        fixSuggestion: issue.fix ? {
+          fix: issue.fix,
+          correctedCode: issue.fixedCode || '',
+          explanation: issue.fixExplanation || ''
+        } : undefined
+      };
+    });
 
-### Executive Summary
-- **Overall Score**: ${data.scores.overall}/100 (Grade: ${grade})
-- **Total Issues**: ${data.summary.totalIssues}
-- **Critical Issues**: ${data.summary.critical}
-- **High Issues**: ${data.summary.high}
-- **Fixed Automatically**: ${data.summary.fixed}
-- **Cache Hit Rate**: ${data.metrics.cacheHitRate}
+    // Group issues for the formatter
+    const groupingResult = groupIssues(enrichedIssues);
 
-### Score Breakdown
-| Category | Score |
-|----------|-------|
-| Security | ${data.scores.security}/100 |
-| Quality | ${data.scores.quality}/100 |
-| Performance | ${data.scores.performance}/100 |
-| Architecture | ${data.scores.architecture}/100 |
-| Dependencies | ${data.scores.dependencies}/100 |
+    // Create formatter (null = use patterns only, no AI calls for cost efficiency)
+    const formatter = new V9GroupedReportFormatter(null, data.language || 'java', 'medium');
 
-### Performance Metrics
-- **Analysis Time**: ${data.metrics.analysisTime}ms
-- **Tool Execution**: ${data.metrics.toolsExecutionTime}ms
-- **Fix Generation**: ${data.metrics.fixGenerationTime}ms
-- **Cost Estimate**: $${data.metrics.costEstimate.toFixed(4)}
+    // Build metadata for the formatter
+    const repoName = data.repository.split('/').slice(-2).join('/');
+    const metadata = {
+      repository: repoName,
+      repoUrl: data.repository,
+      repoPath: data.repoPath || '', // Used for code snippet extraction
+      prNumber: data.prNumber || 0,
+      prTitle: data.prTitle || `PR #${data.prNumber}`,
+      branch: `pr-${data.prNumber}`,
+      baseBranch: 'main',
+      prAuthor: data.prAuthor || 'unknown',
+      prAuthorEmail: data.prAuthorEmail || 'unknown@example.com',
+      organizationName: data.repository.split('/')[3] || 'unknown',
+      totalFiles: enrichedIssues.length > 0 ? new Set(enrichedIssues.map((i: any) => i.file)).size : 0,
+      totalLinesOfCode: 0,
+      filesModified: new Set(enrichedIssues.map((i: any) => i.file)).size,
+      linesAdded: data.linesAdded || 0,
+      linesDeleted: data.linesDeleted || 0,
+      decision: (data.summary?.critical || 0) > 0 ||
+                enrichedIssues.some((i: any) => i.category === 'NEW' && (i.severity === 'critical' || i.severity === 'high'))
+                  ? 'DECLINED' : 'APPROVED',
+      blockingCount: enrichedIssues.filter((i: any) =>
+        i.category === 'NEW' && (i.severity === 'critical' || i.severity === 'high')
+      ).length,
+      totalDuration: data.metrics?.analysisTime || 0,
+      cloneTime: 0,
+      analysisTime: data.metrics?.analysisTime || 0,
+      reportGenerationTime: 0,
+      analyzedAt: new Date().toISOString(),
+      analyzerVersion: '9.0.0',
+      // Provide mock tool performance if not available (simulation mode)
+      toolPerformance: data.toolPerformance?.length > 0 ? data.toolPerformance : [
+        { tool: 'semgrep', duration: 5000, issuesFound: Math.ceil((data.issues?.length || 0) / 2) },
+        { tool: 'checkstyle', duration: 3000, issuesFound: Math.floor((data.issues?.length || 0) / 2) }
+      ],
+      agentPerformance: data.agentPerformance?.length > 0 ? data.agentPerformance : [
+        { agent: 'Security Agent', model: 'mock', duration: 2000, cost: 0 },
+        { agent: 'Code Quality Agent', model: 'mock', duration: 3000, cost: 0 }
+      ],
+      userTier: userTier
+    };
 
-### Recommendations
-1. Address ${data.summary.critical} critical issues immediately
-2. Review ${data.summary.high} high-priority issues
-3. Consider automated fixes for ${data.summary.fixed} issues
-`;
+    // Generate comprehensive report using V9GroupedReportFormatter (ONLY formatter - no legacy fallback)
+    const result = await formatter.generateGroupedReport(enrichedIssues, groupingResult.groups, metadata);
+
+    logger.info('Report generated successfully', {
+      markdownLength: result.markdown?.length || 0,
+      issueCount: enrichedIssues.length,
+      prNumber: data.prNumber
+    });
+
+    return {
+      markdown: result.markdown,
+      html: result.markdown, // Could convert to HTML if needed
+      grade,
+      attachments: result.attachments,
+      ideFixFiles: result.ideFixFiles,
+      recommendations: [
+        `Address ${data.summary?.critical || 0} critical issues immediately`,
+        `Review ${data.summary?.high || 0} high-priority issues`,
+        `Consider automated fixes for ${data.summary?.fixed || 0} issues`
+      ],
+      businessImpact: {
+        riskScore: 100 - data.scores.overall,
+        technicalDebt: `${(data.summary?.totalIssues || 0) * 30} minutes`,
+        estimatedFixTime: `${Math.ceil((data.summary?.totalIssues || 0) * 0.5)} hours`,
+        priorityActions: [
+          'Fix critical security vulnerabilities',
+          'Address performance bottlenecks',
+          'Improve code quality metrics'
+        ]
+      }
+    };
+  } catch (error) {
+    // No fallback - V9GroupedReportFormatter is the ONLY formatter
+    // Log error details for debugging
+    logger.error('V9GroupedReportFormatter failed - this is the only formatter, no fallback', {
+      error: (error as any)?.message,
+      stack: (error as any)?.stack,
+      repository: data.repository,
+      prNumber: data.prNumber
+    });
+
+    // Re-throw to fail fast - no legacy fallback
+    throw new Error(`Report generation failed: ${(error as any)?.message}`);
+  }
+}
+
+/**
+ * SESSION 70: Calculate REAL gamification data based on analysis results
+ *
+ * XP System (from GAMIFICATION_SCORING_GUIDE.md):
+ * - Base Analysis: +10 XP
+ * - Per issue fixed: +5 XP
+ * - Critical fix bonus: +20 XP
+ * - High fix bonus: +15 XP
+ * - Security fix bonus: +10 XP
+ * - Perfect score (>=95): +100 XP
+ *
+ * Level System:
+ * Level 1: 0 XP, Level 2: 100 XP, Level 3: 250 XP, Level 4: 500 XP, Level 5: 1000 XP
+ */
+function calculateRealGamification(result: any, isPro: boolean) {
+  const breakdown: { action: string; xp: number }[] = [];
+  let totalXP = 0;
+
+  // Base analysis XP
+  totalXP += 10;
+  breakdown.push({ action: 'Complete Analysis', xp: 10 });
+
+  // Count resolved issues (issues YOU fixed)
+  const resolvedIssues = result.issues?.filter((i: any) =>
+    i.category === 'RESOLVED' || i.status === 'resolved'
+  ) || [];
+  const resolvedCount = resolvedIssues.length;
+
+  if (resolvedCount > 0) {
+    const resolvedXP = resolvedCount * 5;
+    totalXP += resolvedXP;
+    breakdown.push({ action: `Resolve ${resolvedCount} Issues (You)`, xp: resolvedXP });
+  }
+
+  // Count critical/high severity resolved issues for bonuses
+  const criticalResolved = resolvedIssues.filter((i: any) => i.severity === 'critical').length;
+  const highResolved = resolvedIssues.filter((i: any) => i.severity === 'high').length;
+
+  if (criticalResolved > 0) {
+    const criticalBonus = criticalResolved * 20;
+    totalXP += criticalBonus;
+    breakdown.push({ action: `Critical Fix Bonus (${criticalResolved}x)`, xp: criticalBonus });
+  }
+
+  if (highResolved > 0) {
+    const highBonus = highResolved * 15;
+    totalXP += highBonus;
+    breakdown.push({ action: `High Fix Bonus (${highResolved}x)`, xp: highBonus });
+  }
+
+  // Security fix bonus
+  const securityResolved = resolvedIssues.filter((i: any) =>
+    categorizeIssueForScoring(i) === 'security'
+  ).length;
+
+  if (securityResolved > 0) {
+    const securityBonus = securityResolved * 10;
+    totalXP += securityBonus;
+    breakdown.push({ action: `Security Fix Bonus (${securityResolved}x)`, xp: securityBonus });
+  }
+
+  // PRO tier: Auto-fix bonus
+  if (isPro && result.summary?.fixed > 0) {
+    const proFixXP = result.summary.fixed * 5;
+    totalXP += proFixXP;
+    breakdown.push({ action: `PRO Auto-Fix (${result.summary.fixed}x)`, xp: proFixXP });
+  }
+
+  // Perfect score bonus
+  if (result.score?.overall >= 95) {
+    totalXP += 100;
+    breakdown.push({ action: 'Perfect Score (>=95)', xp: 100 });
+  }
+
+  // Calculate level from XP
+  const levels = [
+    { level: 1, xp: 0, title: 'Newcomer' },
+    { level: 2, xp: 100, title: 'Apprentice' },
+    { level: 3, xp: 250, title: 'Developer' },
+    { level: 4, xp: 500, title: 'Craftsman' },
+    { level: 5, xp: 1000, title: 'Expert' },
+    { level: 6, xp: 2000, title: 'Master' },
+    { level: 7, xp: 4000, title: 'Grandmaster' },
+    { level: 8, xp: 8000, title: 'Legend' },
+    { level: 9, xp: 16000, title: 'Mythic' },
+    { level: 10, xp: 32000, title: 'Transcendent' }
+  ];
+
+  // For now, assume cumulative XP starts at 0 (would come from user profile in production)
+  const cumulativeXP = totalXP;
+  const currentLevel = levels.filter(l => l.xp <= cumulativeXP).pop() || levels[0];
+  const nextLevel = levels.find(l => l.xp > cumulativeXP) || levels[levels.length - 1];
+
+  // Calculate skill levels based on issue types fixed
+  const skills = calculateSkillLevels(result, resolvedIssues);
+
+  // Generate achievements based on analysis
+  const achievements = generateAchievements(result, resolvedIssues, isPro);
 
   return {
-    markdown,
-    html: markdown, // Convert to HTML in production
-    grade,
-    recommendations: [
-      `Address ${data.summary.critical} critical issues immediately`,
-      `Review ${data.summary.high} high-priority issues`,
-      `Consider automated fixes for ${data.summary.fixed} issues`
-    ],
-    businessImpact: {
-      riskScore: 100 - data.scores.overall,
-      technicalDebt: `${data.summary.totalIssues * 30} minutes`,
-      estimatedFixTime: `${Math.ceil(data.summary.totalIssues * 0.5)} hours`,
-      priorityActions: [
-        'Fix critical security vulnerabilities',
-        'Address performance bottlenecks',
-        'Improve code quality metrics'
-      ]
+    xp: {
+      totalXP,
+      breakdown,
+      cumulativeXP,
+      currentLevel: currentLevel.level,
+      currentTitle: currentLevel.title,
+      nextLevelXP: nextLevel.xp,
+      progressToNextLevel: Math.round(((cumulativeXP - currentLevel.xp) / (nextLevel.xp - currentLevel.xp)) * 100)
+    },
+    skills: {
+      skills,
+      achievements,
+      streaks: {
+        current: 1, // Would come from user profile in production
+        longest: 1,
+        lastActivity: new Date().toISOString()
+      }
     }
   };
 }
+
+/**
+ * Calculate skill levels based on issues resolved per category
+ */
+function calculateSkillLevels(result: any, resolvedIssues: any[]) {
+  const skillCategories = ['security', 'quality', 'performance', 'architecture', 'dependencies'];
+
+  return skillCategories.map(category => {
+    // Count resolved issues in this category
+    const categoryResolved = resolvedIssues.filter(i =>
+      categorizeIssueForScoring(i) === category
+    ).length;
+
+    // XP per category = 10 per resolved issue
+    const categoryXP = categoryResolved * 10;
+
+    // Level thresholds: 50, 100, 200, 400, 800
+    const thresholds = [0, 50, 100, 200, 400, 800];
+    const level = thresholds.filter(t => t <= categoryXP).length;
+    const nextThreshold = thresholds[level] || 800;
+
+    return {
+      name: category.charAt(0).toUpperCase() + category.slice(1),
+      level: Math.min(level, 5),
+      xp: categoryXP,
+      nextLevelXp: nextThreshold,
+      issuesFixed: categoryResolved
+    };
+  });
+}
+
+/**
+ * Generate achievements based on analysis results
+ */
+function generateAchievements(result: any, resolvedIssues: any[], isPro: boolean) {
+  const achievements: any[] = [];
+
+  // First Analysis
+  achievements.push({
+    id: 'first-analysis',
+    name: 'First Analysis',
+    description: 'Completed your first PR analysis',
+    earned: true
+  });
+
+  // Security Champion (10 security issues fixed)
+  const securityFixed = resolvedIssues.filter(i =>
+    categorizeIssueForScoring(i) === 'security'
+  ).length;
+  achievements.push({
+    id: 'security-champion',
+    name: 'Security Champion',
+    description: 'Fixed 10 security issues',
+    earned: securityFixed >= 10,
+    progress: securityFixed,
+    target: 10
+  });
+
+  // Perfect Score
+  achievements.push({
+    id: 'perfect-score',
+    name: 'Perfect Score',
+    description: 'Achieved a score of 95 or higher',
+    earned: result.score?.overall >= 95
+  });
+
+  // Bug Squasher (50 issues resolved)
+  achievements.push({
+    id: 'bug-squasher',
+    name: 'Bug Squasher',
+    description: 'Fixed 50 issues total',
+    earned: resolvedIssues.length >= 50,
+    progress: resolvedIssues.length,
+    target: 50
+  });
+
+  // PRO tier achievements
+  if (isPro) {
+    const autoFixCount = result.summary?.fixed || 0;
+    achievements.push({
+      id: 'automation-master',
+      name: 'Automation Master',
+      description: 'Used PRO auto-fix on 100 issues',
+      earned: autoFixCount >= 100,
+      progress: autoFixCount,
+      target: 100
+    });
+  }
+
+  return achievements;
+}
+
+// ============================================================================
+// SESSION 79: APPLY FIXES WITH VERIFICATION
+// ============================================================================
+
+/**
+ * Apply fixes with verification endpoint
+ *
+ * Request body:
+ * - analysisId: string - The analysis ID containing fixes to apply
+ * - fixes: VerifiedFix[] - Array of fixes to apply
+ * - verificationLevel: 'quick_apply' | 'standard_verify' | 'full_regression'
+ * - autoCommit: boolean - Whether to auto-commit after successful application
+ * - repositoryPath: string - Local path to the repository
+ */
+const ApplyFixesRequestSchema = z.object({
+  analysisId: z.string(),
+  fixes: z.array(z.object({
+    id: z.string(),
+    file: z.string(),
+    line: z.number(),
+    column: z.number().optional(),
+    ruleId: z.string(),
+    tool: z.string(),
+    originalCode: z.string(),
+    fixedCode: z.string(),
+    validationStatus: z.enum(['verified', 'failed_validation', 'failed_generation']),
+    confidence: z.enum(['high', 'medium', 'low', 'manual'])
+  })),
+  verificationLevel: z.enum(['quick_apply', 'standard_verify', 'full_regression']),
+  autoCommit: z.boolean().default(false),
+  repositoryPath: z.string()
+});
+
+/**
+ * @swagger
+ * /api/v9/apply-fixes:
+ *   post:
+ *     summary: Apply verified fixes with optional regression checking
+ *     description: Applies fixes to files with configurable verification levels
+ *     tags: [Fixes]
+ */
+router.post('/apply-fixes', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
+  try {
+    const validation = ApplyFixesRequestSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        details: validation.error.errors
+      });
+    }
+
+    const { analysisId, fixes, verificationLevel, autoCommit, repositoryPath } = validation.data;
+
+    logger.info(`[ApplyFixes] Starting fix application`, {
+      analysisId,
+      totalFixes: fixes.length,
+      verificationLevel,
+      autoCommit
+    });
+
+    // Filter to only verified fixes
+    const verifiedFixes = fixes.filter(f => f.validationStatus === 'verified');
+    if (verifiedFixes.length === 0) {
+      return res.status(400).json({
+        error: 'No verified fixes to apply',
+        message: 'All provided fixes either failed validation or generation',
+        totalProvided: fixes.length,
+        verified: 0
+      });
+    }
+
+    logger.info(`[ApplyFixes] ${verifiedFixes.length} verified fixes out of ${fixes.length} total`);
+
+    // Apply fixes with verification
+    const verificationService = new PostApplyVerificationService();
+    const result = await verificationService.applyWithVerification({
+      analysisId,
+      repositoryPath,
+      fixes: verifiedFixes,
+      verificationLevel,
+      autoCommit
+    });
+
+    const duration = Date.now() - startTime;
+
+    // Log summary
+    logger.info(`[ApplyFixes] Complete`, {
+      applied: result.applied,
+      skipped: result.skipped,
+      reverted: result.reverted,
+      failed: result.failed,
+      duration: `${duration}ms`,
+      commitSha: result.commitSha
+    });
+
+    return res.json({
+      success: result.success,
+      summary: {
+        totalFixes: result.totalFixes,
+        applied: result.applied,
+        skipped: result.skipped,
+        reverted: result.reverted,
+        failed: result.failed
+      },
+      results: result.results,
+      commit: result.commitSha ? {
+        sha: result.commitSha,
+        message: `Applied ${result.applied} verified code quality fixes`
+      } : null,
+      regressions: result.regressionsSummary,
+      timing: {
+        duration: `${duration}ms`,
+        verificationLevel
+      }
+    });
+  } catch (error: any) {
+    logger.error('[ApplyFixes] Failed:', error);
+    return res.status(500).json({
+      error: 'Failed to apply fixes',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v9/verification-levels:
+ *   get:
+ *     summary: Get available verification levels and descriptions
+ *     description: Returns all verification levels with their descriptions and recommendations
+ *     tags: [Fixes]
+ */
+router.get('/verification-levels', (_req: Request, res: Response) => {
+  return res.json({
+    levels: Object.entries(VERIFICATION_LEVELS).map(([key, value]) => ({
+      id: key,
+      ...value
+    })),
+    default: 'standard_verify',
+    recommendation: 'Use standard_verify for most PRs. Use full_regression for critical codebases.'
+  });
+});
 
 export default router;

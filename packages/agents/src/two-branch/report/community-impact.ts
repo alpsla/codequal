@@ -48,15 +48,23 @@ export interface CommunityPrivacyPrefs {
  *
  * @param impact - Community impact summary data
  * @param prefs - User privacy preferences
+ * @param tier - User tier (basic, pro, enterprise) - SESSION 73: Added for tier differentiation
  * @returns Markdown section for the report
  */
 export function generateCommunityImpactSection(
   impact: CommunityImpactSummary,
-  prefs: CommunityPrivacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false }
+  prefs: CommunityPrivacyPrefs = { isAnonymous: false, showOnLeaderboard: true, shareProfile: false },
+  tier: 'basic' | 'pro' | 'enterprise' = 'basic'
 ): string {
-  // No contributions yet
+  // SESSION 77: BASIC tier should NOT show contributing section (PRO feature)
+  if (tier === 'basic') {
+    return generateBasicTierSection();
+  }
+
+  // No contributions yet (PRO/Enterprise only reach here)
   if (impact.totalPatternsContributed === 0) {
-    return generateNewContributorSection();
+    // SESSION 73: PRO tier auto-saves patterns, so show different message
+    return generateProAutoSaveSection();
   }
 
   // Anonymous contributor
@@ -69,7 +77,35 @@ export function generateCommunityImpactSection(
 }
 
 /**
+ * Section for BASIC tier users - SESSION 77
+ * Shows pattern library benefits without contribution messaging
+ */
+function generateBasicTierSection(): string {
+  return `
+## 🌟 Community Pattern Library
+
+### Powered by the Community
+
+Your analysis benefits from **community-contributed fix patterns** that provide
+instant, proven solutions for common issues.
+
+**What you get with BASIC:**
+- ✅ Access to community pattern library
+- ✅ Instant pattern-based fixes (when available)
+- ✅ Educational insights from tool analysis
+- ✅ IDE export formats (SARIF, GitLab, Checkstyle)
+
+**Upgrade to PRO for:**
+- 🤖 AI-generated fixes for ALL issues
+- 📝 Contribute your own patterns to help others
+- 🏆 Recognition on community leaderboards
+- ⏱️ Track your community impact
+`;
+}
+
+/**
  * Section for users who haven't contributed patterns yet
+ * NOTE: Only shown for PRO/Enterprise users who haven't contributed yet
  */
 function generateNewContributorSection(): string {
   return `
@@ -91,8 +127,31 @@ your patterns can be saved to help other developers facing the same issues.
 - 📊 See how many developers you've helped
 - ⏱️ Track total time saved across the community
 - 🎯 Build your developer reputation
+`;
+}
 
-> 💡 **Tip**: Enable "Save patterns" in settings to start contributing automatically.
+/**
+ * Section for PRO tier users - patterns are auto-saved
+ * SESSION 73: Added for tier differentiation
+ * SESSION 77: Updated with settings info
+ */
+function generateProAutoSaveSection(): string {
+  return `
+## 🌟 Community Impact
+
+### Pattern Auto-Save Enabled
+
+As a PRO user, your fix patterns are automatically saved to the community library.
+When you fix issues, other developers instantly benefit from your solutions.
+
+**Your impact will grow as you:**
+- ✅ Fix issues using AI-generated fixes
+- ✅ Contribute unique fix patterns
+- ✅ Help developers facing similar issues
+
+> 🚀 Your patterns will appear here after your first contribution.
+
+**Settings:** You can manage pattern saving in your [account settings](/settings).
 `;
 }
 

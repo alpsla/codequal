@@ -305,15 +305,119 @@ npx ts-node test-v9-e2e-complete.ts
 
 ---
 
+## 🔄 PRO Tier: Ralph-Inspired Fix Flow (Session 82)
+
+For PRO tier users, we offer AI-assisted fix generation with the following enhancements:
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│              PRO TIER FIX FLOW (Ralph Pattern)                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. Issues Detected by V9PRAnalyzer                                 │
+│        ↓                                                            │
+│  2. StoryDecomposer → Group into Fix Stories                        │
+│        ↓                                                            │
+│  3. PRFixStateManager → Initialize State (pr-fix-state.json)        │
+│        ↓                                                            │
+│  4. For each story:                                                 │
+│     │                                                               │
+│     ├─→ FRESH CONTEXT (new AI call each attempt)                    │
+│     │   • KB guidance (fix_pattern_guidance)                        │
+│     │   • Repository learnings (same repo: 100%)                    │
+│     │   • Cross-repo learnings (same org: 80%, language: 60%)       │
+│     │   • Prior fixes in same file                                  │
+│     │   • Within-PR learnings                                       │
+│     │                                                               │
+│     ├─→ Generate Fix → Validate → [PASS/FAIL]                       │
+│     │                                                               │
+│     └─→ Update state, accumulate learnings                          │
+│                                                                     │
+│  5. saveLearningsToRepository() → Persist to KB                     │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `FreshContextFixService` | `src/fix-agent/state/fresh-context-fixer.ts` | Orchestrates fix flow with fresh context per attempt |
+| `PRFixStateManager` | `src/fix-agent/state/pr-fix-state.ts` | Explicit state tracking, enables resumption |
+| `StoryDecomposer` | `src/fix-agent/state/story-decomposer.ts` | Groups related issues into atomic stories |
+| `RepositoryLearningService` | `src/fix-agent/state/repository-learnings.ts` | Cross-repo knowledge sharing |
+
+### Usage with V9PRAnalyzer
+
+```typescript
+import { V9PRAnalyzer } from './services/v9-pr-analyzer';
+import {
+  FreshContextFixService,
+  getRepositoryLearningService
+} from '@codequal/agents/fix-agent/state';
+
+// 1. Run analysis
+const analyzer = new V9PRAnalyzer();
+const result = await analyzer.analyzePR({ ... });
+
+// 2. For PRO tier, generate fixes
+const repoLearnings = getRepositoryLearningService();
+const frameworks = repoLearnings.detectFrameworks(changedFiles);
+
+const fixService = new FreshContextFixService(
+  prUrl, prNumber, repository, language,
+  {
+    maxAttemptsPerStory: 3,
+    repositoryInfo: { organization, frameworks },
+    generateFix: async (context) => { /* AIFixerAgent */ },
+    validateFix: async (fixCode, issues) => { /* verifier */ },
+  }
+);
+
+fixService.initialize(result.issues.all.filter(i => i.category === 'NEW'));
+const fixResult = await fixService.processAllStories();
+await fixService.saveLearningsToRepository();
+```
+
+### Three-Layer Knowledge Base
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      KNOWLEDGE BASE LAYERS                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Layer 1: fix_pattern_guidance (Session 81)                         │
+│    • Rule-specific anti-patterns and correct patterns               │
+│    • Applies to ALL repositories using that rule                    │
+│    • Updated via /maintain-kb or kb-ai-maintainer.ts                │
+│                                                                     │
+│  Layer 2: repository_learnings (Session 82)                         │
+│    • Repository-specific insights                                   │
+│    • Cross-repo sharing by org/language/framework                   │
+│    • Confidence-weighted (same repo 100%, same org 80%, etc.)       │
+│                                                                     │
+│  Layer 3: PR learnings (pr-learnings.json)                          │
+│    • Within-PR accumulated insights                                 │
+│    • Promoted to Layer 2 after successful session                   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 📚 Related Documentation
 
 - `V9_CRITICAL_KNOWLEDGE_BASE.md` - V9 architecture overview
 - `QUICK_START_NEXT_SESSION.md` - Latest session notes
 - `test-v9-e2e-complete.ts` - E2E test example
 - `analyze-pr-endpoint.ts` - API endpoint example
+- `src/fix-agent/state/example-integration.ts` - PRO tier fix flow example
 
 ---
 
-**Status**: ✅ Production Ready  
-**Next**: Add TypeScript support → Deploy API → Production release
+**Status**: ✅ Production Ready
+**Last Updated**: Session 82 (January 12, 2026)
+**Next**: Test Ralph integrations → Add TypeScript support → Deploy API → Production release
 

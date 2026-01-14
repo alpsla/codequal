@@ -1,31 +1,34 @@
 # V9 CRITICAL KNOWLEDGE BASE (Condensed)
-**Last Updated: December 31, 2025**
+**Last Updated: January 12, 2026 (Session 82)**
 **For detailed session history, see: [V9_SESSION_ARCHIVE.md](./V9_SESSION_ARCHIVE.md)**
 
 ---
 
 ## 📋 Tier Differentiation & API Documentation (Session 68)
 
-### Tier Feature Matrix (FINAL)
+### Tier Feature Matrix (FINAL - Updated Session 70)
 
-| Feature | BASIC | PRO | Cost Justification |
-|---------|-------|-----|-------------------|
-| Issue detection | ✅ | ✅ | Free |
-| Educational content | ✅ | ✅ | Free |
-| Business impact analysis | ✅ | ✅ | Free |
-| Historical PR analytics | ✅ | ✅ | Minimal storage |
-| XP & Level progress | ✅ | ✅ | Free |
-| Achievements | ✅ | ✅ | Free |
-| Community impact | ✅ | ✅ | Free |
-| Skills tracking | ✅ | ✅ | Free |
-| IDE exports (SARIF, GitLab) | ✅ | ✅ | Free |
-| **Auto-fix buttons** | ❌ | ✅ | AI compute cost |
-| **Fix confidence levels** | ❌ | ✅ | AI analysis |
-| **Commit integration** | ❌ | ✅ | Git operations |
+| Feature | BASIC | PRO | Notes |
+|---------|-------|-----|-------|
+| Issue detection | ✅ | ✅ | Same analysis |
+| Educational content | ✅ | ✅ | Based on found issues |
+| Business impact analysis | ✅ | ✅ | Same metrics |
+| Historical PR analytics | ✅ | ✅ | Same |
+| XP & Level progress | ✅ | ✅ | PRO earns more via auto-fix |
+| Achievements | ✅ | ✅ | Same |
+| Skills tracking | ✅ | ✅ | Same |
+| **IDE exports (SARIF, GitLab)** | ✅ | ❌ | BASIC needs IDE to fix |
+| **Pattern contribution** | ✅ (opt-in) | ✅ (auto) | BASIC: manual +50 XP |
+| **Auto-fix** | ❌ | ✅ | AI compute cost |
+| **Fix verification** | ❌ | ✅ | Re-scan + regression check |
+| **Commit integration** | ❌ | ✅ | Direct apply |
 
-### Key Decisions
-- **Gamification for ALL tiers**: XP, achievements, skills, community impact - keeps users engaged
-- **Historical analytics for ALL tiers**: Better engagement drives conversion
+### Key Decisions (Updated Session 70)
+- **Gamification for ALL tiers**: XP, achievements, skills - keeps users engaged
+- **Educational resources for ALL tiers**: Same content based on found issues
+- **IDE exports ONLY for BASIC**: BASIC users need IDE help to fix manually
+- **PRO fixes directly**: No IDE needed, CodeQual applies fixes
+- **Pattern contribution**: BASIC = opt-in (+50 XP), PRO = automatic
 - **Auto-fix is the killer PRO feature**: Clear value proposition, real compute cost
 
 ### API Documentation (Swagger)
@@ -1378,6 +1381,128 @@ After completing pattern collection for all languages, comprehensive UX testing 
 - After pattern collection target reached (500+ patterns/language)
 - Before BASIC tier public launch
 - As part of provider integration milestone
+
+---
+
+## 🔧 PENDING TUNING TASKS (Session 75)
+
+### Rate Limit Tuning (After Multi-Language Tests)
+
+**Status**: GENEROUS DEFAULTS IN PLACE - NEEDS TUNING BASED ON REAL DATA
+
+**Current State (Session 75)**:
+- Dynamic timeouts implemented based on tool type × repo size
+- Per-tool concurrency limits set generously for testing
+- Monitoring enabled via `flushMetricsToLog()` and `getExecutionMetrics()`
+
+**Action Required**:
+1. Run multi-language API tests (all 7 languages)
+2. Review timing metrics from `[ToolRevalidator] Execution Metrics Summary`
+3. Note: avg, p95, max times per tool:repoSize combination
+4. Identify any timeouts that occurred
+5. Adjust `TOOL_TIMEOUT_CONFIGS` and `USER_TIER_QUOTAS` based on data
+
+**Files to Update**:
+- `packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.ts`
+
+**Current Generous Defaults**:
+```typescript
+// Timeouts (will be reduced based on data)
+spotbugs: 5 min base (× repo size multiplier)
+pmd: 2 min base
+eslint: 1 min base
+
+// Quotas (may be tightened)
+basic: 60/min, 6 concurrent
+pro: 200/min, 20 concurrent
+```
+
+**Monitoring Commands**:
+```bash
+# After running tests
+flushMetricsToLog()  # Shows timing summary
+
+# Or check raw metrics
+getExecutionMetrics()  # Returns full metrics array
+```
+
+---
+
+## 🔄 RALPH-INSPIRED STATE MANAGEMENT (Session 82)
+
+### Overview
+
+Session 82 added Ralph-inspired patterns for improved fix operations:
+1. **Fresh context per attempt** - No context bloat
+2. **Story decomposition** - Related issues grouped
+3. **Cross-repo learning** - KB shared across repos
+
+### Three-Layer Knowledge Base
+
+```
+Layer 1: fix_pattern_guidance (Session 81)
+  └─→ Global rule-specific patterns (CloseResource, EmptyCatchBlock)
+  └─→ Applies to ALL repositories
+
+Layer 2: repository_learnings (Session 82)
+  └─→ Repository-specific insights
+  └─→ Cross-repo sharing: org (80%), language (60%), framework (60%)
+
+Layer 3: pr-learnings.json (Session 82)
+  └─→ Within-PR accumulated insights
+  └─→ Promoted to Layer 2 after successful session
+```
+
+### Key Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `PRFixStateManager` | `fix-agent/state/pr-fix-state.ts` | Explicit state tracking |
+| `StoryDecomposer` | `fix-agent/state/story-decomposer.ts` | Group related issues |
+| `FreshContextFixService` | `fix-agent/state/fresh-context-fixer.ts` | Fresh context per attempt |
+| `RepositoryLearningService` | `fix-agent/state/repository-learnings.ts` | Cross-repo learning |
+
+### Usage
+
+```typescript
+import {
+  FreshContextFixService,
+  getRepositoryLearningService
+} from '@codequal/agents/fix-agent/state';
+
+// Detect frameworks
+const repoLearnings = getRepositoryLearningService();
+const frameworks = repoLearnings.detectFrameworks(files);
+
+// Create fix service
+const fixService = new FreshContextFixService(
+  prUrl, prNumber, repository, language,
+  {
+    maxAttemptsPerStory: 3,
+    repositoryInfo: { organization, frameworks },
+    generateFix: async (context) => { /* AI call */ },
+    validateFix: async (fixCode, issues) => { /* verify */ },
+  }
+);
+
+// Process stories
+await fixService.processAllStories();
+
+// Save learnings for future PRs
+await fixService.saveLearningsToRepository();
+```
+
+### Database Migrations Required
+
+```bash
+# Session 81 - Fix pattern guidance
+psql $DATABASE_URL -f database/migrations/20260109_fix_pattern_guidance.sql
+psql $DATABASE_URL -f database/migrations/20260109_seed_fix_pattern_guidance.sql
+psql $DATABASE_URL -f database/migrations/20260109_fix_failure_tracking.sql
+
+# Session 82 - Repository learnings
+psql $DATABASE_URL -f database/migrations/20260112_repository_learnings.sql
+```
 
 ---
 

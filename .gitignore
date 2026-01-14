@@ -198,3 +198,21 @@ apps/api/deepwiki-metrics.json
 packages/agents/src/standard/tests/reports/comparison-agent/pr-*-2025-*.md
 # packages/agents/test-outputs/
 # test-outputs/
+
+# Auto Claude data directory
+.auto-claude/
+
+# Claude settings
+.claude_settings.json
+
+# Git worktrees
+.worktrees/
+
+# V9 test reports and generated data (generated during testing)
+packages/agents/tests/integration/v9-2tier-reports/*.json
+packages/agents/tests/integration/v9-2tier-reports/*-COMPREHENSIVE.md
+packages/agents/tests/integration/v9-2tier-reports/*-FINAL*.md
+packages/agents/tests/integration/v9-2tier-reports/*TWO-BRANCH*.md
+packages/agents/tests/integration/v9-2tier-reports/*-report-new.md
+packages/agents/tests/integration/v9-2tier-reports/*-report-v2.md
+packages/agents/tests/integration/v9-2tier-reports/*_2026-*.md
