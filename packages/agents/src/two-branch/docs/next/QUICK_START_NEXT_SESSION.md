@@ -50,18 +50,19 @@
 
 ## Session 85 TODO: KB Verification & Multi-Language Expansion
 
-### P0: Restore Cloud Access & Verify KB Usage
+### P0: Verify KB Pattern Usage in Logs
 
-**Issue**: SSH key rejected by Oracle Cloud instance
+**SSH Access**: Use the project key (not ~/.ssh)
 
 ```bash
-# Debug SSH access
-ssh -v opc@129.213.49.128
+# CORRECT SSH command (use project key)
+ssh -i ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key opc@129.213.49.128
 
-# If key needs to be re-added to cloud:
-# 1. Access via Oracle Cloud Console
-# 2. Check ~/.ssh/authorized_keys on instance
-# 3. Add public key: cat ~/.ssh/oci_codequal_rsa.pub
+# Alternative: Add alias to ~/.ssh/config
+# Host codequal-cloud
+#   HostName 129.213.49.128
+#   User opc
+#   IdentityFile ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key
 ```
 
 **Once SSH restored:**
@@ -159,10 +160,10 @@ grep "FALLBACK_GUIDANCE.set" packages/agents/src/fix-agent/fix-pattern-registry/
 cd packages/agents/src/fix-agent/fix-pattern-registry
 npx ts-node kb-review-cli.ts list
 
-# SSH troubleshooting
-ssh-add -l                    # Check loaded keys
-ssh-add ~/.ssh/oci_codequal_rsa  # Add OCI key
-ssh -v opc@129.213.49.128    # Verbose debug
+# SSH to cloud (use project key!)
+ssh -i ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key opc@129.213.49.128
+
+# Or create alias in ~/.ssh/config for convenience
 ```
 
 ---
