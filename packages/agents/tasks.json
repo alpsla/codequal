@@ -1,0 +1,98 @@
+{
+  "feature": "Session 84 - KB Pattern Expansion via Cloud Testing",
+  "branchName": "main",
+  "createdAt": "2026-01-13T18:30:00Z",
+  "maxIterations": 10,
+  "currentIteration": 0,
+  "status": "ready",
+
+  "stories": [
+    {
+      "id": 1,
+      "title": "Verify Cloud Test Infrastructure",
+      "description": "As a developer, I want to verify the cloud test infrastructure is ready, so that I can run KB pattern expansion tests.",
+      "acceptanceCriteria": [
+        "SSH connection to Oracle Cloud (129.213.49.128) works",
+        "Redis is accessible (localhost:6379)",
+        "Cloud code is updated to latest main",
+        "test-v9-2tier-all-languages.ts exists and is runnable",
+        "Node/npm dependencies are installed on cloud"
+      ],
+      "technicalNotes": "Use REDIS_URL=redis://localhost:6379 instead of private IP 10.116.0.7",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
+    },
+    {
+      "id": 2,
+      "title": "Run Java Cloud Test and Capture KB Failures",
+      "description": "As a developer, I want to run the Java cloud test and capture all KB failures, so that I can identify which patterns need to be added.",
+      "acceptanceCriteria": [
+        "Run test-v9-2tier-all-languages.ts with LANG=java",
+        "Capture all issues that fail KB lookup",
+        "Document which rules have no patterns",
+        "Record aiCallsSaved metrics (should be 0 initially for new rules)",
+        "Save test results to local file for analysis"
+      ],
+      "technicalNotes": "Use MAX_ISSUES=20 to limit API costs. Export REDIS_URL=redis://localhost:6379",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
+    },
+    {
+      "id": 3,
+      "title": "Add Top 3 Missing KB Patterns for Java",
+      "description": "As a developer, I want to add the top 3 most common missing patterns to the KB, so that future tests save AI calls.",
+      "acceptanceCriteria": [
+        "Review KB failures from Story 2",
+        "Identify top 3 most frequent missing patterns",
+        "Use kb-ai-maintainer.ts to add patterns",
+        "Verify patterns are added to fix_pattern_guidance",
+        "Test one pattern manually with kb-review-cli.ts"
+      ],
+      "technicalNotes": "Common missing patterns: UnusedImport, MissingOverride, LooseCoupling, AvoidDuplicateLiterals",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
+    },
+    {
+      "id": 4,
+      "title": "Add Additional KB Patterns to Reach 10+",
+      "description": "As a developer, I want to add more patterns to reach 10+ Java patterns in KB, so that the fix success rate improves.",
+      "acceptanceCriteria": [
+        "Current KB has 4 patterns: EmptyCatchBlock, CloseResource, AvoidCatchingThrowable, UseUtilityClass",
+        "Add 6+ more patterns based on test results",
+        "Target patterns: UnusedImport, MissingOverride, LooseCoupling, AvoidDuplicateLiterals, UnusedPrivateMethod, NullPointerException",
+        "Verify total patterns >= 10",
+        "Document all added patterns"
+      ],
+      "technicalNotes": "Use npx ts-node kb-ai-maintainer.ts --rule <RuleId> --auto-approve",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
+    },
+    {
+      "id": 5,
+      "title": "Re-run Test and Verify Pattern Hit Rate",
+      "description": "As a developer, I want to re-run the cloud test and verify improved pattern hit rate, so that I can confirm KB expansion was successful.",
+      "acceptanceCriteria": [
+        "Re-run test-v9-2tier-all-languages.ts with LANG=java",
+        "Verify aiCallsSaved > 0 (patterns being used)",
+        "Calculate KB hit rate (patterns found / total issues)",
+        "Document improvement vs initial run",
+        "Update session documentation with results"
+      ],
+      "technicalNotes": "Target: 50%+ hit rate for Java rules after KB expansion",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
+    }
+  ],
+
+  "iterations": []
+}

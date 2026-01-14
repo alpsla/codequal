@@ -152,6 +152,139 @@ const FALLBACK_GUIDANCE: Map<string, FixGuidance> = new Map([
 - All methods should be static`,
     successRate: 0,
     usageCount: 0
+  }],
+  // SESSION 84: New patterns based on cloud test results
+  ['UnnecessarySemicolon:java:any', {
+    ruleId: 'UnnecessarySemicolon',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'semicolon after class body', why: 'Unnecessary, adds visual clutter' },
+      { pattern: 'double semicolon', why: 'Redundant, likely copy-paste error' }
+    ],
+    correctPatterns: [
+      { pattern: 'remove unnecessary semicolon', example: 'class Foo { } // No semicolon after closing brace' },
+      { pattern: 'keep only required semicolons', example: 'statement; // Only at end of statements' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Remove unnecessary semicolons after class/interface/enum bodies.',
+    promptAdditions: `CRITICAL for UnnecessarySemicolon:
+- Remove semicolons after closing braces of class/interface/enum bodies
+- Keep semicolons only at end of statements
+- Do NOT remove semicolons from for-loop structure`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['UseLocaleWithCaseConversions:java:any', {
+    ruleId: 'UseLocaleWithCaseConversions',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'toLowerCase() without locale', why: 'Uses default locale, may produce wrong results in Turkish/other locales' },
+      { pattern: 'toUpperCase() without locale', why: 'Same locale-sensitivity issue' }
+    ],
+    correctPatterns: [
+      { pattern: 'explicit Locale.ROOT', example: 'str.toLowerCase(Locale.ROOT)' },
+      { pattern: 'explicit Locale.ENGLISH', example: 'str.toUpperCase(Locale.ENGLISH)' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Always specify Locale for case conversions to ensure consistent behavior.',
+    promptAdditions: `CRITICAL for UseLocaleWithCaseConversions:
+- Use Locale.ROOT for machine-readable strings (IDs, keys, constants)
+- Use Locale.ENGLISH for user-facing English text
+- Use Locale.getDefault() only when locale-sensitive behavior is intended
+- Import java.util.Locale if not already imported`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['DoubleBraceInitialization:java:any', {
+    ruleId: 'DoubleBraceInitialization',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'new HashMap<>() {{ put(...); }}', why: 'Creates anonymous class, memory leak potential, serialization issues' },
+      { pattern: 'new ArrayList<>() {{ add(...); }}', why: 'Same issues - anonymous inner class' }
+    ],
+    correctPatterns: [
+      { pattern: 'Map.of()', example: 'Map.of("key1", "value1", "key2", "value2")' },
+      { pattern: 'List.of()', example: 'List.of("a", "b", "c")' },
+      { pattern: 'static initialization block', example: 'static { map.put("key", "value"); }' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Use factory methods (Map.of, List.of, Set.of) instead of double brace initialization.',
+    promptAdditions: `CRITICAL for DoubleBraceInitialization:
+- Replace new HashMap<>() {{ ... }} with Map.of() or Map.ofEntries()
+- Replace new ArrayList<>() {{ ... }} with List.of() or new ArrayList<>(List.of(...))
+- For mutable collections: new HashMap<>(Map.of(...))
+- Use Arrays.asList() for mutable list from array`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['LooseCoupling:java:any', {
+    ruleId: 'LooseCoupling',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'ArrayList as return/param type', why: 'Ties to implementation, prevents using other List types' },
+      { pattern: 'HashMap as field type', why: 'Same coupling issue' }
+    ],
+    correctPatterns: [
+      { pattern: 'List interface', example: 'public List<String> getItems()' },
+      { pattern: 'Map interface', example: 'private Map<String, Object> cache;' },
+      { pattern: 'Set interface', example: 'public Set<User> findUsers()' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Use interface types (List, Map, Set) instead of concrete implementations.',
+    promptAdditions: `CRITICAL for LooseCoupling:
+- Change ArrayList to List in method signatures
+- Change HashMap to Map in field/parameter types
+- Change HashSet to Set
+- Keep concrete type only in new expression: List<String> list = new ArrayList<>();`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['MissingOverride:java:any', {
+    ruleId: 'MissingOverride',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'overriding method without @Override', why: 'Compiler cannot catch signature mismatches' }
+    ],
+    correctPatterns: [
+      { pattern: '@Override annotation', example: '@Override\\npublic String toString() { ... }' },
+      { pattern: '@Override on interface methods', example: '@Override\\npublic void onClick(View v) { ... }' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Add @Override annotation to all methods that override superclass or implement interface methods.',
+    promptAdditions: `CRITICAL for MissingOverride:
+- Add @Override annotation on line BEFORE method declaration
+- Apply to ALL methods overriding parent class methods
+- Apply to ALL methods implementing interface methods
+- Import not needed - @Override is in java.lang`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['UnusedPrivateMethod:java:any', {
+    ruleId: 'UnusedPrivateMethod',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'commenting out the method', why: 'Dead code should be removed' },
+      { pattern: 'making method public', why: 'Does not fix the issue, method is still unused' }
+    ],
+    correctPatterns: [
+      { pattern: 'delete unused method', example: '// Remove the entire method' },
+      { pattern: 'call the method if needed', example: 'this.unusedMethod(); // If actually needed' }
+    ],
+    relatedRules: ['UnusedLocalVariable', 'UnusedPrivateField'],
+    guidanceText: 'Remove unused private methods to reduce code complexity and maintenance burden.',
+    promptAdditions: `CRITICAL for UnusedPrivateMethod:
+- PREFERRED: Delete the entire method (not just comment it out)
+- Verify no reflection-based usage before deleting
+- If method IS needed, add a call to it
+- If deleting breaks something, the test will catch it`,
+    successRate: 0,
+    usageCount: 0
   }]
 ]);
 
