@@ -1,69 +1,109 @@
 {
-  "feature": "Fresh Context Fix Flow Integration",
-  "branchName": "feature/fresh-context-fix-integration",
-  "specPath": ".agent-os/specs/2026-01-12-fresh-context-fix-integration/",
-  "qualityGates": [
-    "turbo run build --filter=@codequal/agents",
-    "cd packages/agents && npx tsc --noEmit --skipLibCheck",
-    "cd packages/agents && npx ts-node tests/integration/test-fix-flow-framework-e2e.ts"
-  ],
+  "feature": "Session 85: AI Savings Verification & Multi-Language KB",
+  "branchName": "main",
+  "createdAt": "2026-01-14T04:00:00.000Z",
+  "maxIterations": 10,
+  "currentIteration": 0,
+  "status": "ready",
+
   "stories": [
     {
       "id": 1,
-      "title": "Verify E2E test framework passes with mocks",
-      "description": "Run test-fix-flow-framework-e2e.ts and verify all 6 tests pass. Fix any import/type errors. Verify story decomposition and fresh context building work correctly.",
-      "files": [
-        "packages/agents/tests/integration/test-fix-flow-framework-e2e.ts",
-        "packages/agents/src/fix-agent/state/index.ts"
+      "title": "Test Template Transforms",
+      "description": "As a developer, I want to verify that template transforms are working for simple rules so that we achieve 0 AI calls for trivial fixes.",
+      "acceptanceCriteria": [
+        "Find or create a PR with UnnecessarySemicolon, MissingOverride, or UnusedImport issues",
+        "Run analysis on cloud and check logs for 'TEMPLATE TRANSFORM' messages",
+        "Verify template-fixed issues don't trigger AI calls",
+        "Document which rules successfully use templates"
       ],
-      "passes": true,
-      "attempts": 1,
-      "completedAt": "2026-01-12T23:55:00-05:00"
+      "technicalNotes": "Template transforms are in pattern-aware-fixer.ts applyTemplateTransform(). Check cloud logs: grep 'TEMPLATE TRANSFORM' /tmp/api.log. SSH: ssh -i ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key opc@129.213.49.128",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
     },
     {
       "id": 2,
-      "title": "Apply database migrations",
-      "description": "Verify migration files exist and apply them: 20260109_fix_pattern_guidance.sql, 20260109_seed_fix_pattern_guidance.sql, 20260109_fix_failure_tracking.sql, 20260112_repository_learnings.sql. Verify tables exist.",
-      "files": [
-        "database/migrations/20260109_fix_pattern_guidance.sql",
-        "database/migrations/20260112_repository_learnings.sql"
+      "title": "Test Fix Cache on Repeat Analysis",
+      "description": "As a developer, I want to verify that the fix cache works on repeat analysis so that identical issues don't require AI regeneration.",
+      "acceptanceCriteria": [
+        "Run the same PR analysis twice on cloud",
+        "First run should populate cache (no CACHE HIT messages)",
+        "Second run should show 'CACHE HIT' messages in logs",
+        "Measure AI call reduction between first and second runs"
       ],
-      "passes": true,
-      "attempts": 1
+      "technicalNotes": "Fix cache uses MD5 hash of rule+code. Cache is in-memory per API instance. Check: grep 'CACHE HIT' /tmp/api.log",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
     },
     {
       "id": 3,
-      "title": "Create generateFixesWithFreshContext function",
-      "description": "Add imports for FreshContextFixService. Create generateFixesWithFreshContext function in v9-analyze.ts. Implement issue conversion, initialize service, wire callbacks to AIFixerAgent and verifier, call processAllStories and saveLearningsToRepository.",
-      "files": [
-        "apps/api/src/routes/v9-analyze.ts"
+      "title": "Add Python KB Patterns",
+      "description": "As a developer, I want to add common Python fix patterns to the KB so that Python PRs benefit from pattern-based fixes.",
+      "acceptanceCriteria": [
+        "Run Python test on cloud",
+        "Identify top 5 most common Python rule violations from test results",
+        "Add fix patterns for each rule to fix-pattern-guidance.ts",
+        "Document Python patterns in KB (similar to Java patterns)"
       ],
-      "passes": true,
-      "attempts": 1,
-      "completedAt": "2026-01-13T08:15:00-05:00"
+      "technicalNotes": "Common Python rules: E501 (line length), F401 (unused import), E302 (blank lines), W503 (line break before operator). Add to PYTHON_PATTERNS in fix-pattern-guidance.ts. Test: LANG=python in test-v9-2tier-all-languages.ts",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
     },
     {
       "id": 4,
-      "title": "Replace generateFixesWithHybridAgents call",
-      "description": "Replace the call to generateFixesWithHybridAgents (~line 711) with generateFixesWithFreshContext. Add session info to response. Handle partial failure warnings.",
-      "files": [
-        "apps/api/src/routes/v9-analyze.ts"
+      "title": "Add TypeScript KB Patterns",
+      "description": "As a developer, I want to add common TypeScript fix patterns to the KB so that TypeScript PRs benefit from pattern-based fixes.",
+      "acceptanceCriteria": [
+        "Run TypeScript test on cloud",
+        "Identify top 5 most common TypeScript/ESLint rule violations",
+        "Add fix patterns for each rule to fix-pattern-guidance.ts",
+        "Document TypeScript patterns in KB"
       ],
-      "passes": true,
-      "attempts": 1,
-      "completedAt": "2026-01-13T08:30:00-05:00"
+      "technicalNotes": "Common TS rules: @typescript-eslint/no-unused-vars, @typescript-eslint/explicit-function-return-type, no-console. Add to TYPESCRIPT_PATTERNS in fix-pattern-guidance.ts",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
     },
     {
       "id": 5,
-      "title": "Integration test with real API",
-      "description": "Start API server, run 2-tier test with Java (LANG=java MAX_ISSUES=3). Verify PRO tier uses fresh context, verify learnings are saved to database.",
-      "files": [],
-      "passes": true,
-      "attempts": 1,
-      "completedAt": "2026-01-13T09:00:00-05:00",
-      "note": "Manual verification required - all automated quality gates pass. Code integration complete. Run manually with: API_BASE_URL=http://localhost:3001 LANG=java MAX_ISSUES=3 npx ts-node tests/integration/test-v9-2tier-all-languages.ts"
+      "title": "Add Go KB Patterns",
+      "description": "As a developer, I want to add common Go fix patterns to the KB so that Go PRs benefit from pattern-based fixes.",
+      "acceptanceCriteria": [
+        "Run Go test on cloud",
+        "Identify top 5 most common golangci-lint rule violations",
+        "Add fix patterns for each rule to fix-pattern-guidance.ts",
+        "Document Go patterns in KB"
+      ],
+      "technicalNotes": "Common Go rules: errcheck, govet, ineffassign, staticcheck. Add to GO_PATTERNS in fix-pattern-guidance.ts",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
+    },
+    {
+      "id": 6,
+      "title": "Verify Multi-Language AI Savings",
+      "description": "As a developer, I want to verify AI savings work across all languages so that the KB provides consistent value.",
+      "acceptanceCriteria": [
+        "Run tests for Java, Python, TypeScript, Go on cloud",
+        "Check each language shows AI savings in logs",
+        "Document savings rate per language",
+        "Target: >30% AI savings for each language"
+      ],
+      "technicalNotes": "Check logs: grep 'AI calls saved' /tmp/api.log. Compare savings rates across languages.",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null
     }
   ],
-  "currentIteration": 4,
-  "lastRun": "2026-01-13T09:00:00-05:00"
+
+  "iterations": []
 }
