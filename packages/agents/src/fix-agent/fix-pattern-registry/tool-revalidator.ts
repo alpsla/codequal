@@ -724,7 +724,7 @@ function extractJSON(output: string): string | null {
 
   // Clean output - remove non-printable characters but preserve newlines for later
   // eslint-disable-next-line no-control-regex
-  let cleanOutput = output.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+  const cleanOutput = output.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
   // Try multiple JSON extraction strategies
   const strategies = [

@@ -94,6 +94,69 @@ export class CodeSnippetExtractor {
   }
 
   /**
+   * Parse GitHub URL and extract owner/repo with proper hostname validation
+   * Handles: https://github.com/owner/repo, git@github.com:owner/repo, github.com/owner/repo
+   */
+  private static parseGitHubUrl(repositoryUrl: string): { owner: string; repo: string } | null {
+    try {
+      // Handle SSH format: git@github.com:owner/repo.git
+      if (repositoryUrl.startsWith('git@github.com:')) {
+        const sshPath = repositoryUrl.slice('git@github.com:'.length);
+        const segments = sshPath.split('/');
+        if (segments.length >= 2) {
+          const owner = segments[0];
+          const repo = segments[1].replace(/\.git$/, '');
+          if (this.isValidGitHubName(owner) && this.isValidGitHubName(repo)) {
+            return { owner, repo };
+          }
+        }
+        return null;
+      }
+
+      // Handle HTTPS/HTTP URLs using URL parser for proper hostname validation
+      let urlToParse = repositoryUrl;
+      if (!urlToParse.startsWith('http://') && !urlToParse.startsWith('https://')) {
+        urlToParse = 'https://' + urlToParse;
+      }
+
+      const url = new URL(urlToParse);
+
+      // CRITICAL: Validate hostname is EXACTLY github.com (not a substring)
+      if (url.hostname !== 'github.com' && url.hostname !== 'www.github.com') {
+        return null;
+      }
+
+      // Extract owner/repo from pathname: /owner/repo or /owner/repo.git
+      const pathSegments = url.pathname.split('/').filter(s => s.length > 0);
+      if (pathSegments.length < 2) {
+        return null;
+      }
+
+      const owner = pathSegments[0];
+      const repo = pathSegments[1].replace(/\.git$/, '');
+
+      if (!this.isValidGitHubName(owner) || !this.isValidGitHubName(repo)) {
+        return null;
+      }
+
+      return { owner, repo };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Validate GitHub username/repo name format
+   */
+  private static isValidGitHubName(name: string): boolean {
+    if (!name || name.length === 0 || name.length > 100) {
+      return false;
+    }
+    // GitHub names: alphanumeric, hyphens, underscores, dots (no consecutive dots)
+    return /^[\w.-]+$/.test(name) && !name.includes('..');
+  }
+
+  /**
    * Fetch file content from GitHub API
    * SESSION 74: New method for remote code fetching
    */
@@ -103,44 +166,21 @@ export class CodeSnippetExtractor {
     branch = 'main'
   ): Promise<string | null> {
     try {
-      // Validate input to prevent ReDoS attacks
+      // Validate input
       if (!repositoryUrl || typeof repositoryUrl !== 'string' || repositoryUrl.length > 500) {
         return null;
       }
 
-      // Parse GitHub URL to get owner/repo using a safe, explicit regex
-      // Format: github.com/owner/repo or github.com:owner/repo
-      const urlLower = repositoryUrl.toLowerCase();
-      if (!urlLower.includes('github.com')) {
+      // Parse owner/repo from GitHub URL using proper URL parsing
+      const parsed = this.parseGitHubUrl(repositoryUrl);
+      if (!parsed) {
         return null;
       }
 
-      // Extract owner/repo using indexOf for safety (no backtracking)
-      const githubIndex = urlLower.indexOf('github.com');
-      const afterGithub = repositoryUrl.slice(githubIndex + 10); // 'github.com'.length = 10
-      const separator = afterGithub[0];
-      if (separator !== '/' && separator !== ':') {
-        return null;
-      }
-
-      const pathPart = afterGithub.slice(1); // Remove separator
-      const pathSegments = pathPart.split('/');
-      if (pathSegments.length < 2) {
-        return null;
-      }
-
-      const owner = pathSegments[0];
-      // Remove .git suffix if present
-      const repo = pathSegments[1].replace(/\.git$/, '');
-
-      // Validate owner/repo format (alphanumeric, hyphens, underscores)
-      const validNameRegex = /^[\w.-]+$/;
-      if (!owner || !repo || !validNameRegex.test(owner) || !validNameRegex.test(repo)) {
-        return null;
-      }
+      const { owner, repo } = parsed;
 
       // Normalize file path - remove leading slashes and any repo prefix
-      let normalizedPath = filePath
+      const normalizedPath = filePath
         .replace(/^\/+/, '')
         .replace(/^\.\//, '');
 

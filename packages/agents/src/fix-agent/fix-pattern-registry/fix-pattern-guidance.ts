@@ -279,7 +279,7 @@ export class FixPatternGuidanceService {
    * 2. rule_id + language + 'any' (tool-agnostic)
    * 3. rule_id + 'any' + 'any' (fully generic)
    */
-  async getGuidance(ruleId: string, language: string, tool: string = 'any'): Promise<FixGuidance | null> {
+  async getGuidance(ruleId: string, language: string, tool = 'any'): Promise<FixGuidance | null> {
     await this.ensureInitialized();
 
     // Normalize inputs
@@ -404,7 +404,7 @@ export class FixPatternGuidanceService {
   /**
    * Get prompt additions for a rule (for injection into AI prompts)
    */
-  async getPromptAdditions(ruleId: string, language: string, tool: string = 'any'): Promise<string | null> {
+  async getPromptAdditions(ruleId: string, language: string, tool = 'any'): Promise<string | null> {
     const guidance = await this.getGuidance(ruleId, language, tool);
     return guidance?.promptAdditions || null;
   }
@@ -420,7 +420,7 @@ export class FixPatternGuidanceService {
   /**
    * Format guidance for inclusion in AI prompt
    */
-  async formatForPrompt(ruleId: string, language: string, tool: string = 'any'): Promise<string> {
+  async formatForPrompt(ruleId: string, language: string, tool = 'any'): Promise<string> {
     const guidance = await this.getGuidance(ruleId, language, tool);
     if (!guidance) return '';
 
