@@ -103,13 +103,41 @@ export class CodeSnippetExtractor {
     branch = 'main'
   ): Promise<string | null> {
     try {
-      // Parse GitHub URL to get owner/repo
-      const match = repositoryUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
-      if (!match) {
+      // Validate input to prevent ReDoS attacks
+      if (!repositoryUrl || typeof repositoryUrl !== 'string' || repositoryUrl.length > 500) {
         return null;
       }
 
-      const [, owner, repo] = match;
+      // Parse GitHub URL to get owner/repo using a safe, explicit regex
+      // Format: github.com/owner/repo or github.com:owner/repo
+      const urlLower = repositoryUrl.toLowerCase();
+      if (!urlLower.includes('github.com')) {
+        return null;
+      }
+
+      // Extract owner/repo using indexOf for safety (no backtracking)
+      const githubIndex = urlLower.indexOf('github.com');
+      const afterGithub = repositoryUrl.slice(githubIndex + 10); // 'github.com'.length = 10
+      const separator = afterGithub[0];
+      if (separator !== '/' && separator !== ':') {
+        return null;
+      }
+
+      const pathPart = afterGithub.slice(1); // Remove separator
+      const pathSegments = pathPart.split('/');
+      if (pathSegments.length < 2) {
+        return null;
+      }
+
+      const owner = pathSegments[0];
+      // Remove .git suffix if present
+      const repo = pathSegments[1].replace(/\.git$/, '');
+
+      // Validate owner/repo format (alphanumeric, hyphens, underscores)
+      const validNameRegex = /^[\w.-]+$/;
+      if (!owner || !repo || !validNameRegex.test(owner) || !validNameRegex.test(repo)) {
+        return null;
+      }
 
       // Normalize file path - remove leading slashes and any repo prefix
       let normalizedPath = filePath

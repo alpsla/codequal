@@ -12,7 +12,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import { createLogger } from '@codequal/core/utils';
 
@@ -93,7 +93,7 @@ export class PostApplyVerificationService {
   private originalFileContents: Map<string, string> = new Map();
   private appliedFixes: Map<string, VerifiedFix> = new Map();
   private baselineIssues: ScannedIssue[] = [];
-  private language: string = 'java'; // Default, will be detected
+  private language = 'java'; // Default, will be detected
 
   constructor() {
     this.repoPath = '';
@@ -975,7 +975,6 @@ export class PostApplyVerificationService {
    */
   private async commitFixes(analysisId: string, fixCount: number): Promise<string | undefined> {
     try {
-      const { execSync } = require('child_process');
 
       // Stage all modified files
       execSync('git add -A', { cwd: this.repoPath });
