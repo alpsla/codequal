@@ -8,17 +8,96 @@
 - Cloud code: Updated to main (30488f0d)
 - Test file: test-v9-2tier-all-languages.ts EXISTS
 
-### Current KB Patterns (Java - 4 total)
+### Current KB Patterns (Java - 10 total)
+**Original 4:**
 1. EmptyCatchBlock
 2. CloseResource
 3. AvoidCatchingThrowable
 4. UseUtilityClass
 
+**Session 84 Added (6 new):**
+5. UnnecessarySemicolon
+6. UseLocaleWithCaseConversions
+7. DoubleBraceInitialization
+8. LooseCoupling
+9. MissingOverride
+10. UnusedPrivateMethod
+
 ### Target
-- 10+ Java patterns in KB
-- 50%+ hit rate for Java rules
+- ✅ 10+ Java patterns in KB (ACHIEVED: 10 patterns)
+- 🔄 50%+ hit rate for Java rules (PENDING VERIFICATION - need API logs)
 
 ---
 
 ## Iteration Log
+
+### Iteration 1 - Initial Test (Stories 1-2)
+**Test: spring-petclinic PR #950**
+- BASIC: 102 issues, 120s ✅
+- PRO: 102 issues, 98 fixed (96% fix rate), 331s ✅
+- Tier Comparison Features:
+  - BASIC: IDE Exports=✅, Pattern Opt-in=✅
+  - PRO: Fix Summary=✅, AI Insights=✅
+
+### Iteration 2 - Pattern Expansion (Stories 3-4)
+- Added 6 new Java patterns to fix-pattern-guidance.ts
+- Patterns based on PMD rules found in test results
+- Cloud code updated, API restarted
+
+### Iteration 3 - Verification Test (Story 5)
+**Test: spring-petclinic PR #950 (re-run)**
+- BASIC: 102 issues, 120s ✅
+- PRO: 102 issues, 98 fixed (96% fix rate), 331s ✅
+- Status: Test completed successfully
+
+### SSH Access Issue
+- SSH to Oracle Cloud (129.213.49.128) became unavailable
+- Keys in agent are being rejected by server
+- Need to verify authorized_keys on cloud instance
+- KB pattern usage logs cannot be accessed until SSH is restored
+
+### Iteration 4 - TRUE AI Call Savings (Session 84 continued)
+
+**Problem Identified:**
+- Original implementation called AI for EVERY issue
+- `applyPattern` was still making AI calls (just with better prompts)
+- `aiCallsSaved` metric was misleading
+
+**Solution Implemented:**
+1. **Fix Cache** - Hash(ruleId + codeContext) → reuse identical fixes
+2. **Template Transforms** - Simple rules fixed without AI:
+   - UnnecessarySemicolon: `};` → `}`
+   - MissingOverride: Add `@Override` annotation
+   - UseLocaleWithCaseConversions: `.toLowerCase()` → `.toLowerCase(Locale.ROOT)`
+   - UnusedImport: Comment out import line
+3. **Identical Code Detection** - Same code in story → reuse fix directly
+4. **Priority Order**:
+   ```
+   1. Check FIX CACHE → 0 AI calls
+   2. Try TEMPLATE TRANSFORM → 0 AI calls
+   3. Check IDENTICAL CODE → 0 AI calls (reuse fix)
+   4. Try applyPattern (AI) → 1 AI call
+   5. Fall back to full AI → 1 AI call
+   ```
+
+**Files Modified:**
+- `packages/agents/src/fix-agent/state/pattern-aware-fixer.ts`
+  - Added `hashCode()` function
+  - Added `applyTemplateTransform()` for simple rules
+  - Added `isIdenticalCode()` for direct propagation
+  - Added `fixCache` Map with `CachedFix` entries
+  - Added `stats` tracking (cacheHits, templateTransforms, directPropagation, aiCalls)
+  - Updated `propagatePatternToStory()` with 5-tier priority system
+  - Updated `processStoryWithPatterns()` to try all issues without AI first
+  - Updated `getPatternStats()` with real tracking
+
+**Expected Savings:**
+| Scenario | Before | After |
+|----------|--------|-------|
+| 5 UnnecessarySemicolon | 5 AI calls | 0 AI calls (template) |
+| 5 identical issues | 5 AI calls | 1 AI call (first) + 4 reuse |
+| 5 diverse issues | 5 AI calls | 5 AI calls (no change) |
+| Mixed story (2 same + 3 diff) | 5 AI calls | 1 + 1 reuse + 3 AI = 4 AI calls |
+
+**Build Status:** ✅ Compiles successfully
 
