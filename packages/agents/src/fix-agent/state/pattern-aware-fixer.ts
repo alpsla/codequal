@@ -48,6 +48,8 @@ function hashCode(ruleId: string, codeContext: string): string {
 /**
  * Template transforms for simple rules that don't need AI
  * Returns null if no template available for the rule
+ *
+ * Session 85: Expanded template coverage to reduce AI costs
  */
 function applyTemplateTransform(
   ruleId: string,
@@ -96,6 +98,112 @@ function applyTemplateTransform(
     if (modified) {
       return { fixedCode: result.join('\n'), transformed: true };
     }
+  }
+
+  // SESSION 85: Additional template transforms to reduce AI costs
+
+  // SimplifyBooleanReturns - return condition instead of if/else true/false
+  if (normalizedRule.includes('simplifybooleanreturns') || normalizedRule.includes('simplify_boolean')) {
+    // Pattern: if (condition) return true; else return false; → return condition;
+    let fixed = codeContext;
+    fixed = fixed.replace(
+      /if\s*\(([^)]+)\)\s*\{\s*return\s+true\s*;\s*\}\s*else\s*\{\s*return\s+false\s*;\s*\}/g,
+      'return $1;'
+    );
+    fixed = fixed.replace(
+      /if\s*\(([^)]+)\)\s*return\s+true\s*;\s*else\s*return\s+false\s*;/g,
+      'return $1;'
+    );
+    fixed = fixed.replace(
+      /if\s*\(([^)]+)\)\s*\{\s*return\s+false\s*;\s*\}\s*else\s*\{\s*return\s+true\s*;\s*\}/g,
+      'return !($1);'
+    );
+    if (fixed !== codeContext) {
+      return { fixedCode: fixed, transformed: true };
+    }
+  }
+
+  // EmptyCatchBlock - Add logging or comment to empty catch
+  if (normalizedRule.includes('emptycatchblock') || normalizedRule.includes('empty_catch')) {
+    const fixed = codeContext.replace(
+      /catch\s*\((\w+)\s+(\w+)\)\s*\{\s*\}/g,
+      'catch ($1 $2) {\n    // TODO: Handle exception or add logging\n    $2.printStackTrace();\n}'
+    );
+    if (fixed !== codeContext) {
+      return { fixedCode: fixed, transformed: true };
+    }
+  }
+
+  // AvoidCatchingThrowable - Replace Throwable with Exception
+  if (normalizedRule.includes('avoidcatchingthrowable') || normalizedRule.includes('catching_throwable')) {
+    const fixed = codeContext.replace(/catch\s*\(\s*Throwable\s+/g, 'catch (Exception ');
+    if (fixed !== codeContext) {
+      return { fixedCode: fixed, transformed: true };
+    }
+  }
+
+  // DoubleBraceInitialization - Convert to standard initialization
+  if (normalizedRule.includes('doublebraceinitialization') || normalizedRule.includes('double_brace')) {
+    // This is complex, but we can handle simple cases
+    // Pattern: new ArrayList<>() {{ add(x); }} → Arrays.asList(x) or List.of(x)
+    let fixed = codeContext;
+    // Simple case: single add
+    fixed = fixed.replace(
+      /new\s+ArrayList<[^>]*>\(\)\s*\{\{\s*add\(([^)]+)\);\s*\}\}/g,
+      'new ArrayList<>(List.of($1))'
+    );
+    if (fixed !== codeContext) {
+      return { fixedCode: fixed, transformed: true };
+    }
+  }
+
+  // ArrayTypeStyleCheck - Move brackets from variable to type
+  if (normalizedRule.includes('arraytypestyle') || normalizedRule.includes('array_type')) {
+    // Pattern: String args[] → String[] args
+    const fixed = codeContext.replace(/(\w+)\s+(\w+)\[\]/g, '$1[] $2');
+    if (fixed !== codeContext) {
+      return { fixedCode: fixed, transformed: true };
+    }
+  }
+
+  // NoPackage - Add package declaration (simple case)
+  if (normalizedRule.includes('nopackage') && language === 'java') {
+    // Only if it's a class file without package
+    if (!codeContext.includes('package ') && codeContext.includes('class ')) {
+      // Can't determine package from context, suggest placeholder
+      const fixed = `// TODO: Add appropriate package declaration\n// package com.example;\n\n${codeContext}`;
+      return { fixedCode: fixed, transformed: true };
+    }
+  }
+
+  // UnusedFormalParameter - Prefix with underscore (Java convention)
+  if (normalizedRule.includes('unusedformalparameter') || normalizedRule.includes('unused_parameter')) {
+    // Pattern: void method(String unused) → void method(String _unused)
+    // This is tricky without knowing which param is unused, skip for now
+  }
+
+  // UseUtilityClass - Add private constructor
+  if (normalizedRule.includes('useutilityclass') || normalizedRule.includes('utility_class')) {
+    // Add private constructor if class has only static methods and no constructor
+    if (codeContext.includes('static ') && !codeContext.includes('private ') &&
+        !codeContext.match(/\b\w+\s*\([^)]*\)\s*\{/)) {
+      // Simple case: add private constructor suggestion
+      const classMatch = codeContext.match(/class\s+(\w+)/);
+      if (classMatch) {
+        const className = classMatch[1];
+        const insertPoint = codeContext.indexOf('{') + 1;
+        const fixed = codeContext.slice(0, insertPoint) +
+          `\n    private ${className}() {\n        // Utility class - prevent instantiation\n    }\n` +
+          codeContext.slice(insertPoint);
+        return { fixedCode: fixed, transformed: true };
+      }
+    }
+  }
+
+  // CloseResource - Add try-with-resources (simple case)
+  if (normalizedRule.includes('closeresource') || normalizedRule.includes('close_resource')) {
+    // Pattern: InputStream is = new FileInputStream(f); → try (InputStream is = new FileInputStream(f)) {
+    // This is complex, needs context awareness - skip for now
   }
 
   // UseLocaleWithCaseConversions - Add Locale.ROOT
@@ -511,18 +619,20 @@ export class PatternAwareFixService extends FreshContextFixService {
   }
 
   /**
-   * Try to apply KB pattern using lightweight AI call
+   * Try to apply KB pattern
+   *
+   * Session 85: HIGH-CONFIDENCE PATTERN SKIP
+   * If pattern confidence >= 90% and has been used successfully 5+ times,
+   * apply the fix template DIRECTLY without AI call.
+   *
+   * Priority:
+   * 1. High-confidence direct application (0 AI calls)
+   * 2. Lightweight AI pattern application (1 AI call)
    */
   private async tryKBPattern(
     issue: FreshContextIssue,
     guidance: FixGuidance
-  ): Promise<{ success: boolean; fixCode?: string; error?: string }> {
-    // If no applyPattern callback, fall back to full generation
-    if (!this.patternConfig.applyPattern) {
-      console.log(`[PatternAwareFixer] No applyPattern callback, using full generation`);
-      return { success: false, error: 'No pattern application callback' };
-    }
-
+  ): Promise<{ success: boolean; fixCode?: string; error?: string; skippedAI?: boolean }> {
     // Find the best example from KB
     const bestExample = this.findBestKBExample(guidance, issue);
     if (!bestExample) {
@@ -540,8 +650,43 @@ export class PatternAwareFixService extends FreshContextFixService {
       confidence: guidance.successRate,
     };
 
+    // SESSION 85: HIGH-CONFIDENCE PATTERN SKIP
+    // If confidence >= 90% AND pattern has been used successfully 5+ times,
+    // try direct application WITHOUT AI call
+    const HIGH_CONFIDENCE_THRESHOLD = 90;
+    const MIN_SUCCESSFUL_USES = 5;
+
+    if (guidance.successRate >= HIGH_CONFIDENCE_THRESHOLD &&
+        guidance.usageCount >= MIN_SUCCESSFUL_USES) {
+
+      console.log(`[PatternAwareFixer] 🚀 HIGH-CONFIDENCE PATTERN (${guidance.successRate}%, ${guidance.usageCount} uses) - skipping AI`);
+
+      // Try direct template application from the pattern
+      const directResult = this.tryDirectPatternApplication(issue, guidance, bestExample);
+
+      if (directResult) {
+        // Validate the direct fix
+        const validation = await this.patternConfig.validateFix(directResult, [issue]);
+
+        if (validation.passed) {
+          console.log(`[PatternAwareFixer] ✅ Direct pattern application succeeded - 0 AI calls`);
+          this.stats.directPropagation++;
+          return { success: true, fixCode: directResult, skippedAI: true };
+        } else {
+          console.log(`[PatternAwareFixer] ⚠️ Direct pattern validation failed, falling back to AI`);
+        }
+      }
+    }
+
+    // If no applyPattern callback, fall back to full generation
+    if (!this.patternConfig.applyPattern) {
+      console.log(`[PatternAwareFixer] No applyPattern callback, using full generation`);
+      return { success: false, error: 'No pattern application callback' };
+    }
+
     try {
-      // Use lightweight pattern application
+      // Use lightweight pattern application (1 AI call)
+      this.stats.aiCalls++;
       const result = await this.patternConfig.applyPattern(pattern, issue, guidance);
 
       if (!result.success) {
@@ -562,6 +707,83 @@ export class PatternAwareFixService extends FreshContextFixService {
     } catch (error: any) {
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * SESSION 85: Try direct pattern application without AI
+   *
+   * Uses the fix_template from DB patterns to apply fixes directly.
+   * Returns null if direct application not possible.
+   */
+  private tryDirectPatternApplication(
+    issue: FreshContextIssue,
+    guidance: FixGuidance,
+    bestExample: { pattern: string; example: string }
+  ): string | null {
+    const codeContext = issue.codeContext || '';
+
+    // If the example contains a direct replacement pattern, use it
+    if (bestExample.example && bestExample.example.length > 10) {
+      // Check if this is a simple replacement pattern
+      // Many KB patterns store the fixed code directly
+
+      // For patterns with clear before/after, try to apply
+      const normalizedRule = guidance.ruleId.toLowerCase();
+
+      // Check if we have a template transform for this rule
+      const templateResult = applyTemplateTransform(guidance.ruleId, codeContext, issue.language);
+      if (templateResult?.transformed) {
+        return templateResult.fixedCode;
+      }
+
+      // For patterns where the example IS the fix (no context needed)
+      // e.g., "Add @Override annotation" → just return the annotated version
+      if (this.isDirectReplacementPattern(normalizedRule)) {
+        // The example code IS the fix - return it if it looks valid
+        if (this.validatePatternStructure(bestExample.example, issue)) {
+          return bestExample.example;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if a rule type can use direct replacement
+   */
+  private isDirectReplacementPattern(normalizedRule: string): boolean {
+    const directPatternRules = [
+      'unnecessarysemicolon',
+      'simplifybooleanreturns',
+      'emptycatchblock',
+      'avoidcatchingthrowable',
+      'arraytypestyle',
+      'missingoverride',
+      'uselocalewithcaseconversions',
+      'unusedimport',
+    ];
+
+    return directPatternRules.some(r => normalizedRule.includes(r));
+  }
+
+  /**
+   * Basic structure validation for pattern application
+   */
+  private validatePatternStructure(fixCode: string, issue: FreshContextIssue): boolean {
+    if (!fixCode || fixCode.length < 5) return false;
+
+    // Check that the fix is syntactically reasonable
+    // (balanced braces, no obvious truncation)
+    const openBraces = (fixCode.match(/\{/g) || []).length;
+    const closeBraces = (fixCode.match(/\}/g) || []).length;
+
+    if (Math.abs(openBraces - closeBraces) > 2) return false;
+
+    // Check that it doesn't look like an error message
+    if (fixCode.includes('Error:') || fixCode.includes('Exception:')) return false;
+
+    return true;
   }
 
   /**
