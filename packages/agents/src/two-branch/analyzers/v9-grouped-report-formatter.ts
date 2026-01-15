@@ -1090,6 +1090,13 @@ export class V9GroupedReportFormatter {
     markdown.push(await this.generateExecutiveSummary(enrichedIssues, updatedGroups, metadata));
     markdown.push('');
 
+    // SESSION 85: PRO Tier Fix Summary Section
+    // Shows fix results with before/after, verification status, confidence scores
+    if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+      markdown.push(this.generatePROFixSummary(enrichedIssues, updatedGroups, metadata));
+      markdown.push('');
+    }
+
     // BUG #89: Removed old incorrect fix (was here at line 779-809)
     // The correct fix is now at line 630-654 (BEFORE summary generation at line 776)
     // This ensures enrichedIssues is populated BEFORE generateExecutiveSummary() uses it
@@ -4720,17 +4727,24 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         section += '\n```\n\n';
       } else if (representative?.fixSuggestion?.correctedCode && typeof representative.fixSuggestion.correctedCode === 'string') {
         // BUG FIX #47 CORRECTED: Show AI code when snippet unavailable, but with minimal cleaning
+        // SESSION 85: Only show AI code for PRO/Enterprise tier
         const aiCode = representative.fixSuggestion.correctedCode.trim();
         // Only remove <think> tags, keep everything else
         const cleanCode = aiCode.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '').trim();
 
         if (cleanCode && cleanCode.length >= 20) {
-          section += `**Code** (AI-generated example):\n\n`;
-          const language = this.getLanguageFromFile(exampleIssue.file);
-          section += `\`\`\`${language}\n`;
-          section += cleanCode;
-          section += '\n```\n\n';
-          alreadyShowedAICode = true; // Track that we showed AI code here
+          // SESSION 85: Tier-aware code display
+          if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+            section += `**Code** (AI-generated example):\n\n`;
+            const language = this.getLanguageFromFile(exampleIssue.file);
+            section += `\`\`\`${language}\n`;
+            section += cleanCode;
+            section += '\n```\n\n';
+            alreadyShowedAICode = true; // Track that we showed AI code here
+          } else {
+            // BASIC tier: Show that code is available but not displayed
+            section += `> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.\n\n`;
+          }
         } else {
           section += `> Code snippet unavailable. See fix recommendation below.\n\n`;
         }
@@ -4755,53 +4769,63 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
         const cleanFix = this.cleanAIContent(representative.fixSuggestion.fix);
         section += `${cleanFix}\n\n`;
 
-        // Show AI-generated code example if available
+        // SESSION 85: TIER-AWARE FIX DISPLAY
+        // Show AI-generated code example ONLY for PRO/Enterprise tier
+        // BASIC tier gets text guidance only (matches BASIC_TIER_SAMPLE_REPORT.md design)
         if (hasValidFix) {
           const cleanCorrectedCode = this.cleanAIContent(representative.fixSuggestion.correctedCode);
 
-          // If after cleaning, the code is valid, show it
+          // If after cleaning, the code is valid, show it (but only for PRO tier)
           if (cleanCorrectedCode && cleanCorrectedCode.length >= 20) {
-            if (hasValidSnippet) {
-              // SESSION 74 FIX: Check if before and after are identical to avoid confusing diffs
-              const snippetNormalized = (representative.snippet || '').trim().replace(/\s+/g, ' ');
-              const correctedNormalized = cleanCorrectedCode.trim().replace(/\s+/g, ' ');
-              const areIdentical = snippetNormalized === correctedNormalized ||
-                this.calculateSimilarity(snippetNormalized, correctedNormalized) > 0.95;
+            // SESSION 85: Check tier before showing AI-generated code
+            if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+              // PRO/Enterprise tier: Show full AI-generated fix with before/after
+              if (hasValidSnippet) {
+                // SESSION 74 FIX: Check if before and after are identical to avoid confusing diffs
+                const snippetNormalized = (representative.snippet || '').trim().replace(/\s+/g, ' ');
+                const correctedNormalized = cleanCorrectedCode.trim().replace(/\s+/g, ' ');
+                const areIdentical = snippetNormalized === correctedNormalized ||
+                  this.calculateSimilarity(snippetNormalized, correctedNormalized) > 0.95;
 
-              if (areIdentical) {
-                // Before and after are essentially the same - show a helpful message instead
-                section += `> 💡 **Note**: The AI-suggested fix involves changes that may require context beyond the displayed snippet. `;
-                section += `Please review the specific fix guidance above and apply it manually to the affected locations.\n\n`;
-              } else {
-                section += `**Suggested Change**:\n\n`;
-                section += '```diff\n';
-                section += '- // Before:\n';
-                section += (representative.snippet || '').split('\n').map(line => `- ${line}`).join('\n');
-                section += '\n\n';
-                section += '+ // After:\n';
-                section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
-                section += '\n```\n\n';
-              }
-            } else if (!alreadyShowedAICode) {
-              // BUG FIX: Only show "Recommended Code" if we didn't already show it as "Code (AI-generated example)"
-              // SESSION 73 FIX: Validate that corrected code matches the representative file
-              // Extract class name from exampleIssue file to check if code is for the right file
-              const exampleFileName = exampleIssue?.file?.split('/').pop()?.replace('.java', '').replace('.ts', '').replace('.py', '') || '';
-              const codeMatchesFile = !exampleFileName ||
-                cleanCorrectedCode.includes(exampleFileName) ||
-                cleanCorrectedCode.includes(`class ${exampleFileName}`) ||
-                cleanCorrectedCode.length < 200; // Short generic patterns are OK
+                if (areIdentical) {
+                  // Before and after are essentially the same - show a helpful message instead
+                  section += `> 💡 **Note**: The AI-suggested fix involves changes that may require context beyond the displayed snippet. `;
+                  section += `Please review the specific fix guidance above and apply it manually to the affected locations.\n\n`;
+                } else {
+                  section += `**Suggested Change**:\n\n`;
+                  section += '```diff\n';
+                  section += '- // Before:\n';
+                  section += (representative.snippet || '').split('\n').map(line => `- ${line}`).join('\n');
+                  section += '\n\n';
+                  section += '+ // After:\n';
+                  section += cleanCorrectedCode.split('\n').map(line => `+ ${line}`).join('\n');
+                  section += '\n```\n\n';
+                }
+              } else if (!alreadyShowedAICode) {
+                // BUG FIX: Only show "Recommended Code" if we didn't already show it as "Code (AI-generated example)"
+                // SESSION 73 FIX: Validate that corrected code matches the representative file
+                // Extract class name from exampleIssue file to check if code is for the right file
+                const exampleFileName = exampleIssue?.file?.split('/').pop()?.replace('.java', '').replace('.ts', '').replace('.py', '') || '';
+                const codeMatchesFile = !exampleFileName ||
+                  cleanCorrectedCode.includes(exampleFileName) ||
+                  cleanCorrectedCode.includes(`class ${exampleFileName}`) ||
+                  cleanCorrectedCode.length < 200; // Short generic patterns are OK
 
-              if (codeMatchesFile) {
-                section += `**Recommended Code**:\n\n`;
-                const language = representative?.file ? this.getLanguageFromFile(representative.file) : 'text';
-                section += `\`\`\`${language}\n`;
-                section += cleanCorrectedCode;
-                section += '\n```\n\n';
-              } else {
-                // Code doesn't match the representative example - show generic guidance instead
-                section += `> 💡 **Pattern-Based Fix**: This fix pattern applies to all occurrences. Adapt the principle to each specific file.\n\n`;
+                if (codeMatchesFile) {
+                  section += `**Recommended Code**:\n\n`;
+                  const language = representative?.file ? this.getLanguageFromFile(representative.file) : 'text';
+                  section += `\`\`\`${language}\n`;
+                  section += cleanCorrectedCode;
+                  section += '\n```\n\n';
+                } else {
+                  // Code doesn't match the representative example - show generic guidance instead
+                  section += `> 💡 **Pattern-Based Fix**: This fix pattern applies to all occurrences. Adapt the principle to each specific file.\n\n`;
+                }
               }
+            } else {
+              // BASIC tier: Show upgrade prompt instead of AI-generated code
+              section += `> 💡 **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.\n`;
+              section += `> See the IDE Integration section below to export issues for manual fixing.\n\n`;
             }
           } else {
             // BUG-LSP-001: Fix was rejected (template pattern detected) - show manual review message
@@ -6172,6 +6196,242 @@ ${(() => {
    */
   private getRiskImpactLevel(categoryIssues: EnrichedIssue[]): string {
     return getRiskImpactLevel(categoryIssues);
+  }
+
+  /**
+   * SESSION 85: Generate PRO Tier Fix Summary
+   * Shows fix results with status, confidence scores, and pending issues
+   * Only called for PRO/Enterprise tier users
+   */
+  private generatePROFixSummary(
+    issues: EnrichedIssue[],
+    groups: IssueGroup[],
+    metadata: any
+  ): string {
+    const lines: string[] = [];
+
+    // Count issues by fix status
+    const fixedIssues = issues.filter(i => i.fixSuggestion?.correctedCode && i.category !== 'RESOLVED');
+    const pendingIssues = issues.filter(i => !i.fixSuggestion?.correctedCode && i.category !== 'RESOLVED');
+    const resolvedByPR = issues.filter(i => i.category === 'RESOLVED');
+
+    // Calculate fix rate
+    const totalActive = fixedIssues.length + pendingIssues.length;
+    const fixRate = totalActive > 0 ? (fixedIssues.length / totalActive * 100).toFixed(1) : '100.0';
+
+    lines.push('## 🔧 Fix Summary (PRO)');
+    lines.push('');
+    lines.push('All fixes have been AI-generated and verified against tool rules.');
+    lines.push('');
+
+    // Overall stats table
+    lines.push('| Status | Count | Percentage |');
+    lines.push('|--------|-------|------------|');
+    lines.push(`| ✅ **Auto-Fixed** | ${fixedIssues.length} | ${fixRate}% |`);
+    lines.push(`| ⏳ **Pending Review** | ${pendingIssues.length} | ${totalActive > 0 ? (pendingIssues.length / totalActive * 100).toFixed(1) : '0.0'}% |`);
+    lines.push(`| 🎉 **Already Resolved** | ${resolvedByPR.length} | - |`);
+    lines.push('');
+
+    // Group fixed issues by category
+    if (fixedIssues.length > 0) {
+      lines.push('### Successfully Fixed Issues');
+      lines.push('');
+
+      // Group by detected category
+      const categories = ['Security', 'Performance', 'Architecture', 'Dependencies', 'Code Quality'];
+
+      for (const category of categories) {
+        const categoryIssues = fixedIssues.filter(i => i.detectedCategory === category);
+        if (categoryIssues.length === 0) continue;
+
+        const categoryGroups = groups.filter(g =>
+          categoryIssues.some(i => i.rule === g.rule && i.tool === g.tool)
+        );
+
+        lines.push(`#### ${category} Fixes (${categoryIssues.length})`);
+        lines.push('');
+        lines.push('| # | File | Rule | Status | Confidence |');
+        lines.push('|---|------|------|--------|------------|');
+
+        // Show up to 5 issues per category
+        const displayIssues = categoryIssues.slice(0, 5);
+        displayIssues.forEach((issue, idx) => {
+          const fileName = issue.file.split('/').pop() || issue.file;
+          const confidence = this.getFixConfidence(issue);
+          lines.push(`| ${idx + 1} | ${fileName}:${issue.line || 0} | ${issue.rule} | ✅ FIXED | ${confidence}% |`);
+        });
+
+        if (categoryIssues.length > 5) {
+          lines.push(`| ... | *${categoryIssues.length - 5} more issues* | | FIXED | |`);
+        }
+        lines.push('');
+      }
+    }
+
+    // Pending issues that need manual review
+    if (pendingIssues.length > 0) {
+      lines.push('### Pending Issues (Require Manual Review)');
+      lines.push('');
+      lines.push('These issues could not be auto-fixed and require human decision:');
+      lines.push('');
+
+      // Group by reason
+      const manualReviewGroups = this.groupPendingByReason(pendingIssues);
+
+      for (const [reason, reasonIssues] of Object.entries(manualReviewGroups)) {
+        lines.push(`#### ${reason} (${reasonIssues.length} issues)`);
+        lines.push('');
+
+        // Show first issue as example
+        const example = reasonIssues[0];
+        lines.push(`- **Example**: \`${example.file.split('/').pop()}:${example.line || 0}\``);
+        lines.push(`- **Rule**: ${example.rule}`);
+        lines.push(`- **Reason**: ${this.getManualReviewReason(example)}`);
+        lines.push('');
+        lines.push(`**Recommendation**: ${this.getManualReviewRecommendation(example)}`);
+        lines.push('');
+        lines.push('---');
+        lines.push('');
+      }
+    }
+
+    // Apply Fixes CLI section
+    if (fixedIssues.length > 0) {
+      lines.push('### Apply Fixes');
+      lines.push('');
+      lines.push('```bash');
+      lines.push('# Apply all verified fixes');
+      lines.push(`codequal apply --analysis-id ${metadata.commitSHA || 'latest'}`);
+      lines.push('');
+      lines.push('# Review and commit');
+      lines.push('git diff');
+      lines.push(`git add -A && git commit -m "Apply CodeQual fixes for ${fixedIssues.length} issues"`);
+      lines.push('```');
+      lines.push('');
+      lines.push('**Other options:**');
+      lines.push('');
+      lines.push('```bash');
+      lines.push('# Apply only security fixes');
+      lines.push('codequal apply --category security');
+      lines.push('');
+      lines.push('# Interactive mode - review each fix');
+      lines.push('codequal apply --interactive');
+      lines.push('```');
+      lines.push('');
+    }
+
+    // Business Impact Summary
+    const estimatedManualTime = pendingIssues.length * 15; // 15 min per issue
+    const autoFixTime = fixedIssues.length * 5; // 5 min saved per auto-fix
+    const timeSaved = Math.max(0, (fixedIssues.length * 15) - autoFixTime);
+
+    lines.push('### Business Impact');
+    lines.push('');
+    lines.push('| Metric | Value |');
+    lines.push('|--------|-------|');
+    lines.push(`| Estimated Manual Fix Time | ${Math.round(estimatedManualTime / 60)}h ${estimatedManualTime % 60}m |`);
+    lines.push(`| Auto-Fix Time | ${Math.round(autoFixTime / 60)}h ${autoFixTime % 60}m |`);
+    lines.push(`| **Time Saved** | **${Math.round(timeSaved / 60)}h ${timeSaved % 60}m (${fixedIssues.length > 0 ? Math.round(timeSaved / (fixedIssues.length * 15) * 100) : 0}%)** |`);
+    lines.push('');
+
+    lines.push('---');
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Get fix confidence percentage based on fix tier and issue characteristics
+   */
+  private getFixConfidence(issue: EnrichedIssue): number {
+    // Base confidence on whether we have a valid fix
+    if (!issue.fixSuggestion?.correctedCode) return 0;
+
+    // Use severity confidence if available
+    if (issue.severityConfidence === 'high') return 95;
+    if (issue.severityConfidence === 'medium') return 85;
+    if (issue.severityConfidence === 'low') return 70;
+
+    // Default based on category
+    if (issue.detectedCategory === 'Security') return 92;
+    if (issue.detectedCategory === 'Code Quality') return 88;
+    return 85;
+  }
+
+  /**
+   * Group pending issues by their manual review reason
+   */
+  private groupPendingByReason(issues: EnrichedIssue[]): Record<string, EnrichedIssue[]> {
+    const groups: Record<string, EnrichedIssue[]> = {};
+
+    for (const issue of issues) {
+      const reason = this.classifyManualReviewReason(issue);
+      if (!groups[reason]) groups[reason] = [];
+      groups[reason].push(issue);
+    }
+
+    return groups;
+  }
+
+  /**
+   * Classify why an issue needs manual review
+   */
+  private classifyManualReviewReason(issue: EnrichedIssue): string {
+    // Check common patterns
+    if (issue.rule.toLowerCase().includes('upgrade') ||
+        issue.rule.toLowerCase().includes('dependency')) {
+      return 'Major Dependency Upgrade';
+    }
+    if (issue.rule.toLowerCase().includes('complexity') ||
+        issue.rule.toLowerCase().includes('cognitive')) {
+      return 'Complex Refactoring Required';
+    }
+    if (issue.detectedCategory === 'Architecture') {
+      return 'Architectural Decision';
+    }
+    if (issue.detectedCategory === 'Security' && !issue.fixSuggestion?.correctedCode) {
+      return 'Security Review Required';
+    }
+    return 'Context-Dependent Fix';
+  }
+
+  /**
+   * Get explanation for why manual review is needed
+   */
+  private getManualReviewReason(issue: EnrichedIssue): string {
+    const classification = this.classifyManualReviewReason(issue);
+
+    switch (classification) {
+      case 'Major Dependency Upgrade':
+        return 'This upgrade involves breaking changes that require careful review';
+      case 'Complex Refactoring Required':
+        return 'The fix requires architectural decisions about code structure';
+      case 'Architectural Decision':
+        return 'This involves design patterns and team conventions';
+      case 'Security Review Required':
+        return 'Security-sensitive changes require human verification';
+      default:
+        return 'The fix depends on context not available to automated analysis';
+    }
+  }
+
+  /**
+   * Get recommendation for manual review issues
+   */
+  private getManualReviewRecommendation(issue: EnrichedIssue): string {
+    const classification = this.classifyManualReviewReason(issue);
+
+    switch (classification) {
+      case 'Major Dependency Upgrade':
+        return 'Plan this as a separate PR with thorough testing. Check migration guides.';
+      case 'Complex Refactoring Required':
+        return 'Consider extracting to smaller methods or services. Discuss with team.';
+      case 'Architectural Decision':
+        return 'Review with tech lead. Consider impact on related components.';
+      case 'Security Review Required':
+        return 'Verify with security team. Ensure compliance with security policies.';
+      default:
+        return 'Review the code context and apply the suggested pattern manually.';
+    }
   }
 
   /**

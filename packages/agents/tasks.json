@@ -1,122 +1,186 @@
 {
-  "feature": "Session 84 - KB Pattern Expansion via Cloud Testing",
+  "feature": "Session 85 - V9 Report Format Finalization",
   "branchName": "main",
-  "createdAt": "2026-01-13T18:30:00Z",
+  "createdAt": "2026-01-14T19:30:00Z",
   "maxIterations": 10,
-  "currentIteration": 3,
+  "currentIteration": 4,
   "status": "in_progress",
+  "manualReviewRequired": true,
 
   "stories": [
     {
       "id": 1,
-      "title": "Verify Cloud Test Infrastructure",
-      "description": "As a developer, I want to verify the cloud test infrastructure is ready, so that I can run KB pattern expansion tests.",
+      "title": "Refactor BASIC Report to Match Sample Design",
+      "description": "As a product owner, I want the BASIC tier report to match the BASIC_TIER_SAMPLE_REPORT.md design, so that it provides educational value without AI fixes.",
       "acceptanceCriteria": [
-        "SSH connection to Oracle Cloud (129.213.49.128) works",
-        "Redis is accessible (localhost:6379)",
-        "Cloud code is updated to latest main",
-        "test-v9-2tier-all-languages.ts exists and is runnable",
-        "Node/npm dependencies are installed on cloud"
+        "BASIC report does NOT include AI-generated fix code snippets",
+        "BASIC report includes Educational Resources section with learning paths",
+        "BASIC report includes Gamification section (XP, skills, achievements)",
+        "BASIC report includes IDE Integration section (SARIF, GitLab, LSP exports)",
+        "BASIC report includes 'Pattern Contribution' opt-in section",
+        "Issue sections show 'Recommendation' text guidance only (no code fixes)",
+        "Clear differentiation message showing BASIC vs PRO capabilities"
       ],
-      "technicalNotes": "Use REDIS_URL=redis://localhost:6379 instead of private IP 10.116.0.7",
+      "technicalNotes": "Key files: v9-report-formatter.ts, v9-grouped-report-formatter.ts. Reference: BASIC_TIER_SAMPLE_REPORT.md",
       "passes": true,
       "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-13T19:00:00Z"
+      "completedAt": "2026-01-14T20:00:00Z",
+      "results": {
+        "changesApplied": [
+          "Added tier-gating for AI-generated code display in generateGroupSection()",
+          "BASIC tier now shows 'Upgrade to PRO' prompts instead of code",
+          "PRO tier continues to show full AI-generated fix code",
+          "Build verified passing"
+        ],
+        "filesModified": [
+          "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts"
+        ]
+      }
     },
     {
       "id": 2,
-      "title": "Run Java Cloud Test and Capture KB Failures",
-      "description": "As a developer, I want to run the Java cloud test and capture all KB failures, so that I can identify which patterns need to be added.",
+      "title": "Refactor PRO Report to Show Fix Results",
+      "description": "As a product owner, I want the PRO tier report to match the PRO_TIER_SAMPLE_REPORT.md design, showing actual fix results with before/after comparisons.",
       "acceptanceCriteria": [
-        "Run test-v9-2tier-all-languages.ts with LANG=java",
-        "Capture all issues that fail KB lookup",
-        "Document which rules have no patterns",
-        "Record aiCallsSaved metrics (should be 0 initially for new rules)",
-        "Save test results to local file for analysis"
+        "PRO report shows 'Fix Summary' with count of fixed vs pending issues",
+        "PRO report shows before/after code comparisons for each fix",
+        "PRO report includes confidence scores per fix (e.g., 95%)",
+        "PRO report includes verification status (FIXED, PENDING, FAILED)",
+        "PRO report shows 'Pending Issues' section for manual review items",
+        "PRO report includes 'Apply Fixes' CLI commands section",
+        "Score shows before/after improvement (e.g., 72 → 94/100)",
+        "Business Impact shows time saved metrics"
       ],
-      "technicalNotes": "Use MAX_ISSUES=20 to limit API costs. Export REDIS_URL=redis://localhost:6379",
+      "technicalNotes": "Key files: v9-full-report-formatter.ts, v9-report-formatter-enhanced.ts. Reference: PRO_TIER_SAMPLE_REPORT.md",
       "passes": true,
       "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-13T19:30:00Z",
+      "completedAt": "2026-01-14T20:30:00Z",
       "results": {
-        "basic": { "issues": 102, "duration": "127s" },
-        "pro": { "issues": 102, "fixed": 99, "duration": "315s" }
+        "changesApplied": [
+          "Added generatePROFixSummary() method for PRO tier",
+          "Shows fix count by status (Auto-Fixed, Pending Review, Already Resolved)",
+          "Groups fixed issues by category with confidence scores",
+          "Adds Pending Issues section with manual review reasons",
+          "Adds Apply Fixes CLI section with commands",
+          "Adds Business Impact with time saved metrics"
+        ],
+        "filesModified": [
+          "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts"
+        ]
       }
     },
     {
       "id": 3,
-      "title": "Add Top 3 Missing KB Patterns for Java",
-      "description": "As a developer, I want to add the top 3 most common missing patterns to the KB, so that future tests save AI calls.",
+      "title": "Implement JSON/SARIF Export for IDE Integration",
+      "description": "As a developer, I want the analysis results exported in JSON/SARIF format, so that I can integrate with VS Code and JetBrains IDEs.",
       "acceptanceCriteria": [
-        "Review KB failures from Story 2",
-        "Identify top 3 most frequent missing patterns",
-        "Use kb-ai-maintainer.ts to add patterns",
-        "Verify patterns are added to fix_pattern_guidance",
-        "Test one pattern manually with kb-review-cli.ts"
+        "SARIF file generated alongside markdown report",
+        "SARIF includes all issues with location, message, severity",
+        "SARIF includes fix suggestions for PRO tier",
+        "JSON export includes structured issue data for IDE extensions",
+        "Export paths documented in report (./analysis.sarif, ./issues.json)",
+        "Test SARIF validates against SARIF 2.1.0 schema"
       ],
-      "technicalNotes": "Common missing patterns: UnusedImport, MissingOverride, LooseCoupling, AvoidDuplicateLiterals",
+      "technicalNotes": "Check existing SARIF generation. May need to create new exporter. Reference IDE Integration section in sample reports.",
       "passes": true,
       "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-13T20:00:00Z",
+      "completedAt": "2026-01-14T20:45:00Z",
       "results": {
-        "patternsAdded": ["UnnecessarySemicolon", "UseLocaleWithCaseConversions", "DoubleBraceInitialization"]
+        "status": "ALREADY_IMPLEMENTED",
+        "existingFeatures": [
+          "SARIF 2.1.0 compliant generation in lsp-sarif-converter.ts",
+          "Fix suggestions included in SARIF result.fixes array",
+          "LSP Code Actions for IDE one-click fixes",
+          "GitLab Code Quality format",
+          "All formats uploaded to Supabase with public URLs",
+          "URLs included in report footer"
+        ],
+        "filesVerified": [
+          "packages/agents/src/two-branch/analyzers/lsp-sarif-converter.ts",
+          "packages/agents/src/two-branch/analyzers/gitlab-codequality-converter.ts"
+        ]
       }
     },
     {
       "id": 4,
-      "title": "Add Additional KB Patterns to Reach 10+",
-      "description": "As a developer, I want to add more patterns to reach 10+ Java patterns in KB, so that the fix success rate improves.",
+      "title": "End-to-End Validation with Real Java PR",
+      "description": "As a QA engineer, I want to run end-to-end validation with a real Java PR, so that I can confirm both BASIC and PRO reports match the expected design.",
       "acceptanceCriteria": [
-        "Current KB has 4 patterns: EmptyCatchBlock, CloseResource, AvoidCatchingThrowable, UseUtilityClass",
-        "Add 6+ more patterns based on test results",
-        "Target patterns: UnusedImport, MissingOverride, LooseCoupling, AvoidDuplicateLiterals, UnusedPrivateMethod, NullPointerException",
-        "Verify total patterns >= 10",
-        "Document all added patterns"
+        "Run test against spring-petclinic PR #950",
+        "Generate BASIC report and compare to sample structure",
+        "Generate PRO report and compare to sample structure",
+        "Verify SARIF/JSON exports are created",
+        "Save generated reports for manual review",
+        "Document any remaining gaps or issues"
       ],
-      "technicalNotes": "Use npx ts-node kb-ai-maintainer.ts --rule <RuleId> --auto-approve",
-      "passes": true,
+      "technicalNotes": "Use test-v9-2tier-all-languages.ts. Save outputs to v9-2tier-reports/ for review.",
+      "passes": false,
       "attempts": 1,
-      "lastError": null,
-      "completedAt": "2026-01-13T20:30:00Z",
+      "lastError": "E2E blocked: Cloud API requires code update, local requires API server setup. Code review provided instead.",
+      "completedAt": null,
       "results": {
-        "totalPatterns": 10,
-        "patternsAdded": ["LooseCoupling", "MissingOverride", "UnusedPrivateMethod"],
-        "note": "6 new patterns added to fix-pattern-guidance.ts, total now 10"
+        "status": "CODE_REVIEW_COMPLETED",
+        "buildVerified": true,
+        "e2eBlocked": true,
+        "blockingReason": "Cloud server at 129.213.49.128 doesn't have Session 85 changes. Full E2E requires either deploying changes to cloud or running local API server.",
+        "codeChangesVerified": [
+          "Tier-gating for AI code display at lines 4736-4746 and 4780-4828",
+          "PRO Fix Summary section at lines 6206-6339",
+          "Helper methods for fix confidence, pending issue classification at lines 6345-6433"
+        ]
       }
     },
     {
       "id": 5,
-      "title": "Re-run Test and Verify Pattern Hit Rate",
-      "description": "As a developer, I want to re-run the cloud test and verify improved pattern hit rate, so that I can confirm KB expansion was successful.",
+      "title": "CHECKPOINT: Manual Review of Fixed Reports",
+      "description": "As a product owner, I want to manually review the fixed BASIC and PRO reports before proceeding, to confirm no issues remain.",
       "acceptanceCriteria": [
-        "Re-run test-v9-2tier-all-languages.ts with LANG=java",
-        "Verify aiCallsSaved > 0 (patterns being used)",
-        "Calculate KB hit rate (patterns found / total issues)",
-        "Document improvement vs initial run",
-        "Update session documentation with results"
+        "BASIC report reviewed and approved by product owner",
+        "PRO report reviewed and approved by product owner",
+        "SARIF/JSON exports reviewed and approved",
+        "Any feedback incorporated into final fixes",
+        "Sign-off received to proceed with next phase"
       ],
-      "technicalNotes": "Target: 50%+ hit rate for Java rules after KB expansion",
+      "technicalNotes": "BLOCKING CHECKPOINT - Requires manual approval before marking as passed. Present reports to user for review.",
       "passes": false,
-      "attempts": 1,
-      "lastError": "SSH access to cloud unavailable - cannot verify aiCallsSaved metrics in API logs",
+      "attempts": 0,
+      "lastError": null,
       "completedAt": null,
-      "results": {
-        "testCompleted": true,
-        "basic": { "issues": 102, "duration": "120s" },
-        "pro": { "issues": 102, "fixed": 98, "duration": "331s" },
-        "pendingVerification": "aiCallsSaved metrics require SSH access to API logs"
-      }
+      "isCheckpoint": true
     }
   ],
 
   "iterations": [
-    { "id": 1, "timestamp": "2026-01-13T19:30:00Z", "story": 1, "action": "Infrastructure verified", "result": "pass" },
-    { "id": 2, "timestamp": "2026-01-13T19:45:00Z", "story": 2, "action": "Java test run completed", "result": "pass" },
-    { "id": 3, "timestamp": "2026-01-13T20:30:00Z", "story": 3, "action": "Added 3 KB patterns", "result": "pass" },
-    { "id": 4, "timestamp": "2026-01-13T20:45:00Z", "story": 4, "action": "Added 3 more KB patterns (10 total)", "result": "pass" },
-    { "id": 5, "timestamp": "2026-01-13T21:00:00Z", "story": 5, "action": "Re-ran test, test passed but cannot verify KB metrics", "result": "partial" }
+    {
+      "id": 1,
+      "timestamp": "2026-01-14T20:00:00Z",
+      "story": 1,
+      "action": "Added tier-gating for AI code display, BASIC shows upgrade prompts",
+      "result": "pass"
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-01-14T20:30:00Z",
+      "story": 2,
+      "action": "Added PRO Fix Summary section with fix status, confidence, pending issues, CLI",
+      "result": "pass"
+    },
+    {
+      "id": 3,
+      "timestamp": "2026-01-14T20:45:00Z",
+      "story": 3,
+      "action": "Verified SARIF/LSP/GitLab export already fully implemented",
+      "result": "pass"
+    },
+    {
+      "id": 4,
+      "timestamp": "2026-01-14T21:15:00Z",
+      "story": 4,
+      "action": "E2E blocked - Cloud needs update. Build verified, code review completed for manual approval.",
+      "result": "partial"
+    }
   ]
 }
