@@ -100,3 +100,70 @@ Commit: [main fe64a3c6] rex(#4): Add KB Success Rate to Complexity Detection
  create mode 100644 packages/agents/src/fix-agent/state/complexity-detection.ts
 fe64a3c6
 
+
+=== Task #5 (2026-01-16 08:25:21) ===
+Title: Optimize Batch Validation
+Status: COMPLETE
+Commit: [main aaf5062b] rex(#5): Optimize Batch Validation
+ 5 files changed, 593 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/validators/batch-validator.ts
+ create mode 100644 packages/agents/src/fix-agent/validators/index.ts
+aaf5062b
+
+---
+
+# SESSION 90: Test Stabilization & KB-First Fix Bypass
+# Source: rex-session-90-tasks.md
+# Started: 2026-01-16
+
+## Learnings
+
+### Task 1-2: Fix TypeScript Errors in Test Files
+- Jest `@jest/globals` requires explicit generic types for mock functions
+- Pattern: `jest.fn<() => ReturnType>().mockReturnValue(value)`
+- Affected mocks: fs module, repository-learnings, fix-pattern-guidance, fix-pattern-registry
+- Example fix:
+  ```typescript
+  // Before (TS2345 error):
+  jest.fn().mockReturnValue(false)
+
+  // After (correct):
+  jest.fn<() => boolean>().mockReturnValue(false)
+  ```
+
+### Task 3: KB Bypass Check Function
+- Created kb-fix-applicator.ts with checkKBBypass() function
+- Bypass conditions:
+  1. KB success rate >= 95% → high_success_rate
+  2. 10+ uses with 100% success rate → tool_validated
+- Interface KBBypassResult tracks: canBypass, reason, guidance, confidence, fixCode
+- Metrics tracking: kbAppliedCount, aiAppliedCount, kbBypassSavings
+
+### Task 4: AI Fixer Integration
+- Modified processIssue() in ai-fixer-agent.ts to check KB bypass first
+- KB bypass returns EnrichedIssue with model='kb-bypass' and cost=0
+- Metrics recorded via recordKBBypass() function
+- Fallback to AI when bypass not allowed
+
+### Task 5: KB Bypass Tests
+- Comprehensive test coverage for 95% threshold edge case
+- Tests for tool_validated detection (10+ uses, 100% success)
+- Tests for no_pattern and low_confidence fallbacks
+- Metrics recording and reset tests
+- Integration scenarios for repeated scans
+
+## Summary
+All 5 tasks completed successfully:
+- Test stabilization: Fixed Jest mock typing errors
+- KB-First Fix Bypass: Implemented cost-saving feature that skips AI when KB has high-confidence patterns
+- Expected outcome: Second scan of same PR = 0 AI calls for rules with >=95% success rate
+
+=== Session 90 Task #1-5 (2026-01-16) ===
+Title: Session 90 - Test Stabilization & KB-First Fix Bypass
+Status: COMPLETE
+Commit: [main bbfef771] Session 90: Test stabilization & KB-First Fix Bypass
+ 6 files changed, 866 insertions(+), 26 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/state/__tests__/kb-fix-applicator.test.ts
+ create mode 100644 packages/agents/src/fix-agent/state/kb-fix-applicator.ts
+bbfef771
+

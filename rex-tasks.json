@@ -1,118 +1,116 @@
 {
-  "source": "docs/NEXT_SESSION_89.md",
-  "createdAt": "2025-01-16T08:00:00Z",
-  "maxIterations": 20,
+  "source": "rex-session-90-tasks.md",
+  "createdAt": "2026-01-16T14:00:00Z",
+  "maxIterations": 15,
   "currentIteration": 5,
-  "status": "ready",
+  "status": "completed",
+
   "validation": {
-    "type": "turbo",
-    "build": "turbo run build",
+    "type": "turborepo",
+    "build": "npx turbo run build --no-daemon",
+    "test": "npx turbo run test --no-daemon",
+    "typecheck": "npx turbo run typecheck --no-daemon",
     "note": "Lint disabled - codebase has pre-existing lint errors"
   },
+
   "tasks": [
     {
       "id": 1,
       "parentId": null,
-      "title": "Test Complexity Detection & Batch Fixing",
-      "description": "Verify Session 88 implementations work correctly by creating test files for complexity detection and batch fixing.",
+      "title": "Fix TypeScript errors in complexity-detection.test.ts",
+      "description": "Update jest mock typing to use explicit generic types for mockReturnValue calls. The issue is that @jest/globals requires explicit typing like jest.fn<() => boolean>(). Change patterns like jest.fn().mockReturnValue(false) to jest.fn<() => boolean>().mockReturnValue(false)",
       "steps": [
-        "Create test file for complexity detection with tests for simple rules (unused-import, formatting-error) and complex rules (sql-injection, xss-vulnerability)",
-        "Create integration test for batch fixing: mock 3 issues in same story, verify single AI call is made, verify all 3 fixes are validated"
+        "Read the test file to identify all jest.fn() calls with mockReturnValue",
+        "Update each jest.fn() to use explicit generic type matching the return value",
+        "Ensure all mock functions have proper TypeScript types"
       ],
-      "files": [
-        "packages/agents/src/fix-agent/state/__tests__/complexity-detection.test.ts",
-        "packages/agents/src/fix-agent/state/__tests__/batch-fixing.test.ts"
-      ],
+      "files": ["packages/agents/src/fix-agent/state/__tests__/complexity-detection.test.ts"],
       "priority": "high",
       "passes": true,
-      "attempts": 0,
+      "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-16T13:13:37Z",
-      "commitHash": "[main 82088355] rex(#1): Test Complexity Detection & Batch Fixing\n 4 files changed, 971 insertions(+)\n create mode 100644 packages/agents/src/fix-agent/state/__tests__/batch-fixing.test.ts\n create mode 100644 packages/agents/src/fix-agent/state/__tests__/complexity-detection.test.ts\n create mode 100644 rex-progress.txt\n create mode 100644 rex-tasks.json\n82088355"
+      "completedAt": "2026-01-16T14:30:00Z",
+      "commitHash": "bbfef771"
     },
     {
       "id": 2,
       "parentId": null,
-      "title": "Implement generateBatchFix Callback",
-      "description": "Create the AI callback that handles batch prompts for fixing multiple issues in a single AI call.",
+      "title": "Fix TypeScript errors in batch-fixing.test.ts",
+      "description": "Update jest mock typing to use explicit generic types for mockReturnValue calls. Same pattern as task 1 - add explicit generic types to all jest.fn() calls with mockReturnValue.",
       "steps": [
-        "Add generateBatchFix method to ai-fixer-agent.ts",
-        "Implement buildBatchPrompt helper to create the batch prompt",
-        "Implement parseBatchResponse helper to parse AI response",
-        "Integrate with existing fix flow"
+        "Read the test file to identify all jest.fn() calls with mockReturnValue",
+        "Update each jest.fn() to use explicit generic type matching the return value",
+        "Ensure all mock functions have proper TypeScript types"
       ],
-      "files": [
-        "packages/agents/src/fix-agent/agents/ai-fixer-agent.ts"
-      ],
+      "files": ["packages/agents/src/fix-agent/state/__tests__/batch-fixing.test.ts"],
       "priority": "high",
       "passes": true,
-      "attempts": 0,
+      "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-16T13:16:48Z",
-      "commitHash": "[main 12402927] rex(#2): Implement generateBatchFix Callback\n 3 files changed, 321 insertions(+), 4 deletions(-)\n12402927"
+      "completedAt": "2026-01-16T14:35:00Z",
+      "commitHash": "bbfef771"
     },
     {
       "id": 3,
       "parentId": null,
-      "title": "Documentation Cleanup - DigitalOcean to Oracle Cloud",
-      "description": "Update remaining DigitalOcean references in docs to Oracle Cloud registry.",
+      "title": "Implement KB bypass check function",
+      "description": "Create checkKBBypass() function that returns true when: KB success rate for rule ID >= 95%, OR Pattern has toolValidated flag set to true. Create new file kb-fix-applicator.ts with KBBypassResult interface and checkKBBypass function.",
       "steps": [
-        "Replace registry.digitalocean.com with iad.ocir.io/idzaw9ddo1h5/codequal",
-        "Update references from DigitalOcean to Oracle Cloud",
-        "Mark deprecated guides (DROPLET_SETUP_GUIDE.md) as archived"
+        "Create KBBypassResult interface with canBypass, reason, pattern, and confidence fields",
+        "Implement checkKBBypass() function that checks success rate and toolValidated flag",
+        "Implement applyPatternTemplate() function to apply KB pattern to issues",
+        "Export all functions and types"
       ],
-      "files": [
-        "packages/agents/docs/HYBRID_ARCHITECTURE_ROADMAP.md",
-        "packages/agents/src/two-branch/docs/next/V9-SYSTEM-OVERVIEW.md",
-        "packages/agents/src/two-branch/docs/next/V9_SESSION_HANDOFF_PROTOCOL.md"
-      ],
+      "files": ["packages/agents/src/fix-agent/state/kb-fix-applicator.ts"],
       "priority": "high",
       "passes": true,
-      "attempts": 0,
+      "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-16T13:18:15Z",
-      "commitHash": "[main a3bca93f] rex(#3): Documentation Cleanup - DigitalOcean to Oracle Cloud\n 6 files changed, 32 insertions(+), 12 deletions(-)\na3bca93f"
+      "completedAt": "2026-01-16T14:45:00Z",
+      "commitHash": "bbfef771"
     },
     {
       "id": 4,
       "parentId": null,
-      "title": "Add KB Success Rate to Complexity Detection",
-      "description": "Use KB success rate to improve model selection - if success rate >= 80%, route to simple/Haiku.",
+      "title": "Integrate KB bypass into AI fixer flow",
+      "description": "Update ai-fixer-agent.ts to call checkKBBypass() before invoking AI. If bypass is allowed, apply pattern directly without AI call. Track metrics: kb_applied vs ai_applied counts.",
       "steps": [
-        "Pass KB success rate to complexity detection function",
-        "Add logic to return 'simple' if kbSuccessRate >= 80",
-        "Update stats to track KB-based routing"
+        "Import checkKBBypass and applyPatternTemplate from kb-fix-applicator",
+        "Add bypass check before AI fixer call in generateFix method",
+        "If canBypass=true, apply pattern template directly (no AI cost)",
+        "If canBypass=false, fall back to AI fixer",
+        "Add metrics recording for both paths (kb_applied, ai_applied)"
       ],
-      "files": [
-        "packages/agents/src/fix-agent/state/complexity-detection.ts"
-      ],
-      "priority": "medium",
+      "files": ["packages/agents/src/fix-agent/agents/ai-fixer-agent.ts"],
+      "priority": "high",
       "passes": true,
-      "attempts": 0,
+      "attempts": 1,
       "lastError": null,
-      "completedAt": "2026-01-16T13:21:58Z",
-      "commitHash": "[main fe64a3c6] rex(#4): Add KB Success Rate to Complexity Detection\n 6 files changed, 411 insertions(+), 125 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/state/complexity-detection.ts\nfe64a3c6"
+      "completedAt": "2026-01-16T14:55:00Z",
+      "commitHash": "bbfef771"
     },
     {
       "id": 5,
       "parentId": null,
-      "title": "Optimize Batch Validation",
-      "description": "Batch validate fixes when same tool/rule instead of validating each fix individually.",
+      "title": "Add KB bypass tests",
+      "description": "Create tests for KB bypass logic covering: High success rate bypass (>=95%), Tool-validated pattern bypass, No pattern fallback to AI, Metrics recording, Edge cases (94% rate should NOT bypass, 95% should).",
       "steps": [
-        "Group fixes by tool using groupBy",
-        "Implement batchValidate function per tool",
-        "Update validation flow to use batch validation"
+        "Create test file kb-fix-applicator.test.ts",
+        "Add test for high success rate bypass (>=95%)",
+        "Add test for tool-validated pattern bypass",
+        "Add test for no pattern fallback to AI",
+        "Add edge case test for 94% vs 95% threshold",
+        "Add metrics recording tests"
       ],
-      "files": [
-        "packages/agents/src/fix-agent/validators/"
-      ],
-      "priority": "medium",
-      "passes": false,
-      "attempts": 0,
+      "files": ["packages/agents/src/fix-agent/state/__tests__/kb-fix-applicator.test.ts"],
+      "priority": "high",
+      "passes": true,
+      "attempts": 1,
       "lastError": null,
-      "completedAt": null,
-      "commitHash": null
+      "completedAt": "2026-01-16T15:00:00Z",
+      "commitHash": "bbfef771"
     }
   ],
+
   "iterations": []
 }
