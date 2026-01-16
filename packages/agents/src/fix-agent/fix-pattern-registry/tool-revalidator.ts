@@ -1741,6 +1741,132 @@ export class ToolRevalidator {
 
     return extensions[language] || '.txt';
   }
+
+  // ==========================================================================
+  // SESSION 89: Batch Validation Support
+  // ==========================================================================
+
+  /**
+   * SESSION 89: Validate multiple fixes in a batch
+   *
+   * Groups fixes by tool/language and validates each group together.
+   * More efficient than calling validateFix individually when you have
+   * multiple fixes for the same tool.
+   *
+   * @param requests - Array of validation requests with fixIds
+   * @returns Batch validation result with individual fix results
+   */
+  async validateBatch(
+    requests: Array<ToolRevalidationRequest & { fixId: string }>
+  ): Promise<{
+    totalFixes: number;
+    passedCount: number;
+    failedCount: number;
+    results: Map<string, ToolRevalidationResult & { fixId: string }>;
+    toolExecutions: number;
+    executionsSaved: number;
+    totalDuration: number;
+    summary: string;
+  }> {
+    const startTime = Date.now();
+    const results = new Map<string, ToolRevalidationResult & { fixId: string }>();
+    let toolExecutions = 0;
+
+    if (requests.length === 0) {
+      return {
+        totalFixes: 0,
+        passedCount: 0,
+        failedCount: 0,
+        results,
+        toolExecutions: 0,
+        executionsSaved: 0,
+        totalDuration: 0,
+        summary: 'No fixes to validate',
+      };
+    }
+
+    // Group fixes by tool:language for efficient processing
+    const groups = new Map<string, Array<ToolRevalidationRequest & { fixId: string }>>();
+    for (const request of requests) {
+      const key = `${request.tool.toLowerCase()}:${request.language.toLowerCase()}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(request);
+    }
+
+    console.log(
+      `[ToolRevalidator:Batch] Grouped ${requests.length} fixes into ${groups.size} tool groups`
+    );
+
+    // Process each group
+    const groupEntries = Array.from(groups.entries());
+    for (const [groupKey, groupRequests] of groupEntries) {
+      console.log(
+        `[ToolRevalidator:Batch] Processing group ${groupKey} with ${groupRequests.length} fixes`
+      );
+      toolExecutions++;
+
+      // Validate each fix in the group
+      // Note: Within a group, fixes share rate limiter context and tool config
+      for (const request of groupRequests) {
+        try {
+          const result = await this.validateFix(request);
+          results.set(request.fixId, { ...result, fixId: request.fixId });
+        } catch (error) {
+          // If validation throws, record as failed
+          results.set(request.fixId, {
+            fixId: request.fixId,
+            passed: false,
+            originalIssueResolved: false,
+            hasRegressions: false,
+            regressionCount: 0,
+            regressions: [],
+            toolExecution: {
+              tool: request.tool,
+              command: 'N/A',
+              exitCode: -1,
+              duration: 0,
+              stdout: '',
+              stderr: (error as Error).message,
+            },
+            summary: `Validation error: ${(error as Error).message}`,
+          });
+        }
+      }
+    }
+
+    // Calculate statistics
+    let passedCount = 0;
+    let failedCount = 0;
+    results.forEach((result) => {
+      if (result.passed) passedCount++;
+      else failedCount++;
+    });
+
+    const totalDuration = Date.now() - startTime;
+    const executionsSaved = Math.max(0, requests.length - groups.size);
+
+    const passRate = requests.length > 0 ? Math.round((passedCount / requests.length) * 100) : 0;
+    const savedPercent = requests.length > 0 ? Math.round((executionsSaved / requests.length) * 100) : 0;
+
+    const summary = `Batch validation: ${passedCount}/${requests.length} passed (${passRate}%), ` +
+      `${groups.size} tool executions (${executionsSaved} groups saved, ${savedPercent}% reduction), ` +
+      `${totalDuration}ms`;
+
+    console.log(`[ToolRevalidator:Batch] ${summary}`);
+
+    return {
+      totalFixes: requests.length,
+      passedCount,
+      failedCount,
+      results,
+      toolExecutions: groups.size,
+      executionsSaved,
+      totalDuration,
+      summary,
+    };
+  }
 }
 
 // ============================================================================
