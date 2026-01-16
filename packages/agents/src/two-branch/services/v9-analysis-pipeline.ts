@@ -587,6 +587,8 @@ export class V9AnalysisPipeline {
         analyzerVersion: '9.0.0',
         toolPerformance: prResult.toolPerformance,
         agentPerformance: prResult.agentPerformance,
+        // SESSION 91 FIX: Pass user tier for tier-specific report content (BASIC vs PRO)
+        userTier: this.config.userTier,
       };
 
       const reportResult = await formatter.generateGroupedReport(

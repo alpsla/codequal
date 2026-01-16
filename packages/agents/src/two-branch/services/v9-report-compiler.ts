@@ -37,6 +37,8 @@ export interface CompileReportInput {
   // BUG-108 FIX: Actual PR-modified files (not just issue files)
   // This is needed to correctly distinguish EXISTING_MODIFIED from EXISTING_REST
   actualModifiedFiles?: string[];
+  // SESSION 91 FIX: User tier for tier-specific report content (BASIC vs PRO)
+  userTier?: 'basic' | 'pro' | 'enterprise';
 }
 
 export interface CompileReportOptions {
@@ -493,7 +495,9 @@ export async function compileV9Report(
     skillScore,
     analyzer: 'V9IntegratedAnalyzer',
     analyzerVersion: '9.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    // SESSION 91 FIX: Pass user tier for tier-specific report content
+    userTier: data.userTier || 'basic'
   };
 
   // Add team members (placeholder - requires Supabase)
