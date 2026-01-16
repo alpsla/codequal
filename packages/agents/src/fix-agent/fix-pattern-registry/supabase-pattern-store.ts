@@ -429,6 +429,15 @@ export class SupabasePatternStore {
       return false; // Reject empty patterns to prevent "poisoned" patterns in database
     }
 
+    // SESSION 87 FIX: Validate that pattern has a tool field (DB constraint requires it)
+    if (!pattern.tool) {
+      console.warn(
+        `[SupabasePatternStore] REJECTED pattern ${pattern.id?.substring(0, 8) || 'new'} for ${pattern.ruleId}: ` +
+        `missing tool field - cannot save to database`
+      );
+      return false; // Reject patterns without tool to prevent DB constraint violation
+    }
+
     // SESSION 49 FIX: Validate that pattern is not corrupted (AI asking for context instead of providing fix)
     // These phrases indicate the AI failed to generate a proper fix and asked for more information
     const CORRUPTED_PHRASES = [

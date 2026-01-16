@@ -32,6 +32,7 @@ import {
   FixGuidance,
   fixPatternGuidance,
 } from '../fix-pattern-registry/fix-pattern-guidance';
+import { getFixPatternRegistry } from '../fix-pattern-registry/fix-pattern-registry';
 
 // ============================================================================
 // Session 86: CRITICAL FIX - Prevent infinite loops and cost overruns
@@ -1350,8 +1351,8 @@ export class PatternAwareFixService extends FreshContextFixService {
       confidence: 85, // High confidence from successful validation
     };
 
-    // Save pattern for future use
-    await this.savePatternToKB(pattern, kbGuidance);
+    // Save pattern for future use (Session 87: include file info for Supabase)
+    await this.savePatternToKB(pattern, kbGuidance, firstIssue.file, firstIssue.line);
 
     // If only one issue, we're done
     if (issues.length === 1) {
@@ -1558,10 +1559,13 @@ export class PatternAwareFixService extends FreshContextFixService {
 
   /**
    * Save a successful pattern to the KB for future use
+   * Session 87: Actually persist to Supabase for cross-session reuse
    */
   private async savePatternToKB(
     pattern: PatternExample,
-    existingGuidance?: FixGuidance | null
+    existingGuidance?: FixGuidance | null,
+    filePath?: string,
+    lineNumber?: number
   ): Promise<void> {
     console.log(`[PatternAwareFixer] Saving pattern to KB: ${pattern.ruleId}`);
 
@@ -1578,6 +1582,37 @@ export class PatternAwareFixService extends FreshContextFixService {
     // Store the pattern for session-level reuse
     const key = `${pattern.ruleId}:${pattern.language}:${pattern.tool}`;
     this.successfulPatterns.set(key, pattern);
+
+    // SESSION 87: Actually persist to Supabase for cross-session reuse
+    // Only save patterns from AI generation (not KB patterns we already have)
+    if (pattern.source === 'ai' && pattern.originalCode && pattern.fixedCode) {
+      try {
+        const registry = getFixPatternRegistry();
+        const response = await registry.submitAIFix(
+          {
+            ruleId: pattern.ruleId,
+            tool: pattern.tool, // Required field - will be rejected if null
+            filePath: filePath || 'unknown',
+            beforeCode: pattern.originalCode,
+            afterCode: pattern.fixedCode,
+            lineNumber: lineNumber || 1,
+            issueMessage: `Fix for ${pattern.ruleId}`,
+            aiModel: 'claude-3-5-sonnet-20241022',
+            aiConfidence: pattern.confidence,
+          },
+          { verified: true } // Validated fix goes directly to active
+        );
+
+        if (response.success) {
+          console.log(`[PatternAwareFixer] ✅ Pattern persisted to Supabase: ${response.patternId?.substring(0, 8) || 'new'}`);
+        } else {
+          console.log(`[PatternAwareFixer] ⚠️ Pattern save failed: ${response.message}`);
+        }
+      } catch (err) {
+        // Don't fail the whole operation if persistence fails
+        console.warn(`[PatternAwareFixer] Failed to persist pattern to Supabase: ${(err as Error).message}`);
+      }
+    }
   }
 
   // --------------------------------------------------------------------------
