@@ -330,15 +330,24 @@ export class LSPSARIFConverter {
   /**
    * BUG-LSP-004 FIX: Validate that fix content is appropriate for the target file
    * Prevents applying Pet.java code to MavenWrapperDownloader.java
+   *
+   * SESSION 87: Enhanced validation to catch more context-specific patterns
    */
   private isFixAppropriateForFile(fixContent: string, targetFile: string): boolean {
     if (!fixContent || !targetFile) return true; // No validation possible
 
     const fileName = targetFile.split('/').pop()?.toLowerCase() || '';
-    const fixLower = fixContent.toLowerCase();
+    const code = fixContent.trim();
 
     // Extract class name from file (e.g., "Pet.java" -> "pet")
-    const targetClassName = fileName.replace(/\.(java|ts|js|py|kt|scala)$/i, '');
+    const targetClassName = fileName.replace(/\.(java|ts|js|py|kt|scala|go|rs)$/i, '');
+
+    // SESSION 87: RULE 1 - Reject large code blocks (likely context-specific)
+    const lineCount = code.split('\n').length;
+    if (lineCount > 15) {
+      console.warn(`[LSP-SARIF] Fix too large (${lineCount} lines) for ${targetClassName} - likely context-specific`);
+      return false;
+    }
 
     // Check for obvious mismatches - fix contains class definitions for different classes
     const classDefPattern = /\b(class|interface|enum)\s+(\w+)/gi;
@@ -353,6 +362,38 @@ export class LSPSARIFConverter {
         // Exception: Test files can contain test classes
         if (!fileName.includes('test') && !definedClass.includes('test')) {
           console.warn(`[LSP-SARIF] Fix defines class '${definedClass}' but target is '${targetClassName}'`);
+          return false;
+        }
+      }
+    }
+
+    // SESSION 87: RULE 2 - Check for project-specific imports
+    const suspiciousImports = [
+      /from\s+["'][.\/]+[^"']+["']/,  // Relative imports like from "./socket"
+      /import\s+.*from\s+["']@[^"']+["']/,  // Scoped packages like @company/pkg
+      /import\s+\{[^}]+\}\s+from\s+["']engine\.io/i,  // Specific package imports
+    ];
+
+    for (const pattern of suspiciousImports) {
+      if (pattern.test(code)) {
+        console.warn(`[LSP-SARIF] Fix contains project-specific imports for ${targetClassName}`);
+        return false;
+      }
+    }
+
+    // SESSION 87: RULE 3 - Check for context-specific code patterns (medium-sized fixes)
+    if (lineCount > 5) {
+      const contextSpecificPatterns = [
+        /\bthis\.context\./,           // Specific object references
+        /getServletContext\(\)/,       // Very specific API calls
+        /asciidoctorTask/i,            // Project-specific names
+        /submittedQuestions/,          // Business-logic specific
+        /secQuestionStore/,            // Business-logic specific
+      ];
+
+      for (const pattern of contextSpecificPatterns) {
+        if (pattern.test(code)) {
+          console.warn(`[LSP-SARIF] Fix contains context-specific code for ${targetClassName}`);
           return false;
         }
       }

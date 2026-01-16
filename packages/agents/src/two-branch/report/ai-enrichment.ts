@@ -16,6 +16,133 @@ import { IssueGroup } from '../utils/issue-grouping';
 import { cleanAIContent, containsAIErrorPatterns } from './formatter-utils';
 
 /**
+ * SESSION 87: Pattern Context Validation
+ *
+ * Validates if a KB pattern's code is appropriate for a target issue.
+ * Prevents applying literal code from Project A to Project B.
+ *
+ * Returns true only for:
+ * 1. Simple fixes (single-line changes, annotations, simple method calls)
+ * 2. Generic patterns that don't contain project-specific code
+ *
+ * Returns false for:
+ * 1. Code with class definitions that don't match target file
+ * 2. Code with project-specific imports
+ * 3. Large code blocks (>15 lines) that are likely context-specific
+ */
+function isPatternApplicableToIssue(
+  patternCode: string,
+  targetFile: string,
+  issueContext?: string
+): { applicable: boolean; reason?: string } {
+  if (!patternCode || patternCode.length < 5) {
+    return { applicable: false, reason: 'Pattern code too short' };
+  }
+
+  const code = patternCode.trim();
+  const targetFileName = targetFile.split('/').pop()?.toLowerCase() || '';
+  const targetClassName = targetFileName.replace(/\.(java|ts|js|py|kt|scala|go|rs)$/i, '');
+
+  // RULE 1: Reject large code blocks (likely context-specific full files)
+  const lineCount = code.split('\n').length;
+  if (lineCount > 15) {
+    return {
+      applicable: false,
+      reason: `Pattern too large (${lineCount} lines) - likely context-specific`
+    };
+  }
+
+  // RULE 2: Check for class definitions that don't match target
+  const classDefPattern = /\b(class|interface|enum)\s+(\w+)/gi;
+  const classMatches = [...code.matchAll(classDefPattern)];
+
+  for (const match of classMatches) {
+    const definedClass = match[2].toLowerCase();
+    // If pattern defines a class that doesn't match target file name
+    if (definedClass !== targetClassName &&
+        !targetClassName.includes(definedClass) &&
+        !definedClass.includes(targetClassName) &&
+        // Exclude common test/helper patterns
+        !definedClass.includes('test') &&
+        !targetFileName.includes('test')) {
+      return {
+        applicable: false,
+        reason: `Pattern defines class '${match[2]}' but target is '${targetClassName}'`
+      };
+    }
+  }
+
+  // RULE 3: Check for project-specific imports (node_modules, specific packages)
+  const suspiciousImports = [
+    /from\s+["'][.\/]+[^"']+["']/,  // Relative imports like from "./socket"
+    /import\s+.*from\s+["']@[^"']+["']/,  // Scoped packages like @company/pkg
+    /import\s+\{[^}]+\}\s+from\s+["']engine\.io/i,  // Specific package imports
+  ];
+
+  for (const pattern of suspiciousImports) {
+    if (pattern.test(code)) {
+      return {
+        applicable: false,
+        reason: 'Pattern contains project-specific imports'
+      };
+    }
+  }
+
+  // RULE 4: Check for specific variable/method references that indicate context
+  // These patterns suggest the fix is for a very specific codebase
+  const contextSpecificPatterns = [
+    /\bthis\.context\./,           // Specific object references
+    /\blogger\.\w+\(/,             // Specific logger instances
+    /getServletContext\(\)/,       // Very specific API calls
+    /asciidoctorTask/i,            // Project-specific names
+    /springboot/i,                 // Framework-specific (if in wrong context)
+    /submittedQuestions/,          // Business-logic specific
+    /secQuestionStore/,            // Business-logic specific
+  ];
+
+  // Only check these if the code is medium-sized (6-15 lines)
+  // Small fixes (1-5 lines) are usually safe
+  if (lineCount > 5) {
+    for (const pattern of contextSpecificPatterns) {
+      if (pattern.test(code)) {
+        return {
+          applicable: false,
+          reason: 'Pattern contains context-specific code references'
+        };
+      }
+    }
+  }
+
+  // RULE 5: Simple patterns are generally safe (annotations, single statements)
+  // These can be applied across projects
+  const simplePatternIndicators = [
+    /^@\w+/,                        // Annotations: @Override, @RequestMapping
+    /^import\s+/,                   // Simple import statements
+    /^\s*\.\w+\(/,                  // Method chaining
+    /Locale\.(ROOT|ENGLISH)/,       // Standard library usage
+    /\.toLowerCase\(Locale\./,      // Standard fix patterns
+    /private\s+\w+\(\)/,            // Private constructor pattern
+  ];
+
+  for (const pattern of simplePatternIndicators) {
+    if (pattern.test(code)) {
+      return { applicable: true };
+    }
+  }
+
+  // Default: Apply patterns cautiously for medium-sized code
+  if (lineCount <= 5) {
+    return { applicable: true };
+  }
+
+  // For larger patterns, be more cautious
+  return {
+    applicable: false,
+    reason: `Pattern size (${lineCount} lines) requires manual review`
+  };
+}
+
+/**
  * Get curated educational resources for specific rules
  */
 export function getCuratedResourcesForRule(ruleId: string): Array<{ title: string; url: string }> {
@@ -137,13 +264,36 @@ export async function enrichIssuesWithAI(
           if (correctedCode && !isCorrupted && correctedCode.length > 10) {
             // SESSION 26: Clean license headers from Supabase patterns
             const cleanedPatternCode = cleanAIContent(correctedCode);
-            fixFromPattern = {
-              fix: pattern.description || `Apply ${pattern.name} fix pattern`,
-              correctedCode: cleanedPatternCode,
-              explanation: pattern.description || `Fix for ${group.rule} using verified pattern`
-            };
-            patternsUsed++;
-            console.log(`[AI Enrichment] ✅ Pattern found for ${group.rule} (confidence: ${pattern.confidence}%)`);
+
+            // SESSION 87: Validate pattern is applicable to target issues
+            // Get a representative issue to check file context
+            const representativeIssue = groupIssues[0];
+            const targetFile = representativeIssue?.file || '';
+            const validation = isPatternApplicableToIssue(
+              cleanedPatternCode,
+              targetFile,
+              representativeIssue?.snippet
+            );
+
+            if (validation.applicable) {
+              fixFromPattern = {
+                fix: pattern.description || `Apply ${pattern.name} fix pattern`,
+                correctedCode: cleanedPatternCode,
+                explanation: pattern.description || `Fix for ${group.rule} using verified pattern`
+              };
+              patternsUsed++;
+              console.log(`[AI Enrichment] ✅ Pattern found for ${group.rule} (confidence: ${pattern.confidence}%)`);
+            } else {
+              // Pattern exists but not applicable - use text guidance only
+              fixFromPattern = {
+                fix: pattern.description || `Apply ${pattern.name} fix pattern`,
+                correctedCode: '',  // SESSION 87: Don't use inapplicable code
+                explanation: pattern.description || `Fix for ${group.rule} - manual application required`
+              };
+              patternsUsed++;
+              console.log(`[AI Enrichment] ⚠️ Pattern for ${group.rule} not applicable to ${targetFile}: ${validation.reason}`);
+              console.log(`[AI Enrichment]    Using text guidance only (no correctedCode)`);
+            }
           } else if (isCorrupted) {
             console.log(`[AI Enrichment] ⚠️ Skipping corrupted pattern for ${group.rule} - contains incomplete AI response`);
           }
