@@ -218,6 +218,33 @@ export interface SARIFReplacement {
 export class LSPSARIFConverter {
 
   /**
+   * SESSION 87: Helper to get correctedCode from either issue.fix or issue.fixSuggestion
+   * The AI-fixer stores fixes in issue.fix (string), but some code paths use fixSuggestion.correctedCode
+   */
+  private getCorrectedCode(issue: any): string | null {
+    // Check fixSuggestion.correctedCode first (legacy path)
+    if (issue.fixSuggestion?.correctedCode) {
+      return issue.fixSuggestion.correctedCode;
+    }
+    // Check issue.fix (AI-fixer path)
+    if (typeof issue.fix === 'string' && issue.fix.length > 0) {
+      return issue.fix;
+    }
+    // Check issue.fix.correctedCode (object path)
+    if (issue.fix?.correctedCode) {
+      return issue.fix.correctedCode;
+    }
+    return null;
+  }
+
+  /**
+   * SESSION 87: Helper to check if an issue has a valid fix
+   */
+  private hasFix(issue: any): boolean {
+    return !!this.getCorrectedCode(issue);
+  }
+
+  /**
    * BUG-072 FIX: Clean correctedCode to remove problematic AI patterns
    * Strips "// Should be changed to:" comments and before/after comparison text
    * 
@@ -444,8 +471,8 @@ export class LSPSARIFConverter {
   ): LSPCodeAction[] {
     const codeActions: LSPCodeAction[] = [];
 
-    // Filter issues with fixes
-    const fixableIssues = issues.filter(issue => issue.fixSuggestion?.correctedCode);
+    // SESSION 87: Filter issues with fixes (check both issue.fix and fixSuggestion.correctedCode)
+    const fixableIssues = issues.filter(issue => this.hasFix(issue));
 
     // ========================================================================
     // BATCH ACTIONS (One-click fixes) - ADDED FIRST so they appear at top
@@ -510,7 +537,7 @@ export class LSPSARIFConverter {
     for (const [file, fileIssues] of Object.entries(allIssuesByFile)) {
       for (const issue of fileIssues) {
         const fileUri = this.toFileUri(file, workspaceRoot);
-        const hasFix = !!issue.fixSuggestion?.correctedCode;
+        const hasFix = this.hasFix(issue);  // SESSION 87: Check both fix locations
 
         if (hasFix) {
           // Issue has pre-generated fix - create full Code Action with edit
@@ -709,11 +736,13 @@ export class LSPSARIFConverter {
     const diagnostics: LSPDiagnostic[] = [];
 
     for (const issue of issues) {
-      if (!issue.fixSuggestion?.correctedCode || !issue.file) continue;
+      // SESSION 87: Get correctedCode from either fix or fixSuggestion
+      const correctedCode = this.getCorrectedCode(issue);
+      if (!correctedCode || !issue.file) continue;
 
       // BUG-LSP-001 FIX: Clean the code and skip if it returns empty (rejected template text)
       // BUG-LSP-004 FIX: Also validate fix matches target file context
-      const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode, issue.file);
+      const cleanedCode = this.cleanCorrectedCode(correctedCode, issue.file);
       if (!cleanedCode) continue; // Skip issues with template/invalid/mismatched fixes
 
       const fileUri = this.toFileUri(issue.file, workspaceRoot);
@@ -908,7 +937,8 @@ export class LSPSARIFConverter {
     const tier2Tools = ['semgrep', 'sorald', 'spotbugs', 'checkstyle', 'pmd', 'bandit'];
 
     for (const issue of issues) {
-      if (!issue.fixSuggestion?.correctedCode) {
+      // SESSION 87: Check both fix locations
+      if (!this.hasFix(issue)) {
         breakdown.unfixable++;
         continue;
       }
@@ -931,10 +961,12 @@ export class LSPSARIFConverter {
     issue: EnrichedIssue,
     fileUri: string
   ): LSPCodeAction | null {
-    if (!issue.fixSuggestion?.correctedCode) return null;
+    // SESSION 87: Get correctedCode from either fix or fixSuggestion
+    const correctedCode = this.getCorrectedCode(issue);
+    if (!correctedCode) return null;
 
     const line = (issue.line || 1) - 1; // Convert to 0-based
-    const endLine = line + this.countLines(issue.fixSuggestion.correctedCode);
+    const endLine = line + this.countLines(correctedCode);
 
     // Determine issue type from tool/category
     const issueType = this.determineIssueType(issue);
@@ -955,7 +987,8 @@ export class LSPSARIFConverter {
     };
 
     // BUG-LSP-004 FIX: Validate fix matches target file before creating action
-    const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode, issue.file);
+    // SESSION 87: Use correctedCode extracted earlier (from issue.fix or fixSuggestion)
+    const cleanedCode = this.cleanCorrectedCode(correctedCode, issue.file);
     if (!cleanedCode) return null; // Fix rejected - doesn't match file context
 
     return {
@@ -996,7 +1029,7 @@ export class LSPSARIFConverter {
         fix: {
           recommendation: issue.fixSuggestion?.fix || issue.fixSuggestion?.explanation || '',
           bestPractices: issue.fixSuggestion?.bestPractices || [],
-          correctedCode: issue.fixSuggestion.correctedCode
+          correctedCode: correctedCode  // SESSION 87: Use extracted correctedCode
         },
         context: {
           originalCode: issue.snippet || '',
@@ -1162,9 +1195,11 @@ export class LSPSARIFConverter {
     };
 
     // Add fix if available and valid for this file
-    if (issue.fixSuggestion?.correctedCode) {
+    // SESSION 87: Check both fix locations
+    const sarifCorrectedCode = this.getCorrectedCode(issue);
+    if (sarifCorrectedCode) {
       // BUG-LSP-004 FIX: Validate fix matches target file context
-      const cleanedCode = this.cleanCorrectedCode(issue.fixSuggestion.correctedCode, issue.file);
+      const cleanedCode = this.cleanCorrectedCode(sarifCorrectedCode, issue.file);
       if (cleanedCode) {
         result.fixes = [{
           description: {
