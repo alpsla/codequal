@@ -53,7 +53,7 @@ Transform the current agent-side fix generation (110s for 74 issues) to a hybrid
 
 ### Phase 1: Agent Containerization ✅ COMPLETED
 - ✅ Created Dockerfile.hybrid and Dockerfile.hybrid-demo
-- ✅ Built and pushed images to registry.digitalocean.com/codequal-registry
+- ✅ Built and pushed images to iad.ocir.io/idzaw9ddo1h5/codequal (Oracle Cloud)
 - ✅ Tested containers locally with 161x improvement
 
 ### Phase 2: Kubernetes Deployment ✅ COMPLETED
@@ -83,11 +83,11 @@ Transform the current agent-side fix generation (110s for 74 issues) to a hybrid
 
 ## 📦 Production Deployment Configuration
 
-### Cloud Infrastructure (DigitalOcean)
+### Cloud Infrastructure (Oracle Cloud)
 ```yaml
-Cluster: do-nyc1-codequal-prod
+Cluster: codequal-oke-cluster
 Namespace: codequal-dev
-Registry: registry.digitalocean.com/codequal-registry
+Registry: iad.ocir.io/idzaw9ddo1h5/codequal
 
 Services:
 - hybrid-agent-service (LoadBalancer): 129.212.136.24
@@ -232,7 +232,7 @@ cat test-cloud-analysis.js
 ## 🎉 Achievements Summary
 
 - ✅ **83-130x performance improvement** achieved
-- ✅ **Cloud deployment** completed to DigitalOcean Kubernetes
+- ✅ **Cloud deployment** completed to Oracle Cloud Kubernetes
 - ✅ **V9 unified framework** validated for multiple languages
 - ✅ **Redis caching** operational with 50% hit rate
 - ✅ **Cost reduction** of 85-87% confirmed

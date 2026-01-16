@@ -335,7 +335,7 @@ Status: Already cloned and ready
 
 **Docker Images Available**:
 ```bash
-Registry: registry.digitalocean.com/codequal-registry
+Registry: iad.ocir.io/idzaw9ddo1h5/codequal
 Java Analyzer: analyzer:lang-java-v5.1-arm
 All Tools: PMD, Checkstyle, SpotBugs, Semgrep
 ```

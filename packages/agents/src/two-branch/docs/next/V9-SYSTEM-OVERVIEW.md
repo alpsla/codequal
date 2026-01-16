@@ -24,7 +24,7 @@
 
 ### 3. Tool Execution Infrastructure
 - **Location**: `/packages/agents/src/two-branch/analyzers/v9-tool-orchestrator.ts`
-- **Container Images** (in registry.digitalocean.com/codequal):
+- **Container Images** (in iad.ocir.io/idzaw9ddo1h5/codequal):
   - `analyzer:lang-java-v5.1` - Java tools (SpotBugs, PMD, Checkstyle, etc.)
   - `analyzer:lang-python-v4.3` - Python tools
   - `analyzer:lang-javascript-v4.3` - JavaScript/TypeScript tools
@@ -139,7 +139,7 @@ npx ts-node test-v8-final.ts
 ### What's Actually Running:
 - ✅ Kubernetes cluster with 11+ pods
 - ✅ PVC `codequal-workspace` for repository storage
-- ✅ Analyzer containers in DigitalOcean registry
+- ✅ Analyzer containers in Oracle Cloud registry
 - ✅ Redis cache for results
 - ✅ Supabase for persistence
 - ✅ Hybrid Agent for orchestration

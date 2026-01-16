@@ -1,5 +1,17 @@
 # DigitalOcean Droplet Setup Guide for CodeQual
 
+> **⚠️ ARCHIVED (January 2026)**
+>
+> This guide is deprecated. CodeQual has migrated from DigitalOcean to Oracle Cloud Infrastructure.
+>
+> **New Infrastructure:**
+> - Registry: `iad.ocir.io/idzaw9ddo1h5/codequal`
+> - Server: Oracle A1.Flex (129.213.49.128)
+>
+> See `V9_SESSION_HANDOFF_PROTOCOL.md` for current Oracle Cloud setup.
+
+---
+
 ## 📋 Prerequisites
 
 - DigitalOcean account (get $200 free credit: https://try.digitalocean.com/freetrialoffer/)
