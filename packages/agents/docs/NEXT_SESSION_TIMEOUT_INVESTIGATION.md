@@ -1,6 +1,33 @@
 # CRITICAL BUG: Infinite Loop Causing $25+ API Costs
 
-## URGENT - Session 85 Discovery
+## Session 86 FIX IMPLEMENTED
+
+**Status: FIXED** - The infinite loop bug has been patched in `pattern-aware-fixer.ts`
+
+### What Was Fixed (Session 86):
+
+1. **MAX_STORY_ATTEMPTS = 3** - Each story now limited to 3 retry attempts
+2. **MAX_API_CALLS_PER_ANALYSIS = 50** - Global limit prevents runaway costs
+3. **processedStories Set** - Tracks which stories have been processed to prevent re-processing
+4. **storyAttempts Map** - Tracks retry attempts per story
+5. **globalApiCalls counter** - Tracks total API calls with abort when limit reached
+6. **checkAndTrackApiCall()** - Central method to track all AI calls and enforce limits
+
+### Key Changes in processAllStories():
+- Changed from `while (!this.isComplete())` to `for (const story of allStories)`
+- Each story processed exactly once (tracked in processedStories Set)
+- Stories that exceed MAX_STORY_ATTEMPTS are marked as 'skipped'
+- Global API limit triggers abort for remaining stories
+- Proper status updates: 'fixed', 'failed', or 'skipped'
+
+### Testing Required:
+1. Run E2E test with these limits active
+2. Verify cost stays under $5 for full analysis
+3. Confirm no story is processed more than 3 times
+
+---
+
+## ORIGINAL BUG - Session 85 Discovery
 
 **Bug:** PatternAwareFixer enters infinite retry loop on certain stories, making 100,000+ API calls.
 

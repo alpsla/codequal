@@ -34,6 +34,22 @@ import {
 } from '../fix-pattern-registry/fix-pattern-guidance';
 
 // ============================================================================
+// Session 86: CRITICAL FIX - Prevent infinite loops and cost overruns
+// ============================================================================
+
+/**
+ * Maximum retry attempts per story before skipping
+ * Prevents infinite loops like Session 85's $25+ bug
+ */
+const MAX_STORY_ATTEMPTS = 3;
+
+/**
+ * Maximum total API calls per analysis run
+ * Safety limit to prevent runaway costs
+ */
+const MAX_API_CALLS_PER_ANALYSIS = 50;
+
+// ============================================================================
 // Session 84: Fix Cache & Template Transforms
 // ============================================================================
 
@@ -328,6 +344,12 @@ export class PatternAwareFixService extends FreshContextFixService {
     totalIssues: 0,
   };
 
+  // Session 86: CRITICAL - Prevent infinite loops
+  private processedStories: Set<number> = new Set();
+  private storyAttempts: Map<number, number> = new Map();
+  private globalApiCalls = 0;
+  private aborted = false;
+
   constructor(
     prUrl: string,
     prNumber: number,
@@ -403,6 +425,23 @@ export class PatternAwareFixService extends FreshContextFixService {
   }
 
   /**
+   * Session 86: Check if we can make another API call
+   * Throws error if limit exceeded to abort processing
+   */
+  private checkAndTrackApiCall(context: string): void {
+    if (this.aborted) {
+      throw new Error(`API processing aborted - limit was reached`);
+    }
+    if (this.globalApiCalls >= MAX_API_CALLS_PER_ANALYSIS) {
+      this.aborted = true;
+      throw new Error(`API call limit reached (${MAX_API_CALLS_PER_ANALYSIS}). Context: ${context}`);
+    }
+    this.globalApiCalls++;
+    this.stats.aiCalls++;
+    console.log(`[PatternAwareFixer] 🤖 API call ${this.globalApiCalls}/${MAX_API_CALLS_PER_ANALYSIS}: ${context}`);
+  }
+
+  /**
    * Get statistics about AI call savings
    */
   getAICallStats(): {
@@ -432,6 +471,12 @@ export class PatternAwareFixService extends FreshContextFixService {
 
   /**
    * Override processAllStories to use KB-first + pattern propagation
+   *
+   * Session 86: CRITICAL FIX - Prevent infinite loops
+   * - Track processed stories to prevent re-processing
+   * - Enforce MAX_STORY_ATTEMPTS per story
+   * - Enforce MAX_API_CALLS_PER_ANALYSIS globally
+   * - Mark stories as completed/failed/skipped after processing
    */
   async processAllStories(): Promise<{
     completed: number;
@@ -442,32 +487,90 @@ export class PatternAwareFixService extends FreshContextFixService {
   }> {
     let totalAttempts = 0;
     let totalAiCallsSaved = 0;
+    let completed = 0;
+    let failed = 0;
+    let skipped = 0;
+
+    // Reset tracking for new run
+    this.processedStories.clear();
+    this.storyAttempts.clear();
+    this.globalApiCalls = 0;
+    this.aborted = false;
 
     const state = this.getState();
+    const allStories = [...state.fixStories];
 
-    while (!this.isComplete()) {
-      const pendingStories = state.fixStories.filter(s => s.status === 'pending');
-      if (pendingStories.length === 0) break;
+    console.log(`[PatternAwareFixer] Processing ${allStories.length} stories (max ${MAX_STORY_ATTEMPTS} attempts each, max ${MAX_API_CALLS_PER_ANALYSIS} API calls total)`);
 
-      const story = pendingStories[0];
-      console.log(`[PatternAwareFixer] Processing story ${story.id}: "${story.groupName}"`);
+    for (const story of allStories) {
+      // Session 86: Check if already processed
+      if (this.processedStories.has(story.id)) {
+        console.log(`[PatternAwareFixer] ⏭️ Story ${story.id} already processed - skipping`);
+        continue;
+      }
 
-      const result = await this.processStoryWithPatterns(story.id);
-      totalAttempts += result.attemptNumber;
-      totalAiCallsSaved += result.aiCallsSaved || 0;
+      // Session 86: Check global API limit
+      if (this.globalApiCalls >= MAX_API_CALLS_PER_ANALYSIS) {
+        console.error(`[PatternAwareFixer] ⛔ GLOBAL API LIMIT REACHED (${MAX_API_CALLS_PER_ANALYSIS}). Aborting remaining stories.`);
+        this.aborted = true;
+        // Mark remaining stories as skipped
+        skipped++;
+        continue;
+      }
 
-      if (result.success) {
-        console.log(`[PatternAwareFixer] ✅ Story ${story.id} fixed (source: ${result.source}, AI calls saved: ${result.aiCallsSaved})`);
-      } else {
-        console.log(`[PatternAwareFixer] ⚠️ Story ${story.id} failed`);
+      // Session 86: Check story attempt limit
+      const attempts = this.storyAttempts.get(story.id) || 0;
+      if (attempts >= MAX_STORY_ATTEMPTS) {
+        console.error(`[PatternAwareFixer] ❌ Story ${story.id} exceeded max attempts (${MAX_STORY_ATTEMPTS}) - skipping`);
+        story.status = 'skipped';
+        skipped++;
+        this.processedStories.add(story.id);
+        continue;
+      }
+
+      // Increment attempt counter
+      this.storyAttempts.set(story.id, attempts + 1);
+      console.log(`[PatternAwareFixer] Processing story ${story.id}: "${story.groupName}" (attempt ${attempts + 1}/${MAX_STORY_ATTEMPTS})`);
+
+      try {
+        const result = await this.processStoryWithPatterns(story.id);
+        totalAttempts++;
+        totalAiCallsSaved += result.aiCallsSaved || 0;
+
+        if (result.success) {
+          console.log(`[PatternAwareFixer] ✅ Story ${story.id} fixed (source: ${result.source}, AI calls saved: ${result.aiCallsSaved})`);
+          story.status = 'fixed';
+          completed++;
+          this.processedStories.add(story.id);
+        } else {
+          // Check if we should retry or give up
+          const currentAttempts = this.storyAttempts.get(story.id) || 0;
+          if (currentAttempts >= MAX_STORY_ATTEMPTS) {
+            console.log(`[PatternAwareFixer] ⚠️ Story ${story.id} failed after ${currentAttempts} attempts - marking as failed`);
+            story.status = 'failed';
+            failed++;
+            this.processedStories.add(story.id);
+          } else {
+            console.log(`[PatternAwareFixer] ⚠️ Story ${story.id} failed (attempt ${currentAttempts}/${MAX_STORY_ATTEMPTS})`);
+            // Don't mark as processed - allow retry on next loop
+          }
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[PatternAwareFixer] ❌ Story ${story.id} threw error: ${errorMessage}`);
+        story.status = 'failed';
+        failed++;
+        this.processedStories.add(story.id);
       }
     }
 
-    const finalState = this.getState();
+    console.log(`[PatternAwareFixer] Processing complete: ${completed} completed, ${failed} failed, ${skipped} skipped`);
+    console.log(`[PatternAwareFixer] API calls made: ${this.globalApiCalls}/${MAX_API_CALLS_PER_ANALYSIS}`);
+
     return {
-      completed: finalState.progress.storiesFixed,
-      failed: finalState.progress.storiesFailed,
-      skipped: finalState.fixStories.filter(s => s.status === 'skipped').length,
+      completed,
+      failed,
+      skipped,
       totalAttempts,
       aiCallsSaved: totalAiCallsSaved,
     };
@@ -686,7 +789,7 @@ export class PatternAwareFixService extends FreshContextFixService {
 
     try {
       // Use lightweight pattern application (1 AI call)
-      this.stats.aiCalls++;
+      this.checkAndTrackApiCall(`applyPattern for ${issue.ruleId}`);
       const result = await this.patternConfig.applyPattern(pattern, issue, guidance);
 
       if (!result.success) {
@@ -824,7 +927,8 @@ export class PatternAwareFixService extends FreshContextFixService {
     const primaryRule = story.ruleIds[0] || firstIssue.ruleId;
 
     // Generate fix for first issue using full AI
-    console.log(`[PatternAwareFixer] Generating fix for first issue with AI`);
+    // Session 86: Track this as an AI call
+    this.checkAndTrackApiCall(`generateFix for story ${story.id} first issue`);
 
     // Build context for first issue only (for pattern extraction)
     const singleIssueStory = { ...story, issueIds: [firstIssue.id] };
@@ -952,8 +1056,7 @@ export class PatternAwareFixService extends FreshContextFixService {
       // PRIORITY 4: Try applyPattern callback (lightweight AI)
       if (this.patternConfig.applyPattern) {
         try {
-          console.log(`[PatternAwareFixer] 🤖 Applying pattern to issue ${i + 1}/${issues.length} (AI call)`);
-          this.stats.aiCalls++;
+          this.checkAndTrackApiCall(`pattern for issue ${i + 1}/${issues.length}`);
 
           const applied = await this.patternConfig.applyPattern(pattern, issue, kbGuidance);
 
@@ -972,7 +1075,7 @@ export class PatternAwareFixService extends FreshContextFixService {
 
           // Pattern didn't work - fall back to full AI
           console.log(`[PatternAwareFixer] Pattern failed for issue ${i + 1}, using full AI`);
-          this.stats.aiCalls++; // Another AI call for fallback
+          this.checkAndTrackApiCall(`fallback for issue ${i + 1}`);
           const fallbackResult = await this.generateSingleIssueFix(issue);
 
           if (fallbackResult.success) {
@@ -982,8 +1085,13 @@ export class PatternAwareFixService extends FreshContextFixService {
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : String(error);
+          // Check if this was an abort due to limit
+          if (this.aborted || errorMessage.includes('API call limit')) {
+            console.log(`[PatternAwareFixer] ⛔ Aborting due to API limit`);
+            break;
+          }
           console.log(`[PatternAwareFixer] Error applying pattern: ${errorMessage}`);
-          this.stats.aiCalls++;
+          this.checkAndTrackApiCall(`error fallback for issue ${i + 1}`);
           const fallbackResult = await this.generateSingleIssueFix(issue);
           if (fallbackResult.success) {
             allFixes.push(fallbackResult.fixCode || '');
@@ -993,8 +1101,7 @@ export class PatternAwareFixService extends FreshContextFixService {
         }
       } else {
         // PRIORITY 5: No applyPattern callback - use full AI
-        console.log(`[PatternAwareFixer] 🤖 No pattern callback, using full AI for issue ${i + 1}`);
-        this.stats.aiCalls++;
+        this.checkAndTrackApiCall(`full AI for issue ${i + 1}`);
         const aiResult = await this.generateSingleIssueFix(issue);
         if (aiResult.success) {
           allFixes.push(aiResult.fixCode || '');
