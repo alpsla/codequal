@@ -3065,10 +3065,12 @@ async function generateV9Report(data: any, userTier: 'basic' | 'pro' = 'basic') 
         category: category,
         detectedCategory: issue.detectedCategory || 'code_quality',
         snippet: issue.snippet || '',
+        // SESSION 87: Map fix data correctly for LSP export
+        // AI-fixer stores fix in issue.fix, LSP converter expects fixSuggestion.correctedCode
         fixSuggestion: issue.fix ? {
-          fix: issue.fix,
-          correctedCode: issue.fixedCode || '',
-          explanation: issue.fixExplanation || ''
+          fix: typeof issue.fix === 'string' ? issue.fix : (issue.fix as any)?.fix || '',
+          correctedCode: typeof issue.fix === 'string' ? issue.fix : (issue.fix as any)?.correctedCode || '',
+          explanation: issue.fixExplanation || (issue.fix as any)?.explanation || ''
         } : undefined
       };
     });
