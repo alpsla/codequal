@@ -224,16 +224,20 @@ export class LSPSARIFConverter {
   private getCorrectedCode(issue: any): string | null {
     // Check fixSuggestion.correctedCode first (legacy path)
     if (issue.fixSuggestion?.correctedCode) {
+      console.log(`[LSP-SARIF] getCorrectedCode: Found in fixSuggestion for ${issue.rule}`);
       return issue.fixSuggestion.correctedCode;
     }
     // Check issue.fix (AI-fixer path)
     if (typeof issue.fix === 'string' && issue.fix.length > 0) {
+      console.log(`[LSP-SARIF] getCorrectedCode: Found in issue.fix (string) for ${issue.rule}`);
       return issue.fix;
     }
     // Check issue.fix.correctedCode (object path)
     if (issue.fix?.correctedCode) {
+      console.log(`[LSP-SARIF] getCorrectedCode: Found in issue.fix.correctedCode for ${issue.rule}`);
       return issue.fix.correctedCode;
     }
+    console.log(`[LSP-SARIF] getCorrectedCode: NOT FOUND for ${issue.rule} (has fixSuggestion: ${!!issue.fixSuggestion}, has fix: ${!!issue.fix}, fix type: ${typeof issue.fix})`);
     return null;
   }
 
