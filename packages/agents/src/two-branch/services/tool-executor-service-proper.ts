@@ -48,7 +48,8 @@ export class ToolExecutorService {
   constructor() {
     this.toolServiceUrl = process.env.TOOL_SERVICE_URL || 'http://tool-executor-service';
     this.kubeNamespace = process.env.KUBE_NAMESPACE || 'codequal-dev';
-    this.registry = process.env.CONTAINER_REGISTRY || 'registry.digitalocean.com/codequal';
+    // Session 88: Updated to Oracle Container Registry (DigitalOcean closed)
+    this.registry = process.env.CONTAINER_REGISTRY || 'iad.ocir.io/idzaw9ddo1h5/codequal';
 
     // Validate configuration on initialization
     this.validateConfiguration();
@@ -65,7 +66,7 @@ export class ToolExecutorService {
     }
 
     if (!process.env.CONTAINER_REGISTRY) {
-      console.warn('CONTAINER_REGISTRY not set, using default: registry.digitalocean.com/codequal');
+      console.warn('CONTAINER_REGISTRY not set, using default: iad.ocir.io/idzaw9ddo1h5/codequal');
     }
 
     if (errors.length > 0) {
@@ -655,9 +656,9 @@ spec:
         'Verify with: echo $OPENROUTER_API_KEY'
       ],
       'CONTAINER_PULL_FAILED': [
-        'Check Docker registry credentials: doctl registry login',
-        'Verify registry access: doctl registry repository list-v2',
-        'Try manual pull: docker pull registry.digitalocean.com/codequal/lang-java-v5.1'
+        'Check Docker registry credentials for Oracle OCIR',
+        'Verify registry access: docker login iad.ocir.io',
+        'Try manual pull: docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm'
       ],
       'POD_CREATION_FAILED': [
         'Check Kubernetes connectivity: kubectl cluster-info',
@@ -668,7 +669,7 @@ spec:
         'Review the detailed error output above',
         'Check if any tool containers are running: docker ps | grep codequal',
         'Verify Kubernetes pods: kubectl get pods -n codequal-dev',
-        'Test with a simple command: docker run registry.digitalocean.com/codequal/lang-java-v5.1 echo "test"'
+        'Test with a simple command: docker run iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm echo "test"'
       ],
       'INSUFFICIENT_ISSUES': [
         'Check if workspace contains valid Java files',

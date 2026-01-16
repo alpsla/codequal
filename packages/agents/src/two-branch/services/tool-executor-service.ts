@@ -130,7 +130,7 @@ spec:
     spec:
       containers:
       - name: tool-executor
-        image: registry.digitalocean.com/codequal/${tool.image}
+        image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:${tool.image}
         command: ["/bin/bash", "-c"]
         args:
           - |
@@ -244,7 +244,8 @@ spec:
    */
   private async executeViaDocker(tool: any, workspace: string): Promise<ToolExecutionResult> {
     const startTime = Date.now();
-    const image = `registry.digitalocean.com/codequal/${tool.image}`;
+    // Session 88: Updated to Oracle Container Registry (DigitalOcean closed)
+    const image = `iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:${tool.image}`;
 
     try {
       // Pull latest image

@@ -23,7 +23,8 @@ const logger = winston.createLogger({
 
 async function buildJavaAnalyzerWithKaniko() {
   const namespace = 'codequal-dev';
-  const imageName = 'registry.digitalocean.com/codequal-registry/analyzer:lang-java-v5.0';
+  // Session 88: Updated to Oracle Container Registry (DigitalOcean closed)
+  const imageName = 'iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v6.0-arm';
 
   try {
     logger.info('🚀 Building Enhanced Java Analyzer Image with Kaniko');
@@ -50,18 +51,19 @@ type: kubernetes.io/dockerconfigjson
 data:
   .dockerconfigjson: ${Buffer.from(JSON.stringify({
     auths: {
-      "registry.digitalocean.com": {
-        auth: Buffer.from("YOUR_DO_TOKEN:YOUR_DO_TOKEN").toString('base64')
+      "iad.ocir.io": {
+        auth: Buffer.from("idzaw9ddo1h5/YOUR_USERNAME:YOUR_AUTH_TOKEN").toString('base64')
       }
     }
   })).toString('base64')}
 `;
 
-      logger.info('📝 NOTE: You need to update the docker-registry-config secret with your DigitalOcean registry credentials');
+      // Session 88: Updated to Oracle Container Registry (DigitalOcean closed)
+      logger.info('📝 NOTE: You need to update the docker-registry-config secret with your Oracle OCIR credentials');
       logger.info('Run: kubectl create secret docker-registry docker-registry-config \\');
-      logger.info('  --docker-server=registry.digitalocean.com \\');
-      logger.info('  --docker-username=YOUR_DO_TOKEN \\');
-      logger.info('  --docker-password=YOUR_DO_TOKEN \\');
+      logger.info('  --docker-server=iad.ocir.io \\');
+      logger.info('  --docker-username=idzaw9ddo1h5/YOUR_USERNAME \\');
+      logger.info('  --docker-password=YOUR_AUTH_TOKEN \\');
       logger.info('  --namespace=codequal-dev');
 
       // For now, we'll proceed assuming credentials will be added

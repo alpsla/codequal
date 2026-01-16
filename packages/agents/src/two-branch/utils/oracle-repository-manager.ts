@@ -44,7 +44,8 @@ export class OracleRepositoryManager {
     this.oracleHost = process.env.ORACLE_HOST || '129.213.49.128';
     this.oracleUser = process.env.ORACLE_USER || 'opc';
     this.sshKeyPath = process.env.ORACLE_SSH_KEY || 'keys/oracle/ssh-key-2025-05-08.key';
-    this.registryUrl = process.env.ANALYZER_REGISTRY || 'registry.digitalocean.com/codequal-registry';
+    // Session 88: Updated to Oracle Container Registry (DigitalOcean closed)
+    this.registryUrl = process.env.ANALYZER_REGISTRY || 'iad.ocir.io/idzaw9ddo1h5/codequal';
     this.workspaceBase = process.env.REMOTE_WORKSPACE_BASE || '/mnt/workspace';
     this.useArmAnalyzers = process.env.USE_ARM_ANALYZERS === 'true';
   }

@@ -864,7 +864,8 @@ spec:
     };
 
     const imageTag = languageVersions[language] || `lang-${language}-v4`;
-    const image = `registry.digitalocean.com/codequal-registry/analyzer:${imageTag}`;
+    // Session 88: Updated to Oracle Container Registry (DigitalOcean closed)
+    const image = `iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:${imageTag}`;
 
     // Create file list command if smart selection is used
     let fileListCommand = '';

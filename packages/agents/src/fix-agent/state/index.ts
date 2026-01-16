@@ -42,6 +42,10 @@ export {
   type PatternAwareConfig,
   type PatternAwareResult,
   type FailedStoryReport,
+  // Session 88: Complexity detection for model selection
+  type IssueComplexity,
+  getFixComplexity,
+  getModelForComplexity,
 } from './pattern-aware-fixer';
 
 export { default } from './pr-fix-state';
