@@ -51,6 +51,13 @@ const MAX_STORY_ATTEMPTS = 3;
 const MAX_API_CALLS_PER_ANALYSIS = 30;
 
 /**
+ * Session 87: Parallel processing configuration
+ * Process multiple stories concurrently to reduce total time
+ * Default: 4 concurrent workers (reduces 20 min → 5 min for 21 stories)
+ */
+const PARALLEL_WORKERS = parseInt(process.env.PARALLEL_FIX_WORKERS || '4', 10);
+
+/**
  * Session 86: Failed story report for final output
  * Tracks why stories failed and provides recommendations
  */
@@ -566,7 +573,55 @@ export class PatternAwareFixService extends FreshContextFixService {
     const allStories = [...state.fixStories];
 
     console.log(`[PatternAwareFixer] Processing ${allStories.length} stories (max ${MAX_STORY_ATTEMPTS} attempts each, max ${MAX_API_CALLS_PER_ANALYSIS} API calls total)`);
+    console.log(`[PatternAwareFixer] Session 87: Parallel processing with ${PARALLEL_WORKERS} workers`);
 
+    // Session 87: Process stories in parallel batches
+    // Group stories by files to prevent parallel edits to the same file
+    const storyGroups = this.groupStoriesByFile(allStories);
+    console.log(`[PatternAwareFixer] Stories grouped into ${storyGroups.length} file-based batches`);
+
+    // Process each group of independent stories in parallel
+    for (const batch of storyGroups) {
+      // Process up to PARALLEL_WORKERS stories at once within each batch
+      const chunks = this.chunkArray(batch, PARALLEL_WORKERS);
+
+      for (const chunk of chunks) {
+        // Check abort before processing chunk
+        if (this.abortSignal?.aborted || this.aborted) {
+          console.log(`[PatternAwareFixer] ⛔ Processing aborted - skipping remaining stories`);
+          for (const story of chunk) {
+            story.status = 'skipped';
+            skipped++;
+            this.failedStoryReports.push({
+              storyId: story.id,
+              storyName: story.groupName,
+              ruleIds: story.ruleIds,
+              files: story.files,
+              failureReason: 'api_limit',
+              attempts: 0,
+              recommendation: `Processing was aborted. Consider running analysis again.`,
+            });
+          }
+          continue;
+        }
+
+        // Process chunk in parallel
+        const results = await Promise.all(
+          chunk.map(story => this.processStoryWithSafetyChecks(story))
+        );
+
+        // Aggregate results
+        for (const result of results) {
+          totalAttempts += result.attempts;
+          totalAiCallsSaved += result.aiCallsSaved || 0;
+          if (result.status === 'completed') completed++;
+          else if (result.status === 'failed') failed++;
+          else if (result.status === 'skipped') skipped++;
+        }
+      }
+    }
+
+    /* Session 87: Replaced sequential loop with parallel processing above
     for (const story of allStories) {
       // Session 86: Check abort signal first
       if (this.abortSignal?.aborted || this.aborted) {
@@ -691,6 +746,7 @@ export class PatternAwareFixService extends FreshContextFixService {
         this.processedStories.add(story.id);
       }
     }
+    // End of Session 87 commented-out sequential loop */
 
     console.log(`[PatternAwareFixer] Processing complete: ${completed} completed, ${failed} failed, ${skipped} skipped`);
     console.log(`[PatternAwareFixer] API calls made: ${this.globalApiCalls}/${MAX_API_CALLS_PER_ANALYSIS}`);
@@ -747,6 +803,161 @@ export class PatternAwareFixService extends FreshContextFixService {
 
     // Default recommendation
     return `Manual fix recommended for ${story.files[0]}. Rules: ${rules}. Consider adding a KB pattern after manual fix.`;
+  }
+
+  // ==========================================================================
+  // Session 87: Parallel Processing Helper Methods
+  // ==========================================================================
+
+  /**
+   * Group stories by files to prevent parallel edits to the same file
+   * Stories editing the same file are placed in the same group
+   */
+  private groupStoriesByFile(stories: FixStory[]): FixStory[][] {
+    const fileToStories = new Map<string, FixStory[]>();
+
+    for (const story of stories) {
+      // Use first file as the key (stories typically edit one file)
+      const primaryFile = story.files[0] || `story-${story.id}`;
+      const existing = fileToStories.get(primaryFile) || [];
+      existing.push(story);
+      fileToStories.set(primaryFile, existing);
+    }
+
+    // Return as array of story groups
+    // Each group contains stories that CAN'T run in parallel (same file)
+    // Different groups CAN run in parallel
+    return Array.from(fileToStories.values());
+  }
+
+  /**
+   * Split array into chunks for parallel processing
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  /**
+   * Process a single story with all safety checks
+   * Returns a result object for aggregation
+   */
+  private async processStoryWithSafetyChecks(story: FixStory): Promise<{
+    status: 'completed' | 'failed' | 'skipped';
+    attempts: number;
+    aiCallsSaved?: number;
+  }> {
+    // Check abort signal
+    if (this.abortSignal?.aborted || this.aborted) {
+      story.status = 'skipped';
+      this.failedStoryReports.push({
+        storyId: story.id,
+        storyName: story.groupName,
+        ruleIds: story.ruleIds,
+        files: story.files,
+        failureReason: 'api_limit',
+        attempts: 0,
+        recommendation: `Processing was aborted.`,
+      });
+      return { status: 'skipped', attempts: 0 };
+    }
+
+    // Check if already processed
+    if (this.processedStories.has(story.id)) {
+      return { status: 'skipped', attempts: 0 };
+    }
+
+    // Check global API limit
+    if (this.globalApiCalls >= MAX_API_CALLS_PER_ANALYSIS) {
+      this.aborted = true;
+      story.status = 'skipped';
+      this.failedStoryReports.push({
+        storyId: story.id,
+        storyName: story.groupName,
+        ruleIds: story.ruleIds,
+        files: story.files,
+        failureReason: 'api_limit',
+        attempts: 0,
+        recommendation: `API call limit (${MAX_API_CALLS_PER_ANALYSIS}) reached.`,
+      });
+      this.processedStories.add(story.id);
+      return { status: 'skipped', attempts: 0 };
+    }
+
+    // Check story attempt limit
+    const attempts = this.storyAttempts.get(story.id) || 0;
+    if (attempts >= MAX_STORY_ATTEMPTS) {
+      story.status = 'skipped';
+      const lastError = this.storyErrors.get(story.id);
+      this.failedStoryReports.push({
+        storyId: story.id,
+        storyName: story.groupName,
+        ruleIds: story.ruleIds,
+        files: story.files,
+        failureReason: 'max_attempts',
+        attempts,
+        lastError,
+        recommendation: this.generateRecommendation(story, lastError),
+      });
+      this.processedStories.add(story.id);
+      return { status: 'skipped', attempts: 0 };
+    }
+
+    // Increment attempt counter
+    this.storyAttempts.set(story.id, attempts + 1);
+    console.log(`[PatternAwareFixer] Processing story ${story.id}: "${story.groupName}" (attempt ${attempts + 1}/${MAX_STORY_ATTEMPTS})`);
+
+    try {
+      const result = await this.processStoryWithPatterns(story.id);
+
+      if (result.success) {
+        console.log(`[PatternAwareFixer] ✅ Story ${story.id} fixed (source: ${result.source}, AI calls saved: ${result.aiCallsSaved})`);
+        story.status = 'fixed';
+        this.processedStories.add(story.id);
+        return { status: 'completed', attempts: 1, aiCallsSaved: result.aiCallsSaved };
+      } else {
+        this.storyErrors.set(story.id, result.error || 'Validation failed');
+        const currentAttempts = this.storyAttempts.get(story.id) || 0;
+
+        if (currentAttempts >= MAX_STORY_ATTEMPTS) {
+          story.status = 'failed';
+          this.failedStoryReports.push({
+            storyId: story.id,
+            storyName: story.groupName,
+            ruleIds: story.ruleIds,
+            files: story.files,
+            failureReason: 'validation_failed',
+            attempts: currentAttempts,
+            lastError: result.error,
+            recommendation: this.generateRecommendation(story, result.error),
+          });
+          this.processedStories.add(story.id);
+          return { status: 'failed', attempts: 1 };
+        }
+
+        return { status: 'failed', attempts: 1 };
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[PatternAwareFixer] ❌ Story ${story.id} threw error: ${errorMessage}`);
+      story.status = 'failed';
+      this.storyErrors.set(story.id, errorMessage);
+      this.failedStoryReports.push({
+        storyId: story.id,
+        storyName: story.groupName,
+        ruleIds: story.ruleIds,
+        files: story.files,
+        failureReason: 'error',
+        attempts: this.storyAttempts.get(story.id) || 1,
+        lastError: errorMessage,
+        recommendation: this.generateRecommendation(story, errorMessage),
+      });
+      this.processedStories.add(story.id);
+      return { status: 'failed', attempts: 1 };
+    }
   }
 
   /**
