@@ -8,6 +8,33 @@
 
 **Root Cause:** Story 8 "Code quality fixes" never completes, keeps retrying indefinitely.
 
+---
+
+## EXPECTED BEHAVIOR (Cost Control)
+
+### When AI-Fixer Should Be Called:
+1. **Pattern EXISTS in KB** → Apply directly, **0 AI calls**
+2. **Pattern NOT in KB** → Try AI (attempt 1)
+3. **AI fix fails validation** → Retry AI (attempt 2)
+4. **Still fails** → Final retry (attempt 3)
+5. **Still fails** → **SKIP and move on** (don't loop)
+
+### Cost Expectations:
+- **With 642 patterns in KB:** Most issues = 0 AI calls
+- **New pattern needed:** Max 3 AI calls per issue
+- **Full analysis:** Should cost < $1 for mature KB
+- **Current bug:** $25+ due to infinite loops
+
+### The Broken Logic:
+```
+CURRENT (WRONG):
+Story → Check KB → Pattern exists → STILL calls AI for "first issue" → Loop forever
+
+CORRECT:
+Story → Check KB → Pattern exists? → YES → Apply directly (0 AI)
+                                   → NO  → AI attempt 1/3 → Save to KB
+```
+
 ## Evidence from Logs
 
 ```
@@ -25,24 +52,36 @@
 
 ## Immediate Fixes Required (NEXT SESSION PRIORITY #1)
 
-### 1. Add Max Retry Limit Per Story
+### 1. FIX: Skip AI When Pattern Exists in KB
 ```typescript
-// In pattern-aware-fixer.ts
-const MAX_STORY_RETRIES = 3;
-let retryCount = 0;
+// In pattern-aware-fixer.ts - THIS IS THE MAIN FIX
+async function fixIssue(issue: Issue): Promise<FixResult> {
+  // Step 1: Check KB for existing pattern
+  const pattern = await getPatternFromKB(issue.rule);
 
-while (!storyFixed && retryCount < MAX_STORY_RETRIES) {
-  retryCount++;
-  // ... existing logic
-}
+  if (pattern && pattern.confidence >= 80) {
+    // Pattern exists - apply directly, NO AI CALL
+    console.log(`[PatternAwareFixer] ✅ KB pattern found for ${issue.rule} - 0 AI calls`);
+    return applyPatternDirectly(pattern, issue);
+  }
 
-if (!storyFixed) {
-  console.error(`[PatternAwareFixer] ❌ Story ${storyId} failed after ${MAX_STORY_RETRIES} attempts - SKIPPING`);
-  continue; // Move to next story
+  // Step 2: No pattern - try AI with max 3 attempts
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const result = await callAI(issue); // Only place AI is called
+    if (result.success) {
+      await savePatternToKB(issue.rule, result); // Save for future
+      return result;
+    }
+    console.log(`[PatternAwareFixer] AI attempt ${attempt}/3 failed`);
+  }
+
+  // Step 3: All attempts failed - skip this issue
+  console.error(`[PatternAwareFixer] ❌ Skipping ${issue.rule} after 3 failed attempts`);
+  return { success: false, skipped: true };
 }
 ```
 
-### 2. Add Global Call Limit Safety
+### 2. Add Global Call Limit Safety (Backup Protection)
 ```typescript
 // In ai-fixer-agent.ts
 const MAX_API_CALLS_PER_ANALYSIS = 50;
@@ -54,6 +93,25 @@ private async executeOpenRouterCall() {
   }
   apiCallCount++;
   // ... existing logic
+}
+```
+
+### 3. Add Max Retry Limit Per Story (Prevent Infinite Loop)
+```typescript
+// In pattern-aware-fixer.ts
+const MAX_STORY_ATTEMPTS = 3;
+
+for (const story of stories) {
+  let attempts = 0;
+  while (!storyFixed && attempts < MAX_STORY_ATTEMPTS) {
+    attempts++;
+    // ... fix logic
+  }
+
+  if (!storyFixed) {
+    console.error(`[PatternAwareFixer] ❌ Story "${story.title}" failed after ${attempts} attempts - SKIPPING`);
+    continue; // MUST move to next story, not loop forever
+  }
 }
 ```
 
