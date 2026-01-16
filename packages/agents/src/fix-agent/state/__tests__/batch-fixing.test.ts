@@ -17,34 +17,34 @@ import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals
 
 // Mock fs module before importing modules that use it
 jest.mock('fs', () => ({
-  existsSync: jest.fn().mockReturnValue(false),
-  readFileSync: jest.fn().mockReturnValue('{}'),
-  writeFileSync: jest.fn(),
-  unlinkSync: jest.fn(),
-  mkdirSync: jest.fn(),
+  existsSync: jest.fn<() => boolean>().mockReturnValue(false),
+  readFileSync: jest.fn<() => string>().mockReturnValue('{}'),
+  writeFileSync: jest.fn<() => void>(),
+  unlinkSync: jest.fn<() => void>(),
+  mkdirSync: jest.fn<() => void>(),
 }));
 
 // Mock repository-learnings module
 jest.mock('../repository-learnings', () => ({
-  getRepositoryLearningService: jest.fn(() => ({
-    formatLearningsForPrompt: jest.fn().mockResolvedValue(''),
-    saveLearningsFromSession: jest.fn().mockResolvedValue(0),
+  getRepositoryLearningService: jest.fn<() => object>(() => ({
+    formatLearningsForPrompt: jest.fn<() => Promise<string>>().mockResolvedValue(''),
+    saveLearningsFromSession: jest.fn<() => Promise<number>>().mockResolvedValue(0),
   })),
-  RepositoryLearningService: jest.fn(),
+  RepositoryLearningService: jest.fn<() => object>(),
 }));
 
 // Mock fix-pattern-guidance module
 jest.mock('../../fix-pattern-registry/fix-pattern-guidance', () => ({
-  getFixGuidance: jest.fn().mockResolvedValue(null),
+  getFixGuidance: jest.fn<() => Promise<null>>().mockResolvedValue(null),
   fixPatternGuidance: {
-    recordFixAttempt: jest.fn().mockResolvedValue(undefined),
+    recordFixAttempt: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
   },
 }));
 
 // Mock fix-pattern-registry module
 jest.mock('../../fix-pattern-registry/fix-pattern-registry', () => ({
-  getFixPatternRegistry: jest.fn(() => ({
-    submitAIFix: jest.fn().mockResolvedValue({ success: true, patternId: 'mock-id' }),
+  getFixPatternRegistry: jest.fn<() => object>(() => ({
+    submitAIFix: jest.fn<() => Promise<{ success: boolean; patternId: string }>>().mockResolvedValue({ success: true, patternId: 'mock-id' }),
   })),
 }));
 

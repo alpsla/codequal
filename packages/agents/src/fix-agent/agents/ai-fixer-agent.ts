@@ -25,6 +25,11 @@ import {
   AIFixerVerifier,
   formatGuidanceForPrompt,  // SESSION 80: Knowledge base integration
 } from '../fix-pattern-registry';
+import {
+  checkKBBypass,
+  recordKBBypass,
+  type KBBypassResult,
+} from '../state/kb-fix-applicator';  // SESSION 90: KB bypass for cost savings
 import { OpenRouterKeyManager } from '../../two-branch/services/openrouter-key-manager';
 
 // ============================================================================
@@ -228,15 +233,30 @@ export class AIFixerAgent {
 
   /**
    * Process a single issue and generate AI fix recommendation
+   *
+   * SESSION 90: Check KB bypass first to save costs
+   * If KB has high-confidence pattern (>=95% success rate or tool-validated),
+   * skip AI entirely and apply pattern directly.
    */
   async processIssue(issue: AIFixerIssue): Promise<EnrichedIssue> {
     const startTime = Date.now();
+
+    // SESSION 90: Check if we can bypass AI using KB
+    const bypassResult = await this.tryKBBypass(issue);
+    if (bypassResult.enrichedIssue) {
+      console.log(`[AI-Fixer] 💰 KB bypass for ${issue.ruleId} - saved AI call (${bypassResult.reason})`);
+      recordKBBypass(issue.ruleId, false); // false = AI was NOT used
+      return bypassResult.enrichedIssue;
+    }
 
     // Get AI model for this language
     const model = await this.getModelForLanguage(issue.language);
 
     // Generate fix using AI with tool context
     const recommendation = await this.generateFixRecommendation(issue, model);
+
+    // Record that AI was used
+    recordKBBypass(issue.ruleId, true); // true = AI was used
 
     return {
       ...issue,
@@ -334,6 +354,76 @@ export class AIFixerAgent {
         processingTimeMs: Date.now() - startTime,
       },
     };
+  }
+
+  // ==========================================================================
+  // SESSION 90: KB BYPASS
+  // ==========================================================================
+
+  /**
+   * Result of KB bypass attempt
+   */
+  private kbBypassResult: { enrichedIssue: EnrichedIssue | null; reason: string } = {
+    enrichedIssue: null,
+    reason: 'not_checked',
+  };
+
+  /**
+   * Try to bypass AI using KB patterns
+   *
+   * Returns object with enrichedIssue if bypass is allowed (success rate >= 95% or tool-validated)
+   * Returns object with null enrichedIssue if AI is needed
+   */
+  private async tryKBBypass(issue: AIFixerIssue): Promise<{ enrichedIssue: EnrichedIssue | null; reason: string }> {
+    try {
+      const bypassCheck = await checkKBBypass(
+        issue.ruleId,
+        issue.language,
+        issue.validatorToolId,
+        issue.codeContext
+      );
+
+      if (!bypassCheck.canBypass) {
+        return { enrichedIssue: null, reason: bypassCheck.reason };
+      }
+
+      // KB bypass is allowed - create EnrichedIssue without AI call
+      const fixCode = bypassCheck.fixCode || bypassCheck.guidance?.correctPatterns?.[0]?.example || '';
+
+      if (!fixCode) {
+        console.log(`[AI-Fixer] KB bypass allowed but no fix code available for ${issue.ruleId}`);
+        return { enrichedIssue: null, reason: 'no_fix_code' };
+      }
+
+      const recommendation: AIFixRecommendation = {
+        fix: `KB pattern applied for ${issue.ruleId}`,
+        correctedCode: fixCode,
+        explanation: `Fix applied from knowledge base (${bypassCheck.reason}). ` +
+          `Success rate: ${bypassCheck.confidence}%, no AI call needed.`,
+        bestPractices: bypassCheck.guidance?.correctPatterns?.map(p => p.pattern) || [],
+        confidence: bypassCheck.confidence,
+        model: 'kb-bypass', // Indicate this came from KB, not AI
+        cost: 0, // No AI cost
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        },
+      };
+
+      return {
+        enrichedIssue: {
+          ...issue,
+          tier: 2,
+          fixRecommendation: recommendation,
+          aiProcessedAt: new Date(),
+        },
+        reason: bypassCheck.reason,
+      };
+    } catch (error: any) {
+      console.warn(`[AI-Fixer] KB bypass check failed: ${error.message}`);
+      return { enrichedIssue: null, reason: 'error' };
+    }
   }
 
   // ==========================================================================

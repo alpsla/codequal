@@ -58,4 +58,16 @@ export {
   KB_SUCCESS_RATE_THRESHOLD,
 } from './complexity-detection';
 
+// Session 90: KB bypass for cost savings
+export {
+  type KBBypassResult,
+  type KBBypassMetrics,
+  checkKBBypass,
+  applyPatternTemplate,
+  recordKBBypass,
+  recordKBApplication,
+  getKBBypassMetrics,
+  resetKBBypassMetrics,
+} from './kb-fix-applicator';
+
 export { default } from './pr-fix-state';
