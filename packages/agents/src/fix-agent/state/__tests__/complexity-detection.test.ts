@@ -46,13 +46,21 @@ jest.mock('../../fix-pattern-registry/fix-pattern-registry', () => ({
   })),
 }));
 
+// Session 89: Import from dedicated complexity-detection module
 import {
   getFixComplexity,
   getModelForComplexity,
   IssueComplexity,
-} from '../pattern-aware-fixer';
+  getComplexityStats,
+  resetComplexityStats,
+} from '../complexity-detection';
 
 describe('Complexity Detection (Session 88)', () => {
+  // Reset stats before each test to ensure isolation
+  beforeEach(() => {
+    resetComplexityStats();
+  });
+
   describe('getFixComplexity()', () => {
     describe('simple rules (should return "simple")', () => {
       it('should classify unused-import as simple', () => {
@@ -323,6 +331,85 @@ describe('Complexity Detection (Session 88)', () => {
       // Calculate savings percentage
       const savingsPercent = ((allSonnetCost - routedCost) / allSonnetCost) * 100;
       expect(savingsPercent).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Session 89: Stats tracking for KB-based routing', () => {
+    beforeEach(() => {
+      // Reset stats before each test
+      resetComplexityStats();
+    });
+
+    it('should track total classifications', () => {
+      getFixComplexity('unused-import');
+      getFixComplexity('sql-injection');
+      getFixComplexity('unknown-rule');
+
+      const stats = getComplexityStats();
+      expect(stats.totalClassified).toBe(3);
+    });
+
+    it('should track simple vs complex counts', () => {
+      getFixComplexity('unused-import');    // simple
+      getFixComplexity('formatting-error'); // simple
+      getFixComplexity('sql-injection');    // complex
+      getFixComplexity('unknown-rule');     // complex (default)
+
+      const stats = getComplexityStats();
+      expect(stats.simpleCount).toBe(2);
+      expect(stats.complexCount).toBe(2);
+    });
+
+    it('should track KB-routed to simple', () => {
+      // Unknown rule without KB rate -> complex
+      getFixComplexity('unknown-rule-1');
+
+      // Unknown rule with high KB rate -> simple (KB routed)
+      getFixComplexity('unknown-rule-2', 85);
+      getFixComplexity('unknown-rule-3', 90);
+
+      // Unknown rule with low KB rate -> complex
+      getFixComplexity('unknown-rule-4', 50);
+
+      const stats = getComplexityStats();
+      expect(stats.kbRoutedToSimple).toBe(2);
+      expect(stats.unknownWithKbOverride).toBe(2);
+    });
+
+    it('should NOT count inherently simple rules as KB-routed', () => {
+      // These are simple by pattern, not by KB
+      getFixComplexity('unused-import', 90);
+      getFixComplexity('formatting-error', 85);
+
+      const stats = getComplexityStats();
+      expect(stats.kbRoutedToSimple).toBe(0);
+      expect(stats.simpleCount).toBe(2);
+    });
+
+    it('should NOT count complex rules as KB-routed even with high KB rate', () => {
+      // Complex rules stay complex regardless of KB rate
+      getFixComplexity('sql-injection', 100);
+      getFixComplexity('security-issue', 95);
+
+      const stats = getComplexityStats();
+      expect(stats.kbRoutedToSimple).toBe(0);
+      expect(stats.complexCount).toBe(2);
+    });
+
+    it('should reset stats correctly', () => {
+      getFixComplexity('unused-import');
+      getFixComplexity('unknown-rule', 85);
+
+      let stats = getComplexityStats();
+      expect(stats.totalClassified).toBe(2);
+
+      resetComplexityStats();
+
+      stats = getComplexityStats();
+      expect(stats.totalClassified).toBe(0);
+      expect(stats.simpleCount).toBe(0);
+      expect(stats.complexCount).toBe(0);
+      expect(stats.kbRoutedToSimple).toBe(0);
     });
   });
 });

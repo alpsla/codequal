@@ -33,6 +33,15 @@ import {
   fixPatternGuidance,
 } from '../fix-pattern-registry/fix-pattern-guidance';
 import { getFixPatternRegistry } from '../fix-pattern-registry/fix-pattern-registry';
+// Session 89: Import complexity detection from dedicated module
+import {
+  IssueComplexity,
+  getFixComplexity,
+  getModelForComplexity,
+  getComplexityStats,
+  resetComplexityStats,
+  KB_SUCCESS_RATE_THRESHOLD,
+} from './complexity-detection';
 
 // ============================================================================
 // Session 86: CRITICAL FIX - Prevent infinite loops and cost overruns
@@ -53,126 +62,11 @@ const MAX_API_CALLS_PER_ANALYSIS = 30;
 
 // ============================================================================
 // Session 88: Complexity-Based Model Selection (Haiku vs Sonnet)
+// Session 89: Moved to dedicated complexity-detection.ts module
+// Re-export for backwards compatibility
 // ============================================================================
 
-/**
- * Issue complexity level for model selection
- * - 'simple': Use Haiku (fast, cheap) - ~$0.001/issue
- * - 'complex': Use Sonnet (smart, thorough) - ~$0.01/issue
- */
-export type IssueComplexity = 'simple' | 'complex';
-
-/**
- * Rules that indicate SIMPLE issues (use Haiku)
- * These are typically formatting, style, or trivial fixes
- */
-const SIMPLE_RULE_PATTERNS = [
-  /unused/i,
-  /import/i,
-  /semicolon/i,
-  /style/i,
-  /formatting/i,
-  /whitespace/i,
-  /indent/i,
-  /trailing/i,
-  /naming/i,
-  /convention/i,
-  /override/i,        // MissingOverride is simple
-  /braces/i,          // Brace style
-  /empty.*block/i,    // EmptyBlock variants
-  /line.*length/i,    // Line length issues
-];
-
-/**
- * Rules that indicate COMPLEX issues (use Sonnet)
- * These require security expertise or deep code understanding
- */
-const COMPLEX_RULE_PATTERNS = [
-  /injection/i,
-  /security/i,
-  /vulnerability/i,
-  /xss/i,
-  /csrf/i,
-  /sql/i,
-  /auth/i,
-  /crypto/i,
-  /secret/i,
-  /password/i,
-  /token/i,
-  /session/i,
-  /unsafe/i,
-  /dangerous/i,
-  /exploit/i,
-  /privilege/i,
-  /escalation/i,
-  /deserializ/i,     // Deserialization attacks
-  /command/i,        // Command injection
-  /path.*travers/i,  // Path traversal
-  /resource.*leak/i, // Resource leaks need careful handling
-  /close.*resource/i,// CloseResource needs context
-  /thread.*safe/i,   // Thread safety issues
-  /concurren/i,      // Concurrency issues
-  /race.*condition/i,
-];
-
-/**
- * KB success rate threshold for using Haiku
- * If a rule has >= this success rate, Haiku can handle it
- */
-const KB_SUCCESS_RATE_FOR_SIMPLE = 80;
-
-/**
- * Determine the complexity of an issue for model selection
- *
- * Priority:
- * 1. Complex rules always get Sonnet (security, injection, etc.)
- * 2. Simple rules get Haiku (unused, formatting, etc.)
- * 3. If KB success rate > 80%, use Haiku (proven pattern)
- * 4. Default to Sonnet for unknown rules
- *
- * Session 88: Cost savings estimate:
- * - 60% of issues are simple → Haiku @ $0.001
- * - 40% of issues are complex → Sonnet @ $0.01
- * - Average cost: 0.6 * $0.001 + 0.4 * $0.01 = $0.0046 (54% savings vs all-Sonnet)
- */
-export function getFixComplexity(
-  ruleId: string,
-  kbSuccessRate?: number
-): IssueComplexity {
-  const normalizedRule = ruleId.toLowerCase();
-
-  // Check complex patterns first (security takes priority)
-  if (COMPLEX_RULE_PATTERNS.some(pattern => pattern.test(normalizedRule))) {
-    return 'complex';
-  }
-
-  // Check simple patterns
-  if (SIMPLE_RULE_PATTERNS.some(pattern => pattern.test(normalizedRule))) {
-    return 'simple';
-  }
-
-  // Check KB success rate - high success = proven pattern = simple
-  if (kbSuccessRate !== undefined && kbSuccessRate >= KB_SUCCESS_RATE_FOR_SIMPLE) {
-    return 'simple';
-  }
-
-  // Unknown rules default to complex (err on the side of quality)
-  return 'complex';
-}
-
-/**
- * Get the model ID based on complexity
- * Uses OpenRouter model naming convention
- */
-export function getModelForComplexity(complexity: IssueComplexity): string {
-  if (complexity === 'simple') {
-    // Haiku: Fast and cheap, good for simple fixes
-    return 'anthropic/claude-3-haiku-20240307';
-  } else {
-    // Sonnet: Smart and thorough, needed for security/complex issues
-    return 'anthropic/claude-3-5-sonnet-20241022';
-  }
-}
+export { IssueComplexity, getFixComplexity, getModelForComplexity } from './complexity-detection';
 
 /**
  * Session 87: Parallel processing configuration
@@ -523,6 +417,7 @@ export class PatternAwareFixService extends FreshContextFixService {
 
   // Session 84: Statistics tracking
   // Session 88: Added complexity routing and batch fixing stats
+  // Session 89: Added KB-based routing stats
   private stats = {
     cacheHits: 0,
     templateTransforms: 0,
@@ -535,6 +430,8 @@ export class PatternAwareFixService extends FreshContextFixService {
     // Session 88: Track batch fixing
     batchFixCalls: 0,
     issuesFixedInBatch: 0,
+    // Session 89: Track KB-based routing
+    kbRoutedToSimple: 0,
   };
 
   // Session 86: CRITICAL - Prevent infinite loops
@@ -872,6 +769,7 @@ export class PatternAwareFixService extends FreshContextFixService {
   /**
    * Get statistics about AI call savings
    * Session 88: Includes complexity routing and batch fixing stats
+   * Session 89: Added KB-based routing stats
    */
   getAICallStats(): {
     cacheHits: number;
@@ -889,6 +787,8 @@ export class PatternAwareFixService extends FreshContextFixService {
     batchFixCalls: number;
     issuesFixedInBatch: number;
     batchEfficiency: string;
+    // Session 89: KB-based routing stats
+    kbRoutedToSimple: number;
   } {
     const saved = this.stats.cacheHits + this.stats.templateTransforms + this.stats.directPropagation;
     const rate = this.stats.totalIssues > 0
@@ -911,8 +811,12 @@ export class PatternAwareFixService extends FreshContextFixService {
       ? `${(this.stats.issuesFixedInBatch / this.stats.batchFixCalls).toFixed(1)} issues/call`
       : 'N/A';
 
+    // Session 89: Get KB routing stats from complexity detection module
+    const complexityStats = getComplexityStats();
+
     return {
       ...this.stats,
+      kbRoutedToSimple: complexityStats.kbRoutedToSimple,
       aiCallsSaved: saved,
       savingsRate: `${rate}%`,
       complexityRoutingSavings: `${costSavings}% (~$${(allSonnetCost - routedCost).toFixed(3)} saved)`,
@@ -2037,6 +1941,7 @@ export class PatternAwareFixService extends FreshContextFixService {
   /**
    * Get session statistics (Session 84: Updated with real tracking)
    * Session 88: Added complexity routing and batch fixing stats
+   * Session 89: Added KB-based routing stats
    */
   getPatternStats(): {
     patternsUsed: number;
@@ -2056,6 +1961,8 @@ export class PatternAwareFixService extends FreshContextFixService {
     batchFixCalls: number;
     issuesFixedInBatch: number;
     batchEfficiency: string;
+    // Session 89: KB-based routing
+    kbRoutedToSimple: number;
   } {
     const fullStats = this.getAICallStats();
     return {
@@ -2076,6 +1983,8 @@ export class PatternAwareFixService extends FreshContextFixService {
       batchFixCalls: fullStats.batchFixCalls,
       issuesFixedInBatch: fullStats.issuesFixedInBatch,
       batchEfficiency: fullStats.batchEfficiency,
+      // Session 89: KB-based routing
+      kbRoutedToSimple: fullStats.kbRoutedToSimple,
     };
   }
 }

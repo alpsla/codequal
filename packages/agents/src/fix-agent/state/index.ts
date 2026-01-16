@@ -42,10 +42,20 @@ export {
   type PatternAwareConfig,
   type PatternAwareResult,
   type FailedStoryReport,
-  // Session 88: Complexity detection for model selection
+} from './pattern-aware-fixer';
+
+// Session 89: Complexity detection moved to dedicated module
+export {
   type IssueComplexity,
+  type ComplexityRoutingStats,
   getFixComplexity,
   getModelForComplexity,
-} from './pattern-aware-fixer';
+  getComplexityStats,
+  resetComplexityStats,
+  isInherentlyComplex,
+  isInherentlySimple,
+  getComplexitySummary,
+  KB_SUCCESS_RATE_THRESHOLD,
+} from './complexity-detection';
 
 export { default } from './pr-fix-state';
