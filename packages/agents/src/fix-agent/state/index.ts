@@ -41,6 +41,7 @@ export {
   type PatternExample,
   type PatternAwareConfig,
   type PatternAwareResult,
+  type FailedStoryReport,
 } from './pattern-aware-fixer';
 
 export { default } from './pr-fix-state';

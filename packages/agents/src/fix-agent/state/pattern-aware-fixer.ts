@@ -46,8 +46,24 @@ const MAX_STORY_ATTEMPTS = 3;
 /**
  * Maximum total API calls per analysis run
  * Safety limit to prevent runaway costs
+ * Session 86: Reduced from 50 to 30 (~$3 limit)
  */
-const MAX_API_CALLS_PER_ANALYSIS = 50;
+const MAX_API_CALLS_PER_ANALYSIS = 30;
+
+/**
+ * Session 86: Failed story report for final output
+ * Tracks why stories failed and provides recommendations
+ */
+export interface FailedStoryReport {
+  storyId: number;
+  storyName: string;
+  ruleIds: string[];
+  files: string[];
+  failureReason: 'max_attempts' | 'api_limit' | 'validation_failed' | 'error';
+  attempts: number;
+  lastError?: string;
+  recommendation: string;
+}
 
 // ============================================================================
 // Session 84: Fix Cache & Template Transforms
@@ -347,8 +363,14 @@ export class PatternAwareFixService extends FreshContextFixService {
   // Session 86: CRITICAL - Prevent infinite loops
   private processedStories: Set<number> = new Set();
   private storyAttempts: Map<number, number> = new Map();
+  private storyErrors: Map<number, string> = new Map();
   private globalApiCalls = 0;
   private aborted = false;
+  private failedStoryReports: FailedStoryReport[] = [];
+
+  // Session 86: AbortController support
+  private abortSignal?: AbortSignal;
+  private timeoutId?: ReturnType<typeof setTimeout>;
 
   constructor(
     prUrl: string,
@@ -425,12 +447,52 @@ export class PatternAwareFixService extends FreshContextFixService {
   }
 
   /**
+   * Session 86: Set abort signal for cancellation
+   */
+  setAbortSignal(signal: AbortSignal): void {
+    this.abortSignal = signal;
+    signal.addEventListener('abort', () => {
+      console.log(`[PatternAwareFixer] ⛔ ABORT SIGNAL received - stopping processing`);
+      this.aborted = true;
+    });
+  }
+
+  /**
+   * Session 86: Start processing with automatic timeout
+   * @param timeoutMs Timeout in milliseconds (default: 10 minutes)
+   */
+  async processAllStoriesWithTimeout(
+    timeoutMs: number = 10 * 60 * 1000
+  ): Promise<ReturnType<typeof this.processAllStories>> {
+    const controller = new AbortController();
+    this.setAbortSignal(controller.signal);
+
+    // Set up timeout
+    this.timeoutId = setTimeout(() => {
+      console.error(`[PatternAwareFixer] ⏱️ TIMEOUT (${timeoutMs}ms) - aborting all processing`);
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      const result = await this.processAllStories();
+      return result;
+    } finally {
+      // Clean up timeout
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = undefined;
+      }
+    }
+  }
+
+  /**
    * Session 86: Check if we can make another API call
-   * Throws error if limit exceeded to abort processing
+   * Throws error if limit exceeded or abort signal received
    */
   private checkAndTrackApiCall(context: string): void {
-    if (this.aborted) {
-      throw new Error(`API processing aborted - limit was reached`);
+    // Check abort signal
+    if (this.abortSignal?.aborted || this.aborted) {
+      throw new Error(`API processing aborted - abort signal received`);
     }
     if (this.globalApiCalls >= MAX_API_CALLS_PER_ANALYSIS) {
       this.aborted = true;
@@ -484,6 +546,7 @@ export class PatternAwareFixService extends FreshContextFixService {
     skipped: number;
     totalAttempts: number;
     aiCallsSaved?: number;
+    failedStories?: FailedStoryReport[];
   }> {
     let totalAttempts = 0;
     let totalAiCallsSaved = 0;
@@ -494,8 +557,10 @@ export class PatternAwareFixService extends FreshContextFixService {
     // Reset tracking for new run
     this.processedStories.clear();
     this.storyAttempts.clear();
+    this.storyErrors.clear();
     this.globalApiCalls = 0;
     this.aborted = false;
+    this.failedStoryReports = [];
 
     const state = this.getState();
     const allStories = [...state.fixStories];
@@ -503,6 +568,23 @@ export class PatternAwareFixService extends FreshContextFixService {
     console.log(`[PatternAwareFixer] Processing ${allStories.length} stories (max ${MAX_STORY_ATTEMPTS} attempts each, max ${MAX_API_CALLS_PER_ANALYSIS} API calls total)`);
 
     for (const story of allStories) {
+      // Session 86: Check abort signal first
+      if (this.abortSignal?.aborted || this.aborted) {
+        console.log(`[PatternAwareFixer] ⛔ Processing aborted - skipping remaining stories`);
+        story.status = 'skipped';
+        skipped++;
+        this.failedStoryReports.push({
+          storyId: story.id,
+          storyName: story.groupName,
+          ruleIds: story.ruleIds,
+          files: story.files,
+          failureReason: 'api_limit',
+          attempts: 0,
+          recommendation: `Processing was aborted (timeout or manual). Consider running analysis again or adding KB patterns for: ${story.ruleIds.join(', ')}`,
+        });
+        continue;
+      }
+
       // Session 86: Check if already processed
       if (this.processedStories.has(story.id)) {
         console.log(`[PatternAwareFixer] ⏭️ Story ${story.id} already processed - skipping`);
@@ -513,8 +595,19 @@ export class PatternAwareFixService extends FreshContextFixService {
       if (this.globalApiCalls >= MAX_API_CALLS_PER_ANALYSIS) {
         console.error(`[PatternAwareFixer] ⛔ GLOBAL API LIMIT REACHED (${MAX_API_CALLS_PER_ANALYSIS}). Aborting remaining stories.`);
         this.aborted = true;
-        // Mark remaining stories as skipped
+        // Mark remaining stories as skipped with report
+        story.status = 'skipped';
         skipped++;
+        this.failedStoryReports.push({
+          storyId: story.id,
+          storyName: story.groupName,
+          ruleIds: story.ruleIds,
+          files: story.files,
+          failureReason: 'api_limit',
+          attempts: this.storyAttempts.get(story.id) || 0,
+          recommendation: `API call limit (${MAX_API_CALLS_PER_ANALYSIS}) reached. Consider increasing limit or reviewing KB patterns for rules: ${story.ruleIds.join(', ')}`,
+        });
+        this.processedStories.add(story.id);
         continue;
       }
 
@@ -524,6 +617,17 @@ export class PatternAwareFixService extends FreshContextFixService {
         console.error(`[PatternAwareFixer] ❌ Story ${story.id} exceeded max attempts (${MAX_STORY_ATTEMPTS}) - skipping`);
         story.status = 'skipped';
         skipped++;
+        const lastError = this.storyErrors.get(story.id);
+        this.failedStoryReports.push({
+          storyId: story.id,
+          storyName: story.groupName,
+          ruleIds: story.ruleIds,
+          files: story.files,
+          failureReason: 'max_attempts',
+          attempts,
+          lastError,
+          recommendation: this.generateRecommendation(story, lastError),
+        });
         this.processedStories.add(story.id);
         continue;
       }
@@ -543,12 +647,25 @@ export class PatternAwareFixService extends FreshContextFixService {
           completed++;
           this.processedStories.add(story.id);
         } else {
+          // Track the error for reporting
+          this.storyErrors.set(story.id, result.error || 'Validation failed');
+
           // Check if we should retry or give up
           const currentAttempts = this.storyAttempts.get(story.id) || 0;
           if (currentAttempts >= MAX_STORY_ATTEMPTS) {
             console.log(`[PatternAwareFixer] ⚠️ Story ${story.id} failed after ${currentAttempts} attempts - marking as failed`);
             story.status = 'failed';
             failed++;
+            this.failedStoryReports.push({
+              storyId: story.id,
+              storyName: story.groupName,
+              ruleIds: story.ruleIds,
+              files: story.files,
+              failureReason: 'validation_failed',
+              attempts: currentAttempts,
+              lastError: result.error,
+              recommendation: this.generateRecommendation(story, result.error),
+            });
             this.processedStories.add(story.id);
           } else {
             console.log(`[PatternAwareFixer] ⚠️ Story ${story.id} failed (attempt ${currentAttempts}/${MAX_STORY_ATTEMPTS})`);
@@ -560,6 +677,17 @@ export class PatternAwareFixService extends FreshContextFixService {
         console.error(`[PatternAwareFixer] ❌ Story ${story.id} threw error: ${errorMessage}`);
         story.status = 'failed';
         failed++;
+        this.storyErrors.set(story.id, errorMessage);
+        this.failedStoryReports.push({
+          storyId: story.id,
+          storyName: story.groupName,
+          ruleIds: story.ruleIds,
+          files: story.files,
+          failureReason: 'error',
+          attempts: this.storyAttempts.get(story.id) || 1,
+          lastError: errorMessage,
+          recommendation: this.generateRecommendation(story, errorMessage),
+        });
         this.processedStories.add(story.id);
       }
     }
@@ -567,13 +695,58 @@ export class PatternAwareFixService extends FreshContextFixService {
     console.log(`[PatternAwareFixer] Processing complete: ${completed} completed, ${failed} failed, ${skipped} skipped`);
     console.log(`[PatternAwareFixer] API calls made: ${this.globalApiCalls}/${MAX_API_CALLS_PER_ANALYSIS}`);
 
+    // Log failed story summary for report
+    if (this.failedStoryReports.length > 0) {
+      console.log(`[PatternAwareFixer] Failed stories summary:`);
+      for (const report of this.failedStoryReports) {
+        console.log(`  - Story ${report.storyId} (${report.storyName}): ${report.failureReason}`);
+        console.log(`    Rules: ${report.ruleIds.join(', ')}`);
+        console.log(`    Recommendation: ${report.recommendation}`);
+      }
+    }
+
     return {
       completed,
       failed,
       skipped,
       totalAttempts,
       aiCallsSaved: totalAiCallsSaved,
+      failedStories: this.failedStoryReports.length > 0 ? this.failedStoryReports : undefined,
     };
+  }
+
+  /**
+   * Session 86: Get failed stories report for final output
+   */
+  getFailedStoriesReport(): FailedStoryReport[] {
+    return [...this.failedStoryReports];
+  }
+
+  /**
+   * Session 86: Generate recommendation for failed story
+   */
+  private generateRecommendation(story: FixStory, lastError?: string): string {
+    const rules = story.ruleIds.join(', ');
+
+    // Check for common error patterns
+    if (lastError?.includes('syntax') || lastError?.includes('parse')) {
+      return `Fix has syntax issues. Manual review recommended for ${story.files[0]}. Consider adding KB pattern for rules: ${rules}`;
+    }
+
+    if (lastError?.includes('validation')) {
+      return `AI-generated fix failed validation. The fix may introduce new issues. Manual review of ${story.files.join(', ')} recommended.`;
+    }
+
+    if (lastError?.includes('timeout') || lastError?.includes('abort')) {
+      return `Operation timed out. Consider splitting into smaller fixes or adding KB patterns for: ${rules}`;
+    }
+
+    if (lastError?.includes('API call limit')) {
+      return `API budget exhausted. Consider adding KB patterns for frequently occurring rules: ${rules}`;
+    }
+
+    // Default recommendation
+    return `Manual fix recommended for ${story.files[0]}. Rules: ${rules}. Consider adding a KB pattern after manual fix.`;
   }
 
   /**
@@ -724,13 +897,15 @@ export class PatternAwareFixService extends FreshContextFixService {
   /**
    * Try to apply KB pattern
    *
-   * Session 85: HIGH-CONFIDENCE PATTERN SKIP
-   * If pattern confidence >= 90% and has been used successfully 5+ times,
-   * apply the fix template DIRECTLY without AI call.
+   * Session 86: COST-SAVING FLOW
+   * ALWAYS try direct pattern application first, regardless of confidence.
+   * Validation is cheap, AI calls are expensive.
+   * Even if only 50% of low-confidence patterns work, we save money.
    *
    * Priority:
-   * 1. High-confidence direct application (0 AI calls)
-   * 2. Lightweight AI pattern application (1 AI call)
+   * 1. Try direct pattern application (0 AI calls)
+   * 2. If validation passes → done, we saved an AI call
+   * 3. If validation fails → fall back to AI
    */
   private async tryKBPattern(
     issue: FreshContextIssue,
@@ -753,32 +928,31 @@ export class PatternAwareFixService extends FreshContextFixService {
       confidence: guidance.successRate,
     };
 
-    // SESSION 85: HIGH-CONFIDENCE PATTERN SKIP
-    // If confidence >= 90% AND pattern has been used successfully 5+ times,
-    // try direct application WITHOUT AI call
-    const HIGH_CONFIDENCE_THRESHOLD = 90;
-    const MIN_SUCCESSFUL_USES = 5;
+    // SESSION 86: ALWAYS TRY DIRECT APPLICATION FIRST
+    // Even low-confidence patterns should be tried - validation is cheaper than AI
+    // If 50% of 60% confidence patterns work, we still save money on those
+    console.log(`[PatternAwareFixer] 💰 Trying KB pattern (${guidance.successRate}% confidence, ${guidance.usageCount} uses) - 0 AI calls if validation passes`);
 
-    if (guidance.successRate >= HIGH_CONFIDENCE_THRESHOLD &&
-        guidance.usageCount >= MIN_SUCCESSFUL_USES) {
+    // Try direct template application from the pattern
+    const directResult = this.tryDirectPatternApplication(issue, guidance, bestExample);
 
-      console.log(`[PatternAwareFixer] 🚀 HIGH-CONFIDENCE PATTERN (${guidance.successRate}%, ${guidance.usageCount} uses) - skipping AI`);
+    if (directResult) {
+      // Validate the direct fix
+      const validation = await this.patternConfig.validateFix(directResult, [issue]);
 
-      // Try direct template application from the pattern
-      const directResult = this.tryDirectPatternApplication(issue, guidance, bestExample);
-
-      if (directResult) {
-        // Validate the direct fix
-        const validation = await this.patternConfig.validateFix(directResult, [issue]);
-
-        if (validation.passed) {
-          console.log(`[PatternAwareFixer] ✅ Direct pattern application succeeded - 0 AI calls`);
-          this.stats.directPropagation++;
-          return { success: true, fixCode: directResult, skippedAI: true };
-        } else {
-          console.log(`[PatternAwareFixer] ⚠️ Direct pattern validation failed, falling back to AI`);
-        }
+      if (validation.passed) {
+        console.log(`[PatternAwareFixer] ✅ KB pattern succeeded - 0 AI calls (saved ~$0.10)`);
+        this.stats.directPropagation++;
+        // Update KB success rate
+        await fixPatternGuidance.recordFixAttempt(guidance.ruleId, guidance.language, guidance.tool, true);
+        return { success: true, fixCode: directResult, skippedAI: true };
+      } else {
+        console.log(`[PatternAwareFixer] ⚠️ KB pattern validation failed (${validation.error}), falling back to AI`);
+        // Record failure to update KB success rate
+        await fixPatternGuidance.recordFixAttempt(guidance.ruleId, guidance.language, guidance.tool, false, validation.error);
       }
+    } else {
+      console.log(`[PatternAwareFixer] ⚠️ KB pattern could not be applied directly, trying AI`);
     }
 
     // If no applyPattern callback, fall back to full generation

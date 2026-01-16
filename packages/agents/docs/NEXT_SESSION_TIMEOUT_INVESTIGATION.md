@@ -7,11 +7,15 @@
 ### What Was Fixed (Session 86):
 
 1. **MAX_STORY_ATTEMPTS = 3** - Each story now limited to 3 retry attempts
-2. **MAX_API_CALLS_PER_ANALYSIS = 50** - Global limit prevents runaway costs
+2. **MAX_API_CALLS_PER_ANALYSIS = 30** - Global limit ~$3 (reduced from 50)
 3. **processedStories Set** - Tracks which stories have been processed to prevent re-processing
 4. **storyAttempts Map** - Tracks retry attempts per story
-5. **globalApiCalls counter** - Tracks total API calls with abort when limit reached
-6. **checkAndTrackApiCall()** - Central method to track all AI calls and enforce limits
+5. **storyErrors Map** - Tracks last error for each story
+6. **globalApiCalls counter** - Tracks total API calls with abort when limit reached
+7. **checkAndTrackApiCall()** - Central method to track all AI calls and enforce limits
+8. **FailedStoryReport interface** - Captures failure details for final report
+9. **generateRecommendation()** - Provides actionable recommendations for failed stories
+10. **getFailedStoriesReport()** - Public method to retrieve failure details
 
 ### Key Changes in processAllStories():
 - Changed from `while (!this.isComplete())` to `for (const story of allStories)`
@@ -19,11 +23,27 @@
 - Stories that exceed MAX_STORY_ATTEMPTS are marked as 'skipped'
 - Global API limit triggers abort for remaining stories
 - Proper status updates: 'fixed', 'failed', or 'skipped'
+- Failed stories include detailed reports with recommendations
+
+### Failed Story Report Format:
+```typescript
+interface FailedStoryReport {
+  storyId: number;
+  storyName: string;
+  ruleIds: string[];
+  files: string[];
+  failureReason: 'max_attempts' | 'api_limit' | 'validation_failed' | 'error';
+  attempts: number;
+  lastError?: string;
+  recommendation: string;  // Actionable suggestion for manual fix
+}
+```
 
 ### Testing Required:
 1. Run E2E test with these limits active
-2. Verify cost stays under $5 for full analysis
+2. Verify cost stays under $3 for full analysis
 3. Confirm no story is processed more than 3 times
+4. Verify failed stories have proper recommendations in output
 
 ---
 
