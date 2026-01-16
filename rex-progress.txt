@@ -1,0 +1,33 @@
+# Rex Progress Log
+# Source: docs/NEXT_SESSION_89.md
+# Started: 2025-01-16
+
+## Learnings
+(Patterns discovered during task execution)
+
+### Task 1: Test Complexity Detection & Batch Fixing
+- Test files follow Jest conventions with `describe`, `it`, `expect` from `@jest/globals`
+- Test file naming: `*.test.ts` in `__tests__` directories
+- Session 88 features tested:
+  - `getFixComplexity()` - determines if rule is simple (Haiku) or complex (Sonnet)
+  - `getModelForComplexity()` - returns OpenRouter model ID
+  - `PatternAwareFixService.processAllStories()` - batch fixing integration
+- Key patterns from Session 88:
+  - Simple rules: unused, formatting, style, naming, override, braces
+  - Complex rules: injection, security, auth, crypto, thread-safety
+  - KB success rate >= 80% overrides unknown rules to simple
+  - Batch fixing uses 1 API call for N issues (saves N-1 calls)
+
+---
+
+=== Task #1 (2026-01-16 08:02:58) ===
+Title: Test Complexity Detection & Batch Fixing
+Status: FAILED
+Reason: Validation failed
+
+
+=== Task #1 (2026-01-16 08:07:24) ===
+Title: Test Complexity Detection & Batch Fixing
+Status: FAILED
+Reason: Validation failed
+

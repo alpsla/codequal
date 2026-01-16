@@ -1,0 +1,118 @@
+{
+  "source": "docs/NEXT_SESSION_89.md",
+  "createdAt": "2025-01-16T08:00:00Z",
+  "maxIterations": 20,
+  "currentIteration": 1,
+  "status": "ready",
+  "validation": {
+    "type": "turbo",
+    "build": "turbo run build",
+    "note": "Lint disabled - codebase has pre-existing lint errors"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "parentId": null,
+      "title": "Test Complexity Detection & Batch Fixing",
+      "description": "Verify Session 88 implementations work correctly by creating test files for complexity detection and batch fixing.",
+      "steps": [
+        "Create test file for complexity detection with tests for simple rules (unused-import, formatting-error) and complex rules (sql-injection, xss-vulnerability)",
+        "Create integration test for batch fixing: mock 3 issues in same story, verify single AI call is made, verify all 3 fixes are validated"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/state/__tests__/complexity-detection.test.ts",
+        "packages/agents/src/fix-agent/state/__tests__/batch-fixing.test.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 2,
+      "parentId": null,
+      "title": "Implement generateBatchFix Callback",
+      "description": "Create the AI callback that handles batch prompts for fixing multiple issues in a single AI call.",
+      "steps": [
+        "Add generateBatchFix method to ai-fixer-agent.ts",
+        "Implement buildBatchPrompt helper to create the batch prompt",
+        "Implement parseBatchResponse helper to parse AI response",
+        "Integrate with existing fix flow"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/agents/ai-fixer-agent.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 3,
+      "parentId": null,
+      "title": "Documentation Cleanup - DigitalOcean to Oracle Cloud",
+      "description": "Update remaining DigitalOcean references in docs to Oracle Cloud registry.",
+      "steps": [
+        "Replace registry.digitalocean.com with iad.ocir.io/idzaw9ddo1h5/codequal",
+        "Update references from DigitalOcean to Oracle Cloud",
+        "Mark deprecated guides (DROPLET_SETUP_GUIDE.md) as archived"
+      ],
+      "files": [
+        "packages/agents/docs/HYBRID_ARCHITECTURE_ROADMAP.md",
+        "packages/agents/src/two-branch/docs/next/V9-SYSTEM-OVERVIEW.md",
+        "packages/agents/src/two-branch/docs/next/V9_SESSION_HANDOFF_PROTOCOL.md"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 4,
+      "parentId": null,
+      "title": "Add KB Success Rate to Complexity Detection",
+      "description": "Use KB success rate to improve model selection - if success rate >= 80%, route to simple/Haiku.",
+      "steps": [
+        "Pass KB success rate to complexity detection function",
+        "Add logic to return 'simple' if kbSuccessRate >= 80",
+        "Update stats to track KB-based routing"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/state/complexity-detection.ts"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 5,
+      "parentId": null,
+      "title": "Optimize Batch Validation",
+      "description": "Batch validate fixes when same tool/rule instead of validating each fix individually.",
+      "steps": [
+        "Group fixes by tool using groupBy",
+        "Implement batchValidate function per tool",
+        "Update validation flow to use batch validation"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/validators/"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    }
+  ],
+  "iterations": []
+}
