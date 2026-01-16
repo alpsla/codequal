@@ -66,8 +66,8 @@ export interface KBBypassMetrics {
 // Constants
 // ============================================================================
 
-/** Minimum success rate to allow bypass without validation */
-const KB_BYPASS_THRESHOLD = 95;
+/** Minimum success rate to allow bypass without validation (configurable via env) */
+const KB_BYPASS_THRESHOLD = parseInt(process.env.KB_BYPASS_THRESHOLD || '95', 10);
 
 /** Estimated cost per AI fix call */
 const ESTIMATED_AI_CALL_COST = 0.01;
@@ -137,19 +137,7 @@ export async function checkKBBypass(
     };
   }
 
-  // Condition 1: High success rate (>= 95%)
-  if (guidance.successRate >= KB_BYPASS_THRESHOLD) {
-    const fixCode = findBestExample(guidance, codeContext);
-    return {
-      canBypass: true,
-      reason: 'high_success_rate',
-      guidance,
-      confidence: guidance.successRate,
-      fixCode,
-    };
-  }
-
-  // Condition 2: Tool-validated pattern
+  // Condition 1: Tool-validated pattern (check first - more specific signal)
   // Check if any correct pattern has been marked as tool validated
   // Note: toolValidated is not currently in FixGuidance type, but we check metadata
   const isToolValidated = checkToolValidated(guidance);
@@ -160,6 +148,18 @@ export async function checkKBBypass(
       reason: 'tool_validated',
       guidance,
       confidence: 100, // Tool validation means 100% confidence
+      fixCode,
+    };
+  }
+
+  // Condition 2: High success rate (>= 95%)
+  if (guidance.successRate >= KB_BYPASS_THRESHOLD) {
+    const fixCode = findBestExample(guidance, codeContext);
+    return {
+      canBypass: true,
+      reason: 'high_success_rate',
+      guidance,
+      confidence: guidance.successRate,
       fixCode,
     };
   }

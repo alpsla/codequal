@@ -28,6 +28,7 @@ import {
 import {
   checkKBBypass,
   recordKBBypass,
+  getKBBypassMetrics,
   type KBBypassResult,
 } from '../state/kb-fix-applicator';  // SESSION 90: KB bypass for cost savings
 import { OpenRouterKeyManager } from '../../two-branch/services/openrouter-key-manager';
@@ -341,6 +342,15 @@ export class AIFixerAgent {
       `[AI-Fixer] Batch complete: ${enrichedIssues.length}/${issues.length} fixed, ` +
       `${issues.length} AI calls, avg confidence: ${Math.round(avgConfidence)}%`
     );
+
+    // SESSION 91: Log KB bypass metrics at end of batch
+    const metrics = getKBBypassMetrics();
+    if (metrics.kbAppliedCount > 0 || metrics.aiAppliedCount > 0) {
+      console.log(
+        `[AI-Fixer] KB Bypass Summary: ${metrics.kbAppliedCount} KB, ` +
+        `${metrics.aiAppliedCount} AI, saved $${metrics.kbBypassSavings.toFixed(4)}`
+      );
+    }
 
     return {
       enrichedIssues,
