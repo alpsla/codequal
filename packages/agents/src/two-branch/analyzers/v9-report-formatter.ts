@@ -668,9 +668,11 @@ ${Object.entries(categoryCounts).map(([cat, count]) =>
 
     // Only generate new fix if:
     // 1. No pre-existing fix, AND
-    // 2. Issue is actionable (NEW or EXISTING_MODIFIED)
-    const isActionable = issue.status !== 'EXISTING_REST' &&
-      (issue.status === 'new' || issue.status === 'modified' || !issue.status);
+    // 2. Issue is actionable (NEW or EXISTING_MODIFIED based on category)
+    // Note: category is set during two-branch comparison and indicates actionability
+    const issueCategory = (issue as any).category as string | undefined;
+    const isActionable = issueCategory !== 'EXISTING_REST' && issueCategory !== 'RESOLVED' &&
+      (issueCategory === 'NEW' || issueCategory === 'EXISTING_MODIFIED' || !issueCategory);
 
     if (!fixSuggestion && isActionable) {
       fixSuggestion = await this.generateDynamicFix(issue);
