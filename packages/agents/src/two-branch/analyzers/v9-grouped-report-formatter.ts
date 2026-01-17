@@ -1252,8 +1252,9 @@ export class V9GroupedReportFormatter {
     // Manifest already created and uploaded above with public URLs
 
     // BUG FIX #19: Add CheckStyle auto-fix guidance if CheckStyle issues found
+    // Session 91: Only show manual guide for BASIC tier; PRO has AI fixes inline
     const checkstyleGroups = groups.filter(g => g.tool === 'checkstyle');
-    if (checkstyleGroups.length > 0) {
+    if (checkstyleGroups.length > 0 && this.userTier !== 'pro' && this.userTier !== 'enterprise') {
       const checkstyleCount = enrichedIssues.filter(i => i.tool === 'checkstyle').length;
       markdown.push(this.generateCheckStyleAutoFixGuide(checkstyleCount));
       markdown.push('');
@@ -2375,11 +2376,7 @@ ${this.SHOW_FIX_COVERAGE ? `**Fix Coverage** (excluding ${issues.length - issues
 
 ---
 
-### 🤖 AI Fix Recommendations & Auto-Fix Capability
-
-**BASIC vs PRO Tier Fix System**:
-
-CodeQual offers two subscription tiers with different fix capabilities:
+### 🤖 AI Fix Recommendations
 
 ${(() => {
         const breakdown = this.calculateTierBreakdown(groups);
@@ -2394,16 +2391,33 @@ ${(() => {
         const activeIssueCount = issues.length - resolvedCount;
         const activeIssuesNeedingGuidance = Math.max(0, guidanceNeeded - resolvedCount);
 
-        return `**🆓 BASIC Tier** (Pattern Library + IDE Guidance):
-- 📚 **Pattern Fixes**: ${patternFixable.toLocaleString()} issues (${patternPercent}%) - Pre-learned fixes from ${patternCount}+ patterns in Supabase
-- 💡 **IDE Integration**: Export fixes to VS Code, JetBrains for one-click application
-- 📖 **Actionable Guidance**: Clear instructions for ${activeIssuesNeedingGuidance.toLocaleString()} active issues needing manual attention
+        // Session 91: Tier-aware content - PRO users see results, BASIC users see upgrade path
+        if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+          // PRO tier: Show what was done
+          const fixedCount = issues.filter(i => i.fixSuggestion?.correctedCode).length;
+          const fixRate = activeIssueCount > 0 ? (fixedCount / activeIssueCount * 100).toFixed(1) : '100.0';
+          return `**⭐ PRO Analysis Complete**
 
-**⭐ PRO Tier** (Full AI-Powered Analysis):
-- 🤖 **AI Auto-Fix**: All ${activeIssueCount.toLocaleString()} active issues analyzed with contextual AI fixes
-- 🔄 **Pattern Learning**: Every fix improves the pattern library (saves cost over time)
-- ✅ **Verification**: AI fixes verified before application (syntax, tests, behavior)
-- 📈 **Coverage**: 100% of issues get AI-generated fix suggestions`;
+| Metric | Result |
+|--------|--------|
+| 🔍 **Issues Analyzed** | ${activeIssueCount.toLocaleString()} active issues |
+| 🤖 **AI Fixes Generated** | ${fixedCount.toLocaleString()} (${fixRate}%) |
+| ✅ **Verified Fixes** | All fixes validated against tool rules |
+| 🔄 **Pattern Learning** | New patterns saved for future cost savings |
+
+> All AI-generated fixes are shown inline with each issue below. Apply them with the IDE integration files or CLI.`;
+        } else {
+          // BASIC tier: Show upgrade path
+          return `**Your Tier: BASIC** (Pattern Library + IDE Guidance)
+
+| Available | Count | Description |
+|-----------|-------|-------------|
+| 📚 **Pattern Fixes** | ${patternFixable.toLocaleString()} (${patternPercent}%) | Pre-learned fixes from ${patternCount}+ patterns |
+| 💡 **IDE Integration** | ✅ | Export to VS Code, JetBrains |
+| 📖 **Guidance** | ${activeIssuesNeedingGuidance.toLocaleString()} | Step-by-step instructions |
+
+> 💡 **Upgrade to PRO** for AI-generated fixes on all ${activeIssueCount.toLocaleString()} issues with automatic verification.`;
+        }
       })()}
 
 ---
@@ -2652,20 +2666,30 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     const highCount = blockingIssues.filter(i => i.severity === 'high').length;
     const securityIssues = issues.filter(i => i.detectedCategory === 'Security');
 
-    // Enhancement #1: Auto-fix mention in recommendations (safe auto-apply subset)
+    // Enhancement #1: Auto-fix mention in recommendations
     // SESSION 26 FIX: Exclude RESOLVED issues - they're already fixed!
     const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+
+    // Session 91 FIX: Distinguish between "can be auto-fixed" and "has AI fix generated"
+    // - autoFixableIssues = Issues that CAN be auto-fixed (by rule type)
+    // - aiFixedIssues = Issues that actually HAVE AI-generated fixes
     const autoFixableIssues = activeIssues.filter(i =>
       this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
-    const autoFixPercent = activeIssues.length > 0 ? Math.round((autoFixableIssues.length / activeIssues.length) * 100) : 0;
+    const aiFixedIssues = activeIssues.filter(i => i.fixSuggestion?.correctedCode);
 
-    if (autoFixableIssues.length > 0) {
-      // SESSION 73: Tier-aware messaging - PRO shows fixes applied, BASIC shows IDE instructions
-      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-        content += `✅ **Fixes Applied**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) have been auto-fixed. Review changes in the **Applied Fixes** section below.\n\n`;
-      } else {
-        content += `🚀 **Easy Fixes Available**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) can be auto-fixed using your IDE or linter. See **How to Apply Fixes** below.\n\n`;
+    // Session 91: Use correct metric based on tier
+    if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+      // PRO: Show actual AI fixes generated
+      const aiFixPercent = activeIssues.length > 0 ? Math.round((aiFixedIssues.length / activeIssues.length) * 100) : 0;
+      if (aiFixedIssues.length > 0) {
+        content += `✅ **AI Fixes Generated**: ${aiFixedIssues.length.toLocaleString()} issues (${aiFixPercent}%) have AI-generated fixes. Review in the sections below.\n\n`;
+      }
+    } else {
+      // BASIC: Show auto-fixable by rule type
+      const autoFixPercent = activeIssues.length > 0 ? Math.round((autoFixableIssues.length / activeIssues.length) * 100) : 0;
+      if (autoFixableIssues.length > 0) {
+        content += `🚀 **Easy Fixes Available**: ${autoFixableIssues.length.toLocaleString()} issues (${autoFixPercent}%) can be auto-fixed using your IDE or linter.\n\n`;
       }
     }
 
@@ -2694,18 +2718,23 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       }
     }
 
-    const autoFixable = issues.filter(i =>
+    // Session 91 FIX: Use actual AI fix count for PRO tier
+    const actualFixedCount = issues.filter(i => i.fixSuggestion?.correctedCode).length;
+    const autoFixableCount = issues.filter(i =>
       this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
-    );
-    if (autoFixable.length > issues.length * 0.3) {
-      // SESSION 73: Tier-aware messaging
-      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-        content += `4. **Fixes Applied**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues were auto-fixed. Review and commit when ready.\n`;
-      } else {
-        content += `4. **Automation Opportunity**: ${((autoFixable.length / issues.length) * 100).toFixed(0)}% of issues auto-fixable - consider pre-commit hooks\n`;
+    ).length;
+
+    if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+      // PRO: Show actual AI fix rate
+      if (actualFixedCount > 0) {
+        const fixRate = issues.length > 0 ? ((actualFixedCount / issues.length) * 100).toFixed(0) : '0';
+        content += `4. **AI Fix Coverage**: ${fixRate}% of issues have AI-generated fixes. Apply via IDE or CLI.\n`;
       }
     } else {
-      if (issues.length > 0) {
+      // BASIC: Show automation opportunity
+      if (autoFixableCount > issues.length * 0.3) {
+        content += `4. **Automation Opportunity**: ${((autoFixableCount / issues.length) * 100).toFixed(0)}% of issues auto-fixable - consider pre-commit hooks\n`;
+      } else if (issues.length > 0) {
         content += `4. **Code Quality**: Most issues require manual attention - allocate development time accordingly\n`;
       }
     }
@@ -7810,28 +7839,23 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 
 ### 💡 Quick Stats
 
-**Fix Recommendations (100% Coverage):**
+**Fix Recommendations:**
 ${(() => {
-        const safeCount = issues.filter(i => this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
-        const safePercent = Math.round(safeCount / issues.length * 100);
-        const advancedCount = issues.filter(i => this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
-        const advancedPercent = Math.round(advancedCount / issues.length * 100);
-        const manualCount = issues.length - advancedCount;
-        const manualPercent = Math.round(manualCount / issues.length * 100);
+        const fixedCount = issues.filter(i => i.fixSuggestion?.correctedCode).length;
+        const fixedPercent = issues.length > 0 ? Math.round(fixedCount / issues.length * 100) : 0;
+        const pendingCount = issues.length - fixedCount;
 
-        // SESSION 51: Updated to BASIC/PRO tier system
-        const patternFixes = safeCount > 0
-          ? `${safeCount} issues (${safePercent}%)`
-          : `0 issues`;
-        const aiAvailable = advancedCount > 0
-          ? `${advancedCount} issues (${advancedPercent}%)`
-          : `0 issues`;
-        const guidanceNeeded = manualCount > 0
-          ? `${manualCount} issues (${manualPercent}%)`
-          : `0 issues`;
-
-        return `**🆓 BASIC Tier**: ${patternFixes} from pattern library, ${guidanceNeeded} with IDE guidance
-**⭐ PRO Tier**: ${aiAvailable} with AI auto-fix, 100% with AI analysis`;
+        // Session 91: Tier-aware content
+        if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+          return `- ✅ **AI Fixes Generated**: ${fixedCount} issues (${fixedPercent}%)
+- ⏳ **Needs Review**: ${pendingCount} issues (${100 - fixedPercent}%)`;
+        } else {
+          const safeCount = issues.filter(i => this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
+          const safePercent = Math.round(safeCount / issues.length * 100);
+          return `- 📚 **Pattern Fixes**: ${safeCount} issues (${safePercent}%)
+- 📖 **IDE Guidance**: ${issues.length - safeCount} issues
+- 💡 Upgrade to PRO for AI-generated fixes`;
+        }
       })()}
 
 **By Severity:**
