@@ -484,7 +484,8 @@ export class V9AnalysisService {
     // Analyze PR branch using execFileSync for safety
     console.log(`   Analyzing PR branch...`);
     execFileSync('git', ['checkout', safePrBranch], { cwd: repoPath, stdio: 'ignore' });
-    const prResult = await orchestrator.orchestrate(repoPath, 'pr', undefined, {
+    // BUG FIX: orchestrate() takes 3 params (repoPath, branch, options) - was passing undefined as options
+    const prResult = await orchestrator.orchestrate(repoPath, 'pr', {
       includeAllSeverities: mode === 'complete',
       analysisMode: mode
     });
@@ -511,7 +512,8 @@ export class V9AnalysisService {
     // Analyze base branch using execFileSync for safety
     console.log(`   Analyzing base branch...`);
     execFileSync('git', ['checkout', safeBaseBranch], { cwd: repoPath, stdio: 'ignore' });
-    const baseResult = await orchestrator.orchestrate(repoPath, 'base', undefined, {
+    // BUG FIX: orchestrate() takes 3 params (repoPath, branch, options) - was passing undefined as options
+    const baseResult = await orchestrator.orchestrate(repoPath, 'base', {
       includeAllSeverities: mode === 'complete',
       analysisMode: mode
     });
@@ -645,8 +647,19 @@ export class V9AnalysisService {
   ): Promise<EnrichedIssue[]> {
     console.log(`🤖 Step 4: AI Enrichment\n`);
 
-    // Group issues to reduce AI calls
-    const groupingResult = groupIssues(issues);
+    // SESSION 92: Only enrich actionable issues (NEW + EXISTING_MODIFIED)
+    // Skip EXISTING_REST as they exist unchanged in both branches - not relevant for PR review
+    const actionableIssues = issues.filter(i =>
+      i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'
+    );
+    const skippedCount = issues.length - actionableIssues.length;
+
+    if (skippedCount > 0) {
+      console.log(`   ℹ️  Skipping ${skippedCount} EXISTING_REST issues (not relevant for PR review)`);
+    }
+
+    // Group only actionable issues to reduce AI calls
+    const groupingResult = groupIssues(actionableIssues);
     console.log(generateGroupingSummary(groupingResult));
 
     const { analyzed: priorityGroups } = prioritizeGroups(groupingResult.groups, maxAnalysis);
@@ -837,11 +850,21 @@ export class V9AnalysisService {
     try {
       const formatter = new V9ReportFormatterFinal();
 
-      // Build result object for formatter
+      // SESSION 92: Split issues by category for formatter
+      // V9ReportFormatterFinal expects newIssues, existingIssues, resolvedIssues arrays
+      const newIssues = issues.filter(i => i.category === 'NEW');
+      const existingModifiedIssues = issues.filter(i => i.category === 'EXISTING_MODIFIED');
+      const existingRestIssues = issues.filter(i => i.category === 'EXISTING_REST');
+      const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
+
+      // Build result object for formatter with proper structure
       const analysisResult: any = {
         issues,
+        newIssues,
+        existingIssues: [...existingModifiedIssues, ...existingRestIssues],
+        resolvedIssues,
         decision,
-        score: 75, // Default score
+        score: Math.max(0, 100 - (blockingIssues.length * 10) - (newIssues.length * 0.5)),
         categoryScores: {},
         duration: 0,
         cost: 0
