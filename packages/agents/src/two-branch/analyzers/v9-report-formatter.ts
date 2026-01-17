@@ -663,18 +663,12 @@ ${Object.entries(categoryCounts).map(([cat, count]) =>
   }
   
   private async formatIssueWithEducation(issue: Issue, severity: string): Promise<string> {
-    // SESSION 92: Use pre-generated fix if available, skip AI for EXISTING_REST
+    // SESSION 92 FIX: Use pre-generated fix if available from enrichWithAI cache
+    // All issues (including EXISTING_REST) should have fixes
     let fixSuggestion = (issue as any).fixSuggestion;
 
-    // Only generate new fix if:
-    // 1. No pre-existing fix, AND
-    // 2. Issue is actionable (NEW or EXISTING_MODIFIED based on category)
-    // Note: category is set during two-branch comparison and indicates actionability
-    const issueCategory = (issue as any).category as string | undefined;
-    const isActionable = issueCategory !== 'EXISTING_REST' && issueCategory !== 'RESOLVED' &&
-      (issueCategory === 'NEW' || issueCategory === 'EXISTING_MODIFIED' || !issueCategory);
-
-    if (!fixSuggestion && isActionable) {
+    // Generate fix only if not already cached from enrichWithAI
+    if (!fixSuggestion) {
       fixSuggestion = await this.generateDynamicFix(issue);
     }
 

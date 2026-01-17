@@ -657,19 +657,18 @@ export class V9AnalysisService {
   ): Promise<EnrichedIssue[]> {
     console.log(`🤖 Step 4: AI Enrichment\n`);
 
-    // SESSION 92: Only enrich actionable issues (NEW + EXISTING_MODIFIED)
-    // Skip EXISTING_REST as they exist unchanged in both branches - not relevant for PR review
-    const actionableIssues = issues.filter(i =>
-      i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'
-    );
-    const skippedCount = issues.length - actionableIssues.length;
+    // SESSION 92 FIX: Process ALL issues (including EXISTING_REST)
+    // Use caching to avoid duplicate AI calls - same rule gets same fix
+    const categoryCounts = {
+      NEW: issues.filter(i => i.category === 'NEW').length,
+      EXISTING_MODIFIED: issues.filter(i => i.category === 'EXISTING_MODIFIED').length,
+      EXISTING_REST: issues.filter(i => i.category === 'EXISTING_REST').length,
+      RESOLVED: issues.filter(i => i.category === 'RESOLVED').length
+    };
+    console.log(`   📊 Issues by category: NEW=${categoryCounts.NEW}, MODIFIED=${categoryCounts.EXISTING_MODIFIED}, EXISTING=${categoryCounts.EXISTING_REST}, RESOLVED=${categoryCounts.RESOLVED}`);
 
-    if (skippedCount > 0) {
-      console.log(`   ℹ️  Skipping ${skippedCount} EXISTING_REST issues (not relevant for PR review)`);
-    }
-
-    // Group only actionable issues to reduce AI calls
-    const groupingResult = groupIssues(actionableIssues);
+    // Group ALL issues to reduce AI calls - same rule:tool gets same fix
+    const groupingResult = groupIssues(issues);
     console.log(generateGroupingSummary(groupingResult));
 
     const { analyzed: priorityGroups } = prioritizeGroups(groupingResult.groups, maxAnalysis);
