@@ -23,7 +23,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 import { V9AnalysisService } from '../../src/two-branch/api/v9-analysis-service';
 
 // Configuration
-const TEST_REPO = 'https://github.com/spring-projects/spring-petclinic';
+const TEST_REPO = 'https://github.com/spring-projects/spring-petclinic.git';
 const TEST_PR = 950;
 const OUTPUT_DIR = '/tmp/v9-production-reports';
 
