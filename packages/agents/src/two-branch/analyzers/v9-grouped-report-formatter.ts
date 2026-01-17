@@ -492,6 +492,86 @@ export class V9GroupedReportFormatter {
     return cleaned.trim();
   }
 
+  /**
+   * SESSION 92 FIX: Determine if correctedCode is actual code vs placeholder/guidance
+   *
+   * Returns:
+   * - 'code': Actual executable code fix
+   * - 'guidance': Text guidance only (no executable code)
+   * - 'none': No fix suggestion at all
+   *
+   * Placeholder patterns to reject:
+   * - "// Fix required at line X" (failed AI generation)
+   * - Comments only without actual code
+   * - Meta-instructions like "Replace X with Y" or "Insert X"
+   */
+  private getFixType(issue: EnrichedIssue): 'code' | 'guidance' | 'none' {
+    const fixSuggestion = issue.fixSuggestion;
+    if (!fixSuggestion) return 'none';
+
+    const correctedCode = fixSuggestion.correctedCode;
+    const fixText = fixSuggestion.fix;
+
+    // Check if correctedCode exists and is not a placeholder
+    if (correctedCode && typeof correctedCode === 'string') {
+      const trimmed = correctedCode.trim();
+
+      // Detect placeholder patterns from failed AI generation
+      const placeholderPatterns = [
+        /^\/\/\s*Fix required at line \d+$/i,
+        /^\/\/\s*TODO:/i,
+        /^\/\/\s*FIXME:/i,
+        /^\/\*\s*Replace\s+/i,
+        /^\/\*\s*Insert\s+/i,
+        /^\s*$/  // Empty or whitespace only
+      ];
+
+      for (const pattern of placeholderPatterns) {
+        if (pattern.test(trimmed)) {
+          // Has correctedCode but it's a placeholder - treat as guidance
+          return fixText ? 'guidance' : 'none';
+        }
+      }
+
+      // Check if code is only comments (no actual executable code)
+      const lines = trimmed.split('\n').filter(l => l.trim().length > 0);
+      const nonCommentLines = lines.filter(l => {
+        const t = l.trim();
+        return !t.startsWith('//') && !t.startsWith('/*') && !t.startsWith('*') && t !== '*/';
+      });
+
+      if (nonCommentLines.length === 0) {
+        // Only comments, no actual code
+        return fixText ? 'guidance' : 'none';
+      }
+
+      // Has actual code - this is a real fix
+      return 'code';
+    }
+
+    // No correctedCode but has text guidance
+    if (fixText) {
+      return 'guidance';
+    }
+
+    return 'none';
+  }
+
+  /**
+   * SESSION 92 FIX: Check if issue has actual executable code fix
+   * (not just text guidance or placeholders)
+   */
+  private hasActualCodeFix(issue: EnrichedIssue): boolean {
+    return this.getFixType(issue) === 'code';
+  }
+
+  /**
+   * SESSION 92 FIX: Check if issue has text guidance (but no actual code)
+   */
+  private hasTextGuidanceOnly(issue: EnrichedIssue): boolean {
+    return this.getFixType(issue) === 'guidance';
+  }
+
   constructor(
     modelConfigResolver?: any,
     language?: string,
@@ -2393,19 +2473,22 @@ ${(() => {
 
         // Session 91: Tier-aware content - PRO users see results, BASIC users see upgrade path
         if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-          // PRO tier: Show what was done
-          const fixedCount = issues.filter(i => i.fixSuggestion?.correctedCode).length;
-          const fixRate = activeIssueCount > 0 ? (fixedCount / activeIssueCount * 100).toFixed(1) : '100.0';
+          // PRO tier: Show what was done - SESSION 92 FIX: Separate code fixes vs guidance
+          const codeFixCount = issues.filter(i => this.hasActualCodeFix(i)).length;
+          const guidanceCount = issues.filter(i => this.hasTextGuidanceOnly(i)).length;
+          const codeFixRate = activeIssueCount > 0 ? (codeFixCount / activeIssueCount * 100).toFixed(1) : '0.0';
+          const guidanceRate = activeIssueCount > 0 ? (guidanceCount / activeIssueCount * 100).toFixed(1) : '0.0';
           return `**⭐ PRO Analysis Complete**
 
 | Metric | Result |
 |--------|--------|
 | 🔍 **Issues Analyzed** | ${activeIssueCount.toLocaleString()} active issues |
-| 🤖 **AI Fixes Generated** | ${fixedCount.toLocaleString()} (${fixRate}%) |
-| ✅ **Verified Fixes** | All fixes validated against tool rules |
+| 🤖 **AI Code Fixes** | ${codeFixCount.toLocaleString()} (${codeFixRate}%) ready-to-apply |
+| 📖 **Text Guidance** | ${guidanceCount.toLocaleString()} (${guidanceRate}%) manual review |
+| ✅ **Verified Fixes** | All code fixes validated against tool rules |
 | 🔄 **Pattern Learning** | New patterns saved for future cost savings |
 
-> All AI-generated fixes are shown inline with each issue below. Apply them with the IDE integration files or CLI.`;
+> Code fixes are shown inline with each issue below. Apply them with the IDE integration files or CLI.`;
         } else {
           // BASIC tier: Show upgrade path
           return `**Your Tier: BASIC** (Pattern Library + IDE Guidance)
@@ -2672,18 +2755,27 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
     // Session 91 FIX: Distinguish between "can be auto-fixed" and "has AI fix generated"
     // - autoFixableIssues = Issues that CAN be auto-fixed (by rule type)
-    // - aiFixedIssues = Issues that actually HAVE AI-generated fixes
+    // - aiFixedIssues = Issues that actually HAVE AI-generated fixes (SESSION 92: exclude placeholders)
     const autoFixableIssues = activeIssues.filter(i =>
       this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
-    const aiFixedIssues = activeIssues.filter(i => i.fixSuggestion?.correctedCode);
+    // SESSION 92 FIX: Use hasActualCodeFix to exclude placeholder fixes
+    const aiFixedIssues = activeIssues.filter(i => this.hasActualCodeFix(i));
+    const textGuidanceIssues = activeIssues.filter(i => this.hasTextGuidanceOnly(i));
 
     // Session 91: Use correct metric based on tier
     if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-      // PRO: Show actual AI fixes generated
+      // PRO: Show actual AI fixes generated - SESSION 92: Add text guidance count
       const aiFixPercent = activeIssues.length > 0 ? Math.round((aiFixedIssues.length / activeIssues.length) * 100) : 0;
-      if (aiFixedIssues.length > 0) {
-        content += `✅ **AI Fixes Generated**: ${aiFixedIssues.length.toLocaleString()} issues (${aiFixPercent}%) have AI-generated fixes. Review in the sections below.\n\n`;
+      if (aiFixedIssues.length > 0 || textGuidanceIssues.length > 0) {
+        if (aiFixedIssues.length > 0) {
+          content += `✅ **AI Code Fixes**: ${aiFixedIssues.length.toLocaleString()} issues (${aiFixPercent}%) have ready-to-apply code fixes.\n`;
+        }
+        if (textGuidanceIssues.length > 0) {
+          const guidancePercent = activeIssues.length > 0 ? Math.round((textGuidanceIssues.length / activeIssues.length) * 100) : 0;
+          content += `📖 **Text Guidance**: ${textGuidanceIssues.length.toLocaleString()} issues (${guidancePercent}%) have guidance (no auto-fix).\n`;
+        }
+        content += '\n';
       }
     } else {
       // BASIC: Show auto-fixable by rule type
@@ -2719,16 +2811,19 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     }
 
     // Session 91 FIX: Use actual AI fix count for PRO tier
-    const actualFixedCount = issues.filter(i => i.fixSuggestion?.correctedCode).length;
+    // SESSION 92 FIX: Use hasActualCodeFix to exclude placeholders
+    const actualFixedCount = issues.filter(i => this.hasActualCodeFix(i)).length;
+    const textGuidanceCount = issues.filter(i => this.hasTextGuidanceOnly(i)).length;
     const autoFixableCount = issues.filter(i =>
       this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     ).length;
 
     if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-      // PRO: Show actual AI fix rate
-      if (actualFixedCount > 0) {
+      // PRO: Show actual AI fix rate - SESSION 92: Separate code fixes vs guidance
+      if (actualFixedCount > 0 || textGuidanceCount > 0) {
         const fixRate = issues.length > 0 ? ((actualFixedCount / issues.length) * 100).toFixed(0) : '0';
-        content += `4. **AI Fix Coverage**: ${fixRate}% of issues have AI-generated fixes. Apply via IDE or CLI.\n`;
+        const guidanceRate = issues.length > 0 ? ((textGuidanceCount / issues.length) * 100).toFixed(0) : '0';
+        content += `4. **AI Fix Coverage**: ${fixRate}% code fixes, ${guidanceRate}% text guidance.\n`;
       }
     } else {
       // BASIC: Show automation opportunity
@@ -6155,18 +6250,18 @@ ${blocking.length > 0
   - ${securityIssues.length > 0 ? `Security vulnerabilities (${securityIssues.length}) pose ongoing risk` : 'Security posture is acceptable'}
 
 ### Risk Matrix by Category
-| Category | This PR | Pre-existing | Auto-fixable | Action Required |
-|----------|---------|--------------|--------------|-----------------|
-| **Security** | ${securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${securityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${securityIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
-| **Performance** | ${performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${performanceIssues.filter(i => i.category === 'EXISTING_REST').length} | ${performanceIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
-| **Architecture** | ${architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${architectureIssues.filter(i => i.category === 'EXISTING_REST').length} | ${architectureIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
-| **Dependencies** | ${dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${dependencyIssues.filter(i => i.category === 'EXISTING_REST').length} | ${dependencyIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
-| **Code Quality** | ${codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${codeQualityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${codeQualityIssues.filter(i => i.fixSuggestion?.correctedCode).length} | ${this.getRiskImpactLevel(codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| Category | This PR | Pre-existing | Code Fixes | Action Required |
+|----------|---------|--------------|------------|-----------------|
+| **Security** | ${securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${securityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${securityIssues.filter(i => this.hasActualCodeFix(i)).length} | ${this.getRiskImpactLevel(securityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Performance** | ${performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${performanceIssues.filter(i => i.category === 'EXISTING_REST').length} | ${performanceIssues.filter(i => this.hasActualCodeFix(i)).length} | ${this.getRiskImpactLevel(performanceIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Architecture** | ${architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${architectureIssues.filter(i => i.category === 'EXISTING_REST').length} | ${architectureIssues.filter(i => this.hasActualCodeFix(i)).length} | ${this.getRiskImpactLevel(architectureIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Dependencies** | ${dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${dependencyIssues.filter(i => i.category === 'EXISTING_REST').length} | ${dependencyIssues.filter(i => this.hasActualCodeFix(i)).length} | ${this.getRiskImpactLevel(dependencyIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
+| **Code Quality** | ${codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED').length} | ${codeQualityIssues.filter(i => i.category === 'EXISTING_REST').length} | ${codeQualityIssues.filter(i => this.hasActualCodeFix(i)).length} | ${this.getRiskImpactLevel(codeQualityIssues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'))} |
 
 **Legend:**
 - **This PR:** Issues in files modified by this PR (NEW + EXISTING_MODIFIED)
 - **Pre-existing:** Issues in files NOT touched by this PR (EXISTING_REST)
-- **Auto-fixable:** Issues with available 1-click fixes
+- **Code Fixes:** Issues with ready-to-apply code (SESSION 92: excludes text-only guidance)
 - **Action Required:** Priority based on severity of issues introduced/modified by this PR
 
 ### Recommendations
@@ -6239,38 +6334,41 @@ ${(() => {
   ): string {
     const lines: string[] = [];
 
-    // Count issues by fix status
-    const fixedIssues = issues.filter(i => i.fixSuggestion?.correctedCode && i.category !== 'RESOLVED');
-    const pendingIssues = issues.filter(i => !i.fixSuggestion?.correctedCode && i.category !== 'RESOLVED');
+    // Count issues by fix status - SESSION 92 FIX: Separate code fixes vs guidance
+    const codeFixIssues = issues.filter(i => this.hasActualCodeFix(i) && i.category !== 'RESOLVED');
+    const guidanceIssues = issues.filter(i => this.hasTextGuidanceOnly(i) && i.category !== 'RESOLVED');
+    const noFixIssues = issues.filter(i => !this.hasActualCodeFix(i) && !this.hasTextGuidanceOnly(i) && i.category !== 'RESOLVED');
     const resolvedByPR = issues.filter(i => i.category === 'RESOLVED');
 
-    // Calculate fix rate
-    const totalActive = fixedIssues.length + pendingIssues.length;
-    const fixRate = totalActive > 0 ? (fixedIssues.length / totalActive * 100).toFixed(1) : '100.0';
+    // Calculate fix rates
+    const totalActive = codeFixIssues.length + guidanceIssues.length + noFixIssues.length;
+    const codeFixRate = totalActive > 0 ? (codeFixIssues.length / totalActive * 100).toFixed(1) : '0.0';
+    const guidanceRate = totalActive > 0 ? (guidanceIssues.length / totalActive * 100).toFixed(1) : '0.0';
 
     lines.push('## 🔧 Fix Summary (PRO)');
     lines.push('');
-    lines.push('All fixes have been AI-generated and verified against tool rules.');
+    lines.push('Code fixes are AI-generated and verified against tool rules. Text guidance requires manual review.');
     lines.push('');
 
-    // Overall stats table
+    // Overall stats table - SESSION 92: Updated to show code fixes vs guidance
     lines.push('| Status | Count | Percentage |');
     lines.push('|--------|-------|------------|');
-    lines.push(`| ✅ **Auto-Fixed** | ${fixedIssues.length} | ${fixRate}% |`);
-    lines.push(`| ⏳ **Pending Review** | ${pendingIssues.length} | ${totalActive > 0 ? (pendingIssues.length / totalActive * 100).toFixed(1) : '0.0'}% |`);
+    lines.push(`| ✅ **Code Fixes** | ${codeFixIssues.length} | ${codeFixRate}% |`);
+    lines.push(`| 📖 **Text Guidance** | ${guidanceIssues.length} | ${guidanceRate}% |`);
+    lines.push(`| ⏳ **No Fix Available** | ${noFixIssues.length} | ${totalActive > 0 ? (noFixIssues.length / totalActive * 100).toFixed(1) : '0.0'}% |`);
     lines.push(`| 🎉 **Already Resolved** | ${resolvedByPR.length} | - |`);
     lines.push('');
 
-    // Group fixed issues by category
-    if (fixedIssues.length > 0) {
-      lines.push('### Successfully Fixed Issues');
+    // Group issues with code fixes by category
+    if (codeFixIssues.length > 0) {
+      lines.push('### Successfully Fixed Issues (Code Fixes)');
       lines.push('');
 
       // Group by detected category
       const categories = ['Security', 'Performance', 'Architecture', 'Dependencies', 'Code Quality'];
 
       for (const category of categories) {
-        const categoryIssues = fixedIssues.filter(i => i.detectedCategory === category);
+        const categoryIssues = codeFixIssues.filter(i => i.detectedCategory === category);
         if (categoryIssues.length === 0) continue;
 
         const categoryGroups = groups.filter(g =>
@@ -6297,15 +6395,16 @@ ${(() => {
       }
     }
 
-    // Pending issues that need manual review
-    if (pendingIssues.length > 0) {
-      lines.push('### Pending Issues (Require Manual Review)');
+    // Text guidance issues that need manual review - SESSION 92
+    const manualReviewIssues = [...guidanceIssues, ...noFixIssues];
+    if (manualReviewIssues.length > 0) {
+      lines.push('### Issues Requiring Manual Review');
       lines.push('');
-      lines.push('These issues could not be auto-fixed and require human decision:');
+      lines.push('These issues have text guidance or require human decision:');
       lines.push('');
 
       // Group by reason
-      const manualReviewGroups = this.groupPendingByReason(pendingIssues);
+      const manualReviewGroups = this.groupPendingByReason(manualReviewIssues);
 
       for (const [reason, reasonIssues] of Object.entries(manualReviewGroups)) {
         lines.push(`#### ${reason} (${reasonIssues.length} issues)`);
@@ -6324,17 +6423,17 @@ ${(() => {
       }
     }
 
-    // Apply Fixes CLI section
-    if (fixedIssues.length > 0) {
-      lines.push('### Apply Fixes');
+    // Apply Fixes CLI section - SESSION 92: Only show for code fixes
+    if (codeFixIssues.length > 0) {
+      lines.push('### Apply Code Fixes');
       lines.push('');
       lines.push('```bash');
-      lines.push('# Apply all verified fixes');
+      lines.push('# Apply all verified code fixes');
       lines.push(`codequal apply --analysis-id ${metadata.commitSHA || 'latest'}`);
       lines.push('');
       lines.push('# Review and commit');
       lines.push('git diff');
-      lines.push(`git add -A && git commit -m "Apply CodeQual fixes for ${fixedIssues.length} issues"`);
+      lines.push(`git add -A && git commit -m "Apply CodeQual fixes for ${codeFixIssues.length} issues"`);
       lines.push('```');
       lines.push('');
       lines.push('**Other options:**');
@@ -6349,10 +6448,10 @@ ${(() => {
       lines.push('');
     }
 
-    // Business Impact Summary
-    const estimatedManualTime = pendingIssues.length * 15; // 15 min per issue
-    const autoFixTime = fixedIssues.length * 5; // 5 min saved per auto-fix
-    const timeSaved = Math.max(0, (fixedIssues.length * 15) - autoFixTime);
+    // Business Impact Summary - SESSION 92: Updated calculations
+    const estimatedManualTime = manualReviewIssues.length * 15; // 15 min per issue
+    const autoFixTime = codeFixIssues.length * 5; // 5 min saved per auto-fix
+    const timeSaved = Math.max(0, (codeFixIssues.length * 15) - autoFixTime);
 
     lines.push('### Business Impact');
     lines.push('');
@@ -6360,7 +6459,7 @@ ${(() => {
     lines.push('|--------|-------|');
     lines.push(`| Estimated Manual Fix Time | ${Math.round(estimatedManualTime / 60)}h ${estimatedManualTime % 60}m |`);
     lines.push(`| Auto-Fix Time | ${Math.round(autoFixTime / 60)}h ${autoFixTime % 60}m |`);
-    lines.push(`| **Time Saved** | **${Math.round(timeSaved / 60)}h ${timeSaved % 60}m (${fixedIssues.length > 0 ? Math.round(timeSaved / (fixedIssues.length * 15) * 100) : 0}%)** |`);
+    lines.push(`| **Time Saved** | **${Math.round(timeSaved / 60)}h ${timeSaved % 60}m (${codeFixIssues.length > 0 ? Math.round(timeSaved / (codeFixIssues.length * 15) * 100) : 0}%)** |`);
     lines.push('');
 
     lines.push('---');
@@ -6372,8 +6471,8 @@ ${(() => {
    * Get fix confidence percentage based on fix tier and issue characteristics
    */
   private getFixConfidence(issue: EnrichedIssue): number {
-    // Base confidence on whether we have a valid fix
-    if (!issue.fixSuggestion?.correctedCode) return 0;
+    // SESSION 92 FIX: Use hasActualCodeFix to check for real fixes
+    if (!this.hasActualCodeFix(issue)) return 0;
 
     // Use severity confidence if available
     if (issue.severityConfidence === 'high') return 95;
@@ -6417,7 +6516,8 @@ ${(() => {
     if (issue.detectedCategory === 'Architecture') {
       return 'Architectural Decision';
     }
-    if (issue.detectedCategory === 'Security' && !issue.fixSuggestion?.correctedCode) {
+    // SESSION 92 FIX: Use hasActualCodeFix for consistency
+    if (issue.detectedCategory === 'Security' && !this.hasActualCodeFix(issue)) {
       return 'Security Review Required';
     }
     return 'Context-Dependent Fix';
@@ -7841,14 +7941,18 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 
 **Fix Recommendations:**
 ${(() => {
-        const fixedCount = issues.filter(i => i.fixSuggestion?.correctedCode).length;
-        const fixedPercent = issues.length > 0 ? Math.round(fixedCount / issues.length * 100) : 0;
-        const pendingCount = issues.length - fixedCount;
+        // SESSION 92 FIX: Separate code fixes vs text guidance
+        const codeFixCount = issues.filter(i => this.hasActualCodeFix(i)).length;
+        const guidanceCount = issues.filter(i => this.hasTextGuidanceOnly(i)).length;
+        const codeFixPercent = issues.length > 0 ? Math.round(codeFixCount / issues.length * 100) : 0;
+        const guidancePercent = issues.length > 0 ? Math.round(guidanceCount / issues.length * 100) : 0;
+        const noFixCount = issues.length - codeFixCount - guidanceCount;
 
-        // Session 91: Tier-aware content
+        // Session 91: Tier-aware content - SESSION 92: Show separate counts
         if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-          return `- ✅ **AI Fixes Generated**: ${fixedCount} issues (${fixedPercent}%)
-- ⏳ **Needs Review**: ${pendingCount} issues (${100 - fixedPercent}%)`;
+          return `- ✅ **AI Code Fixes**: ${codeFixCount} issues (${codeFixPercent}%) ready-to-apply
+- 📖 **Text Guidance**: ${guidanceCount} issues (${guidancePercent}%) manual review
+- ⏳ **Needs Attention**: ${noFixCount} issues`;
         } else {
           const safeCount = issues.filter(i => this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length;
           const safePercent = Math.round(safeCount / issues.length * 100);
