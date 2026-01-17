@@ -16,14 +16,50 @@ import { IssueGroup } from '../utils/issue-grouping';
 import { cleanAIContent, containsAIErrorPatterns } from './formatter-utils';
 
 /**
+ * SESSION 92: Well-known rules with safe, predictable patterns
+ * These rules have standard fixes that can be applied across all projects.
+ */
+const WHITELISTED_PATTERN_RULES: Record<string, { reason: string; maxLines: number }> = {
+  // CheckStyle rules with deterministic fixes
+  'FileTabCharacterCheck': { reason: 'Simple tab-to-space replacement', maxLines: 1 },
+  'HideUtilityClassConstructorCheck': { reason: 'Standard private constructor pattern', maxLines: 10 },
+  'RightCurlyCheck': { reason: 'Simple brace placement adjustment', maxLines: 3 },
+  'MissingJavadocMethodCheck': { reason: 'Standard Javadoc template', maxLines: 15 },
+  'JavadocMethodCheck': { reason: 'Standard Javadoc template', maxLines: 15 },
+  'LocalVariableName': { reason: 'Simple rename pattern', maxLines: 1 },
+  'MemberName': { reason: 'Simple rename pattern', maxLines: 1 },
+  'MethodName': { reason: 'Simple rename pattern', maxLines: 1 },
+  'ParameterName': { reason: 'Simple rename pattern', maxLines: 1 },
+  'ConstantName': { reason: 'Simple rename pattern', maxLines: 1 },
+  'TypeName': { reason: 'Simple rename pattern', maxLines: 1 },
+
+  // PMD rules with standard fixes
+  'CollapsibleIfStatements': { reason: 'Combine conditions with &&', maxLines: 5 },
+  'EmptyCatchBlock': { reason: 'Add logging or rethrow', maxLines: 8 },
+  'CloseResource': { reason: 'Try-with-resources pattern', maxLines: 15 },
+  'UseUtilityClass': { reason: 'Add private constructor', maxLines: 10 },
+  'AvoidCatchingThrowable': { reason: 'Use specific exception type', maxLines: 5 },
+  'UnusedLocalVariable': { reason: 'Remove unused variable', maxLines: 1 },
+  'UnusedPrivateField': { reason: 'Remove unused field', maxLines: 1 },
+  'UnusedPrivateMethod': { reason: 'Remove unused method', maxLines: 1 },
+  'UnnecessaryImport': { reason: 'Remove unnecessary import', maxLines: 1 },
+
+  // SpotBugs rules with standard fixes
+  'RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE': { reason: 'Fix null check logic', maxLines: 3 },
+  'NP_NULL_ON_SOME_PATH': { reason: 'Add null check', maxLines: 3 },
+  'DM_DEFAULT_ENCODING': { reason: 'Specify explicit charset', maxLines: 2 },
+};
+
+/**
  * SESSION 87: Pattern Context Validation
  *
  * Validates if a KB pattern's code is appropriate for a target issue.
  * Prevents applying literal code from Project A to Project B.
  *
  * Returns true only for:
- * 1. Simple fixes (single-line changes, annotations, simple method calls)
- * 2. Generic patterns that don't contain project-specific code
+ * 1. Whitelisted rules (SESSION 92) - well-known rules with safe patterns
+ * 2. Simple fixes (single-line changes, annotations, simple method calls)
+ * 3. Generic patterns that don't contain project-specific code
  *
  * Returns false for:
  * 1. Code with class definitions that don't match target file
@@ -33,10 +69,25 @@ import { cleanAIContent, containsAIErrorPatterns } from './formatter-utils';
 function isPatternApplicableToIssue(
   patternCode: string,
   targetFile: string,
-  issueContext?: string
+  issueContext?: string,
+  ruleId?: string  // SESSION 92: Added for whitelist check
 ): { applicable: boolean; reason?: string } {
   if (!patternCode || patternCode.length < 5) {
     return { applicable: false, reason: 'Pattern code too short' };
+  }
+
+  // SESSION 92: Check whitelist first for well-known rules
+  if (ruleId && WHITELISTED_PATTERN_RULES[ruleId]) {
+    const whitelisted = WHITELISTED_PATTERN_RULES[ruleId];
+    const lineCount = patternCode.trim().split('\n').length;
+
+    // Whitelisted rules can have larger patterns up to their maxLines limit
+    if (lineCount <= whitelisted.maxLines) {
+      console.log(`[AI Enrichment] ✅ Whitelisted rule ${ruleId}: ${whitelisted.reason}`);
+      return { applicable: true };
+    }
+    // If exceeds whitelist maxLines, fall through to normal validation
+    console.log(`[AI Enrichment] ⚠️ Whitelisted rule ${ruleId} exceeds maxLines (${lineCount} > ${whitelisted.maxLines})`);
   }
 
   const code = patternCode.trim();
@@ -269,10 +320,12 @@ export async function enrichIssuesWithAI(
             // Get a representative issue to check file context
             const representativeIssue = groupIssues[0];
             const targetFile = representativeIssue?.file || '';
+            // SESSION 92: Pass ruleId for whitelist check
             const validation = isPatternApplicableToIssue(
               cleanedPatternCode,
               targetFile,
-              representativeIssue?.snippet
+              representativeIssue?.snippet,
+              group.rule  // SESSION 92: Enable whitelist check
             );
 
             if (validation.applicable) {
