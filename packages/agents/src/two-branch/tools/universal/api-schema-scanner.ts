@@ -259,7 +259,22 @@ async function runSpectralOnFile(
 
   try {
     // Build spectral command
-    const rulesetArgs = config.rulesets?.map(r => `--ruleset ${r}`).join(' ') || '';
+    // SESSION 92 FIX: Use default spectral:oas ruleset if no custom rulesets provided
+    // Without a ruleset, Spectral fails with "No ruleset has been found"
+    let rulesetArgs = '';
+    if (config.rulesets && config.rulesets.length > 0) {
+      rulesetArgs = config.rulesets.map(r => `--ruleset ${r}`).join(' ');
+    } else {
+      // Create a temporary ruleset file that extends the built-in OAS rules
+      const tempRulesetPath = path.join(path.dirname(filePath), '.spectral-temp.yml');
+      const tempRulesetContent = 'extends: spectral:oas\n';
+      fs.writeFileSync(tempRulesetPath, tempRulesetContent);
+      rulesetArgs = `--ruleset "${tempRulesetPath}"`;
+      // Clean up temp file after use (in finally block would be better but keeping it simple)
+      setTimeout(() => {
+        try { fs.unlinkSync(tempRulesetPath); } catch { /* ignore */ }
+      }, 5000);
+    }
     const cmd = `spectral lint "${filePath}" --format json ${rulesetArgs}`;
 
     const { stdout, stderr } = await execAsync(cmd, {
