@@ -528,6 +528,169 @@ export abstract class BaseToolOrchestrator {
           break;
         }
 
+        // ============================================================
+        // SESSION 92: P0/P1/P2 Universal Security Tools
+        // ============================================================
+
+        case 'gitleaks': {
+          // P0: Secret detection
+          logger.info('🔐 Running Gitleaks secret detection...');
+          const { SecretScanner } = await import('./universal');
+          const scanner = new SecretScanner();
+          const secretResult = await scanner.runGitleaks(repoPath);
+          issues = secretResult.issues.map(issue => ({
+            id: `gitleaks-${issue.file}-${issue.line}`,
+            tool: 'gitleaks',
+            file: issue.file,
+            line: issue.line,
+            severity: issue.severity,
+            title: issue.ruleId,
+            description: issue.description,
+            category: 'Security',
+            rule: issue.ruleId,
+            // Required V9 Issue fields
+            status: 'new' as const,
+            agent: 'Security',
+            impact: 'Exposed secrets can lead to unauthorized access',
+            businessImpact: 'High risk of credential theft and data breach'
+          }));
+          logger.info(`🔐 Gitleaks completed: ${issues.length} secrets found`);
+          break;
+        }
+
+        case 'checkov': {
+          // P0: IaC security scanning
+          logger.info('🏗️ Running Checkov IaC security scan...');
+          const { IaCScanner } = await import('./universal');
+          const iacScannerInstance = new IaCScanner();
+          const iacResult = await iacScannerInstance.runCheckov(repoPath);
+          issues = iacResult.issues.map(issue => ({
+            id: `checkov-${issue.file}-${issue.line}`,
+            tool: 'checkov',
+            file: issue.file,
+            line: issue.line,
+            severity: issue.severity,
+            title: issue.checkId,
+            description: issue.description,
+            category: 'Security',
+            rule: issue.checkId,
+            cwe: issue.guideline,
+            // Required V9 Issue fields
+            status: 'new' as const,
+            agent: 'Security',
+            impact: 'Infrastructure misconfiguration',
+            businessImpact: 'May expose cloud resources to attacks'
+          }));
+          logger.info(`🏗️ Checkov completed: ${issues.length} IaC issues found`);
+          break;
+        }
+
+        case 'trivy': {
+          // P0: Container security scanning (scans Dockerfiles)
+          logger.info('🐳 Running Trivy container security scan...');
+          const { ContainerScanner } = await import('./universal');
+          const containerScannerInstance = new ContainerScanner();
+          const trivyResult = await containerScannerInstance.scanDockerfiles(repoPath);
+          // Convert Dockerfile issues to Issue format
+          issues = (trivyResult.dockerfileIssues || []).map(issue => ({
+            id: `trivy-dockerfile-${issue.file}-${issue.line}`,
+            tool: 'trivy',
+            file: issue.file,
+            line: issue.line,
+            severity: issue.severity === 'negligible' ? 'low' as const : issue.severity,
+            title: issue.rule,
+            description: issue.message,
+            category: 'Security',
+            rule: issue.rule,
+            // Required V9 Issue fields
+            status: 'new' as const,
+            agent: 'Security',
+            impact: 'Container security misconfiguration',
+            businessImpact: 'May allow container escape or privilege escalation'
+          }));
+          logger.info(`🐳 Trivy completed: ${issues.length} container issues found`);
+          break;
+        }
+
+        case 'grype': {
+          // P0: SBOM-based vulnerability scanning
+          logger.info('📦 Running Grype SBOM vulnerability scan...');
+          const { ContainerScanner: GrypeScanner } = await import('./universal');
+          const grypeInstance = new GrypeScanner();
+          const grypeResult = await grypeInstance.scanFilesystemWithGrype(repoPath);
+          issues = grypeResult.vulnerabilities.map(vuln => ({
+            id: `grype-${vuln.pkgName}-${vuln.vulnerabilityId}`,
+            tool: 'grype',
+            file: 'package dependencies',
+            line: 1,
+            severity: vuln.severity === 'negligible' ? 'low' as const : vuln.severity,
+            title: vuln.vulnerabilityId,
+            description: `${vuln.pkgName}@${vuln.installedVersion}: ${vuln.title}`,
+            category: 'Dependency',
+            rule: vuln.vulnerabilityId,
+            cwe: vuln.cvss?.toString(),
+            // Required V9 Issue fields
+            status: 'new' as const,
+            agent: 'Dependency',
+            impact: 'Known vulnerability in dependency',
+            businessImpact: 'May be exploited by attackers'
+          }));
+          logger.info(`📦 Grype completed: ${issues.length} vulnerabilities found`);
+          break;
+        }
+
+        case 'spectral': {
+          // P1: API schema validation
+          logger.info('📋 Running Spectral API schema validation...');
+          const { runSpectral } = await import('./universal');
+          const spectralResult = await runSpectral(repoPath);
+          issues = spectralResult.issues.map(issue => ({
+            id: `spectral-${issue.file}-${issue.line}-${issue.ruleId}`,
+            tool: 'spectral',
+            file: issue.file,
+            line: issue.line,
+            severity: issue.severity,
+            title: issue.ruleId,
+            description: issue.message,
+            category: 'Architecture',
+            rule: issue.ruleId,
+            // Required V9 Issue fields
+            status: 'new' as const,
+            agent: 'Architecture',
+            impact: 'API schema design issue',
+            businessImpact: 'May cause API compatibility or security issues'
+          }));
+          logger.info(`📋 Spectral completed: ${issues.length} API schema issues found`);
+          break;
+        }
+
+        case 'graphql-cop':
+        case 'graphql-scanner': {
+          // P1: GraphQL security scanning
+          logger.info('🔮 Running GraphQL security scan...');
+          const { runGraphQLScanner } = await import('./universal');
+          const gqlResult = await runGraphQLScanner(repoPath);
+          issues = gqlResult.issues.map(issue => ({
+            id: `graphql-${issue.file || 'unknown'}-${issue.line || 0}-${issue.ruleId}`,
+            tool: 'graphql-cop',
+            file: issue.file || 'graphql-schema',
+            line: issue.line || 1,
+            severity: issue.severity,
+            title: issue.ruleId,
+            description: issue.message,
+            category: 'Security',
+            rule: issue.ruleId,
+            cwe: issue.impact,
+            // Required V9 Issue fields
+            status: 'new' as const,
+            agent: 'Security',
+            impact: 'GraphQL API security issue',
+            businessImpact: 'May allow unauthorized data access or DoS'
+          }));
+          logger.info(`🔮 GraphQL scan completed: ${issues.length} security issues found`);
+          break;
+        }
+
         default:
           throw new Error(`Unknown universal tool: ${toolName}`);
       }

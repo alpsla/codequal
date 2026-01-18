@@ -163,6 +163,7 @@ export const DEFAULT_JAVA_CONFIG: JavaToolConfig = {
  * Java tool category mapping
  * SESSION 57 Part 5: Added jdepend for architecture analysis
  * SESSION 58: Added performance static analysis
+ * SESSION 92: Added P0/P1/P2 universal tools
  */
 const JAVA_TOOL_CATEGORIES = {
   pmd: ToolCategory.CODE_QUALITY,
@@ -171,19 +172,32 @@ const JAVA_TOOL_CATEGORIES = {
   checkstyle: ToolCategory.STYLE_LINT,
   spotbugs: ToolCategory.ADVANCED,
   jdepend: ToolCategory.ADVANCED,  // Architecture analysis
-  performance: ToolCategory.ADVANCED  // Static performance analysis
+  performance: ToolCategory.ADVANCED,  // Static performance analysis
+  // P0: Secret detection (Session 92)
+  gitleaks: ToolCategory.SECRETS,
+  // P0: IaC security (Session 92)
+  checkov: ToolCategory.IAC_SECURITY,
+  // P0: Container security (Session 92)
+  trivy: ToolCategory.CONTAINER_SECURITY,
+  grype: ToolCategory.CONTAINER_SECURITY,
+  // P1: API schema validation (Session 92)
+  spectral: ToolCategory.API_DESIGN,
+  // P1: GraphQL security (Session 92)
+  'graphql-cop': ToolCategory.GRAPHQL_SECURITY
 };
 
 /**
  * Check if a Java tool should run based on analysis mode
+ * SESSION 92: Added P0/P1/P2 tool category checks
  */
 function shouldJavaToolRun(toolName: string, mode: AnalysisMode): boolean {
   const category = JAVA_TOOL_CATEGORIES[toolName as keyof typeof JAVA_TOOL_CATEGORIES];
   if (!category) return false;
-  
+
   const modeConfig = UNIVERSAL_ANALYSIS_MODES[mode];
-  
+
   switch (category) {
+    // Core categories
     case ToolCategory.CODE_QUALITY:
       return modeConfig.toolCategories.codeQuality;
     case ToolCategory.SECURITY:
@@ -194,6 +208,21 @@ function shouldJavaToolRun(toolName: string, mode: AnalysisMode): boolean {
       return modeConfig.toolCategories.styleLint;
     case ToolCategory.ADVANCED:
       return modeConfig.toolCategories.advanced;
+    // P0 categories (Session 92)
+    case ToolCategory.SECRETS:
+      return modeConfig.toolCategories.secrets;
+    case ToolCategory.IAC_SECURITY:
+      return modeConfig.toolCategories.iacSecurity;
+    case ToolCategory.CONTAINER_SECURITY:
+      return modeConfig.toolCategories.containerSecurity;
+    // P1 categories (Session 92)
+    case ToolCategory.API_DESIGN:
+      return modeConfig.toolCategories.apiDesign;
+    case ToolCategory.GRAPHQL_SECURITY:
+      return modeConfig.toolCategories.graphqlSecurity;
+    // P2 categories
+    case ToolCategory.ARCHITECTURE:
+      return modeConfig.toolCategories.architecture;
     default:
       return false;
   }
@@ -308,6 +337,39 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       tools.push('performance');
     }
 
+    // ============================================================
+    // SESSION 92: P0/P1/P2 Universal Security Tools
+    // These are language-agnostic tools handled by base orchestrator
+    // ============================================================
+
+    // P0: Secret detection (gitleaks) - enabled in fast/standard/thorough/complete
+    if (shouldJavaToolRun('gitleaks', mode)) {
+      tools.push('gitleaks');
+    }
+
+    // P0: IaC security (checkov) - enabled in standard/thorough/complete
+    if (shouldJavaToolRun('checkov', mode)) {
+      tools.push('checkov');
+    }
+
+    // P0: Container security (trivy, grype) - enabled in standard/thorough/complete
+    if (shouldJavaToolRun('trivy', mode)) {
+      tools.push('trivy');
+    }
+    if (shouldJavaToolRun('grype', mode)) {
+      tools.push('grype');
+    }
+
+    // P1: API schema validation (spectral) - enabled in thorough/complete
+    if (shouldJavaToolRun('spectral', mode)) {
+      tools.push('spectral');
+    }
+
+    // P1: GraphQL security (graphql-cop) - enabled in thorough/complete
+    if (shouldJavaToolRun('graphql-cop', mode)) {
+      tools.push('graphql-cop');
+    }
+
     return tools;
   }
 
@@ -357,15 +419,24 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
 
   /**
    * SESSION 57 Part 5: Override to include JDepend under Architecture
+   * SESSION 92: Added P0/P1/P2 tools
    */
   protected getAgentToolCategories(): Record<string, string[]> {
     return {
-      'Security': ['semgrep', 'dependency-check', 'spotbugs'],  // SpotBugs can find security issues
+      // Core tools
+      'Security': [
+        'semgrep', 'dependency-check', 'spotbugs',
+        // P0 security tools (Session 92)
+        'gitleaks', 'checkov', 'trivy', 'grype',
+        // P1 security tools (Session 92)
+        'graphql-cop'
+      ],
       'Code Quality': ['pmd', 'checkstyle', 'spotbugs'],
       // SESSION 58: Added static performance analysis
       'Performance': ['performance'],  // PMD perf rules, memory patterns, complexity
-      'Architecture': ['jdepend'],  // SESSION 57 Part 5: JDepend for architecture analysis
-      'Dependencies': ['dependency-check']
+      // SESSION 57 Part 5 + Session 92: Architecture analysis
+      'Architecture': ['jdepend', 'spectral'],  // JDepend + API schema validation
+      'Dependencies': ['dependency-check', 'trivy', 'grype']  // Session 92: Added container scanners
     };
   }
 
