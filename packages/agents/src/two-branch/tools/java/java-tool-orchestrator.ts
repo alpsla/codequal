@@ -793,15 +793,33 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
       const classesDir = await this.findJavaClassesDir(repoPath);
 
       if (!classesDir) {
-        logger.warn('⚠️ No compiled Java classes found. JDepend requires compiled .class files.');
-        logger.warn('   Run: mvn compile (Maven) or gradle build (Gradle) first.');
+        logger.info('🔄 No compiled Java classes found. Falling back to source-based analysis...');
+
+        // Session 93 Fix: Use source-based analysis from architecture-runner when no compiled classes
+        const { javaArchitectureRunner } = await import('./architecture-runner');
+        const sourceAnalysisIssues = await javaArchitectureRunner.runSourceBasedAnalysis(repoPath);
+
+        // Convert architecture issues to RawIssue format
+        const issues: RawIssue[] = sourceAnalysisIssues.map(issue => ({
+          tool: 'jdepend',
+          file: issue.file || issue.packageName || '',
+          line: issue.line || 0,
+          column: 0,
+          severity: issue.severity,
+          message: issue.message,
+          rule: issue.rule,
+          category: 'architecture'
+        }));
+
+        logger.info(`✅ Source-based analysis found ${issues.length} architecture issues`);
+
         return {
           tool: 'jdepend',
           success: true,
           duration: Date.now() - startTime,
-          issues: [],
-          rawOutput: 'No compiled classes found. JDepend requires compiled .class files.',
-          metadata: this.calculateMetadata([])
+          issues,
+          rawOutput: `Source-based analysis (no compiled classes): Found ${issues.length} issues`,
+          metadata: this.calculateMetadata(issues)
         };
       }
 

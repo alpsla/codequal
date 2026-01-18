@@ -4,26 +4,30 @@
   "rule": "java.spring.security.audit.spring-actuator-fully-enabled.spring-actuator-fully-enabled",
   "tool": "semgrep",
   "severity": "high",
-  "description": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only",
+  "description": "Spring Boot Actuator is fully enabled. This exposes sensitive endpoints such as /actuator/env, /actuator/logfile, /actuator/heapdump and others. Unless you have Spring Security enabled or another means to protect these endpoints, this functionality is available without authentication, causing a significant security risk.",
   "fix_pattern": {
     "type": "template",
+    "fixTier": 2,
+    "fixerTool": "ai",
+    "fixerCommand": "ai",
+    "confidence": 85,
     "example": {
       "before": "",
-      "after": "# Before (vulnerable)\n# spring.boot.admin.client.enabled=true\n\n# After (secure)\nmanagement.endpoints.web.exposure.exclude=env,logfile,heapdump\nmanagement.endpoints.web.exposure.include=health,info\nspring.security.user.name=admin\nspring.security.user.password=securePassword123"
+      "after": "management.endpoints.web.exposure.include=health,info"
     },
-    "instructions": "1. Disable unnecessary actuator endpoints using management.endpoints.web.exposure.exclude=env,logfile,heapdump\n2. Enable Spring Security with proper authentication for actuator endpoints\n3. Configure actuator security via spring.security.user.name and spring.security.user.password properties\n4. Restrict actuator access to specific IP ranges or internal networks only"
+    "instructions": "Spring Boot Actuator is fully enabled. This exposes sensitive endpoints such as /actuator/env, /actuator/logfile, /actuator/heapdump and others. Unless you have Spring Security enabled or another means to protect these endpoints, this functionality is available without authentication, causing a significant security risk."
   },
   "locations": [
     {
       "file": "src/main/resources/application.properties",
-      "line": 17,
-      "snippet": "    14 | spring.messages.basename=messages/messages\n    15 | \n    16 | # Actuator\n>   17 | management.endpoints.web.exposure.include=*\n    18 | \n    19 | # Logging\n    20 | logging.level.org.springframework=INFO",
+      "line": 18,
+      "snippet": "    15 | spring.messages.basename=messages/messages\n    16 | \n    17 | # Actuator\n>   18 | management.endpoints.web.exposure.include=*\n    19 | \n    20 | # Logging\n    21 | logging.level.org.springframework=INFO",
       "category": "EXISTING_REST"
     }
   ],
   "metadata": {
     "total_occurrences": 1,
-    "confidence": "low",
+    "confidence": "medium",
     "safe_auto_apply": false,
     "estimated_time_seconds": 1
   }
