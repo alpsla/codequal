@@ -146,14 +146,14 @@ const TEST_SCENARIOS: TestScenario[] = [
 
   // Uncomment to run Java calibration:
   {
-    name: 'Spring PetClinic PR #950 - Java Pattern Calibration',
-    repoUrl: 'https://github.com/spring-projects/spring-petclinic',
+    name: 'Quarkus Quickstarts PR #1600 - Build Reporter Bump',
+    repoUrl: 'https://github.com/quarkusio/quarkus-quickstarts',
     testMode: 'pr-review',
-    prNumber: 950,
+    prNumber: 1600,  // Quarkus framework - different from Spring
     language: 'java',
-    expectedFramework: 'spring',
+    expectedFramework: 'quarkus',
     expectedToolCount: 5,
-    userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',  // PRO for pattern learning
+    userTier: (process.env.USER_TIER as 'basic' | 'pro') || 'pro',
   },
 
   // ========================================================================
@@ -1169,7 +1169,10 @@ async function runLiteE2ETest(scenario: TestScenario): Promise<void> {
         fixedButNeedsReview: scanFixResult.fixedButNeedsReview?.length || 0,
         durationMs: scanFixResult.durationMs,
         success: scanFixResult.success,
-      } : null
+      } : null,
+
+      // SESSION 92: Pass userTier to formatter for PRO/BASIC tier sections
+      userTier: userTier
     };
 
     const result = await formatter.generateGroupedReport(

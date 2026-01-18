@@ -518,30 +518,42 @@ function generateBasicTierSection(
   // BASIC tier gets pattern-based fixes but not AI generation
   const patternFixTime = autoFixableCount > 0 ? Math.ceil(autoFixableCount * 0.35 / 60) : 0; // minutes
   const manualReviewTime = totalActiveIssues - autoFixableCount;
-  const basicTimeSaved = baseFixHours * 0.69; // ~69% time reduction with BASIC
+
+  // SESSION 92 FIX: Calculate time savings properly
+  // Time saved only applies when using autofix feature via IDE integration
+  const manualTimePerIssue = 5; // minutes per issue manually
+  const autoFixTimePerIssue = 0.35; // minutes per issue with autofix
+  const estimatedManualHours = (totalActiveIssues * manualTimePerIssue) / 60;
+  const estimatedAutoFixHours = (autoFixableCount * autoFixTimePerIssue) / 60;
+  const manualReviewHours = (manualReviewTime * manualTimePerIssue) / 60;
+  const totalWithBasic = estimatedAutoFixHours + manualReviewHours;
+  const timeSavedPercent = estimatedManualHours > 0 ? Math.round(((estimatedManualHours - totalWithBasic) / estimatedManualHours) * 100) : 0;
 
   return `
 
 ---
 
-### 💼 Time & Cost Analysis
+### 💼 Time & Cost Analysis (with IDE Autofix)
 
-| Metric | Manual Fix | With CodeQual BASIC |
-|--------|------------|---------------------|
-| **Developer Time** | ${baseFixHours.toFixed(1)} hours | **${(baseFixHours - basicTimeSaved).toFixed(1)} hours** |
-| **Cost (@$${developerRate}/hr)** | $${totalFixCost.toLocaleString()} | **$${Math.round((baseFixHours - basicTimeSaved) * developerRate).toLocaleString()}** |
-| **Time Reduction** | — | **${Math.round((basicTimeSaved / baseFixHours) * 100)}%** ✅ |
+| Metric | Manual Fix | With IDE Autofix |
+|--------|------------|------------------|
+| **Developer Time** | ${estimatedManualHours.toFixed(1)} hours | **${totalWithBasic.toFixed(1)} hours** |
+| **Cost (@$${developerRate}/hr)** | $${Math.round(estimatedManualHours * developerRate).toLocaleString()} | **$${Math.round(totalWithBasic * developerRate).toLocaleString()}** |
+| **Time Reduction** | — | **${timeSavedPercent}%** ✅ |
+
+*Time savings based on applying ${autoFixableCount} auto-fixable issues via IDE integration (LSP/SARIF files).*
 
 **What BASIC includes:**
-- ✅ Pattern-based fixes for ${autoFixableCount} issues (~${patternFixTime} min)
+- ✅ Pattern-based fixes for ${autoFixableCount} issues (~${patternFixTime} min via IDE)
 - ✅ AI recommendations for IDE agents (Cursor, Copilot)
 - ✅ Detailed fix guidance for ${manualReviewTime} remaining issues
+- 💡 **Contribute patterns**: When you manually fix issues via IDE, consider contributing the pattern to help others
 
 ---
 
 ### 💡 Upgrade to PRO
 
-**Reduce ${(baseFixHours - basicTimeSaved).toFixed(1)} hours to ~30 seconds**
+**Reduce ${totalWithBasic.toFixed(1)} hours to ~30 seconds** with auto-apply
 
 | Feature | BASIC | PRO |
 |---------|-------|-----|

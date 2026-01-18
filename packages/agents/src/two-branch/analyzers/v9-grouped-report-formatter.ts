@@ -2271,36 +2271,29 @@ ${scoreInterpretation.emoji} **${qualityResult.score.toFixed(1)}/100** (Grade: *
 > ${scoreInterpretation.description}
 
 **Score Breakdown**:
-${qualityResult.categoryScores ? `
-**Category Scores** (Repository Health):
-${byDetectedCategory['Security'] > 0 ? `- 🔒 Security: ${qualityResult.categoryScores.security}/100\n` : ''}${byDetectedCategory['Performance'] > 0 ? `- ⚡ Performance: ${qualityResult.categoryScores.performance}/100\n` : ''}${byDetectedCategory['Architecture'] > 0 ? `- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100\n` : ''}${byDetectedCategory['Dependencies'] > 0 ? `- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100\n` : ''}${byDetectedCategory['Code Quality'] > 0 ? `- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100\n` : ''}
+${qualityResult.categoryScores ? `${(() => {
+          // SESSION 92 FIX: Only show Category Scores when 2+ categories have issues
+          // Avoids redundant display when only Code Quality has issues
+          const categoriesWithIssues = [
+            byDetectedCategory['Security'] > 0,
+            byDetectedCategory['Performance'] > 0,
+            byDetectedCategory['Architecture'] > 0,
+            byDetectedCategory['Dependencies'] > 0,
+            byDetectedCategory['Code Quality'] > 0
+          ].filter(Boolean).length;
+
+          if (categoriesWithIssues >= 2) {
+            return `**Category Scores** (Repository Health):
+${byDetectedCategory['Security'] > 0 ? `- 🔒 Security: ${qualityResult.categoryScores.security}/100\n` : ''}${byDetectedCategory['Performance'] > 0 ? `- ⚡ Performance: ${qualityResult.categoryScores.performance}/100\n` : ''}${byDetectedCategory['Architecture'] > 0 ? `- 🏗️  Architecture: ${qualityResult.categoryScores.architecture}/100\n` : ''}${byDetectedCategory['Dependencies'] > 0 ? `- 📦 Dependencies: ${qualityResult.categoryScores.dependency}/100\n` : ''}${byDetectedCategory['Code Quality'] > 0 ? `- ✨ Code Quality: ${qualityResult.categoryScores.codeQuality}/100\n` : ''}`;
+          }
+          return ''; // Skip category scores when only one category has issues
+        })()}
 **Overall Scores**:
 - 📱 **APP Score**: ${qualityResult.appScore}/100 (MIN of categories - "weakest link")
 - 👨‍💻 **Skill Score**: ${qualityResult.skillScore}/100 (AVG of categories)
 
 > Scores saved to Supabase for tracking trends over time
 
-${(() => {
-          // SESSION 51: Updated to BASIC/PRO tier system
-          // Pattern-based fixes (from Supabase pattern library)
-          const patternFixableGroups = groups.filter(g => this.canAutoFix(g));
-          const patternFixableCount = patternFixableGroups.reduce((sum, g) => sum + g.count, 0);
-          const patternFixablePercent = issues.length > 0 ? Math.round((patternFixableCount / issues.length) * 100) : 0;
-
-          // AI-fixable (PRO tier only - requires AI generation)
-          const aiFixableGroups = groups.filter(g => !this.isSafeToAutoApply(g) && this.canAutoFix(g));
-          const aiFixableCount = aiFixableGroups.reduce((sum, g) => sum + g.count, 0);
-          const aiFixablePercent = issues.length > 0 ? Math.round((aiFixableCount / issues.length) * 100) : 0;
-
-          // Needs guidance (both tiers provide recommendations)
-          const guidanceNeededCount = issues.length - patternFixableCount;
-          const guidanceNeededPercent = issues.length > 0 ? Math.round((guidanceNeededCount / issues.length) * 100) : 0;
-
-          // SESSION 52: Simplified - detailed tier info is in "AI Fix Recommendations" section below
-          return `\n> 🚀 **Fix Coverage**: ${patternFixableCount.toLocaleString()} issues (${patternFixablePercent}%) have pattern-based fixes available
-> See **AI Fix Recommendations** section below for BASIC vs PRO tier details.
-\n`;
-        })()}
 ` : `
 - Base Score: 100.0
 
@@ -7967,9 +7960,7 @@ ${(() => {
 - High: ${issues.filter(i => i.severity === 'high').length}
 - Medium: ${issues.filter(i => i.severity === 'medium').length}
 - Low: ${issues.filter(i => i.severity === 'low').length}
-\`\`\`
-
-> 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.`;
+\`\`\``;
   }
 
   /**

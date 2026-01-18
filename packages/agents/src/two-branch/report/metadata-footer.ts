@@ -270,11 +270,7 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 - High: ${issues.filter(i => i.severity === 'high').length}
 - Medium: ${issues.filter(i => i.severity === 'medium').length}
 - Low: ${issues.filter(i => i.severity === 'low').length}
-
-> 💡 **Note**: Auto-fixable count is based on IDE capabilities. See manifest file for exact fixable status per issue.
-\`\`\`
-
-> 💡 **Tip**: Copy the markdown above and paste it as a comment on your pull request.`;
+\`\`\``;
 }
 
 /**
