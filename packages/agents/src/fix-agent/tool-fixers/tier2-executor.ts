@@ -662,6 +662,7 @@ export class GolangciLintExecutor extends ToolExecutorBase {
 
 // ============================================================================
 // End SESSION 102 additions
+// NOTE: RustfmtExecutor and ClippyExecutor are in tier1-executor.ts
 // ============================================================================
 
 /**
@@ -687,6 +688,7 @@ export function createTier2Executor(toolName: string): ToolExecutorBase | null {
     'goimports': () => new GoimportsExecutor(),
     'google-java-format': () => new GoogleJavaFormatExecutor(),
     'golangci-lint': () => new GolangciLintExecutor(),
+    // NOTE: Rust tools (rustfmt, clippy) are in tier1-executor.ts
   };
 
   const factory = executors[toolName];
@@ -716,6 +718,7 @@ export function getTier2ToolNames(): string[] {
     'goimports',
     'google-java-format',
     'golangci-lint',
+    // NOTE: Rust tools (rustfmt, clippy) are in tier1-executor.ts
   ];
 }
 
@@ -765,6 +768,11 @@ export function getRecommendedTier2Fixer(language: string, sourceTool: string): 
       'stylecop': 'dotnet-format', // StyleCop rules → format
       'sonarqube': null, // SonarQube C# rules need AI
     },
+    rust: {
+      'clippy': 'rustfmt', // Format first, then clippy
+      'rustfmt': 'rustfmt', // Direct formatting
+      'rustc': 'rustfmt', // Compiler warnings → format first
+    },
   };
 
   const langRecs = recommendations[language.toLowerCase()];
@@ -809,6 +817,10 @@ export function getInstallInstructions(toolName: string): string | null {
 
     // JavaScript/TypeScript tools
     'eslint': 'npm install eslint --save-dev',
+
+    // Rust tools (Session 107)
+    'rustfmt': 'Included with Rust installation (rustup component add rustfmt)',
+    'clippy': 'Included with Rust installation (rustup component add clippy)',
   };
 
   return instructions[toolName] || null;

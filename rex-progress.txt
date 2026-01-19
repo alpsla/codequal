@@ -1046,3 +1046,42 @@ fff5b12a
 - Fix order: dotnet-format → AI
 
 
+
+=== Task #8 (2026-01-19 15:01:58) ===
+Title: Run Live C# Tests - Tier 1 & 2
+Status: COMPLETE
+Commit: [main 9d36e95a] rex(#8): Run Live C# Tests - Tier 1 & 2
+ 3 files changed, 805 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-csharp.test.ts
+9d36e95a
+
+### Task 9: Run Live Rust Tests - Tier 1 & 2
+- Created live-rust.test.ts with comprehensive tests for Rust native fixers
+- Test features:
+  - rustfmt: ALL formatting fixes (spacing, braces, indentation, type annotations)
+  - cargo clippy --fix: needless_return, redundant_clone, let_and_return, map_clone
+  - Verifies files are actually modified (before/after comparison)
+  - Documents which issues need AI (unwrap_used, expect_used, panic)
+- Key patterns:
+  - Copy Cargo.toml + main.rs to temp directory (skip target/)
+  - Set CARGO_TARGET_DIR to temp location for isolated builds
+  - 120 second timeout for cargo clippy (can be slow)
+  - Tool availability checks: isRustfmtAvailable(), isClippyAvailable()
+- Rust tools location note:
+  - RustFmtExecutor and ClippyExecutor are in tier1-executor.ts (NOT tier2-executor.ts)
+  - Use createTier1Executor('rustfmt') and createTier1Executor('clippy')
+- Rust rules auto-fixable by tier 1/2:
+  - rustfmt: ALL formatting (indentation, spacing, braces, type annotations)
+  - clippy: needless_return, redundant_clone, let_and_return, useless_vec,
+    map_clone, single_match, redundant_field_names
+- Rust rules needing AI (tier 3):
+  - unwrap_used (needs proper error handling with Result/Option)
+  - expect_used (needs error handling instead of panic)
+  - panic! (needs Result return type and error propagation)
+  - indexing_slicing (needs bounds checking with .get())
+  - missing_errors_doc (needs documentation)
+  - cognitive_complexity (needs refactoring)
+- Updated tier2-executor.ts with rust language mappings for getRecommendedTier2Fixer()
+- Fix order: rustfmt → cargo clippy --fix → AI
+
+
