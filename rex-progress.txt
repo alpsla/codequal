@@ -583,3 +583,12 @@ Commit: [main 25beddf1] rex(#1): Verify Environment Configuration
  create mode 100644 packages/agents/src/fix-agent/__tests__/live-env-check.test.ts
 25beddf1
 
+
+=== Task #2 (2026-01-19 10:38:22) ===
+Title: Create Live Test Fixture - Python
+Status: COMPLETE
+Commit: [main d8b8fed2] rex(#2): Create Live Test Fixture - Python
+ 3 files changed, 155 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-python.py
+d8b8fed2
+
