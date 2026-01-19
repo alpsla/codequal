@@ -239,3 +239,41 @@ Commits:
 - fdd68b4f: rex(1-6): Add manual patterns for 5 failing rules
 - c0ea0976: rex(9-13): Add native linter --fix executors to tier 2
 
+---
+
+# SESSION 105: E2E Tests for Native Fixers
+# Source: rex task queue
+# Started: 2026-01-19
+
+## Learnings
+
+### Task 1: E2E Tests for Python Fixers
+- Created e2e-python.test.ts with 30 comprehensive tests
+- Test categories:
+  - Tier 2 Tool Recommendations: Validates getRecommendedTier2Fixer() for python
+  - Executor creation: Validates RuffExecutor, BlackExecutor, IsortExecutor, AutoflakeExecutor
+  - Dry run results: Validates each executor returns proper dry run output
+  - Tier 2 Pipeline Flow: Tests conceptual flow where tier 2 tools run before AI
+  - Multi-Tool Fix Sequence: Tests running multiple fixers in sequence (isort → black → ruff)
+  - Rules Coverage Documentation: Documents which rules are auto-fixable vs need AI
+
+- Python rules auto-fixable by tier 2:
+  - F401 (unused imports): ruff, autoflake
+  - F632 (is literal comparison): ruff --fix
+  - F841 (unused variables): autoflake
+  - E711/E712 (None/True/False comparisons): ruff --unsafe-fixes
+  - Import sorting: isort
+  - Formatting: black
+
+- Python rules needing AI (tier 3):
+  - E402 (module level import not at top)
+  - C901 (too complex)
+  - N802/N806 (naming conventions)
+  - D100-D418 (docstrings)
+
+- Test patterns used:
+  - fs.mkdtempSync() for temp test directories
+  - beforeEach/afterEach for cleanup
+  - Dry run validation (no actual tool execution needed)
+  - Command string inspection
+

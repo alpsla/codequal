@@ -1,242 +1,227 @@
 {
-  "source": "rex-session-104-install-missing-tools.md",
-  "createdAt": "2026-01-19T16:00:00Z",
-  "maxIterations": 25,
-  "currentIteration": 12,
-  "status": "completed",
+  "source": "rex-session-105-e2e-validation.md",
+  "createdAt": "2026-01-19T17:00:00Z",
+  "maxIterations": 30,
+  "currentIteration": 1,
+  "status": "ready",
   "validation": {
     "type": "shell",
-    "build": "echo 'Tool installation - no build needed'",
-    "typecheck": "npx tsc --noEmit --skipLibCheck -p /Users/alpinro/CodePrjects/codequal/packages/agents/tsconfig.json",
-    "lint": "echo 'Skipping lint for installation tasks'"
+    "build": "echo 'E2E validation - build skipped'",
+    "typecheck": "echo 'E2E validation - typecheck skipped (test files only)'",
+    "lint": "echo 'E2E validation - lint skipped'"
   },
   "tasks": [
     {
       "id": 1,
       "parentId": null,
-      "title": "Install clang-tidy via LLVM",
-      "description": "Install clang-tidy which is part of LLVM tools",
+      "title": "E2E Tests for Python Fixers",
+      "description": "Validate ruff, black, isort, autoflake work in the pipeline",
       "steps": [
-        "Run brew install llvm",
-        "Add LLVM to PATH: export PATH=\"/opt/homebrew/opt/llvm/bin:$PATH\"",
-        "Verify installation: clang-tidy --version",
-        "Document the installation in TIER2_FIXER_MATRIX.md"
+        "Create test Python file with multiple issues (F401 unused imports, F632 assertions, formatting)",
+        "Run fix-agent pipeline targeting the file",
+        "Verify tier 2 tools are invoked before AI",
+        "Check fixed output matches expected results"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-python.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:15:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 2,
       "parentId": null,
-      "title": "Test clang-tidy auto-fix capabilities",
-      "description": "Validate which clang-tidy checks support auto-fix",
+      "title": "E2E Tests for Go Fixers",
+      "description": "Validate gofmt, goimports, golangci-lint work in the pipeline",
       "steps": [
-        "Create test C++ file with modernization issues (auto, nullptr, override)",
-        "Run clang-tidy --fix --checks='modernize-*' test.cpp",
-        "Document which checks support --fix",
-        "Create before/after examples"
+        "Create test Go file with formatting and unused imports",
+        "Run fix-agent pipeline",
+        "Verify goimports removes unused imports",
+        "Verify formatting is corrected"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-go.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:18:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 3,
       "parentId": null,
-      "title": "Install dotnet SDK",
-      "description": "Install .NET SDK for dotnet-format",
+      "title": "E2E Tests for Java Fixers",
+      "description": "Validate google-java-format and Sorald work",
       "steps": [
-        "Run brew install dotnet",
-        "Verify installation: dotnet --version",
-        "Document the installation"
+        "Create test Java file with formatting issues + SonarQube violations",
+        "Run fix-agent pipeline",
+        "Verify google-java-format fixes formatting",
+        "Verify Sorald fixes S1155, S1132 rules",
+        "Verify PMD rules fall through to AI tier"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-java.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:20:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 4,
       "parentId": null,
-      "title": "Test dotnet-format capabilities",
-      "description": "Validate dotnet-format on C# code",
+      "title": "E2E Tests for C++ Fixers",
+      "description": "Validate clang-format and clang-tidy work",
       "steps": [
-        "Create minimal C# project with formatting issues",
-        "Run dotnet format on the project",
-        "Document what dotnet-format fixes",
-        "Note: requires .csproj file"
+        "Create test C++ file with formatting + modernization issues",
+        "Run fix-agent pipeline",
+        "Verify clang-tidy modernize-* checks are applied",
+        "Document any SDK path requirements for CI"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-cpp.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:22:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 5,
       "parentId": null,
-      "title": "Install Sorald (Java SonarQube fixer)",
-      "description": "Install Sorald for Java SonarQube rule fixes",
+      "title": "E2E Tests for C# Fixers",
+      "description": "Validate dotnet-format works",
       "steps": [
-        "Check brew: brew install sorald or download JAR",
-        "Verify installation: sorald --version",
-        "Document supported SonarQube rules",
-        "If not available via brew, document JAR download from GitHub"
+        "Create test C# project with formatting issues",
+        "Run fix-agent pipeline",
+        "Verify dotnet-format fixes formatting",
+        "Note: requires .csproj context"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-csharp.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:24:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 6,
       "parentId": null,
-      "title": "Test Sorald auto-fix capabilities",
-      "description": "Validate Sorald on Java SonarQube violations",
+      "title": "E2E Tests for TypeScript Fixers",
+      "description": "Validate ESLint --fix works",
       "steps": [
-        "Create test Java file with SonarQube violations (S1068, S1144, etc.)",
-        "Run sorald repair --source <file>",
-        "Document which SonarQube rules Sorald can fix",
-        "Compare to PMD (which has no auto-fix)"
+        "Create test TypeScript file with fixable ESLint issues",
+        "Run fix-agent pipeline",
+        "Verify ESLint fixes what it can",
+        "Verify @typescript-eslint/no-explicit-any falls to AI tier"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-typescript.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:26:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 7,
       "parentId": null,
-      "title": "Document OpenRewrite setup",
-      "description": "Document how to use OpenRewrite Maven plugin",
+      "title": "Test Against Real PR on Cloud Instance",
+      "description": "Validate full pipeline on production-like environment",
       "steps": [
-        "Create sample pom.xml with OpenRewrite plugin",
-        "Document common recipes for code quality",
-        "Show example: mvn rewrite:run -Drewrite.recipeArtifactCoordinates=...",
-        "Note: This is a project-level tool, not CLI"
+        "Deploy to cloud instance (or use existing staging)",
+        "Find/create a real PR with code quality issues",
+        "Run fix-agent against the PR",
+        "Verify tier 1 → tier 2 → tier 3 cascade works",
+        "Document any cloud-specific configuration needed"
       ],
-      "files": ["docs/OPENREWRITE_SETUP.md"],
+      "files": [
+        "docs/E2E_CLOUD_TEST_RESULTS.md"
+      ],
       "priority": "medium",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:28:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 8,
       "parentId": null,
-      "title": "Update TIER2_FIXER_MATRIX.md with new findings",
-      "description": "Update documentation with installation results",
+      "title": "Monitor Supabase Pattern Storage",
+      "description": "Verify new patterns are saved correctly",
       "steps": [
-        "Update tool status for newly installed tools",
-        "Add detailed capabilities for clang-tidy",
-        "Add dotnet-format capabilities",
-        "Add Sorald supported rules list",
-        "Update installation instructions"
+        "Run fixes that should create new patterns",
+        "Query Supabase for recently created patterns",
+        "Verify pattern structure is correct",
+        "Check success_rate tracking works"
       ],
-      "files": ["docs/TIER2_FIXER_MATRIX.md"],
-      "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "files": [],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:30:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 9,
       "parentId": null,
-      "title": "Add new executors if tools work",
-      "description": "Ensure tier2-executor.ts has working executors",
+      "title": "Integration Test: Full Fix Pipeline",
+      "description": "Single test covering all tiers",
       "steps": [
-        "Verify ClangTidyExecutor works with installed tool",
-        "Verify DotnetFormatExecutor works with installed tool",
-        "Add SoraldExecutor if Sorald is installed",
-        "Update checkInstalled() to work correctly"
+        "Create multi-language repo with issues across all languages",
+        "Run comprehensive fix-agent test",
+        "Verify tier 1 cache hits work",
+        "Verify tier 2 native tools are invoked",
+        "Verify tier 3 AI is used only when needed",
+        "Measure API call savings vs all-AI approach"
       ],
-      "files": ["packages/agents/src/fix-agent/tool-fixers/tier2-executor.ts"],
+      "files": [
+        "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-full-pipeline.test.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:32:00Z",
+      "completedAt": null,
       "commitHash": null
     },
     {
       "id": 10,
       "parentId": null,
-      "title": "Run comprehensive tier 2 availability check",
-      "description": "Verify all tier 2 tools are properly detected",
+      "title": "Update Documentation with E2E Results",
+      "description": "Document test coverage and any issues found",
       "steps": [
-        "Create script to check all tool availability",
-        "Run getAllTier2ToolsStatus() and log results",
-        "Verify installation hints are correct",
-        "Document final tool coverage"
+        "Create E2E_TEST_RESULTS.md with test outcomes",
+        "Document any tool-specific quirks discovered",
+        "Update TIER2_FIXER_MATRIX.md if needed",
+        "Add E2E test commands to CI configuration"
       ],
-      "files": [],
-      "priority": "medium",
-      "passes": true,
-      "attempts": 1,
-      "lastError": null,
-      "completedAt": "2026-01-19T16:34:00Z",
-      "commitHash": null
-    },
-    {
-      "id": 11,
-      "parentId": null,
-      "title": "Update test suite with new tools",
-      "description": "Add tests for newly installed tools",
-      "steps": [
-        "Add dry-run tests for clang-tidy",
-        "Add dry-run tests for dotnet-format",
-        "Add tests for Sorald if installed",
-        "Verify all executors are covered"
+      "files": [
+        "docs/E2E_TEST_RESULTS.md",
+        "docs/TIER2_FIXER_MATRIX.md"
       ],
-      "files": ["packages/agents/src/fix-agent/tool-fixers/__tests__/tier2-executor.test.ts"],
       "priority": "medium",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T16:36:00Z",
-      "commitHash": null
-    },
-    {
-      "id": 12,
-      "parentId": null,
-      "title": "Create installation script for CI/CD",
-      "description": "Document how to install all tier 2 tools in CI",
-      "steps": [
-        "Create shell script with all tool installations",
-        "Support macOS (brew) and Linux (apt)",
-        "Add to docs/CI_TOOL_INSTALLATION.md",
-        "Test script runs without errors"
-      ],
-      "files": ["scripts/install-tier2-tools.sh", "scripts/check-tier2-tools.sh"],
-      "priority": "medium",
-      "passes": true,
-      "attempts": 1,
-      "lastError": null,
-      "completedAt": "2026-01-19T16:40:00Z",
+      "completedAt": null,
       "commitHash": null
     }
   ],
