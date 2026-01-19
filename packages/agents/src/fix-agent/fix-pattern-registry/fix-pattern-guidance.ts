@@ -397,6 +397,143 @@ const FALLBACK_GUIDANCE: Map<string, FixGuidance> = new Map([
 - After removal, ensure no other code depends on explicit constructor`,
     successRate: 80,
     usageCount: 1
+  }],
+  // SESSION 102: New patterns for failing rules
+  ['UselessParentheses:java:pmd', {
+    ruleId: 'UselessParentheses',
+    language: 'java',
+    tool: 'pmd',
+    antiPatterns: [
+      { pattern: 'return (value);', why: 'Parentheses around single return value are unnecessary' },
+      { pattern: 'if ((a == b))', why: 'Double parentheses in conditions add no value' },
+      { pattern: 'int x = (5 + 3);', why: 'Parentheses around simple expressions are redundant' },
+      { pattern: '(variable)', why: 'Single variable wrapped in parentheses is always unnecessary' }
+    ],
+    correctPatterns: [
+      { pattern: 'return value;', example: 'return calculatedResult;' },
+      { pattern: 'if (a == b)', example: 'if (status == Status.ACTIVE) { ... }' },
+      { pattern: 'preserve precedence parentheses', example: 'int x = (a + b) * c; // These ARE needed' },
+      { pattern: 'preserve cast parentheses', example: '((String) obj).length(); // Cast parentheses needed' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Remove parentheses that do not affect operator precedence or clarity. Keep parentheses needed for casts, method calls, or complex expressions.',
+    promptAdditions: `CRITICAL for UselessParentheses:
+- Remove parentheses around single variables: (x) → x
+- Remove parentheses around return values: return (x); → return x;
+- Remove double parentheses: if ((x)) → if (x)
+- KEEP parentheses that clarify precedence: (a + b) * c
+- KEEP parentheses for casts: ((String) obj).method()
+- KEEP parentheses for ternary clarity: (a ? b : c)`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['F632:python:ruff', {
+    ruleId: 'F632',
+    language: 'python',
+    tool: 'ruff',
+    antiPatterns: [
+      { pattern: 'x is ""', why: '`is` checks identity, not equality - empty string literals may not be interned' },
+      { pattern: 'x is 0', why: 'Integer identity is only guaranteed for -5 to 256 in CPython' },
+      { pattern: 'x is "literal"', why: 'String interning is implementation-dependent' },
+      { pattern: 'x is 3.14', why: 'Float identity is never guaranteed' }
+    ],
+    correctPatterns: [
+      { pattern: 'x == ""', example: 'if name == "": print("Empty name")' },
+      { pattern: 'x == 0', example: 'if count == 0: return early' },
+      { pattern: 'x is None', example: 'if result is None: # This IS correct - None is singleton' },
+      { pattern: 'x is True / x is False', example: 'if flag is True: # Correct for boolean identity' }
+    ],
+    relatedRules: ['E711', 'E712'],
+    guidanceText: 'Use == for comparing to string/number literals. Use `is` only for None, True, False singletons.',
+    promptAdditions: `CRITICAL for F632:
+- Replace 'is ""' with '== ""'
+- Replace 'is 0' with '== 0'
+- Replace 'is "string"' with '== "string"'
+- DO NOT change 'is None' - that is correct
+- DO NOT change 'is True' or 'is False' - those are correct
+- The 'is' operator checks object identity, == checks value equality`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['@typescript-eslint/no-explicit-any:typescript:eslint', {
+    ruleId: '@typescript-eslint/no-explicit-any',
+    language: 'typescript',
+    tool: 'eslint',
+    antiPatterns: [
+      { pattern: 'function foo(x: any)', why: 'Loses all type safety, defeats purpose of TypeScript' },
+      { pattern: 'const data: any = ...', why: 'Any propagates and infects other types' },
+      { pattern: 'as any', why: 'Type assertion to any bypasses all checking' },
+      { pattern: 'Record<string, any>', why: 'Allows any value type, should be more specific' }
+    ],
+    correctPatterns: [
+      { pattern: 'unknown for truly unknown types', example: 'function parse(input: unknown): Result { ... }' },
+      { pattern: 'generics for flexible types', example: 'function identity<T>(value: T): T { return value; }' },
+      { pattern: 'specific types when known', example: 'interface ApiResponse { data: User[]; status: number; }' },
+      { pattern: 'union types for multiple options', example: 'type Result = Success | Failure | Pending;' }
+    ],
+    relatedRules: ['@typescript-eslint/no-unsafe-any', '@typescript-eslint/no-unsafe-assignment'],
+    guidanceText: 'Replace `any` with `unknown` for truly unknown types, generics for flexible types, or specific interfaces/types when the shape is known.',
+    promptAdditions: `CRITICAL for @typescript-eslint/no-explicit-any:
+- Use 'unknown' when type is truly unknown (requires type guards to use)
+- Use generics <T> when type should be flexible but consistent
+- Use specific interfaces/types when structure is known
+- Use union types (A | B) when multiple specific types are valid
+- Record<string, unknown> instead of Record<string, any>
+- For callback params, infer from usage or use specific function types`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['AvoidDollarSigns:java:pmd', {
+    ruleId: 'AvoidDollarSigns',
+    language: 'java',
+    tool: 'pmd',
+    antiPatterns: [
+      { pattern: 'int $count', why: '$ is reserved for compiler-generated code' },
+      { pattern: 'String my$var', why: '$ in identifiers causes confusion with inner class references' },
+      { pattern: 'void $method()', why: 'Method names should not contain $' },
+      { pattern: 'class My$Class', why: 'Compiler uses $ for inner class naming (Outer$Inner)' }
+    ],
+    correctPatterns: [
+      { pattern: 'camelCase naming', example: 'int itemCount;' },
+      { pattern: 'descriptive names', example: 'String myVariable;' },
+      { pattern: 'underscore for constants', example: 'static final int MAX_COUNT = 100;' }
+    ],
+    relatedRules: ['LocalVariableNamingConventions', 'FieldNamingConventions'],
+    guidanceText: 'Rename identifiers to remove $ character. Use standard Java naming conventions: camelCase for variables/methods, PascalCase for classes.',
+    promptAdditions: `CRITICAL for AvoidDollarSigns:
+- Remove $ from variable names: $count → count, my$var → myVar
+- Remove $ from method names: $init() → init()
+- Remove $ from class names: My$Class → MyClass
+- $ is reserved for: inner class references (Outer$Inner), generated code
+- Use camelCase for variables and methods
+- Use SCREAMING_SNAKE_CASE for constants`,
+    successRate: 0,
+    usageCount: 0
+  }],
+  ['UnnecessaryAnnotationValueElement:java:pmd', {
+    ruleId: 'UnnecessaryAnnotationValueElement',
+    language: 'java',
+    tool: 'pmd',
+    antiPatterns: [
+      { pattern: '@SuppressWarnings(value="unchecked")', why: 'value= is redundant when it is the only element' },
+      { pattern: '@RequestMapping(value="/api")', why: 'Single element annotations can omit value=' },
+      { pattern: '@Autowired(required=true)', why: 'true is the default, no need to specify' }
+    ],
+    correctPatterns: [
+      { pattern: '@SuppressWarnings("unchecked")', example: '@SuppressWarnings("unchecked")' },
+      { pattern: '@RequestMapping("/api")', example: '@RequestMapping("/api/users")' },
+      { pattern: 'keep value= with multiple elements', example: '@RequestMapping(value="/api", method=GET)' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Remove explicit value= when it is the only annotation element. Keep value= when multiple elements are present.',
+    promptAdditions: `CRITICAL for UnnecessaryAnnotationValueElement:
+- Remove 'value=' when single element: @Foo(value="x") → @Foo("x")
+- KEEP 'value=' with multiple elements: @Foo(value="x", other=y)
+- Common annotations: @SuppressWarnings, @RequestMapping, @GetMapping
+- Check if removing value= is valid (some annotations require explicit naming)
+- @Autowired(required=true) → @Autowired (true is default)`,
+    successRate: 0,
+    usageCount: 0
   }]
 ]);
 
