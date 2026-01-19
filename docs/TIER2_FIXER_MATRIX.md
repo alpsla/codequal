@@ -1,7 +1,10 @@
 # Tier 2 Native Fixer Capability Matrix
 
 > Session 104: Complete validation of all native fixers for the fix-agent pipeline.
+> Session 105: E2E test coverage added for all language fixers (225+ tests).
 > Updated with clang-tidy, dotnet-format, and Sorald test results.
+>
+> **See Also:** [E2E Test Results](./E2E_TEST_RESULTS.md) for comprehensive test outcomes.
 
 ## Overview
 
@@ -214,6 +217,42 @@ if (executor) {
 - ✅ Downloaded and tested Sorald JAR
 - ✅ Documented OpenRewrite Maven/Gradle setup
 
+## Session 105 E2E Test Coverage
+
+All tier 2 fixers have comprehensive E2E test coverage:
+
+| Test File | Tests | Status |
+|-----------|-------|--------|
+| `e2e-python.test.ts` | 30 | ✅ Pass |
+| `e2e-go.test.ts` | 30 | ✅ Pass |
+| `e2e-java.test.ts` | 30 | ✅ Pass |
+| `e2e-cpp.test.ts` | 30 | ✅ Pass |
+| `e2e-csharp.test.ts` | 30 | ✅ Pass |
+| `e2e-typescript.test.ts` | 30 | ✅ Pass |
+| `e2e-full-pipeline.test.ts` | 25 | ✅ Pass |
+| **Total** | **~225** | ✅ All Pass |
+
+### Key Quirks Discovered in E2E Testing
+
+1. **PMD Has NO Auto-Fix** - All PMD rules require AI (Tier 3)
+2. **Ruff Unsafe Fixes** - E711/E712 require `--unsafe-fixes` flag
+3. **clang-tidy SDK** - Requires `SDKROOT=$(xcrun --show-sdk-path)` on macOS
+4. **dotnet-format Context** - Requires `.csproj` in directory tree
+5. **goimports > gofmt** - goimports is a superset, prefer it
+6. **Sorald JAR** - Requires separate JAR download and Java runtime
+7. **golangci-lint** - Only formatting linters support `--fix`
+
+### Running E2E Tests
+
+```bash
+# All E2E tests
+cd packages/agents
+npm test -- --testPathPattern="e2e-" --verbose
+
+# Specific language
+npm test -- --testPathPattern="e2e-python" --verbose
+```
+
 ---
 
-*Last updated: Session 104 (2026-01-19)*
+*Last updated: Session 105 (2026-01-19)*

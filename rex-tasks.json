@@ -2,7 +2,7 @@
   "source": "rex-session-105-e2e-validation.md",
   "createdAt": "2026-01-19T17:00:00Z",
   "maxIterations": 30,
-  "currentIteration": 2,
+  "currentIteration": 3,
   "status": "ready",
   "validation": {
     "type": "shell",
@@ -196,11 +196,11 @@
         "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-full-pipeline.test.ts"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "attempts": 0,
       "lastError": null,
-      "completedAt": null,
-      "commitHash": null
+      "completedAt": "2026-01-19T14:42:52Z",
+      "commitHash": "[main 692a7a10] rex(#9): Integration Test: Full Fix Pipeline\n 3 files changed, 809 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-full-pipeline.test.ts\n692a7a10"
     },
     {
       "id": 10,
