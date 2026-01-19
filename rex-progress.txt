@@ -1085,3 +1085,53 @@ Commit: [main 9d36e95a] rex(#8): Run Live C# Tests - Tier 1 & 2
 - Fix order: rustfmt → cargo clippy --fix → AI
 
 
+
+=== Task #9 (2026-01-19 15:06:09) ===
+Title: Run Live Rust Tests - Tier 1 & 2
+Status: COMPLETE
+Commit: [main 8187ad8a] rex(#9): Run Live Rust Tests - Tier 1 & 2
+ 4 files changed, 819 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-rust.test.ts
+8187ad8a
+
+### Task 10: Run Live Ruby Tests - Tier 1 & 2
+- Created live-ruby.test.ts with comprehensive tests for Ruby native fixers
+- Test features:
+  - rubocop --autocorrect: Safe Style/Layout fixes (tier 1)
+  - rubocop --autocorrect-all: Unsafe Style fixes (tier 2)
+  - Verifies files are actually modified (before/after comparison)
+  - Documents which issues need AI (Metrics/* rules)
+- Key patterns:
+  - Copy fixture + .rubocop.yml to temp directory for isolated testing
+  - Create minimal .rubocop.yml to control which cops run
+  - Tool availability check: isRuboCopAvailable()
+  - RuboCopExecutor already exists in tier1-executor.ts
+- Ruby rules auto-fixable by tier 1 (--autocorrect, safe):
+  - Style/StringLiterals (double → single quotes)
+  - Style/FrozenStringLiteralComment (add magic comment)
+  - Style/RedundantReturn (remove explicit return)
+  - Style/RedundantSelf (remove unnecessary self)
+  - Layout/SpaceAroundOperators (fix operator spacing)
+  - Layout/IndentationWidth (fix indentation)
+  - Layout/TrailingWhitespace (remove trailing whitespace)
+  - Layout/EmptyLines (remove extra blank lines)
+  - Layout/SpaceInsideHashLiteralBraces (fix hash spacing)
+  - Layout/SpaceInsideArrayLiteralBrackets (fix array spacing)
+- Ruby rules auto-fixable by tier 2 (--autocorrect-all, unsafe):
+  - Style/SymbolProc (block → &:method)
+  - Style/HashSyntax (old :key => to new key: syntax)
+  - Style/WordArray (%w() array syntax)
+  - Style/SymbolArray (%i() array syntax)
+  - Style/NegatedIf (unless → if !)
+  - Style/ConditionalAssignment (simplified conditionals)
+  - Style/GuardClause (early return pattern)
+- Ruby rules needing AI (tier 3):
+  - Metrics/MethodLength (needs method extraction)
+  - Metrics/CyclomaticComplexity (needs simplification)
+  - Metrics/AbcSize (needs restructuring)
+  - Metrics/BlockLength (needs block extraction)
+  - Metrics/ClassLength (needs class splitting)
+  - Style/Documentation (needs class documentation)
+- Fix order: rubocop --autocorrect → rubocop --autocorrect-all → AI
+
+
