@@ -274,18 +274,23 @@ export class SimpleOpenRouterClient {
           return this.chat(request);
         }
 
-        // All keys failed, check if fallback is allowed
-        if (process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true') {
-          throw new Error('ALERT: All OpenRouter keys failed and STRICT_NO_FALLBACK is enabled');
+        // All keys failed - SESSION-96 FIX: Use Supabase fallback_model, NOT hardcoded Gemini
+        // BUG-101 FIX: Use Supabase fallback_model for 401 errors too
+        const fallbackModel = request.fallbackModel;
+        if (fallbackModel && fallbackModel !== model) {
+          console.log(`[SimpleClient] 🔄 All keys exhausted - switching to Supabase fallback_model: ${fallbackModel}`);
+          return this.chat({
+            ...request,
+            model: fallbackModel,
+            fallbackModel: undefined  // Don't retry fallback again
+          });
         }
 
-        // Fall back to Gemini if available
-        console.warn('[SimpleClient] ⚠️  All OpenRouter keys exhausted - switching to Gemini fallback');
-        if (this.geminiClient) {
-          this.useEmergencyFallback = true;
-          return this.callGemini(systemPrompt, userPrompt, temperature, maxTokens);
-        }
-        throw new Error('All OpenRouter keys failed and no emergency fallback configured');
+        // SESSION-96 FIX: REMOVED hardcoded Gemini fallback - MUST configure fallback_model in Supabase
+        throw new Error(
+          'All OpenRouter keys failed and no Supabase fallback_model configured! ' +
+          'Run monthly-model-refresh.ts to populate model_configurations table with fallback_model.'
+        );
       }
 
       // BUG-101 FIX: Handle 429 rate limit errors - switch to Supabase fallback_model (NOT Gemini)
@@ -316,14 +321,12 @@ export class SimpleOpenRouterClient {
           return this.chat(request);
         }
 
-        // Last resort: Gemini emergency fallback (only if configured and no other option)
-        if (this.geminiClient) {
-          console.warn('[SimpleClient] ⚠️  No Supabase fallback - using Gemini emergency fallback');
-          this.useEmergencyFallback = true;
-          return this.callGemini(systemPrompt, userPrompt, temperature, maxTokens);
-        }
-
-        throw new Error(`Rate limit exceeded and no fallback available: ${error.message}`);
+        // SESSION-96 FIX: REMOVED hardcoded Gemini fallback - MUST configure fallback_model in Supabase
+        throw new Error(
+          `Rate limit exceeded and no Supabase fallback_model configured! ` +
+          `Run monthly-model-refresh.ts to populate model_configurations table with fallback_model. ` +
+          `Original error: ${error.message}`
+        );
       }
 
       // For any other error, throw immediately (no retries)

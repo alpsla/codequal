@@ -98,14 +98,20 @@ abstract class BaseSpecializedAgent {
    * Generate fix suggestion using AI based on issue context
    * BUG-119 FIX: Uses model from ModelConfiguration (via orchestrator) instead of DynamicModelSelector
    * COST FIX: Uses simple client (1 call, fallback on 401 only)
+   * SESSION-96 FIX: REMOVED hardcoded fallback - MUST use dynamic model from Supabase
    */
   async generateFixSuggestion(issue: IssueContext, modelOverride?: string): Promise<FixSuggestion> {
-    // BUG-119 FIX: Use provided model override or model from config
-    // Priority: modelOverride > modelConfig.primary_model > fallback default
-    const strict = process.env.STRICT_NO_FALLBACK === 'true' || process.env.E2E_DISABLE_EMERGENCY_FALLBACK === 'true';
-    const modelToUse = modelOverride || this.modelConfig?.primary_model || (strict
-      ? (() => { throw new Error('ALERT: No model configured for agent under STRICT_NO_FALLBACK'); })()
-      : 'google/gemini-2.5-flash');
+    // SESSION-96 FIX: Use dynamic model selection ONLY - no hardcoded fallbacks
+    // Priority: modelOverride > modelConfig.primary_model > ERROR (no fallback!)
+    const modelToUse = modelOverride || this.modelConfig?.primary_model;
+
+    if (!modelToUse) {
+      throw new Error(
+        `[${this.agentRole}] No model configured! ` +
+        `Run 'npx ts-node src/two-branch/research-services/monthly-model-refresh.ts' to populate model_configurations table. ` +
+        `Or pass modelConfig from orchestrator via SpecializedAgentFactory.generateFixForIssue()`
+      );
+    }
 
     // BUG-101 FIX: Get fallback_model from Supabase config for 429 rate limit handling
     const fallbackModel = this.modelConfig?.fallback_model;

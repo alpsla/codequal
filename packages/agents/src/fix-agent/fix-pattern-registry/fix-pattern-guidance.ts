@@ -285,6 +285,118 @@ const FALLBACK_GUIDANCE: Map<string, FixGuidance> = new Map([
 - If deleting breaks something, the test will catch it`,
     successRate: 0,
     usageCount: 0
+  }],
+  // SESSION 94: Patterns extracted from successful AI fixes without KB guidance
+  ['FieldDeclarationsShouldBeAtStartOfClass:java:any', {
+    ruleId: 'FieldDeclarationsShouldBeAtStartOfClass',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'field declarations scattered throughout class', why: 'Reduces readability, violates convention that fields are declared at top' },
+      { pattern: 'constants declared after methods', why: 'Hard to find class constants when not grouped at top' }
+    ],
+    correctPatterns: [
+      { pattern: 'all fields at top of class', example: 'public class Foo {\n    private static final int CONSTANT = 1;\n    private String field1;\n    private int field2;\n\n    public void method() { ... }\n}' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Move all field declarations to the start of the class, before any methods. Group static final constants first, then instance fields.',
+    promptAdditions: `CRITICAL for FieldDeclarationsShouldBeAtStartOfClass:
+- Move ALL field declarations to the top of the class body
+- Order: static final constants, static fields, instance fields
+- Place fields BEFORE any methods
+- Keep field order consistent (public, protected, package, private)`,
+    successRate: 80,
+    usageCount: 1
+  }],
+  ['CommentDefaultAccessModifier:java:any', {
+    ruleId: 'CommentDefaultAccessModifier',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'package-private members without comment', why: 'Ambiguous intent - unclear if default access was intentional or oversight' }
+    ],
+    correctPatterns: [
+      { pattern: '/* package */ comment before package-private members', example: '/* package */ String internalValue;' },
+      { pattern: '// intentionally package-private comment', example: '// intentionally package-private\nString sharedField;' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Add /* package */ comment before members with default (package-private) access to indicate the access level is intentional.',
+    promptAdditions: `CRITICAL for CommentDefaultAccessModifier:
+- Add /* package */ BEFORE the type declaration
+- Format: /* package */ TypeName memberName;
+- Apply to fields, methods, and nested classes with default access
+- DO NOT change the access modifier, just add the comment`,
+    successRate: 80,
+    usageCount: 1
+  }],
+  ['CallSuperInConstructor:java:any', {
+    ruleId: 'CallSuperInConstructor',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'constructor without explicit super() call', why: 'While Java adds implicit super(), explicit call improves clarity' },
+      { pattern: 'exception constructor not passing message to parent', why: 'Loses exception message chain' }
+    ],
+    correctPatterns: [
+      { pattern: 'explicit super() as first statement', example: 'public MyException(String message) {\n    super(message);\n    this.details = message;\n}' },
+      { pattern: 'super with appropriate arguments', example: 'public MyClass(int value) {\n    super(value);\n}' }
+    ],
+    relatedRules: [],
+    guidanceText: 'Add explicit super() or super(args) as the first statement in constructors. For exceptions, pass the message to the parent constructor.',
+    promptAdditions: `CRITICAL for CallSuperInConstructor:
+- Add super() or super(message) as FIRST statement in constructor
+- For Exception subclasses, pass message to parent: super(message)
+- If parent has only parameterized constructors, use appropriate super(args)
+- super() must be the FIRST statement, before any other code`,
+    successRate: 80,
+    usageCount: 1
+  }],
+  ['ShortVariable:java:any', {
+    ruleId: 'ShortVariable',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'single-letter variable names (i, j, k outside loops)', why: 'Unclear purpose, poor readability' },
+      { pattern: 'cryptic abbreviations (idx, pos, buf)', why: 'Requires mental translation' }
+    ],
+    correctPatterns: [
+      { pattern: 'descriptive names based on purpose', example: 'int extensionIndex = filename.lastIndexOf(\'.\');' },
+      { pattern: 'i, j, k acceptable only in simple for loops', example: 'for (int i = 0; i < items.length; i++) { ... }' }
+    ],
+    relatedRules: ['LongVariable', 'LinguisticNaming'],
+    guidanceText: 'Rename short variables to descriptive names that explain their purpose. Exception: loop counters i, j, k in simple for loops.',
+    promptAdditions: `CRITICAL for ShortVariable:
+- Rename to describe PURPOSE not type (extensionIndex not intIndex)
+- Common patterns:
+  - 'i' for index → 'extensionIndex', 'startIndex', 'itemIndex'
+  - 'f' for file → 'sourceFile', 'tempFile'
+  - 'n' for count → 'itemCount', 'retryCount'
+- Keep loop counters (i, j, k) in simple for loops
+- Min 3 characters for variable names`,
+    successRate: 90,
+    usageCount: 1
+  }],
+  ['UnnecessaryConstructor:java:any', {
+    ruleId: 'UnnecessaryConstructor',
+    language: 'java',
+    tool: 'any',
+    antiPatterns: [
+      { pattern: 'empty default constructor', why: 'Redundant - Java provides implicit default constructor' },
+      { pattern: 'constructor that only calls super()', why: 'Redundant - implicit super() is called automatically' }
+    ],
+    correctPatterns: [
+      { pattern: 'remove empty constructor entirely', example: 'public class MyClass {\n    private String field;\n\n    public void doSomething() { ... }\n}' },
+      { pattern: 'keep constructor if it has documentation', example: '/** Creates a new instance with default settings. */\npublic MyClass() {\n    // Default constructor required for serialization\n}' }
+    ],
+    relatedRules: ['UseUtilityClass'],
+    guidanceText: 'Remove empty default constructors as Java provides them implicitly. Keep only if there\'s documentation explaining why it\'s explicit.',
+    promptAdditions: `CRITICAL for UnnecessaryConstructor:
+- DELETE the empty constructor entirely, don't comment it out
+- Exception: Keep if it has meaningful Javadoc
+- Exception: Keep if required for framework (Spring, serialization)
+- After removal, ensure no other code depends on explicit constructor`,
+    successRate: 80,
+    usageCount: 1
   }]
 ]);
 

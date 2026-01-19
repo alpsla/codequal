@@ -49,9 +49,9 @@ async function getPatternCount(): Promise<number> {
     }
   }
 
-  // Default fallback - approximate count based on last known value
-  // This should be updated periodically
-  return 640;
+  // Default fallback - use 600 as baseline (actual count is ~604 as of Session 96)
+  // Display as "600+" to indicate the minimum
+  return 600;
 }
 
 // ============================================================
@@ -59,8 +59,10 @@ async function getPatternCount(): Promise<number> {
 // ============================================================
 
 // Sample issues for demonstration (matching EnrichedIssue interface)
+// Showcasing diversity of V9 tool suite (10 tools)
 const sampleIssues: EnrichedIssue[] = [
   // NEW issues (in newly added/modified files)
+  // Tool 1: semgrep - Security scanning
   {
     rule: 'javascript.express.security.audit.xss-direct-response-write.direct-response-write',
     message: 'Directly writing user input to response can lead to XSS',
@@ -95,23 +97,43 @@ const sampleIssues: EnrichedIssue[] = [
     },
     educationalLinks: ['https://owasp.org/www-community/attacks/SQL_Injection']
   },
+  // Tool 2: gitleaks - Secrets detection
   {
-    rule: 'javascript.lang.security.detect-child-process.detect-child-process',
-    message: 'Command injection via child_process with unsanitized input',
+    rule: 'gitleaks.generic-api-key',
+    message: 'Potential API key detected in source code',
     severity: 'critical',
     category: 'NEW',
     detectedCategory: 'Security',
-    file: 'src/utils/shell.ts',
-    line: 67,
-    column: 3,
-    tool: 'semgrep',
+    file: 'src/config/settings.ts',
+    line: 15,
+    column: 20,
+    tool: 'gitleaks',
     fixSuggestion: {
-      fix: 'Use execFile with argument array',
-      correctedCode: 'execFile("ls", ["-la", sanitizedPath])',
-      explanation: 'Command injection allows attackers to execute arbitrary system commands.'
+      fix: 'Move API key to environment variable',
+      correctedCode: 'const apiKey = process.env.API_KEY',
+      explanation: 'Hardcoded secrets can be exposed in version control history.'
     },
-    educationalLinks: ['https://owasp.org/www-community/attacks/Command_Injection']
+    educationalLinks: ['https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_credentials']
   },
+  // Tool 3: trivy - Dependency vulnerabilities
+  {
+    rule: 'CVE-2023-44487',
+    message: 'HTTP/2 Rapid Reset Attack vulnerability in express@4.17.1',
+    severity: 'high',
+    category: 'NEW',
+    detectedCategory: 'Dependencies',
+    file: 'package.json',
+    line: 12,
+    column: 5,
+    tool: 'trivy',
+    fixSuggestion: {
+      fix: 'Upgrade express to 4.18.2 or later',
+      correctedCode: '"express": "^4.18.2"',
+      explanation: 'This CVE allows denial of service via HTTP/2 protocol abuse.'
+    },
+    educationalLinks: ['https://nvd.nist.gov/vuln/detail/CVE-2023-44487']
+  },
+  // Tool 4: eslint - JavaScript/TypeScript linting
   {
     rule: 'typescript.performance.avoid-inline-functions',
     message: 'Inline function in JSX causes unnecessary re-renders',
@@ -128,61 +150,116 @@ const sampleIssues: EnrichedIssue[] = [
       explanation: 'Inline functions create new function instances on every render.'
     }
   },
-  // EXISTING_MODIFIED (pre-existing issue in a modified file)
+  // Tool 5: sonarqube - Code quality & complexity
   {
-    rule: 'typescript.react.best-practice.missing-key',
-    message: 'Missing key prop in list rendering',
+    rule: 'javascript:S3776',
+    message: 'Cognitive Complexity of function "processData" is 23 (threshold 15)',
+    severity: 'medium',
+    category: 'NEW',
+    detectedCategory: 'Code Quality',
+    file: 'src/services/processor.ts',
+    line: 45,
+    column: 1,
+    tool: 'sonarqube',
+    fixSuggestion: {
+      fix: 'Extract complex logic into smaller helper functions',
+      correctedCode: '// Split into: validateInput(), transformData(), handleErrors()',
+      explanation: 'High cognitive complexity makes code harder to understand and maintain.'
+    }
+  },
+  // Tool 6: pmd - Java static analysis (for Java projects)
+  {
+    rule: 'CloseResource',
+    message: 'Ensure that resources like this Connection object are closed after use',
+    severity: 'high',
+    category: 'NEW',
+    detectedCategory: 'Security',
+    file: 'src/main/java/com/app/DatabaseService.java',
+    line: 78,
+    column: 9,
+    tool: 'pmd',
+    fixSuggestion: {
+      fix: 'Use try-with-resources statement',
+      correctedCode: 'try (Connection conn = dataSource.getConnection()) { ... }',
+      explanation: 'Unclosed resources can lead to resource leaks and connection pool exhaustion.'
+    }
+  },
+  // Tool 7: checkstyle - Java code style
+  {
+    rule: 'MethodLength',
+    message: 'Method "handleRequest" length is 150 lines (max allowed is 50)',
+    severity: 'medium',
+    category: 'NEW',
+    detectedCategory: 'Code Quality',
+    file: 'src/main/java/com/app/RequestHandler.java',
+    line: 34,
+    column: 5,
+    tool: 'checkstyle',
+    fixSuggestion: {
+      fix: 'Break down into smaller methods with single responsibilities',
+      correctedCode: '// Extract: validateRequest(), processPayload(), buildResponse()',
+      explanation: 'Long methods are harder to test, debug, and maintain.'
+    }
+  },
+  // EXISTING_MODIFIED (pre-existing issue in a modified file)
+  // Tool 8: stylelint - CSS/SCSS linting
+  {
+    rule: 'selector-max-specificity',
+    message: 'Expected selector specificity to be at most "0,3,0", but got "0,5,2"',
     severity: 'low',
     category: 'EXISTING_MODIFIED',
     detectedCategory: 'Code Quality',
-    file: 'src/components/List.tsx',
-    line: 34,
-    column: 8,
-    tool: 'eslint',
+    file: 'src/styles/components.scss',
+    line: 156,
+    column: 1,
+    tool: 'stylelint',
     fixSuggestion: {
-      fix: 'Add unique key prop',
-      correctedCode: '<Item key={item.id} {...item} />',
-      explanation: 'React needs unique keys to efficiently update the DOM.'
+      fix: 'Reduce selector specificity using BEM naming',
+      correctedCode: '.form__input--error { ... }',
+      explanation: 'High specificity selectors are harder to override and maintain.'
     }
   },
   // EXISTING_REST issues (pre-existing in unchanged files - informational only)
+  // Tool 9: prettier - Code formatting
   {
-    rule: 'typescript.no-unused-vars',
-    message: 'Unused variable "tempData"',
+    rule: 'prettier/prettier',
+    message: 'Replace tabs with spaces for consistent formatting',
     severity: 'low',
     category: 'EXISTING_REST',
     detectedCategory: 'Code Quality',
     file: 'src/utils/helpers.ts',
     line: 45,
-    column: 7,
-    tool: 'eslint'
+    column: 1,
+    tool: 'prettier'
   },
+  // Tool 10: typescript-eslint - TypeScript-specific rules
   {
-    rule: 'typescript.prefer-const',
-    message: "Prefer const over let when variable is never reassigned",
+    rule: '@typescript-eslint/no-explicit-any',
+    message: 'Unexpected any. Specify a different type.',
     severity: 'low',
     category: 'EXISTING_REST',
     detectedCategory: 'Code Quality',
     file: 'src/services/auth.ts',
     line: 78,
-    column: 5,
-    tool: 'eslint'
-  },
-  {
-    rule: 'typescript.no-console',
-    message: 'Unexpected console statement',
-    severity: 'low',
-    category: 'EXISTING_REST',
-    detectedCategory: 'Code Quality',
-    file: 'src/index.ts',
-    line: 12,
-    column: 3,
-    tool: 'eslint'
+    column: 15,
+    tool: 'typescript-eslint',
+    fixSuggestion: {
+      fix: 'Replace any with specific type',
+      correctedCode: 'function parseToken(token: string): TokenPayload',
+      explanation: 'Using "any" defeats the purpose of TypeScript type safety.'
+    }
   }
 ];
 
+// Sample PR metadata
+const samplePRAuthor = 'John';
+const samplePRNumber = 950;
+const sampleRepoName = 'spring-petclinic';
+
 // Sample issue groups (matching IssueGroup interface)
+// Showcasing all 10 tools from V9 analysis suite
 const sampleGroups: IssueGroup[] = [
+  // Tool 1: semgrep - Security scanning
   {
     rule: 'javascript.express.security.sql-injection',
     tool: 'semgrep',
@@ -204,21 +281,6 @@ const sampleGroups: IssueGroup[] = [
     }
   },
   {
-    rule: 'javascript.lang.security.detect-child-process',
-    tool: 'semgrep',
-    severity: 'critical',
-    description: 'Command injection via child_process with unsanitized input',
-    category: 'NEW',
-    detectedCategory: 'Security',
-    count: 1,
-    examples: [{ file: 'src/utils/shell.ts', line: 67 }],
-    isRecommendationOnly: false,
-    hasNativeFix: false,
-    fixTier: 3,
-    aiAnalyzed: true,
-    costSaved: 0
-  },
-  {
     rule: 'javascript.express.security.audit.xss-direct-response-write',
     tool: 'semgrep',
     severity: 'high',
@@ -233,6 +295,39 @@ const sampleGroups: IssueGroup[] = [
     aiAnalyzed: true,
     costSaved: 0
   },
+  // Tool 2: gitleaks - Secrets detection
+  {
+    rule: 'gitleaks.generic-api-key',
+    tool: 'gitleaks',
+    severity: 'critical',
+    description: 'Potential API key detected in source code',
+    category: 'NEW',
+    detectedCategory: 'Security',
+    count: 1,
+    examples: [{ file: 'src/config/settings.ts', line: 15 }],
+    isRecommendationOnly: false,
+    hasNativeFix: false,
+    fixTier: 3,
+    aiAnalyzed: true,
+    costSaved: 0
+  },
+  // Tool 3: trivy - Dependency vulnerabilities
+  {
+    rule: 'CVE-2023-44487',
+    tool: 'trivy',
+    severity: 'high',
+    description: 'HTTP/2 Rapid Reset Attack vulnerability in express@4.17.1',
+    category: 'NEW',
+    detectedCategory: 'Dependencies',
+    count: 1,
+    examples: [{ file: 'package.json', line: 12 }],
+    isRecommendationOnly: false,
+    hasNativeFix: true,
+    fixTier: 1,
+    aiAnalyzed: false,
+    costSaved: 0.01
+  },
+  // Tool 4: eslint - JavaScript/TypeScript linting
   {
     rule: 'typescript.performance.avoid-inline-functions',
     tool: 'eslint',
@@ -248,20 +343,101 @@ const sampleGroups: IssueGroup[] = [
     aiAnalyzed: false,
     costSaved: 0.003
   },
+  // Tool 5: sonarqube - Code quality & complexity
   {
-    rule: 'typescript.react.best-practice.missing-key',
-    tool: 'eslint',
-    severity: 'low',
-    description: 'Missing key prop in list rendering',
-    category: 'EXISTING',
+    rule: 'javascript:S3776',
+    tool: 'sonarqube',
+    severity: 'medium',
+    description: 'Cognitive Complexity of function "processData" is 23 (threshold 15)',
+    category: 'NEW',
     detectedCategory: 'Code Quality',
     count: 1,
-    examples: [{ file: 'src/components/List.tsx', line: 34 }],
+    examples: [{ file: 'src/services/processor.ts', line: 45 }],
+    isRecommendationOnly: false,
+    hasNativeFix: false,
+    fixTier: 2,
+    aiAnalyzed: true,
+    costSaved: 0
+  },
+  // Tool 6: pmd - Java static analysis
+  {
+    rule: 'CloseResource',
+    tool: 'pmd',
+    severity: 'high',
+    description: 'Ensure that resources like this Connection object are closed after use',
+    category: 'NEW',
+    detectedCategory: 'Security',
+    count: 1,
+    examples: [{ file: 'src/main/java/com/app/DatabaseService.java', line: 78 }],
+    isRecommendationOnly: false,
+    hasNativeFix: false,
+    fixTier: 2,
+    aiAnalyzed: true,
+    costSaved: 0
+  },
+  // Tool 7: checkstyle - Java code style
+  {
+    rule: 'MethodLength',
+    tool: 'checkstyle',
+    severity: 'medium',
+    description: 'Method "handleRequest" length is 150 lines (max allowed is 50)',
+    category: 'NEW',
+    detectedCategory: 'Code Quality',
+    count: 1,
+    examples: [{ file: 'src/main/java/com/app/RequestHandler.java', line: 34 }],
+    isRecommendationOnly: false,
+    hasNativeFix: false,
+    fixTier: 2,
+    aiAnalyzed: true,
+    costSaved: 0
+  },
+  // Tool 8: stylelint - CSS/SCSS linting
+  {
+    rule: 'selector-max-specificity',
+    tool: 'stylelint',
+    severity: 'low',
+    description: 'Expected selector specificity to be at most "0,3,0", but got "0,5,2"',
+    category: 'EXISTING_MODIFIED',
+    detectedCategory: 'Code Quality',
+    count: 1,
+    examples: [{ file: 'src/styles/components.scss', line: 156 }],
     isRecommendationOnly: false,
     hasNativeFix: true,
     fixTier: 1,
     aiAnalyzed: false,
-    costSaved: 0.003
+    costSaved: 0.002
+  },
+  // Tool 9: prettier - Code formatting
+  {
+    rule: 'prettier/prettier',
+    tool: 'prettier',
+    severity: 'low',
+    description: 'Replace tabs with spaces for consistent formatting',
+    category: 'EXISTING_REST',
+    detectedCategory: 'Code Quality',
+    count: 1,
+    examples: [{ file: 'src/utils/helpers.ts', line: 45 }],
+    isRecommendationOnly: true,
+    hasNativeFix: true,
+    fixTier: 1,
+    aiAnalyzed: false,
+    costSaved: 0.001
+  },
+  // Tool 10: typescript-eslint - TypeScript-specific rules
+  {
+    rule: '@typescript-eslint/no-explicit-any',
+    tool: 'typescript-eslint',
+    severity: 'low',
+    description: 'Unexpected any. Specify a different type.',
+    category: 'EXISTING_REST',
+    detectedCategory: 'Code Quality',
+    count: 1,
+    examples: [{ file: 'src/services/auth.ts', line: 78 }],
+    isRecommendationOnly: false,
+    hasNativeFix: false,
+    fixTier: 2,
+    aiAnalyzed: true,
+    costSaved: 0
   }
 ];
 
@@ -507,8 +683,7 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 > Scores saved to Supabase for tracking trends over time
 
 
-> 🚀 **Fix Coverage**: ${sampleIssues.length} issues (100%) have pattern-based fixes available
-> See **AI Fix Recommendations** section below for BASIC vs PRO tier details.
+> 🚀 **Fix Coverage**: ${sampleIssues.length} issues (100%) have pattern-based fixes available${tier === 'pro' ? '\n> ✅ **Auto-Fix Ready**: All issues can be fixed with one click' : '\n> See **AI Fix Recommendations** section below for upgrade options.'}
 
 ---
 
@@ -560,7 +735,7 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 - Duration: 2m 15s
 
 ---
-
+${tier === 'basic' ? `
 ### 🤖 AI Fix Recommendations & Auto-Fix Capability
 
 **BASIC vs PRO Tier Fix System**:
@@ -577,7 +752,17 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 - 🔄 **Pattern Library**: ${patternCount}+ pre-learned patterns for fast fixing
 - 📈 **100% Coverage**: Every issue gets an actionable fix
 
----
+---` : `
+### ✅ Auto-Fix Status
+
+**All ${sampleIssues.length} issues are ready for automatic fixing.**
+
+- ⚡ **One-Click Apply**: Press "Apply All Fixes" to fix everything in ~30 seconds
+- ✅ **Verified Fixes**: Each fix is syntax and behavior validated before apply
+- 🔄 **Pattern Library**: ${patternCount}+ pre-learned patterns ensure high-quality fixes
+- 📈 **100% Coverage**: Every detected issue has an actionable fix ready
+
+---`}
 
 ### 🔑 Key Findings
 
@@ -601,12 +786,11 @@ ${gradeEmoji} **${appScore}/100** (Grade: **${grade}**) - ${appScore >= 70 ? 'Go
 **Action Required:**
 All blocking issues are detailed in the sections below with:
 - ✅ Full AI analysis and explanations
-- ✅ Code examples and fix recommendations
-- ✅ IDE integration files for automated fixes
+- ✅ Code examples and fix recommendations${tier === 'basic' ? '\n- ✅ IDE integration files for automated fixes' : '\n- ✅ One-click auto-fix for each issue'}
 
 ---
 
-### 📈 Trends & Recommendations
+${tier === 'basic' ? `### 📈 Trends & Recommendations
 
 🚀 **Quick Win**: ${sampleIssues.length} issues (100%) have auto-fix available via IDE integration.
 
@@ -615,7 +799,20 @@ All blocking issues are detailed in the sections below with:
 3. **Code Review Process**: Consider pre-commit hooks for automated checks
 4. **Automation Opportunity**: 100% of issues auto-fixable
 
----
+---` : `### 📈 Auto-Fix Summary
+
+✅ **Ready to Fix**: All ${sampleIssues.length} issues can be auto-fixed with one click.
+
+| Action | Status |
+|--------|--------|
+| Critical/High Issues | ⚡ Auto-fix ready |
+| Security Vulnerabilities | ⚡ Auto-fix ready |
+| Performance Optimizations | ⚡ Auto-fix ready |
+| Code Quality Improvements | ⚡ Auto-fix ready |
+
+> Press **"Apply All Fixes"** to resolve all ${sampleIssues.length} issues automatically.
+
+---`}
 `;
 }
 
@@ -825,6 +1022,167 @@ This issue appears in **1 file** across your codebase:
 
 ---
 
+### 🟠 Hardcoded API Key Detected
+
+**Severity**: HIGH | **Tool**: gitleaks | **Found in**: 1 file | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+Potential API key detected in source code. Hardcoded secrets can be exposed through version control.
+
+#### 🎯 Why does it matter?
+
+Hardcoded credentials are a top security risk. Once committed, they remain in git history even if removed, and can be discovered by attackers scanning public repositories.
+
+#### ⚠️ Impact if not fixed:
+
+**High Risk** - Unauthorized access to external services, potential data breaches, financial liability.
+
+#### ⚡ Risk Assessment
+
+**Overall Risk**: 🟠 **HIGH RISK**
+
+**Category**: Security
+**Focus**: Secrets management and credential protection
+
+#### 📍 Representative Example
+
+**Location**: \`src/config/settings.ts\` (Line 15)
+
+**Code**:
+
+\`\`\`typescript
+    13 | const config = {
+    14 |   // VULNERABLE: Hardcoded API key
+>   15 |   apiKey: "sk_live_1234567890abcdef",
+    16 |   endpoint: "https://api.service.com"
+    17 | };
+\`\`\`
+
+#### 🔧 How to Fix
+
+Move secrets to environment variables or a secrets manager.
+
+**Recommended Code**:
+
+\`\`\`typescript
+const config = {
+  apiKey: process.env.API_KEY,
+  endpoint: process.env.API_ENDPOINT
+};
+\`\`\`
+
+---
+
+### 🟠 Vulnerable Dependency (CVE-2023-44487)
+
+**Severity**: HIGH | **Tool**: trivy | **Found in**: 1 file | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+HTTP/2 Rapid Reset Attack vulnerability in express@4.17.1 (CVE-2023-44487).
+
+#### 🎯 Why does it matter?
+
+This CVE affects the HTTP/2 protocol implementation and can be exploited for denial-of-service attacks. It has a CVSS score of 7.5 (High).
+
+#### ⚠️ Impact if not fixed:
+
+**High Risk** - Application availability, denial of service, resource exhaustion.
+
+#### ⚡ Risk Assessment
+
+**Overall Risk**: 🟠 **HIGH RISK**
+
+**Category**: Dependencies
+**Focus**: Supply chain security and vulnerability management
+
+#### 📍 Affected Dependency
+
+**Location**: \`package.json\` (Line 12)
+
+\`\`\`json
+"dependencies": {
+  "express": "4.17.1"  // Vulnerable
+}
+\`\`\`
+
+#### 🔧 How to Fix
+
+Upgrade to express@4.18.2 or later.
+
+**Recommended Code**:
+
+\`\`\`json
+"dependencies": {
+  "express": "^4.18.2"
+}
+\`\`\`
+
+---
+
+### 🟠 Resource Not Closed
+
+**Severity**: HIGH | **Tool**: pmd | **Found in**: 1 file | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+Database Connection resource is not properly closed after use. This can lead to resource leaks.
+
+#### 🎯 Why does it matter?
+
+Unclosed resources (connections, streams, etc.) can exhaust system resources, leading to memory leaks, connection pool exhaustion, and application crashes.
+
+#### ⚠️ Impact if not fixed:
+
+**High Risk** - Memory leaks, connection pool exhaustion, application instability.
+
+#### ⚡ Risk Assessment
+
+**Overall Risk**: 🟠 **HIGH RISK**
+
+**Category**: Security
+**Focus**: Resource management and reliability
+
+#### 📍 Representative Example
+
+**Location**: \`src/main/java/com/app/DatabaseService.java\` (Line 78)
+
+**Code**:
+
+\`\`\`java
+    76 | public User getUser(String id) {
+    77 |   // VULNERABLE: Connection not closed
+>   78 |   Connection conn = dataSource.getConnection();
+    79 |   PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
+    80 |   return mapUser(ps.executeQuery());
+    81 | }
+\`\`\`
+
+#### 🔧 How to Fix
+
+Use try-with-resources to ensure automatic cleanup.
+
+**Recommended Code**:
+
+\`\`\`java
+public User getUser(String id) {
+  try (Connection conn = dataSource.getConnection();
+       PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?")) {
+    ps.setString(1, id);
+    return mapUser(ps.executeQuery());
+  }
+}
+\`\`\`
+
+---
+
 ## 🟡 Medium Priority Issues
 
 ### 🟡 Inline Functions in JSX
@@ -862,6 +1220,88 @@ const handleClick = useCallback(() => { ... }, [deps]);
 #### 📎 All Occurrences
 
 This issue appears in **1 file** across your codebase.
+
+---
+
+### 🟡 High Cognitive Complexity
+
+**Severity**: MEDIUM | **Tool**: sonarqube | **Found in**: 1 file | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+Cognitive Complexity of function "processData" is 23 (threshold 15). Complex functions are harder to understand and maintain.
+
+#### 🎯 Why does it matter?
+
+High cognitive complexity increases the risk of bugs, makes code reviews more difficult, and slows down development velocity. Research shows that cognitive complexity directly correlates with defect density.
+
+#### ⚠️ Impact if not fixed:
+
+**Medium Risk** - Maintainability issues, higher defect probability, slower development.
+
+#### 📍 Representative Example
+
+**Location**: \`src/services/processor.ts\` (Line 45)
+
+#### 🔧 How to Fix
+
+Extract complex logic into smaller, well-named helper functions.
+
+**Recommended Approach**:
+
+\`\`\`typescript
+// Before: One large function with complexity 23
+function processData(data) { ... }
+
+// After: Split into focused functions
+function validateInput(data) { ... }
+function transformData(data) { ... }
+function handleErrors(error) { ... }
+\`\`\`
+
+---
+
+### 🟡 Method Length Exceeds Limit
+
+**Severity**: MEDIUM | **Tool**: checkstyle | **Found in**: 1 file | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+Method "handleRequest" length is 150 lines (max allowed is 50). Long methods violate the Single Responsibility Principle.
+
+#### 🎯 Why does it matter?
+
+Long methods are harder to test, debug, and maintain. They often indicate that a method is doing too many things and should be refactored.
+
+#### ⚠️ Impact if not fixed:
+
+**Medium Risk** - Testing difficulties, maintenance burden, violation of best practices.
+
+#### 📍 Representative Example
+
+**Location**: \`src/main/java/com/app/RequestHandler.java\` (Line 34)
+
+#### 🔧 How to Fix
+
+Break down into smaller methods with clear responsibilities.
+
+**Recommended Approach**:
+
+\`\`\`java
+// Before: One 150-line method
+public Response handleRequest(Request req) { ... }
+
+// After: Focused methods
+public Response handleRequest(Request req) {
+    validateRequest(req);
+    Data data = processPayload(req);
+    return buildResponse(data);
+}
+\`\`\`
 
 ---
 
@@ -909,27 +1349,27 @@ This issue appears in **1 file** across your codebase.
 
 > These issues existed before this PR and are in files that were **not modified**. They are shown for awareness but are **not blocking** this PR.
 
-### 📝 Unused Variables
+### 📝 CSS Selector Specificity
 
-**Severity**: LOW | **Tool**: eslint | **Found in**: 1 file | **Category**: EXISTING_REST
+**Severity**: LOW | **Tool**: stylelint | **Found in**: 1 file | **Category**: EXISTING_MODIFIED
 
-Unused variable "tempData" in \`src/utils/helpers.ts:45\`
-
----
-
-### 📝 Prefer Const
-
-**Severity**: LOW | **Tool**: eslint | **Found in**: 1 file | **Category**: EXISTING_REST
-
-Variable is never reassigned, prefer const in \`src/services/auth.ts:78\`
+High specificity selector \`#app .container .form .input.error\` in \`src/styles/components.scss:156\`. Consider using BEM naming.
 
 ---
 
-### 📝 Console Statements
+### 📝 Formatting Inconsistency
 
-**Severity**: LOW | **Tool**: eslint | **Found in**: 1 file | **Category**: EXISTING_REST
+**Severity**: LOW | **Tool**: prettier | **Found in**: 1 file | **Category**: EXISTING_REST
 
-Unexpected console statement in \`src/index.ts:12\`
+Replace tabs with spaces for consistent formatting in \`src/utils/helpers.ts:45\`
+
+---
+
+### 📝 Explicit Any Type
+
+**Severity**: LOW | **Tool**: typescript-eslint | **Found in**: 1 file | **Category**: EXISTING_REST
+
+Unexpected \`any\` type. Specify a more precise type in \`src/services/auth.ts:78\`
 
 ---
 `;
@@ -938,6 +1378,17 @@ Unexpected console statement in \`src/index.ts:12\`
 }
 
 function generateAnalysisMetadata(): string {
+  // Get unique tools from sample issues
+  const toolCounts = sampleIssues.reduce((acc, issue) => {
+    acc[issue.tool] = (acc[issue.tool] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const toolRows = Object.entries(toolCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([tool, count]) => `| ${tool} | ${count} | ${count} |`)
+    .join('\n');
+
   return `
 ## 📋 Analysis Metadata
 
@@ -945,27 +1396,39 @@ function generateAnalysisMetadata(): string {
 
 | Agent | Duration | Issues Found |
 |-------|----------|--------------|
-| 🔒 Security Agent | 45s | 3 |
-| ⚡ Performance Agent | 32s | 1 |
-| ✨ Quality Agent | 28s | 1 |
-| **Total** | **2m 15s** | **5** |
+| 🔒 Security Agent | 45s | 4 |
+| ⚡ Performance Agent | 18s | 1 |
+| ✨ Quality Agent | 28s | 5 |
+| 📦 Dependencies Agent | 12s | 1 |
+| **Total** | **2m 15s** | **${sampleIssues.length}** |
 
-### Tool Breakdown
+### Tool Breakdown (10 Tools)
 
 | Tool | Rules Matched | Issues |
 |------|---------------|--------|
-| semgrep | 3 | 3 |
-| eslint | 2 | 2 |
-| **Total** | **5** | **5** |
+${toolRows}
+| **Total** | **${sampleIssues.length}** | **${sampleIssues.length}** |
+
+### Tools Used in This Analysis
+
+| Category | Tools |
+|----------|-------|
+| 🔒 **Security** | semgrep, gitleaks, pmd |
+| 📦 **Dependencies** | trivy |
+| ⚡ **Performance** | eslint |
+| ✨ **Code Quality** | sonarqube, checkstyle, stylelint, prettier, typescript-eslint |
 
 ### Cost Analysis
 
 | Metric | Value |
 |--------|-------|
-| **Pattern Hits** | 3 (60%) |
-| **AI Calls Made** | 2 (40%) |
-| **Estimated AI Cost** | $0.02 |
-| **Cost Saved by Patterns** | $0.03 |
+| **Pattern Hits** | 7 (64%) - Instant fixes from KB |
+| **AI Calls Made** | 4 (36%) - New patterns generated |
+| **New Patterns Learned** | 4 - Added to KB for future PRs |
+| **Estimated AI Cost** | $0.04 |
+| **Cost Saved by Patterns** | $0.07 |
+
+> 💡 **Knowledge Base Growth**: The 4 AI-generated fixes are now stored as patterns. Future PRs with similar issues will get instant fixes at zero AI cost.
 
 ---
 `;
@@ -982,6 +1445,8 @@ Copy this to your PR comment:
 
 \`\`\`markdown
 ## 🔍 CodeQual Analysis
+
+Hey ${samplePRAuthor}! 👋 Thanks for your contribution to **${sampleRepoName}**.
 
 **Result:** ⚠️ CHANGES REQUESTED
 
@@ -1326,7 +1791,8 @@ All ${sampleIssues.length} issues detected can be auto-fixed with PRO tier.
 | Detailed recommendations | ✅ | ✅ |
 | Achievements & XP | ✅ | ✅ |
 | Skills tracking | ✅ | ✅ |
-| Community impact | ✅ | ✅ |
+| **Community impact** | ✅ Contribute patterns | ❌ Auto-learned |
+| **IDE integration** | ✅ LSP/SARIF exports | ❌ Not needed |
 | **One-click auto-fix** | ❌ Copy-paste | ✅ **Instant apply** |
 | **Historical analytics** | ✅ 5 PR history | ✅ **Unlimited history** |
 | **Priority support** | ❌ | ✅ |
@@ -1370,8 +1836,9 @@ ${generateXpProgressBar(totalXp, levelInfo.nextLevelXp)}
   // Achievements section
   report += generateAchievementsSection(sampleAchievements, 'gamified');
 
-  // Community impact
-  report += generateCommunityImpactSection(sampleCommunityImpact);
+  // NOTE: Community Impact NOT shown for PRO tier
+  // PRO learns patterns on backend automatically without user involvement
+  // Users who want to see their contributions should use BASIC tier
 
   // Educational Resources - available for all tiers (helps developers learn)
   // Uses tool-specific documentation links (Semgrep, ESLint, etc.) instead of generic searches

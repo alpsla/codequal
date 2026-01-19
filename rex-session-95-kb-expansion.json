@@ -1,0 +1,231 @@
+{
+  "source": "packages/agents/docs/NEXT_SESSION_95_KB_EXPANSION.md",
+  "createdAt": "2026-01-18T14:30:00Z",
+  "maxIterations": 20,
+  "currentIteration": 0,
+  "status": "ready",
+
+  "validation": {
+    "type": "kb-expansion",
+    "note": "Expanding KB patterns for high-volume unfixed rules",
+    "build": "cd packages/agents && npm run build",
+    "test": "cd packages/agents && npx ts-node tests/fixtures/validate-kb-effectiveness.ts",
+    "lint": "echo 'No lint required'",
+    "typecheck": "cd packages/agents && npx tsc --noEmit"
+  },
+
+  "prioritization": {
+    "formula": "Volume × Fixability × (1 - Current Coverage)",
+    "topTargets": [
+      { "rule": "no-console", "tool": "eslint", "volume": 2588, "score": 2588 },
+      { "rule": "LongVariable", "tool": "pmd", "volume": 155, "score": 155 },
+      { "rule": "LinguisticNaming", "tool": "pmd", "volume": 45, "score": 45 },
+      { "rule": "AvoidReassigningParameters", "tool": "pmd", "volume": 26, "score": 26 },
+      { "rule": "AvoidDuplicateLiterals", "tool": "pmd", "volume": 21, "score": 21 },
+      { "rule": "LiteralsFirstInComparisons", "tool": "pmd", "volume": 7, "score": 7 }
+    ]
+  },
+
+  "tasks": [
+    {
+      "id": 1,
+      "parentId": null,
+      "title": "Create no-console KB Pattern",
+      "description": "Highest impact - 2,588 issues (54% of unfixed). Requires detecting project logging framework.",
+      "steps": [
+        "Analyze TypeScript codebase for logging patterns (winston, pino, bunyan)",
+        "Create detection heuristic for project's logging setup",
+        "Define anti-patterns: console.log for debugging, console.error without logger",
+        "Define correct patterns: project logger, remove debug logs, CLI exceptions",
+        "Create 10 test samples from real no-console violations",
+        "Test AI fixer WITHOUT pattern (baseline)",
+        "Add pattern to fix-pattern-guidance.ts",
+        "Test AI fixer WITH pattern, compare results"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts",
+        "packages/agents/tests/fixtures/no-console-samples.ts"
+      ],
+      "priority": "critical",
+      "passes": false,
+      "attempts": 0,
+      "expectedImprovement": "+20% success rate",
+      "volumeImpact": 2588
+    },
+    {
+      "id": 2,
+      "parentId": null,
+      "title": "Create LongVariable KB Pattern",
+      "description": "155 issues - Common naming violation. Need shortening heuristics.",
+      "steps": [
+        "Analyze long variable patterns in commons-io codebase",
+        "Create shortening rules: remove type suffix, use context, trim redundancy",
+        "Define anti-patterns: redundant type in name, excessive qualification",
+        "Define correct patterns: context-aware naming, max 25 chars",
+        "Create 10 test samples",
+        "Test AI fixer before/after pattern",
+        "Add to KB"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts",
+        "packages/agents/tests/fixtures/long-variable-samples.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "expectedImprovement": "+25% success rate",
+      "volumeImpact": 155
+    },
+    {
+      "id": 3,
+      "parentId": null,
+      "title": "Create LinguisticNaming KB Pattern",
+      "description": "45 issues - Boolean and getter naming conventions.",
+      "steps": [
+        "Identify common linguistic naming violations",
+        "Define rules for boolean prefixes: is/has/can/should",
+        "Define rules for getter/setter naming alignment",
+        "Create 10 test samples",
+        "Test and add to KB"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "expectedImprovement": "+15% success rate",
+      "volumeImpact": 45
+    },
+    {
+      "id": 4,
+      "parentId": null,
+      "title": "Create AvoidReassigningParameters KB Pattern",
+      "description": "26 issues - Clean local variable copy transformation.",
+      "steps": [
+        "Define pattern for creating local variable copy",
+        "Handle cases: modification before use, accumulation patterns",
+        "Define anti-pattern: parameter = newValue",
+        "Define correct patterns: local copy, final parameter",
+        "Create test samples and validate"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
+      "expectedImprovement": "+20% success rate",
+      "volumeImpact": 26
+    },
+    {
+      "id": 5,
+      "parentId": null,
+      "title": "Create AvoidDuplicateLiterals KB Pattern",
+      "description": "21 issues - Constant extraction pattern.",
+      "steps": [
+        "Define constant extraction transformation",
+        "Create naming conventions: PURPOSE not VALUE",
+        "Handle placement rules: constants at top of class",
+        "Create test samples and validate"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
+      "expectedImprovement": "+15% success rate",
+      "volumeImpact": 21
+    },
+    {
+      "id": 6,
+      "parentId": null,
+      "title": "Create LiteralsFirstInComparisons KB Pattern",
+      "description": "7 issues - Simple swap pattern (easy win).",
+      "steps": [
+        "Define literal-first swap pattern",
+        "Handle null checks: 'expected'.equals(actual)",
+        "Handle numeric comparisons",
+        "Add to KB"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"
+      ],
+      "priority": "low",
+      "passes": false,
+      "attempts": 0,
+      "expectedImprovement": "+30% success rate",
+      "volumeImpact": 7
+    },
+    {
+      "id": 7,
+      "parentId": [1, 2, 3, 4, 5, 6],
+      "title": "Run Calibration Test Suite",
+      "description": "Validate all new patterns improve fix quality with before/after comparison.",
+      "steps": [
+        "Collect 5 samples per new rule (30 total)",
+        "Run AI fixer baseline (without new patterns)",
+        "Record: success rate, confidence, regressions",
+        "Enable new KB patterns",
+        "Re-run AI fixer with KB patterns",
+        "Compare metrics: before vs after",
+        "Calculate improvement percentages",
+        "Generate calibration report JSON"
+      ],
+      "files": [
+        "packages/agents/tests/fixtures/calibration-session-95.json",
+        "packages/agents/tests/fixtures/calibration-test-runner.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "successCriteria": {
+        "avgImprovement": ">15%",
+        "noRegressions": true,
+        "minSuccessRate": "80%"
+      }
+    },
+    {
+      "id": 8,
+      "parentId": 7,
+      "title": "Generate KB Coverage Report",
+      "description": "Document new KB coverage and recommend next patterns.",
+      "steps": [
+        "Count total rules with KB patterns (target: 21)",
+        "Calculate new AI-fixable coverage percentage",
+        "Document remaining high-volume rules without patterns",
+        "Create recommendations for Session 96",
+        "Update NEXT_SESSION document"
+      ],
+      "files": [
+        "packages/agents/tests/fixtures/kb-coverage-report-session-95.md",
+        "packages/agents/docs/NEXT_SESSION_96.md"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0
+    }
+  ],
+
+  "iterations": [],
+
+  "expectedOutcomes": {
+    "newPatternsAdded": 6,
+    "kbTotalPatterns": 21,
+    "estimatedImpactIssues": 2842,
+    "targetSuccessRate": ">85%",
+    "calibrationImprovement": ">15%"
+  },
+
+  "notFixable": {
+    "description": "Rules that require human judgment - DO NOT create KB patterns",
+    "rules": [
+      { "rule": "OnlyOneReturn", "volume": 415, "reason": "Control flow refactoring" },
+      { "rule": "CyclomaticComplexity", "volume": 32, "reason": "Algorithm redesign" },
+      { "rule": "TooManyMethods", "volume": 45, "reason": "Class splitting" },
+      { "rule": "LawOfDemeter", "volume": 41, "reason": "Dependency restructuring" },
+      { "rule": "AvoidUncheckedExceptionsInSignatures", "volume": 57, "reason": "API design" }
+    ]
+  }
+}

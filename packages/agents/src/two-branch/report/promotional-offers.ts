@@ -221,7 +221,8 @@ export function generateTierComparisonTable(): string {
 | Educational Resources | ✅ Learning paths | ✅ Learning paths |
 | Skill Progression | ✅ Track growth | ✅ Track growth |
 | Achievements & XP | ✅ Unlock badges | ✅ Unlock badges |
-| Community Impact | ✅ See your impact | ✅ See your impact |
+| **Community Impact** | ✅ Contribute patterns | ❌ Auto-learned |
+| **IDE Integration** | ✅ LSP/SARIF exports | ❌ Not needed |
 | Pattern-Based Fixes | ✅ Suggestions | ✅ **Auto-apply** |
 | **AI Fix Generation** | ❌ | ✅ **Included** |
 | **Auto-Fix Apply** | ❌ | ✅ **One-click** |

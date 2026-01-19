@@ -1,0 +1,119 @@
+{
+  "analyzedAt": "2026-01-18T13:05:00Z",
+  "totalUnfixedIssues": {
+    "pmd": 2183,
+    "eslint": 2590,
+    "total": 4773
+  },
+  "categoryDefinitions": {
+    "syntax-only": "Fix requires only syntactic changes, no semantic understanding needed",
+    "needs-context": "Fix requires understanding surrounding code context",
+    "architectural": "Fix requires restructuring code/design decisions",
+    "unfixable": "Cannot be fixed automatically - requires human judgment or specification changes"
+  },
+  "pmdRuleCategorization": {
+    "syntax-only": {
+      "rules": [
+        {"rule": "FieldDeclarationsShouldBeAtStartOfClass", "count": 274, "aiFixDescription": "Reorder fields to top of class"},
+        {"rule": "CommentDefaultAccessModifier", "count": 187, "aiFixDescription": "Add /* package */ comment before package-private members"},
+        {"rule": "CallSuperInConstructor", "count": 157, "aiFixDescription": "Add super() call in constructors"},
+        {"rule": "UnnecessaryConstructor", "count": 70, "aiFixDescription": "Remove empty default constructors"},
+        {"rule": "LiteralsFirstInComparisons", "count": 7, "aiFixDescription": "Swap literal to left side of equals"}
+      ],
+      "totalCount": 695,
+      "percentage": 31.8
+    },
+    "needs-context": {
+      "rules": [
+        {"rule": "ShortVariable", "count": 288, "aiFixDescription": "Rename to descriptive name based on usage context"},
+        {"rule": "LongVariable", "count": 155, "aiFixDescription": "Shorten while maintaining clarity"},
+        {"rule": "LinguisticNaming", "count": 45, "aiFixDescription": "Rename to match linguistic expectations"},
+        {"rule": "AvoidReassigningParameters", "count": 26, "aiFixDescription": "Create local variable copy"},
+        {"rule": "AvoidDuplicateLiterals", "count": 21, "aiFixDescription": "Extract to constant"},
+        {"rule": "UseUtilityClass", "count": 14, "aiFixDescription": "Add private constructor"}
+      ],
+      "totalCount": 549,
+      "percentage": 25.2
+    },
+    "architectural": {
+      "rules": [
+        {"rule": "OnlyOneReturn", "count": 415, "reason": "Requires refactoring control flow"},
+        {"rule": "TooManyMethods", "count": 45, "reason": "Requires class splitting/redesign"},
+        {"rule": "LawOfDemeter", "count": 41, "reason": "Requires dependency restructuring"},
+        {"rule": "CyclomaticComplexity", "count": 32, "reason": "Requires algorithm simplification"},
+        {"rule": "CloseResource", "count": 17, "reason": "Requires try-with-resources refactoring"}
+      ],
+      "totalCount": 550,
+      "percentage": 25.2
+    },
+    "unfixable": {
+      "rules": [
+        {"rule": "AvoidUncheckedExceptionsInSignatures", "count": 57, "reason": "API design decision"}
+      ],
+      "totalCount": 57,
+      "percentage": 2.6
+    }
+  },
+  "eslintRuleCategorization": {
+    "needs-context": {
+      "rules": [
+        {"rule": "no-console", "count": 2588, "aiFixDescription": "Replace with proper logging based on context"}
+      ],
+      "totalCount": 2588,
+      "percentage": 99.9
+    },
+    "syntax-only": {
+      "rules": [
+        {"rule": "no-useless-escape", "count": 2, "aiFixDescription": "Remove unnecessary escape characters"}
+      ],
+      "totalCount": 2,
+      "percentage": 0.1
+    }
+  },
+  "aiFixableSummary": {
+    "pmd": {
+      "syntaxOnly": 695,
+      "needsContext": 549,
+      "totalAiFixable": 1244,
+      "totalUnfixed": 2183,
+      "aiFixableRate": 57.0
+    },
+    "eslint": {
+      "syntaxOnly": 2,
+      "needsContext": 2588,
+      "totalAiFixable": 2590,
+      "totalUnfixed": 2590,
+      "aiFixableRate": 100.0
+    },
+    "combined": {
+      "totalAiFixable": 3834,
+      "totalUnfixed": 4773,
+      "aiFixableRate": 80.3
+    }
+  },
+  "topTenAiFixablePatterns": [
+    {"rank": 1, "rule": "no-console", "tool": "eslint", "count": 2588, "category": "needs-context"},
+    {"rank": 2, "rule": "ShortVariable", "tool": "pmd", "count": 288, "category": "needs-context"},
+    {"rank": 3, "rule": "FieldDeclarationsShouldBeAtStartOfClass", "tool": "pmd", "count": 274, "category": "syntax-only"},
+    {"rank": 4, "rule": "CommentDefaultAccessModifier", "tool": "pmd", "count": 187, "category": "syntax-only"},
+    {"rank": 5, "rule": "CallSuperInConstructor", "tool": "pmd", "count": 157, "category": "syntax-only"},
+    {"rank": 6, "rule": "LongVariable", "tool": "pmd", "count": 155, "category": "needs-context"},
+    {"rank": 7, "rule": "UnnecessaryConstructor", "tool": "pmd", "count": 70, "category": "syntax-only"},
+    {"rank": 8, "rule": "LinguisticNaming", "tool": "pmd", "count": 45, "category": "needs-context"},
+    {"rank": 9, "rule": "AvoidReassigningParameters", "tool": "pmd", "count": 26, "category": "needs-context"},
+    {"rank": 10, "rule": "AvoidDuplicateLiterals", "tool": "pmd", "count": 21, "category": "needs-context"}
+  ],
+  "recommendations": {
+    "highValueAiFixTargets": [
+      "FieldDeclarationsShouldBeAtStartOfClass - High volume, pure syntax reordering",
+      "CommentDefaultAccessModifier - High volume, simple comment addition",
+      "CallSuperInConstructor - High volume, simple statement addition",
+      "UnnecessaryConstructor - Medium volume, simple removal"
+    ],
+    "needsKbGuidance": [
+      "ShortVariable - Needs naming conventions per domain",
+      "no-console - Needs logging framework guidance per project",
+      "AvoidDuplicateLiterals - Needs constant naming patterns"
+    ]
+  }
+}

@@ -350,9 +350,9 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 
 | Metric | Without CodeQual | With CodeQual |
 |--------|------------------|---------------|
-| **Fix Time** | ${baseFixHours.toFixed(1)} hours (~${fixDays} days) | **${Math.max(1, Math.ceil(blocking.length * 0.05))} hours** (AI-assisted) |
-| **Developer Cost** | $${totalFixCost.toLocaleString()} | **$${Math.round(Math.max(1, blocking.length * 0.05) * developerRate).toLocaleString()}** |
-| **Time Saved** | - | **${Math.round((baseFixHours - Math.max(1, blocking.length * 0.05)) / baseFixHours * 100)}%** |
+| **Fix Time** | ${baseFixHours.toFixed(1)} hours (~${fixDays} days) | **${Math.max(baseFixHours * 0.15, 0.1).toFixed(1)} hours** (AI-assisted) |
+| **Developer Cost** | $${totalFixCost.toLocaleString()} | **$${Math.round(Math.max(baseFixHours * 0.15, 0.1) * developerRate).toLocaleString()}** |
+| **Time Saved** | - | **${Math.round((1 - Math.max(baseFixHours * 0.15, 0.1) / baseFixHours) * 100)}%** |
 | **Fix Coverage** | 0% | **100%** (All ${activeIssues.length} issues have fix suggestions) |
 
 **Fix Availability by Type:**
@@ -368,9 +368,9 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 |-------------|-------|
 | **Potential Exploit Cost** | $${minExploitCost.toLocaleString()} - $${maxExploitCost.toLocaleString()} |
 | **Risk Description** | ${exploitDesc} |
-| **ROI** | **${Math.round(minExploitCost / Math.max(Math.round(Math.max(1, blocking.length * 0.05) * developerRate), 1))}x** (prevention cost vs exploit cost) |
+| **ROI** | **${Math.round(minExploitCost / Math.max(Math.round(Math.max(baseFixHours * 0.15, 0.1) * developerRate), 1))}x** (prevention cost vs exploit cost) |
 
-> 💡 **Bottom Line**: CodeQual turns ${fixDays} days of manual work into ~${Math.max(1, Math.ceil(blocking.length * 0.05))} hours of review + apply, saving **$${(totalFixCost - Math.round(Math.max(1, blocking.length * 0.05) * developerRate)).toLocaleString()}** per analysis.`
+> 💡 **Bottom Line**: CodeQual turns ${baseFixHours.toFixed(1)} hours of manual work into ~${Math.max(baseFixHours * 0.15, 0.1).toFixed(1)} hours of review + apply, saving **$${Math.round(totalFixCost - Math.max(baseFixHours * 0.15, 0.1) * developerRate).toLocaleString()}** per analysis.`
       : `**💚 Low Financial Risk**
 No critical or high-severity issues detected. All identified issues are related to code quality and maintainability (tabs, formatting, documentation).
 
@@ -491,15 +491,9 @@ function generateProTierSection(
 | **ROI** | ${totalFixCost > 0 ? Math.round((thisPrCostSaved / totalFixCost) * 100) : 0}% | ${monthlyStats ? '—' : '—'} | ${ytdStats ? '—' : '—'} |
 `;
 
-  // Add community impact if available
-  if (userMetrics?.patternsContributed || userMetrics?.usersHelped) {
-    section += `
-### 🌟 Your Community Impact
-
-Your fix patterns have helped **${userMetrics.usersHelped ?? 0} developers** across the community.
-You've contributed **${userMetrics.patternsContributed ?? 0} patterns** that accelerate fixes for everyone.
-`;
-  }
+  // NOTE: Community Impact NOT shown for PRO tier
+  // PRO learns patterns on backend automatically without user involvement
+  // Users who want to see/contribute patterns should use BASIC tier
 
   return section;
 }
@@ -562,8 +556,9 @@ function generateBasicTierSection(
 | Educational Resources | ✅ | ✅ |
 | Achievements & XP | ✅ | ✅ |
 | Skills Tracking | ✅ | ✅ |
-| Community Impact | ✅ | ✅ |
-| **Auto-Apply Fixes** | ❌ | ✅ |
+| **Community Impact** | ✅ Contribute patterns | ❌ Auto-learned |
+| IDE Integration | ✅ LSP/SARIF exports | ❌ Not needed |
+| **Auto-Apply Fixes** | ❌ | ✅ One-click |
 | **Historical Analytics** | ✅ 5 PRs | ✅ Unlimited |
 
 [🚀 Upgrade to PRO] — Start your free trial

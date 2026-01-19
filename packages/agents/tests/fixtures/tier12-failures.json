@@ -1,0 +1,100 @@
+{
+  "collectedAt": "2026-01-18T13:00:00Z",
+  "summary": {
+    "pmd": {
+      "baseline": 2197,
+      "afterSorald": 2183,
+      "fixedBySorald": 14,
+      "soraldFixRate": 0.6
+    },
+    "eslint": {
+      "baseline": 2590,
+      "fixable": 0,
+      "fixRate": 0
+    }
+  },
+  "soraldFixResults": {
+    "S1948": {"violations": 4, "fixed": 4, "description": "Serializable fields"},
+    "S4973": {"violations": 1, "fixed": 1, "description": "Strings/Boxed equals"},
+    "S3032": {"violations": 1, "fixed": 1, "description": "JEE getClassLoader"},
+    "S2142": {"violations": 6, "fixed": 6, "description": "InterruptedException"},
+    "S1132": {"violations": 15, "fixed": 15, "description": "LiteralsFirst", "pmdMapping": "LiteralsFirstInComparisons"},
+    "S2184": {"violations": 5, "fixed": 5, "description": "Cast arithmetic"},
+    "S1118": {"violations": 13, "fixed": 3, "description": "Utility class", "pmdMapping": "UseUtilityClass"},
+    "S2095": {"violations": 1, "fixed": 1, "description": "CloseResource", "pmdMapping": "CloseResource"},
+    "S2164": {"violations": 2, "fixed": 0, "description": "Math on floats - FAILED"}
+  },
+  "pmdUnfixedByRule": {
+    "OnlyOneReturn": 415,
+    "ShortVariable": 288,
+    "FieldDeclarationsShouldBeAtStartOfClass": 274,
+    "CommentDefaultAccessModifier": 187,
+    "CallSuperInConstructor": 157,
+    "LongVariable": 155,
+    "UnnecessaryConstructor": 70,
+    "AvoidUncheckedExceptionsInSignatures": 57,
+    "TooManyMethods": 45,
+    "LinguisticNaming": 45,
+    "LawOfDemeter": 41,
+    "CyclomaticComplexity": 32,
+    "AvoidReassigningParameters": 26,
+    "AvoidDuplicateLiterals": 21,
+    "UseUtilityClass": 14,
+    "CloseResource": 17,
+    "LiteralsFirstInComparisons": 7
+  },
+  "eslintUnfixedByRule": {
+    "no-console": 2588,
+    "no-useless-escape": 2
+  },
+  "sampleFailures": [
+    {
+      "tool": "pmd",
+      "rule": "OnlyOneReturn",
+      "file": "org/apache/commons/io/IOUtils.java",
+      "description": "Method has multiple return statements - requires refactoring judgment",
+      "aiFixable": false,
+      "reason": "architectural"
+    },
+    {
+      "tool": "pmd",
+      "rule": "ShortVariable",
+      "file": "org/apache/commons/io/FileUtils.java",
+      "description": "Variable name too short - requires naming judgment",
+      "aiFixable": true,
+      "reason": "needs-context"
+    },
+    {
+      "tool": "pmd",
+      "rule": "FieldDeclarationsShouldBeAtStartOfClass",
+      "file": "various",
+      "description": "Field order in class - AI could reorder",
+      "aiFixable": true,
+      "reason": "syntax-only"
+    },
+    {
+      "tool": "pmd",
+      "rule": "CommentDefaultAccessModifier",
+      "file": "various",
+      "description": "Missing /* package */ comment - AI could add",
+      "aiFixable": true,
+      "reason": "syntax-only"
+    },
+    {
+      "tool": "pmd",
+      "rule": "CallSuperInConstructor",
+      "file": "various",
+      "description": "Missing super() call - AI could add",
+      "aiFixable": true,
+      "reason": "syntax-only"
+    },
+    {
+      "tool": "eslint",
+      "rule": "no-console",
+      "file": "various typescript files",
+      "description": "Console.log usage - requires judgment on replacement",
+      "aiFixable": true,
+      "reason": "needs-context"
+    }
+  ]
+}

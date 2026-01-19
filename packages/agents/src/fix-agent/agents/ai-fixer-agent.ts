@@ -177,14 +177,18 @@ export class AIFixerAgent {
   private keyManager: OpenRouterKeyManager | null = null;
   private modelCache: Map<string, string> = new Map();
   private fixerVerifier: AIFixerVerifier | null = null;
-  private submitToRegistry = false;
+  // SESSION 94: Always auto-learn from successful fixes
+  // When AI successfully fixes an issue and validation passes,
+  // the pattern is automatically added to KB for future reuse
+  private submitToRegistry = true;
 
   // SESSION 49: Retry configuration
   private maxRetries = 2;
   private retryStats = { total: 0, retried: 0, succeeded: 0 };
 
   constructor(options?: { submitToRegistry?: boolean }) {
-    this.submitToRegistry = options?.submitToRegistry ?? false;
+    // SESSION 94: Default to true - always learn from successful fixes
+    this.submitToRegistry = options?.submitToRegistry ?? true;
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
     }
@@ -252,12 +256,26 @@ export class AIFixerAgent {
 
     // Get AI model for this language
     const model = await this.getModelForLanguage(issue.language);
+    console.log(`[AI-Fixer] Using model ${model} for ${issue.language}/${issue.ruleId}`);
 
     // Generate fix using AI with tool context
     const recommendation = await this.generateFixRecommendation(issue, model);
 
     // Record that AI was used
     recordKBBypass(issue.ruleId, true); // true = AI was used
+
+    // SESSION 96: Persist successful fixes to KB for future reuse
+    if (this.submitToRegistry && recommendation.confidence >= 70) {
+      try {
+        const submitResult = await this.submitFixToRegistry(issue, recommendation);
+        if (submitResult.submitted) {
+          console.log(`[AI-Fixer] Pattern persisted for ${issue.ruleId}: ${submitResult.patternStatus}`);
+        }
+      } catch (e: any) {
+        // Non-blocking - don't fail the fix if persistence fails
+        console.log(`[AI-Fixer] Pattern submission skipped (non-blocking): ${e.message}`);
+      }
+    }
 
     return {
       ...issue,
@@ -1083,8 +1101,11 @@ ${instruction}`;
 
   /**
    * Disable submission to pattern registry
+   * @deprecated SESSION 94: Auto-learning should always be enabled.
+   * Only use this for isolated unit tests that don't need DB.
    */
   disableRegistrySubmission(): void {
+    console.warn('[AIFixer] WARNING: Disabling registry submission prevents auto-learning');
     this.submitToRegistry = false;
   }
 

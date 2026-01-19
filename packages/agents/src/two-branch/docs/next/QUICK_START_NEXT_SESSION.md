@@ -1,198 +1,207 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 91 VERIFIED (January 16, 2026)
-**Current Phase**: V9 Two-Branch Analysis - Tier Differentiation Fixed
-**Status**: Session 91 COMPLETE - BASIC vs PRO tier reports working correctly
+**Last Updated**: Session 96+ (January 18, 2026)
+**Current Phase**: V9 Two-Branch Analysis - Model Selection Verified
+**Status**: Dynamic model selection confirmed working ✅
 
 ---
 
-## Session 91 Summary (COMPLETED & VERIFIED)
+## Session 96+ Summary (Investigation Complete)
 
-### What Was Accomplished
+### Key Discovery: Dynamic Model Selection IS Working
 
-**1. Tier Differentiation Bug Fix (CRITICAL)**
-- **Problem**: BASIC and PRO tier reports were identical
-- **Root Cause**: `userTier` wasn't being passed through the V9AnalysisPipeline to V9GroupedReportFormatter
-- **Fix**: Added `userTier: this.config.userTier` to metadata in v9-analysis-pipeline.ts:591
-- **Verified**: Reports now correctly differentiated:
-  - BASIC (56KB): Shows "Upgrade to PRO tier" prompts
-  - PRO (74KB): Shows AI-generated code examples
+We investigated why hardcoded Gemini models appeared in the code. **Finding: The system is working correctly.**
 
-**2. Files Modified**
-```
-packages/agents/src/two-branch/services/v9-analysis-pipeline.ts
-  Line 591: Added userTier to metadata object
+#### Verification Results
 
-packages/agents/src/two-branch/services/v9-report-compiler.ts
-  Line 41: Added userTier to CompileReportInput interface
-  Line 500: Added userTier to completeMetadata object
+```bash
+=== AI-Fixer Model Query (from Supabase) ===
+java: anthropic/claude-sonnet-4.5       ✅
+typescript: anthropic/claude-sonnet-4.5 ✅
+python: anthropic/claude-sonnet-4.5     ✅
+javascript: anthropic/claude-3.7-sonnet ✅
 ```
 
-**3. Validation Completed**
-- SARIF 2.1.0 format: Valid, 358 results
-- LSP Code Actions: Valid, 248 actions
-- GitLab Code Quality: Valid, 358 issues
-- All files uploaded to Supabase storage successfully
+#### Model Configuration Status
 
-**4. Sample Reports Generated**
-- `docs/sample-reports/session-91/BASIC-tier-report.md` (56KB)
-- `docs/sample-reports/session-91/PRO-tier-report.md` (74KB)
+| Metric | Value |
+|--------|-------|
+| Total configs in Supabase | 28 for ai_fixer role |
+| Unique roles configured | 13 |
+| Last monthly refresh | 2025-12-13 |
+| Primary models used | Claude Sonnet 4.5, Claude 3.7 |
+| Fallback models | GPT-4o, DeepSeek Coder |
 
-### Test Results
+### What We Fixed
 
-| Tier | Report Size | Has Upgrade Prompts | Has AI Code | Status |
-|------|-------------|---------------------|-------------|--------|
-| BASIC | 54.2 KB | YES | NO | ✅ |
-| PRO | 71.7 KB | NO | YES | ✅ |
+1. **Added model logging** to `ai-fixer-agent.ts:259`:
+   ```typescript
+   console.log(`[AI-Fixer] Using model ${model} for ${language}/${ruleId}`);
+   ```
+   Now you can verify which model is used for each fix.
 
-**Size Difference**: 17.5 KB (PRO larger due to AI-generated code)
+### Architecture Clarification
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              ACTUAL MODEL SELECTION FLOW                        │
+├─────────────────────────────────────────────────────────────────┤
+│  AI Fixer Request                                               │
+│       ↓                                                         │
+│  Query: model_configurations WHERE role=ai_fixer, lang=X        │
+│       ↓                                                         │
+│  Returns: anthropic/claude-sonnet-4.5 (from Supabase)           │
+│       ↓                                                         │
+│  (Only if Supabase FAILS → gemini-2.0-flash-001 fallback)       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Hardcoded Gemini: When It's Used
+
+The hardcoded `gemini-2.0-flash-001` is **only** used as a last-resort fallback:
+
+| Scenario | Fallback Used? |
+|----------|----------------|
+| Normal operation with .env | NO - uses Supabase config |
+| CI without Supabase credentials | YES |
+| Network failure to Supabase | YES |
+| Language not in config (e.g., Scala) | YES |
+| Researcher service bootstrapping | YES (needs model to discover models) |
 
 ---
 
-## Session 92 TODO: Multi-Language Expansion
+## Session 94-95 Work (Completed)
 
-### P0: Extend to Other Languages
+### AI Fixer Effectiveness Analysis
 
-Now that tier differentiation is working, expand to:
+| Metric | Value |
+|--------|-------|
+| AI Fix Success Rate | 100% (8/8 samples) |
+| AI Fixable Issues | 80.3% (3,834/4,773) |
+| Patterns Extracted | 5 new KB patterns |
+| KB Patterns Total | 15 (10 existing + 5 new) |
+| Average Confidence | 81.3% |
 
-1. **Python Analysis**
+### KB Auto-Filling Results (Session 95)
+
+| Repository | Issues | Success Rate | Patterns Added |
+|------------|--------|--------------|----------------|
+| apache/commons-lang | 50 | 100% | 49 |
+| apache/commons-collections | 50 | 96% | 48 |
+| spring-petclinic | 50 | 100% | 45 |
+| google/guava | 50 | 100% | 50 |
+| **Total** | **200** | **99%** | **~192** |
+
+---
+
+## Next Session TODO
+
+### P0: Session 96 Pending Work
+
+1. **KB Persistence to Supabase**
+   - Problem identified: `processIssue()` generates fixes but doesn't persist to Supabase
+   - Fix: Add call to `validateAndSubmitFix()` in ai-fixer-agent.ts
+   - See: `rex-session-96-kb-persistence.md` for details
+
+2. **Test KB Persistence**
    ```bash
-   # Test Python PR
-   ssh -i ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key opc@129.213.49.128 \
-     'cd ~/codequal/packages/agents && \
-     LANG=python npx ts-node tests/integration/test-v9-2tier-all-languages.ts'
+   cd packages/agents
+   npx ts-node tests/integration/count-kb.ts  # Before
+   npx ts-node tests/integration/run-ai-fixer-batch.ts --repo apache/commons-lang --limit 5
+   npx ts-node tests/integration/count-kb.ts  # After (should increase)
    ```
 
-2. **TypeScript Analysis**
-   ```bash
-   LANG=typescript npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-   ```
+### P1: Expand KB Coverage
 
-3. **Go Analysis**
-   ```bash
-   LANG=go npx ts-node tests/integration/test-v9-2tier-all-languages.ts
-   ```
+1. **More Java repositories**:
+   - apache/commons-io
+   - spring-projects/spring-boot
+   - apache/kafka
+   - elastic/elasticsearch
 
-### P1: Add More KB Patterns
+2. **TypeScript/Python KB Filling**:
+   - Replicate run-ai-fixer-batch.ts for TypeScript (ESLint)
+   - Create Python version (Pylint/Ruff)
 
-**Current KB Status:**
-| Language | Patterns | Target | Status |
-|----------|----------|--------|--------|
-| Java | 10 | 10+ | ✅ ACHIEVED |
-| Python | 0 | 5+ | Not started |
-| TypeScript | 0 | 5+ | Not started |
-| Go | 0 | 3+ | Not started |
+### P2: Monitoring
 
-```bash
-# Add patterns from test results
-cd packages/agents/src/fix-agent/fix-pattern-registry
-npx ts-node kb-ai-maintainer.ts --rule <RuleId> --auto-approve
-```
-
-### P2: Test Template Transforms
-
-Verify 0-AI-call template transforms work:
-```bash
-# Look for template transform logs
-ssh -i ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key opc@129.213.49.128 \
-  'grep "TEMPLATE TRANSFORM" /tmp/api.log'
-```
+1. **Verify model selection in production**
+   - Run V9 E2E test and check logs for `[AI-Fixer] Using model` messages
+   - Confirm Claude models are being used, not Gemini fallback
 
 ---
 
 ## Quick Reference Commands
 
 ```bash
-# SSH to cloud (use project key!)
-ssh -i ~/CodePrjects/codequal/keys/oracle/ssh-key-2025-10-07.key opc@129.213.49.128
-
-# Build check
-turbo run build --filter=@codequal/agents
-
-# Type check
-cd packages/agents && npx tsc --noEmit --skipLibCheck
-
-# Run tier test
+# Check model selection
 cd packages/agents
 node -e "
-const { V9AnalysisPipeline } = require('./dist/two-branch/services/v9-analysis-pipeline');
-const p = new V9AnalysisPipeline({ userTier: 'pro', repoSize: 'medium', repoUrl: 'https://github.com/spring-projects/spring-petclinic', prMetadata: { prNumber: 950, baseBranch: 'main', headBranch: 'pr-950' } });
-p.analyze().then(r => console.log(r.report?.markdown?.length || 0, 'bytes'));
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: '../../.env' });
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+supabase.from('model_configurations').select('language, primary_model').eq('role', 'ai_fixer')
+  .then(({data}) => console.table(data));
 "
 
-# Check KB patterns
-grep "FALLBACK_GUIDANCE.set" packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts | wc -l
+# Run AI fixer batch
+npx ts-node tests/integration/run-ai-fixer-batch.ts --repo apache/commons-io --limit 50
+
+# Check KB patterns count
+npx ts-node tests/integration/count-kb.ts
+
+# Build and typecheck
+turbo run build --filter=@codequal/agents
+npx tsc --noEmit --skipLibCheck
+
+# Run V9 E2E test
+npx ts-node test-v9-e2e-complete.ts
 ```
 
 ---
 
 ## Key Files Reference
 
-### Tier Differentiation Flow
-```
-V9AnalysisPipeline (config.userTier)
-  → metadata.userTier (line 591)
-    → V9GroupedReportFormatter(metadata)
-      → this.userTier = metadata.userTier (line 895)
-        → formatSuggestedFix() checks tier (lines 4737-4828)
-          → BASIC: "Upgrade to PRO tier..."
-          → PRO: Shows actual AI-generated code
-```
+### Model Selection System
 
-### Fix Pattern Guidance (KB Storage)
-```
-packages/agents/src/fix-agent/fix-pattern-registry/
-├── fix-pattern-guidance.ts   - KB service with 10 Java patterns
-├── kb-review-cli.ts          - Human review CLI
-├── kb-ai-maintainer.ts       - AI-assisted maintenance
-└── tool-revalidator.ts       - Fix validation with tools
-```
+| File | Purpose |
+|------|---------|
+| `model_configurations` (Supabase) | Stores role → model mappings |
+| `model-config-resolver.ts` | Queries Supabase for models |
+| `model-researcher-service.ts` | Monthly refresh of model configs |
+| `ai-fixer-agent.ts:993-1020` | getModelForLanguage() with fallback |
 
-### Sample Reports
-```
-docs/sample-reports/session-91/
-├── BASIC-tier-report.md     - 56KB with upgrade prompts
-└── PRO-tier-report.md       - 74KB with AI code examples
-```
+### KB System
 
----
+| File | Purpose |
+|------|---------|
+| `fix-pattern-guidance.ts` | KB service with 15+ Java patterns |
+| `kb-review-cli.ts` | Human review CLI |
+| `kb-ai-maintainer.ts` | AI-assisted maintenance |
+| `run-ai-fixer-batch.ts` | Batch KB filling script |
 
-## Session 91 Commits
+### Session Documentation
 
-1. `b8fd15af` - Session 91: Fix userTier not flowing to V9GroupedReportFormatter
-2. `b401edcb` - Add Session 91 tier differentiation sample reports
+| File | Purpose |
+|------|---------|
+| `rex-session-94-fix-pipeline-testing.md` | AI fixer analysis tasks |
+| `rex-session-95-kb-filling.md` | KB auto-fill plan |
+| `rex-session-96-kb-persistence.md` | KB persistence fix |
+| `kb-coverage-report-session-95.md` | KB coverage stats |
 
 ---
 
-## Architecture: Tier-Specific Report Content
+## Uncommitted Changes
 
-### BASIC Tier Shows
-```markdown
-> **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.
-```
-
-### PRO Tier Shows
-```markdown
-**Recommended Code**:
-```java
-// AI-generated fix code
-public class Example {
-    // Implementation
-}
-```
-```
-
-### Code Path
-```
-v9-grouped-report-formatter.ts:4737-4747
-  if (this.userTier === 'basic') {
-    content.push(`> **AI Fix Available**: Upgrade to PRO tier...`);
-  } else {
-    content.push('**Recommended Code**:', codeBlock);
-  }
-```
+11 files modified (+1,755/-487 lines):
+- `ai-fixer-agent.ts` - Added model logging
+- `fix-pattern-guidance.ts` - 5 new KB patterns
+- `generate-tier-sample-reports.ts` - Report updates
+- Sample reports regenerated
+- Test fixtures from Session 94-95
 
 ---
 
-_Last update: Session 91 complete (January 16, 2026)_
-_Tier differentiation: VERIFIED WORKING_
+_Last update: Session 96+ (January 18, 2026)_
+_Dynamic model selection: VERIFIED WORKING_
+_Next priority: KB persistence to Supabase_

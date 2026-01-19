@@ -340,9 +340,9 @@ export class V9GroupedReportFormatter {
     if (this.cachedPatternCount !== null) {
       return this.cachedPatternCount;
     }
-    // Default to 640 if no Supabase connection
+    // Default to 600 if no Supabase connection (actual count is ~604 as of Session 96)
     // The actual count will be set during formatGroupedReport() initialization
-    return 640;
+    return 600;
   }
 
   /**
@@ -354,8 +354,8 @@ export class V9GroupedReportFormatter {
     }
 
     if (!this.supabase) {
-      this.cachedPatternCount = 640;
-      return 640;
+      this.cachedPatternCount = 600;
+      return 600;
     }
 
     try {
@@ -365,17 +365,17 @@ export class V9GroupedReportFormatter {
 
       if (error) {
         console.warn('[V9Formatter] Error fetching pattern count:', error.message);
-        this.cachedPatternCount = 640;
-        return 640;
+        this.cachedPatternCount = 600;
+        return 600;
       }
 
-      this.cachedPatternCount = count || 640;
+      this.cachedPatternCount = count || 600;
       console.log(`[V9Formatter] Pattern count: ${this.cachedPatternCount}`);
       return this.cachedPatternCount;
     } catch (e) {
       console.warn('[V9Formatter] Failed to fetch pattern count:', e);
-      this.cachedPatternCount = 640;
-      return 640;
+      this.cachedPatternCount = 600;
+      return 600;
     }
   }
 
@@ -2458,7 +2458,7 @@ ${(() => {
         const guidanceNeeded = issues.length - patternFixable;
 
         // BUG-105 FIX: Get pattern count dynamically (no longer hardcoded 500)
-        const patternCount = this.getPatternCountFromCache() || 640;
+        const patternCount = this.getPatternCountFromCache() || 600;
         // BUG-103 FIX: Exclude resolved issues from counts
         const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
         const activeIssueCount = issues.length - resolvedCount;
