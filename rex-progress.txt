@@ -851,3 +851,40 @@ Commit: [main 4584a974] rex(#2): Create Live Test Fixture - C++
  create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-cpp/main.cpp
 4584a974
 
+
+=== Task #3 (2026-01-19 14:45:44) ===
+Title: Create Live Test Fixture - C#
+Status: COMPLETE
+Commit: [main 6ac6281e] rex(#3): Create Live Test Fixture - C#
+ 4 files changed, 308 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-csharp/LiveTest.csproj
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-csharp/Program.cs
+6ac6281e
+
+### Task 4: Create Live Test Fixture - Rust
+- Created fixtures/live-test-rust directory with Cargo.toml and main.rs
+- Cargo.toml requires [[bin]] section to specify main.rs location (not in src/ folder)
+- Rust Tier 1 (rustfmt) issues:
+  - Inconsistent spacing around operators and parameters
+  - Missing spaces in function signatures
+  - Bad brace placement
+  - Bad struct/impl formatting
+  - Long lines that should be wrapped
+  - Multiple statements formatted badly
+- Rust Tier 2 (clippy --fix) issues:
+  - needless_return: Explicit return where implicit would work (10+ occurrences)
+  - redundant_clone: Cloning when not necessary (5+ occurrences)
+  - let_and_return: Let binding immediately returned (3+ occurrences)
+  - map_clone: Using .map(|x| x.clone()) instead of .cloned()
+  - single_match: Single-arm match that could be if-let (2 occurrences)
+  - redundant_field_names: name:name instead of name shorthand
+- Rust Tier 3 (AI required) issues:
+  - unwrap_used: Using .unwrap() on Option/Result (needs error handling)
+  - expect_used: Using .expect() that needs proper error handling
+  - panic!: Using panic! that needs proper Result return types
+  - Unsafe indexing: vec[index] without bounds check
+  - Complex logic with multiple failure points requiring Result pattern
+- Verified: rustfmt --check detects formatting issues
+- Verified: cargo clippy detects needless_return, redundant_clone, etc.
+- File structure: Cargo.toml + main.rs in same directory (not src/ subfolder)
+

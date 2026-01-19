@@ -1,0 +1,10 @@
+[package]
+name = "live-test-rust"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "live-test-rust"
+path = "main.rs"
+
+[dependencies]
