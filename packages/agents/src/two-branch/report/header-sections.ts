@@ -96,7 +96,15 @@ export function generateHeader(
   
   header += `\n**Analysis Date:** ${analysisDate}  
 **Repository Size:** ${(metadata.totalFiles || 0).toLocaleString()} files`;
-  
+
+  // SESSION 112: Add tier field to report metadata
+  if (metadata.userTier) {
+    const tierLabel = metadata.userTier === 'pro' ? '⭐ PRO' :
+                      metadata.userTier === 'enterprise' ? '🏢 Enterprise' : '📋 Basic';
+    header += `
+**Report Tier:** ${tierLabel}`;
+  }
+
   if (metadata.totalLinesOfCode) {
     header += ` | ${metadata.totalLinesOfCode.toLocaleString()} lines`;
   }

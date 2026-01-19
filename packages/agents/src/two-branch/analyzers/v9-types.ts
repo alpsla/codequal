@@ -230,3 +230,147 @@ export interface TwoBranchAnalysisResult {
   prComment: string;
   metadata: ExecutionMetadata;
 }
+
+// ============================================================
+// SESSION 112 - REPORT UI DATA STRUCTURES
+// ============================================================
+
+/**
+ * Report tier - distinguishes BASIC vs PRO reports
+ */
+export type ReportTier = 'basic' | 'pro';
+
+/**
+ * Fix summary for PRO tier reports
+ * Shows what was fixed and by which tier
+ */
+export interface FixSummary {
+  overview: {
+    totalAttempted: number;
+    totalSuccessful: number;
+    totalRequiringReview: number;
+    totalRolledBack: number;
+    successRate: number;
+  };
+  byTier: {
+    tier: 'tier1_native' | 'tier2_dedicated' | 'tier3_ai';
+    description: string;
+    count: number;
+    cost: number;
+    duration: number;
+  }[];
+  byRule: {
+    ruleId: string;
+    count: number;
+    tier: string;
+    tool: string;
+    files: string[];
+  }[];
+}
+
+/**
+ * Commit info for PRO tier (after fixes applied)
+ */
+export interface CommitInfo {
+  branch: string;
+  commitSha: string;
+  filesModified: number;
+  changedFiles: {
+    path: string;
+    additions: number;
+    deletions: number;
+  }[];
+  timestamp: string;
+}
+
+/**
+ * Gamification - XP system
+ */
+export interface XPData {
+  earned: number;          // XP earned in this PR
+  total: number;           // Cumulative XP
+  toNextLevel: number;     // XP needed for next level
+  level: number;           // Current level (1-10+)
+  levelName: string;       // Level name (e.g., "Apprentice", "Expert")
+}
+
+/**
+ * Gamification - Badge/Achievement
+ */
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+  earnedAt?: string;
+  progress?: number;       // 0-100 for partial progress
+  requirement: string;
+}
+
+/**
+ * Structured author action for unfixed issues
+ */
+export interface AuthorAction {
+  type: 'review_and_fix' | 'investigate' | 'refactor' | 'upgrade_dependency' | 'accept_risk';
+  description: string;
+  steps: string[];
+  blocksMerge: boolean;
+  estimatedEffort: 'trivial' | 'minor' | 'moderate' | 'significant';
+}
+
+/**
+ * Extended unfixed issue with structured guidance
+ */
+export interface UnfixedIssueDetail {
+  issueId: string;
+  ruleId: string;
+  tool: string;
+  file: string;
+  line: number;
+  severity: IssueSeverity;
+  reason: string;             // Why not fixed
+  explanation: string;        // Human-readable explanation
+  authorAction: AuthorAction;
+  reviewPriority: 'critical' | 'high' | 'medium' | 'low';
+  documentationLinks?: string[];
+}
+
+/**
+ * User rank title based on strengths
+ */
+export type UserRankTitle =
+  | 'Security Champion'
+  | 'Performance Expert'
+  | 'Architecture Master'
+  | 'Dependency Guardian'
+  | 'Quality Advocate'
+  | 'Rising Star'
+  | 'Full Stack Guardian';
+
+/**
+ * Community impact for BASIC tier (opt-in sharing)
+ */
+export interface CommunityImpactBasic {
+  patternsAvailable: number;       // Patterns user could share
+  potentialImpact: number;         // Est. developers who could benefit
+  sharePromptShown: boolean;       // Track if user saw prompt
+}
+
+/**
+ * Enhanced analysis metadata with tier
+ */
+export interface EnhancedAnalysisMetadata extends AnalysisMetadata {
+  tier: ReportTier;
+  fixSummary?: FixSummary;
+  commitInfo?: CommitInfo;
+}
+
+/**
+ * Enhanced skill score with gamification
+ */
+export interface EnhancedSkillScore extends SkillScore {
+  xp: XPData;
+  badges: Badge[];
+  rankTitle: UserRankTitle;
+}

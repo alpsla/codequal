@@ -566,3 +566,133 @@ export function getScoreInterpretation(score: number): { emoji: string; label: s
     };
   }
 }
+
+// ============================================================
+// PROGRESS HISTORY - Session 112 Addition
+// ============================================================
+
+/**
+ * Progress history entry for UI chart
+ */
+export interface ProgressHistoryEntry {
+  prNumber: number;
+  score: number;
+  grade: string;
+  analyzedAt: string;
+}
+
+/**
+ * Full progress history with trend calculation
+ */
+export interface ProgressHistory {
+  isFirstTimeUser: boolean;
+  history: ProgressHistoryEntry[];
+  displayCount: number;
+  trend: {
+    direction: 'improving' | 'declining' | 'stable';
+    previousScore: number | null;
+    changePercent: number | null;
+  };
+}
+
+/**
+ * Fetch progress history for a repository
+ * Returns last N PR scores for trend chart
+ *
+ * @param repository - Repository name (owner/repo)
+ * @param currentScore - Current PR score (to calculate trend)
+ * @param supabase - Supabase client
+ * @param displayCount - Number of history entries to return (default: 5)
+ */
+export async function fetchProgressHistory(
+  repository: string,
+  currentScore: number,
+  supabase: any,
+  displayCount: number = 5
+): Promise<ProgressHistory> {
+  // Default for first-time users
+  const defaultHistory: ProgressHistory = {
+    isFirstTimeUser: true,
+    history: [],
+    displayCount,
+    trend: {
+      direction: 'stable',
+      previousScore: null,
+      changePercent: null
+    }
+  };
+
+  if (!supabase || !repository) {
+    return defaultHistory;
+  }
+
+  try {
+    // Query last N+1 PR scores (N history + 1 for previous score calculation)
+    const { data, error } = await supabase
+      .from('app_scores')
+      .select('pr_number, overall_score, analyzed_at')
+      .eq('repo_name', repository)
+      .order('analyzed_at', { ascending: false })
+      .limit(displayCount + 1);
+
+    if (error) {
+      console.log(`[ProgressHistory] Query error: ${error.message}`);
+      return defaultHistory;
+    }
+
+    if (!data || data.length === 0) {
+      return defaultHistory;
+    }
+
+    // Convert to history entries with grade calculation
+    const history: ProgressHistoryEntry[] = data.slice(0, displayCount).map((row: any) => {
+      const score = row.overall_score;
+      let grade: string;
+      if (score >= 90) grade = 'A';
+      else if (score >= 80) grade = 'B';
+      else if (score >= 70) grade = 'C';
+      else if (score >= 60) grade = 'D';
+      else grade = 'F';
+
+      return {
+        prNumber: row.pr_number,
+        score,
+        grade,
+        analyzedAt: row.analyzed_at
+      };
+    });
+
+    // Calculate trend based on previous PR
+    const previousEntry = data.length > 0 ? data[0] : null;
+    const previousScore = previousEntry?.overall_score ?? null;
+
+    let direction: 'improving' | 'declining' | 'stable' = 'stable';
+    let changePercent: number | null = null;
+
+    if (previousScore !== null) {
+      const change = currentScore - previousScore;
+      if (change > 2) {
+        direction = 'improving';
+      } else if (change < -2) {
+        direction = 'declining';
+      }
+      changePercent = previousScore > 0 ? Math.round((change / previousScore) * 100) : null;
+    }
+
+    console.log(`[ProgressHistory] Fetched ${history.length} entries for ${repository}, trend: ${direction}`);
+
+    return {
+      isFirstTimeUser: data.length === 0,
+      history,
+      displayCount,
+      trend: {
+        direction,
+        previousScore,
+        changePercent
+      }
+    };
+  } catch (error: any) {
+    console.error(`[ProgressHistory] Error: ${error.message}`);
+    return defaultHistory;
+  }
+}

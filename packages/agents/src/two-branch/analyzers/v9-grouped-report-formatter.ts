@@ -85,7 +85,9 @@ import {
   calculateFullV9Score,
   calculateCategoryScore,
   calculateSimplifiedScore,
-  getScoreInterpretation
+  getScoreInterpretation,
+  fetchProgressHistory,
+  ProgressHistory
 } from '../report/score-calculator';
 import {
   generateAchievementsSection,
@@ -2240,6 +2242,17 @@ ${errorMessage || 'Unknown error - check tool orchestrator logs for details'}
     });
     const scoreInterpretation = this.getScoreInterpretation(qualityResult.score);
 
+    // SESSION 112: Fetch progress history for trend chart
+    let progressHistory: ProgressHistory | null = null;
+    if (this.supabase && metadata.repository) {
+      progressHistory = await fetchProgressHistory(
+        metadata.repository,
+        qualityResult.score,
+        this.supabase,
+        5 // Show last 5 PRs
+      );
+    }
+
     // Calculate auto-fixable coverage (two-tier system)
     // Tier 1: Linter auto-fix (technical capability) = 84%
     const autoFixableGroups = groups.filter(g => this.canAutoFix(g));
@@ -2292,6 +2305,14 @@ ${byDetectedCategory['Security'] > 0 ? `- 🔒 Security: ${qualityResult.categor
 - 📱 **APP Score**: ${qualityResult.appScore}/100 (MIN of categories - "weakest link")
 - 👨‍💻 **Skill Score**: ${qualityResult.skillScore}/100 (AVG of categories)
 
+${progressHistory && !progressHistory.isFirstTimeUser && progressHistory.history.length > 0 ? `
+**📈 Progress History** (Last ${progressHistory.history.length} PRs):
+${progressHistory.history.map(h => `- PR #${h.prNumber}: ${h.score}/100 (${h.grade})`).join('\n')}
+
+**Trend**: ${progressHistory.trend.direction === 'improving' ? '📈 Improving' : progressHistory.trend.direction === 'declining' ? '📉 Declining' : '➡️ Stable'}${progressHistory.trend.changePercent !== null ? ` (${progressHistory.trend.changePercent > 0 ? '+' : ''}${progressHistory.trend.changePercent}%)` : ''}
+` : progressHistory?.isFirstTimeUser ? `
+> 🆕 First analysis for this repository - future PRs will show progress trends
+` : ''}
 > Scores saved to Supabase for tracking trends over time
 
 ` : `
@@ -7654,6 +7675,7 @@ Continue following best practices and consider integrating static analysis into 
 | Files Modified | ${Math.min(metadata.filesModified || 0, metadata.totalFiles || (metadata.filesModified || 0))} |
 | Note | Files Modified is clamped to Total Repository Files to avoid overcount (renames/moves) |
 | Lines Changed | ${(metadata.linesAdded || 0) + (metadata.linesDeleted || 0)} (+${metadata.linesAdded || 0}/-${metadata.linesDeleted || 0}) |
+| Report Tier | ${this.userTier === 'pro' ? '⭐ PRO' : this.userTier === 'enterprise' ? '🏢 Enterprise' : '📋 Basic'} |
 `;
 
     // Add Agent Performance if available (optional)
