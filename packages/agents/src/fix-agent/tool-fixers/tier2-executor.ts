@@ -378,11 +378,267 @@ export class DotnetFormatExecutor extends ToolExecutorBase {
   }
 }
 
+// ============================================================================
+// SESSION 102: Native Linter --fix Executors
+// These run native tool --fix commands before falling back to AI
+// ============================================================================
+
+/**
+ * ESLint Executor - TypeScript/JavaScript linting and fixing
+ * Auto-fixes: formatting rules (semi, quotes, indent), import order
+ * NOT auto-fixable: @typescript-eslint/no-explicit-any (needs AI)
+ */
+export class ESLintExecutor extends ToolExecutorBase {
+  constructor() {
+    super({
+      name: 'eslint',
+      command: 'npx eslint',
+      fixCommand: 'npx eslint --fix',
+    });
+  }
+
+  protected getVersionCommand(): string {
+    return 'npx eslint --version';
+  }
+
+  async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
+    const command = this.buildFixCommand(this.config.fixCommand!, options.files);
+
+    if (options.dryRun) {
+      return {
+        success: true,
+        tool: this.config.name,
+        command,
+        exitCode: 0,
+        stdout: '[DRY RUN] Would execute: ' + command,
+        stderr: '',
+        filesFixed: options.files || [],
+        issuesFixed: 0,
+        durationMs: 0,
+      };
+    }
+
+    return this.executeCommand(command, options);
+  }
+
+  protected parseFixedFiles(stdout: string, _stderr: string): string[] {
+    // ESLint doesn't explicitly list fixed files, assume all input files
+    return [];
+  }
+}
+
+/**
+ * Ruff Executor - Python linting and fixing (Rust-based, fast)
+ * Auto-fixes: F632 (is vs ==), F401 (unused imports), formatting
+ * With --unsafe-fixes: E711, E712 (None/True/False comparisons)
+ */
+export class RuffExecutor extends ToolExecutorBase {
+  private useUnsafeFixes: boolean;
+
+  constructor(useUnsafeFixes = false) {
+    super({
+      name: 'ruff',
+      command: 'ruff check',
+      fixCommand: useUnsafeFixes ? 'ruff check --fix --unsafe-fixes' : 'ruff check --fix',
+    });
+    this.useUnsafeFixes = useUnsafeFixes;
+  }
+
+  protected getVersionCommand(): string {
+    return 'ruff --version';
+  }
+
+  async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
+    const command = this.buildFixCommand(this.config.fixCommand!, options.files);
+
+    if (options.dryRun) {
+      return {
+        success: true,
+        tool: this.config.name,
+        command,
+        exitCode: 0,
+        stdout: '[DRY RUN] Would execute: ' + command,
+        stderr: '',
+        filesFixed: options.files || [],
+        issuesFixed: 0,
+        durationMs: 0,
+      };
+    }
+
+    return this.executeCommand(command, options);
+  }
+
+  protected countFixedIssues(_stdout: string, stderr: string): number {
+    // Ruff outputs "Found X errors (Y fixed, Z remaining)"
+    const match = stderr.match(/\((\d+) fixed/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+}
+
+/**
+ * Gofmt Executor - Go code formatting
+ * Auto-fixes: ALL formatting issues (indentation, spacing, braces)
+ */
+export class GofmtExecutor extends ToolExecutorBase {
+  constructor() {
+    super({
+      name: 'gofmt',
+      command: 'gofmt',
+      fixCommand: 'gofmt -w',
+    });
+  }
+
+  protected getVersionCommand(): string {
+    return 'go version'; // gofmt doesn't have --version
+  }
+
+  async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
+    const command = this.buildFixCommand(this.config.fixCommand!, options.files);
+
+    if (options.dryRun) {
+      return {
+        success: true,
+        tool: this.config.name,
+        command,
+        exitCode: 0,
+        stdout: '[DRY RUN] Would execute: ' + command,
+        stderr: '',
+        filesFixed: options.files || [],
+        issuesFixed: 0,
+        durationMs: 0,
+      };
+    }
+
+    return this.executeCommand(command, options);
+  }
+}
+
+/**
+ * Goimports Executor - Go import organization and formatting
+ * Auto-fixes: unused imports, import ordering, AND all gofmt issues
+ */
+export class GoimportsExecutor extends ToolExecutorBase {
+  constructor() {
+    super({
+      name: 'goimports',
+      command: 'goimports',
+      fixCommand: 'goimports -w',
+    });
+  }
+
+  protected getVersionCommand(): string {
+    return 'goimports --help'; // goimports doesn't have --version
+  }
+
+  async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
+    const command = this.buildFixCommand(this.config.fixCommand!, options.files);
+
+    if (options.dryRun) {
+      return {
+        success: true,
+        tool: this.config.name,
+        command,
+        exitCode: 0,
+        stdout: '[DRY RUN] Would execute: ' + command,
+        stderr: '',
+        filesFixed: options.files || [],
+        issuesFixed: 0,
+        durationMs: 0,
+      };
+    }
+
+    return this.executeCommand(command, options);
+  }
+}
+
+/**
+ * Google Java Format Executor - Java code formatting
+ * Auto-fixes: ALL formatting issues per Google Java Style Guide
+ * NOT available for: semantic issues (UselessParentheses needs AI)
+ */
+export class GoogleJavaFormatExecutor extends ToolExecutorBase {
+  constructor() {
+    super({
+      name: 'google-java-format',
+      command: 'google-java-format',
+      fixCommand: 'google-java-format --replace',
+    });
+  }
+
+  protected getVersionCommand(): string {
+    return 'google-java-format --version';
+  }
+
+  async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
+    const command = this.buildFixCommand(this.config.fixCommand!, options.files);
+
+    if (options.dryRun) {
+      return {
+        success: true,
+        tool: this.config.name,
+        command,
+        exitCode: 0,
+        stdout: '[DRY RUN] Would execute: ' + command,
+        stderr: '',
+        filesFixed: options.files || [],
+        issuesFixed: 0,
+        durationMs: 0,
+      };
+    }
+
+    return this.executeCommand(command, options);
+  }
+}
+
+/**
+ * Golangci-lint Executor - Go multi-linter with limited --fix support
+ * Auto-fixes: formatting, some simple linter issues
+ * NOT auto-fixable: errcheck, unused (semantic issues need AI)
+ */
+export class GolangciLintExecutor extends ToolExecutorBase {
+  constructor() {
+    super({
+      name: 'golangci-lint',
+      command: 'golangci-lint run',
+      fixCommand: 'golangci-lint run --fix',
+    });
+  }
+
+  protected getVersionCommand(): string {
+    return 'golangci-lint --version';
+  }
+
+  async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
+    const command = `${this.config.fixCommand} "${options.workingDir}"`;
+
+    if (options.dryRun) {
+      return {
+        success: true,
+        tool: this.config.name,
+        command,
+        exitCode: 0,
+        stdout: '[DRY RUN] Would execute: ' + command,
+        stderr: '',
+        filesFixed: [],
+        issuesFixed: 0,
+        durationMs: 0,
+      };
+    }
+
+    return this.executeCommand(command, options);
+  }
+}
+
+// ============================================================================
+// End SESSION 102 additions
+// ============================================================================
+
 /**
  * Factory to create Tier 2 executors by tool name
  */
 export function createTier2Executor(toolName: string): ToolExecutorBase | null {
   const executors: Record<string, () => ToolExecutorBase> = {
+    // Original dedicated fixers
     'sorald': () => new SoraldExecutor(),
     'openrewrite': () => new OpenRewriteExecutor(),
     'autoflake': () => new AutoflakeExecutor(),
@@ -392,6 +648,14 @@ export function createTier2Executor(toolName: string): ToolExecutorBase | null {
     'clang-tidy': () => new ClangTidyExecutor(),
     'clang-format': () => new ClangFormatExecutor(),
     'dotnet-format': () => new DotnetFormatExecutor(),
+    // SESSION 102: Native linter --fix tools
+    'eslint': () => new ESLintExecutor(),
+    'ruff': () => new RuffExecutor(false),
+    'ruff-unsafe': () => new RuffExecutor(true),
+    'gofmt': () => new GofmtExecutor(),
+    'goimports': () => new GoimportsExecutor(),
+    'google-java-format': () => new GoogleJavaFormatExecutor(),
+    'golangci-lint': () => new GolangciLintExecutor(),
   };
 
   const factory = executors[toolName];
@@ -403,6 +667,7 @@ export function createTier2Executor(toolName: string): ToolExecutorBase | null {
  */
 export function getTier2ToolNames(): string[] {
   return [
+    // Original dedicated fixers
     'sorald',
     'openrewrite',
     'autoflake',
@@ -412,5 +677,51 @@ export function getTier2ToolNames(): string[] {
     'clang-tidy',
     'clang-format',
     'dotnet-format',
+    // SESSION 102: Native linter --fix tools
+    'eslint',
+    'ruff',
+    'ruff-unsafe',
+    'gofmt',
+    'goimports',
+    'google-java-format',
+    'golangci-lint',
   ];
+}
+
+/**
+ * SESSION 102: Get recommended Tier 2 fixer for a language/tool combination
+ * Returns the native --fix tool that should be tried before AI
+ */
+export function getRecommendedTier2Fixer(language: string, sourceTool: string): string | null {
+  const recommendations: Record<string, Record<string, string>> = {
+    typescript: {
+      eslint: 'eslint',
+      '@typescript-eslint': 'eslint',
+    },
+    javascript: {
+      eslint: 'eslint',
+    },
+    python: {
+      ruff: 'ruff',
+      flake8: 'autoflake', // flake8 issues often fixable by autoflake
+      pylint: 'black', // formatting issues
+      mypy: 'ruff', // type issues not fixable but ruff catches related
+    },
+    go: {
+      golangci: 'golangci-lint',
+      'golangci-lint': 'golangci-lint',
+      staticcheck: 'gofmt', // format first
+      govet: 'gofmt',
+    },
+    java: {
+      pmd: null, // PMD rules NOT auto-fixable
+      checkstyle: 'google-java-format', // formatting only
+      spotbugs: null, // NOT auto-fixable
+    },
+  };
+
+  const langRecs = recommendations[language.toLowerCase()];
+  if (!langRecs) return null;
+
+  return langRecs[sourceTool.toLowerCase()] || null;
 }
