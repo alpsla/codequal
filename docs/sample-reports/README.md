@@ -142,16 +142,21 @@
    - Learning resources only for UNFIXED issues
    - Focused training path
 
-7. **Community Impact** (NEW)
+7. **Community Impact** (BASIC tier only - opt-in)
+   > Note: PRO tier automatically contributes patterns to KB as part of the fix process.
+   > BASIC tier shows this section to encourage users to share manually.
+
    ```markdown
-   ## Community Impact
+   ## Community Impact (BASIC)
 
-   Your PR contributed **3 new patterns** to the CodeQual knowledge base!
+   Help other developers! Share your fix patterns with the community.
 
-   | Pattern | Reuses | Developers Helped |
-   |---------|--------|-------------------|
-   | TS6133 fix | 47 | 23 |
-   | react-hooks/exhaustive-deps | 31 | 18 |
+   | Your Fixes | Could Help |
+   |------------|------------|
+   | TS6133 fix | ~47 developers/month |
+   | react-hooks/exhaustive-deps | ~31 developers/month |
+
+   [Share Fix Patterns →] (opt-in button)
    ```
 
 ---
@@ -179,7 +184,7 @@ bash scripts/testing/oracle/oracle-run-v9-e2e-complete.sh \
 ```
 
 ### Current Blockers for PRO Report Generation
-1. **Docker Registry Auth** - Oracle Cloud needs DigitalOcean registry credentials
+1. **Docker Registry Migration** - Need to update references from DigitalOcean to Oracle Cloud Registry (OCIR)
 2. **Container Services** - Java/Python/TypeScript analyzer containers not running
 3. **Fix Cascade** - Requires all three tiers (native → dedicated → AI) operational
 
@@ -247,12 +252,8 @@ interface ProTierReport {
     changedFiles: FileChange[];
   };
 
-  // NEW: Community impact
-  communityImpact: {
-    patternsContributed: number;
-    totalReuses: number;
-    developersHelped: number;
-  };
+  // Note: PRO tier automatically contributes patterns during fix process
+  // No explicit communityImpact section needed - patterns stored silently
 
   skillsTracking: SkillScore;
   metadata: AnalysisMetadata;

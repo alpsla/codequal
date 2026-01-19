@@ -60,8 +60,8 @@ These fields provide polish but aren't blocking.
 |-------|---------|---------------|-----------------|
 | `user.rank` | Gamification | Generic "Ranking #X" | Add title like "Security Champion" |
 | `user.level` | Gamification | Not present | Calculate level from XP |
-| `communityImpact.patternsContributed` | PRO Features | Not tracked | Add pattern contribution count |
-| `communityImpact.developersHelped` | PRO Features | Not tracked | Add impact metric |
+| `communityImpact.patternsContributed` | BASIC Features | Not tracked | Add opt-in pattern sharing for BASIC tier |
+| `communityImpact.developersHelped` | BASIC Features | Not tracked | Show potential impact to encourage sharing |
 
 ---
 
