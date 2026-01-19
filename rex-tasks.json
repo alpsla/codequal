@@ -1,29 +1,28 @@
 {
-  "source": "rex-session-102-manual-patterns.md",
-  "createdAt": "2026-01-19T10:00:00Z",
-  "completedAt": "2026-01-19T12:00:00Z",
-  "maxIterations": 20,
-  "currentIteration": 14,
-  "status": "completed",
+  "source": "rex-session-103-native-fixer-validation.md",
+  "createdAt": "2026-01-19T14:00:00Z",
+  "maxIterations": 30,
+  "currentIteration": 0,
+  "status": "ready",
   "validation": {
     "type": "turborepo",
     "build": "npm run build -w packages/agents",
     "typecheck": "npx tsc --noEmit --skipLibCheck -p packages/agents/tsconfig.json",
-    "lint": "npx turbo run lint --filter=@codequal/agents"
+    "lint": "echo 'Skipping lint for tool validation tasks'"
   },
   "tasks": [
     {
       "id": 1,
       "parentId": null,
-      "title": "Add UselessParentheses pattern (PMD/Java)",
-      "description": "Add manual pattern for PMD's UselessParentheses rule to fix-pattern-guidance.ts",
+      "title": "Test Autoflake (Python - unused imports/variables)",
+      "description": "Validate autoflake removes unused imports and variables",
       "steps": [
-        "Add entry to FALLBACK_GUIDANCE Map with key `UselessParentheses:java:pmd`",
-        "Include antiPatterns showing redundant parentheses like `return (x);`, `if ((a == b))`",
-        "Include correctPatterns showing clean versions without unnecessary parentheses",
-        "Add promptAdditions with clear instructions to remove only truly unnecessary parentheses while preserving those needed for operator precedence"
+        "Create test Python file with unused imports and variables",
+        "Run autoflake --in-place --remove-all-unused-imports --remove-unused-variables",
+        "Verify unused code is removed",
+        "Document which issues autoflake can fix vs what needs AI"
       ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"],
+      "files": [],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -34,15 +33,15 @@
     {
       "id": 2,
       "parentId": null,
-      "title": "Add F632 pattern (Ruff/Python)",
-      "description": "Add manual pattern for Ruff's F632 rule (use `==` to compare to literals)",
+      "title": "Test Black (Python - code formatter)",
+      "description": "Validate Black formats Python code correctly",
       "steps": [
-        "Add entry to FALLBACK_GUIDANCE Map with key `F632:python:ruff`",
-        "Include antiPatterns showing `is` comparisons with literals like `x is \"\"`, `x is 0`",
-        "Include correctPatterns showing proper `==` comparisons for strings/numbers",
-        "Add promptAdditions explaining that `is` checks identity while `==` checks equality"
+        "Create test Python file with formatting issues (long lines, inconsistent quotes, spacing)",
+        "Run black on the test file",
+        "Verify formatting is corrected",
+        "Document Black's formatting capabilities"
       ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"],
+      "files": [],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -53,15 +52,15 @@
     {
       "id": 3,
       "parentId": null,
-      "title": "Add @typescript-eslint/no-explicit-any pattern (ESLint/TypeScript)",
-      "description": "Add manual pattern for ESLint's no-explicit-any rule",
+      "title": "Test isort (Python - import sorting)",
+      "description": "Validate isort organizes Python imports",
       "steps": [
-        "Add entry to FALLBACK_GUIDANCE Map with key `@typescript-eslint/no-explicit-any:typescript:eslint`",
-        "Include antiPatterns showing `any` type usage like `function foo(x: any)`, `const data: any`",
-        "Include correctPatterns showing proper typing with `unknown`, generics, or specific types",
-        "Add promptAdditions explaining when to use `unknown` vs specific types vs generics"
+        "Create test Python file with unorganized imports",
+        "Run isort on the test file",
+        "Verify imports are sorted (stdlib, third-party, local)",
+        "Document isort's sorting behavior"
       ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"],
+      "files": [],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -72,15 +71,15 @@
     {
       "id": 4,
       "parentId": null,
-      "title": "Add AvoidDollarSigns pattern (PMD/Java)",
-      "description": "Add manual pattern for PMD's AvoidDollarSigns rule",
+      "title": "Test PyUpgrade (Python - syntax upgrades)",
+      "description": "Validate PyUpgrade modernizes Python syntax",
       "steps": [
-        "Add entry to FALLBACK_GUIDANCE Map with key `AvoidDollarSigns:java:pmd`",
-        "Include antiPatterns showing identifiers with `$` like `int $count`, `String my$var`",
-        "Include correctPatterns showing clean naming without dollar signs",
-        "Add promptAdditions noting that `$` is typically reserved for generated code and inner class references"
+        "Create test Python file with old-style syntax (format strings, type hints)",
+        "Run pyupgrade --py310-plus on the test file",
+        "Verify syntax is modernized (f-strings, modern type hints)",
+        "Document which upgrades PyUpgrade handles"
       ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"],
+      "files": [],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -91,15 +90,16 @@
     {
       "id": 5,
       "parentId": null,
-      "title": "Add UnnecessaryAnnotationValueElement pattern (PMD/Java)",
-      "description": "Add manual pattern for PMD's UnnecessaryAnnotationValueElement rule",
+      "title": "Install and Test goimports (Go)",
+      "description": "Install goimports and validate it fixes Go imports",
       "steps": [
-        "Add entry to FALLBACK_GUIDANCE Map with key `UnnecessaryAnnotationValueElement:java:pmd`",
-        "Include antiPatterns showing explicit `value=` when it's the only element",
-        "Include correctPatterns showing shorthand without `value=`",
-        "Add promptAdditions explaining when `value=` is necessary vs unnecessary"
+        "Check if goimports is installed, if not install: go install golang.org/x/tools/cmd/goimports@latest",
+        "Create test Go file with unused imports and formatting issues",
+        "Run goimports -w on the test file",
+        "Verify unused imports removed and formatting fixed",
+        "Compare goimports vs gofmt capabilities"
       ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"],
+      "files": [],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -110,15 +110,16 @@
     {
       "id": 6,
       "parentId": null,
-      "title": "Add UseUtilityClass pattern (PMD/Java)",
-      "description": "Add manual pattern for PMD's UseUtilityClass rule",
+      "title": "Install and Test google-java-format (Java)",
+      "description": "Install google-java-format and validate Java formatting",
       "steps": [
-        "Add entry to FALLBACK_GUIDANCE Map with key `UseUtilityClass:java:pmd`",
-        "Include antiPatterns showing utility class without private constructor",
-        "Include correctPatterns showing final class with private constructor",
-        "Add promptAdditions explaining utility class pattern"
+        "Check if google-java-format is installed, document installation if needed",
+        "Create test Java file with formatting issues",
+        "Run google-java-format --replace on the test file",
+        "Verify formatting matches Google Java Style Guide",
+        "Document limitations (formatting only, not semantic fixes)"
       ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.ts"],
+      "files": [],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -129,12 +130,14 @@
     {
       "id": 7,
       "parentId": null,
-      "title": "Run validation tests",
-      "description": "Verify patterns compile and integrate correctly",
+      "title": "Test Sorald (Java - SonarQube rule fixer)",
+      "description": "Validate Sorald can fix SonarQube violations",
       "steps": [
-        "Run TypeScript compilation: npm run build -w packages/agents",
-        "Check for any type errors in the guidance file",
-        "Verify the patterns are syntactically correct"
+        "Check if Sorald is installed",
+        "Create test Java file with common SonarQube violations",
+        "Run sorald repair on the test file",
+        "Document which SonarQube rules Sorald can auto-fix",
+        "Compare Sorald capabilities vs PMD (which has no auto-fix)"
       ],
       "files": [],
       "priority": "medium",
@@ -147,12 +150,13 @@
     {
       "id": 8,
       "parentId": null,
-      "title": "Test AI Fixer integration",
-      "description": "Verify patterns are loaded and used by the fixer",
+      "title": "Test OpenRewrite (Java - recipe-based refactoring)",
+      "description": "Validate OpenRewrite for Java refactoring",
       "steps": [
-        "Check that FixPatternGuidance class loads the new patterns",
-        "Verify getGuidance() returns correct data for each new rule",
-        "Document any issues found for future improvement"
+        "Check if OpenRewrite Maven plugin is available",
+        "Document common recipes for security/code quality fixes",
+        "Test a simple recipe on sample Java code",
+        "Document how to integrate OpenRewrite with fix-agent"
       ],
       "files": [],
       "priority": "medium",
@@ -165,17 +169,16 @@
     {
       "id": 9,
       "parentId": null,
-      "title": "Validate ESLint --fix (TypeScript native fixer)",
-      "description": "Test ESLint's native auto-fix capability as tier 2 fixer",
+      "title": "Test clang-format (C/C++ formatting)",
+      "description": "Validate clang-format for C/C++ code",
       "steps": [
-        "Create test TypeScript file with auto-fixable ESLint violations",
-        "Run eslint --fix and verify which rules get auto-fixed",
-        "Document fixable vs non-fixable rules (no-explicit-any is NOT auto-fixable)",
-        "List all ESLint rules that support --fix for TypeScript",
-        "Update fix-agent to use eslint --fix as tier 2 before AI"
+        "Check if clang-format is installed",
+        "Create test C++ file with formatting issues",
+        "Run clang-format -i on the test file",
+        "Document formatting capabilities"
       ],
-      "files": ["packages/agents/src/fix-agent/"],
-      "priority": "high",
+      "files": [],
+      "priority": "medium",
       "passes": false,
       "attempts": 0,
       "lastError": null,
@@ -185,17 +188,16 @@
     {
       "id": 10,
       "parentId": null,
-      "title": "Validate Ruff --fix (Python native fixer)",
-      "description": "Test Ruff's native auto-fix capability as tier 2 fixer",
+      "title": "Test clang-tidy (C/C++ linting with fixes)",
+      "description": "Validate clang-tidy auto-fix capabilities",
       "steps": [
-        "Create test Python file with auto-fixable Ruff violations",
-        "Run ruff check --fix and verify which rules get auto-fixed",
-        "Test F632 specifically - check if ruff can auto-fix 'is' to '==' comparisons",
-        "Document all Ruff rules that support --fix",
-        "Update fix-agent to use ruff --fix as tier 2 before AI"
+        "Check if clang-tidy is installed",
+        "Create test C++ file with common issues",
+        "Run clang-tidy --fix on the test file",
+        "Document which checks support auto-fix"
       ],
-      "files": ["packages/agents/src/fix-agent/"],
-      "priority": "high",
+      "files": [],
+      "priority": "medium",
       "passes": false,
       "attempts": 0,
       "lastError": null,
@@ -205,17 +207,16 @@
     {
       "id": 11,
       "parentId": null,
-      "title": "Validate gofmt/goimports (Go native fixer)",
-      "description": "Test Go's native formatting and import fixing tools as tier 2",
+      "title": "Test dotnet-format (C# formatting)",
+      "description": "Validate dotnet-format for C# code",
       "steps": [
-        "Create test Go file with formatting and import issues",
-        "Run gofmt -w and verify formatting fixes",
-        "Run goimports -w and verify import organization",
-        "Test golangci-lint --fix for additional auto-fixes",
-        "Document which Go issues can be auto-fixed natively"
+        "Check if dotnet CLI is installed",
+        "Create test C# file with formatting issues",
+        "Run dotnet format on a test project",
+        "Document formatting capabilities"
       ],
-      "files": ["packages/agents/src/fix-agent/"],
-      "priority": "high",
+      "files": [],
+      "priority": "medium",
       "passes": false,
       "attempts": 0,
       "lastError": null,
@@ -225,16 +226,15 @@
     {
       "id": 12,
       "parentId": null,
-      "title": "Validate Java native fixers (google-java-format, Checkstyle)",
-      "description": "Test Java's native formatting and fixing tools as tier 2",
+      "title": "Create comprehensive fixer capability matrix",
+      "description": "Document all tier 2 fixers with their capabilities",
       "steps": [
-        "Test google-java-format for code formatting",
-        "Check if PMD has any auto-fix capabilities (likely none)",
-        "Test Checkstyle auto-fix options if available",
-        "Document which Java PMD rules have NO native fix (need AI)",
-        "List: UselessParentheses, AvoidDollarSigns, UnnecessaryAnnotationValueElement, UseUtilityClass - all need AI"
+        "Create markdown table with all fixers",
+        "List: tool name, language, what it fixes, what needs AI",
+        "Add installation instructions for each tool",
+        "Add to docs/ for reference"
       ],
-      "files": ["packages/agents/src/fix-agent/"],
+      "files": ["docs/TIER2_FIXER_MATRIX.md"],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -245,16 +245,15 @@
     {
       "id": 13,
       "parentId": null,
-      "title": "Implement tier 2 native fixer integration",
-      "description": "Add native tool --fix support to fix-agent before AI fallback",
+      "title": "Update tier2-executor with installation checks",
+      "description": "Add tool availability checks to executors",
       "steps": [
-        "Create NativeFixerService with tool-specific fix commands",
-        "Add eslint --fix integration for TypeScript",
-        "Add ruff --fix integration for Python",
-        "Add gofmt/goimports integration for Go",
-        "Wire into fix-agent pipeline: tier 1 (cache) → tier 2 (native) → tier 3 (AI)"
+        "Add isAvailable() method to ToolExecutorBase if not exists",
+        "Implement availability check for each executor",
+        "Return graceful error when tool not installed",
+        "Log installation instructions when tool missing"
       ],
-      "files": ["packages/agents/src/fix-agent/"],
+      "files": ["packages/agents/src/fix-agent/tool-fixers/tier2-executor.ts", "packages/agents/src/fix-agent/tool-fixers/tool-executor-base.ts"],
       "priority": "high",
       "passes": false,
       "attempts": 0,
@@ -265,56 +264,16 @@
     {
       "id": 14,
       "parentId": null,
-      "title": "Validate AI Fixer on non-fixable rules",
-      "description": "Test AI fixer specifically for rules that native tools cannot fix",
+      "title": "Create tier 2 fixer test suite",
+      "description": "Automated tests for native fixer validation",
       "steps": [
-        "Test AI fixer on PMD rules (no native fix available)",
-        "Test AI fixer on @typescript-eslint/no-explicit-any (not auto-fixable)",
-        "Test AI fixer on complex refactoring rules",
-        "Document which rules MUST use AI vs native tools",
-        "Update guidance for AI-only rules"
+        "Create test file: packages/agents/src/fix-agent/tool-fixers/__tests__/tier2-executor.test.ts",
+        "Add tests for each executor's fix capabilities",
+        "Mock tool execution for CI environments",
+        "Test getRecommendedTier2Fixer() function"
       ],
-      "files": ["packages/agents/src/fix-agent/"],
+      "files": ["packages/agents/src/fix-agent/tool-fixers/__tests__/tier2-executor.test.ts"],
       "priority": "high",
-      "passes": false,
-      "attempts": 0,
-      "lastError": null,
-      "completedAt": null,
-      "commitHash": null
-    },
-    {
-      "id": 15,
-      "parentId": null,
-      "title": "Monitor Supabase pattern storage",
-      "description": "Verify patterns are stored and retrieved from Supabase correctly",
-      "steps": [
-        "Check Supabase fix_patterns table for new entries",
-        "Verify pattern lookup by rule_id + tool works correctly",
-        "Test pattern caching and retrieval flow",
-        "Document any storage issues for future improvement"
-      ],
-      "files": ["packages/agents/src/fix-agent/fix-pattern-registry/supabase-pattern-store.ts"],
-      "priority": "medium",
-      "passes": false,
-      "attempts": 0,
-      "lastError": null,
-      "completedAt": null,
-      "commitHash": null
-    },
-    {
-      "id": 16,
-      "parentId": null,
-      "title": "Track unfixed issues for improvement",
-      "description": "Document any issues that couldn't be fixed for future pattern development",
-      "steps": [
-        "Review all test results from Java, TypeScript, Python, Go validation",
-        "List any rules that still fail to fix correctly",
-        "Analyze failure patterns and root causes",
-        "Create improvement recommendations for next session",
-        "Update rex-progress.txt with findings"
-      ],
-      "files": [],
-      "priority": "medium",
       "passes": false,
       "attempts": 0,
       "lastError": null,

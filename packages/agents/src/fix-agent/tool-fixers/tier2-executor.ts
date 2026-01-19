@@ -725,3 +725,82 @@ export function getRecommendedTier2Fixer(language: string, sourceTool: string): 
 
   return langRecs[sourceTool.toLowerCase()] || null;
 }
+
+// ============================================================================
+// SESSION 103: Installation Instructions
+// ============================================================================
+
+/**
+ * Get installation instructions for a Tier 2 tool
+ */
+export function getInstallInstructions(toolName: string): string | null {
+  const instructions: Record<string, string> = {
+    // Python tools
+    'autoflake': 'pipx install autoflake',
+    'pyupgrade': 'pipx install pyupgrade',
+    'isort': 'pip install isort',
+    'black': 'pip install black',
+    'ruff': 'pip install ruff',
+
+    // Go tools
+    'gofmt': 'Included with Go installation',
+    'goimports': 'go install golang.org/x/tools/cmd/goimports@latest',
+    'golangci-lint': 'brew install golangci-lint',
+
+    // Java tools
+    'google-java-format': 'brew install google-java-format',
+    'sorald': 'brew install sorald (or download JAR from GitHub)',
+    'openrewrite': 'Add Maven/Gradle plugin to pom.xml or build.gradle',
+
+    // C/C++ tools
+    'clang-format': 'brew install clang-format (or included with Xcode)',
+    'clang-tidy': 'brew install llvm (clang-tidy is part of LLVM)',
+
+    // C# tools
+    'dotnet-format': 'brew install dotnet',
+
+    // JavaScript/TypeScript tools
+    'eslint': 'npm install eslint --save-dev',
+  };
+
+  return instructions[toolName] || null;
+}
+
+/**
+ * Check if a Tier 2 tool is available and return status with installation hint
+ */
+export async function checkTier2ToolAvailability(toolName: string): Promise<{
+  available: boolean;
+  installHint: string | null;
+}> {
+  const executor = createTier2Executor(toolName);
+  if (!executor) {
+    return {
+      available: false,
+      installHint: `Unknown tool: ${toolName}`,
+    };
+  }
+
+  const isInstalled = await executor.checkInstalled();
+  return {
+    available: isInstalled,
+    installHint: isInstalled ? null : getInstallInstructions(toolName),
+  };
+}
+
+/**
+ * Get all Tier 2 tools with their availability status
+ */
+export async function getAllTier2ToolsStatus(): Promise<Map<string, {
+  available: boolean;
+  installHint: string | null;
+}>> {
+  const tools = getTier2ToolNames();
+  const status = new Map<string, { available: boolean; installHint: string | null }>();
+
+  for (const tool of tools) {
+    status.set(tool, await checkTier2ToolAvailability(tool));
+  }
+
+  return status;
+}
