@@ -314,3 +314,39 @@ Commit: [main 2b544d4e] rex(#1): E2E Tests for Python Fixers
   - goimports is a superset of gofmt (preferred)
   - Typical fix order: goimports → golangci-lint → AI
 
+
+=== Task #2 (2026-01-19 08:51:49) ===
+Title: E2E Tests for Go Fixers
+Status: COMPLETE
+Commit: [main d0e19cae] rex(#2): E2E Tests for Go Fixers
+ 3 files changed, 566 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-go.test.ts
+d0e19cae
+
+### Task 3: E2E Tests for Java Fixers
+- Created e2e-java.test.ts with comprehensive tests for Java tier 2 fixers
+- Test categories:
+  - Tier 2 Tool Recommendations: Validates getRecommendedTier2Fixer() for java
+  - Executor creation: Validates GoogleJavaFormatExecutor, SoraldExecutor
+  - Dry run results: Validates each executor returns proper dry run output
+  - Tier 2 Pipeline Flow: Tests conceptual flow where tier 2 tools run before AI
+  - Multi-Tool Fix Sequence: Tests running google-java-format → Sorald in sequence
+  - PMD Fall Through: Validates PMD rules have no tier 2 fixer (need AI)
+  - Rules Coverage Documentation: Documents which rules are auto-fixable vs need AI
+
+- Java rules auto-fixable by tier 2:
+  - google-java-format: ALL formatting per Google Java Style Guide
+  - Sorald: SonarQube rules S1155, S1132, S2095, S2142, S1068, S1481, S1860, S2755
+
+- Java rules needing AI (tier 3):
+  - ALL PMD rules (UselessParentheses, AvoidDollarSigns, CloseResource, etc.)
+  - ALL SpotBugs rules (no native --fix)
+  - Checkstyle non-formatting rules (naming, javadoc, magic numbers)
+
+- Key findings:
+  - PMD has NO auto-fix capability (detection only)
+  - Checkstyle formatting rules fixable via google-java-format
+  - Sorald uses JAR-based execution with --rule-key parameter
+  - Typical fix order: google-java-format → Sorald → AI
+
+
