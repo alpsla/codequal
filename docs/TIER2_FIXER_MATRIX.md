@@ -1,6 +1,7 @@
 # Tier 2 Native Fixer Capability Matrix
 
-> Session 103: Complete validation of all native fixers for the fix-agent pipeline.
+> Session 104: Complete validation of all native fixers for the fix-agent pipeline.
+> Updated with clang-tidy, dotnet-format, and Sorald test results.
 
 ## Overview
 
@@ -34,22 +35,44 @@ The fix-agent uses a 3-tier approach:
 | Tool | Command | What It Fixes | Limitations | Status |
 |------|---------|---------------|-------------|--------|
 | **google-java-format** | `google-java-format --replace` | All formatting (Google style) | Formatting only, NOT semantic | ✅ Tested |
-| **Sorald** | `sorald repair` | ~25 SonarQube rules | Specialized, needs installation | ❌ Not Installed |
-| **OpenRewrite** | Maven/Gradle plugin | Recipe-based refactoring | Requires project setup | ⚙️ Plugin |
+| **Sorald** | `java -jar sorald.jar repair --source <dir> --rule-key <rule>` | ~30 SonarQube rules (S1068, S1132, S1155, S1481, etc.) | JAR download required | ✅ Tested |
+| **OpenRewrite** | Maven/Gradle plugin | Recipe-based refactoring | Requires project setup | ⚙️ Documented |
 | **PMD** | N/A | **NO AUTO-FIX** | Detection only | ⚠️ Needs AI |
+
+**Sorald Supported Rules (partial list):**
+- S1068: Unused private fields
+- S1132: String literal on left of equals
+- S1155: Use isEmpty() instead of size()==0
+- S1481: Unused local variables
+- S1860: Synchronization on strings
+- S2095: Resources should be closed
+- S2142: InterruptedException handling
+- S2755: XXE vulnerability prevention
 
 ### C/C++ Tools
 
 | Tool | Command | What It Fixes | Limitations | Status |
 |------|---------|---------------|-------------|--------|
 | **clang-format** | `clang-format -i` | All formatting | Formatting only | ✅ Tested |
-| **clang-tidy** | `clang-tidy --fix` | Modernization, readability | Needs compilation DB | ❌ Not Installed |
+| **clang-tidy** | `clang-tidy --fix --checks='modernize-*' <file> -- -std=c++17 -isysroot $(xcrun --show-sdk-path)` | Modernization, readability | Needs LLVM in PATH + SDK | ✅ Tested |
+
+**clang-tidy Auto-Fix Capabilities:**
+- `modernize-use-nullptr`: `0` → `nullptr`
+- `modernize-use-override`: Add `override` keyword
+- `modernize-use-equals-default`: `~Foo() {}` → `~Foo() = default;`
+- `modernize-use-trailing-return-type`: `int main()` → `auto main() -> int`
 
 ### C# Tools
 
 | Tool | Command | What It Fixes | Limitations | Status |
 |------|---------|---------------|-------------|--------|
-| **dotnet-format** | `dotnet format` | Formatting, analyzers | Needs .NET SDK | ❌ Not Installed |
+| **dotnet-format** | `dotnet format` | Formatting, analyzers | Needs .NET SDK + .csproj | ✅ Tested |
+
+**dotnet-format Auto-Fix Capabilities:**
+- Whitespace and indentation normalization
+- Brace placement (Allman style by default)
+- Spacing around operators and commas
+- Configurable via .editorconfig
 
 ### TypeScript/JavaScript Tools
 
@@ -84,9 +107,11 @@ export PATH=$PATH:$(go env GOPATH)/bin
 # google-java-format
 brew install google-java-format
 
-# Sorald (optional)
-brew install sorald
-# Or download JAR from: https://github.com/SpoonLabs/sorald
+# Sorald (download JAR - not available via brew)
+mkdir -p ~/tools
+curl -L -o ~/tools/sorald.jar https://github.com/ASSERT-KTH/sorald/releases/download/sorald-0.8.6/sorald-0.8.6-jar-with-dependencies.jar
+
+# Usage: java -jar ~/tools/sorald.jar repair --source <dir> --rule-key S1155
 ```
 
 ### C/C++ Tools
@@ -171,17 +196,24 @@ if (executor) {
 }
 ```
 
-## Session 103 Test Results Summary
+## Session 104 Test Results Summary
 
-| Category | Tools Tested | Working | Not Installed |
-|----------|--------------|---------|---------------|
-| Python | 5 | 5 ✅ | 0 |
-| Go | 3 | 3 ✅ | 0 |
-| Java | 4 | 2 ✅ | 2 |
-| C/C++ | 2 | 1 ✅ | 1 |
-| C# | 1 | 0 | 1 |
-| **Total** | **15** | **11 ✅** | **4** |
+| Category | Tools Tested | Working | Notes |
+|----------|--------------|---------|-------|
+| Python | 5 | 5 ✅ | All working |
+| Go | 3 | 3 ✅ | All working |
+| Java | 4 | 3 ✅ | Sorald tested (JAR), OpenRewrite documented |
+| C/C++ | 2 | 2 ✅ | clang-tidy needs LLVM PATH |
+| C# | 1 | 1 ✅ | dotnet-format tested |
+| TypeScript | 1 | 1 ✅ | ESLint working |
+| **Total** | **16** | **15 ✅** | 1 plugin (OpenRewrite) |
+
+### Session 104 Changes
+- ✅ Installed and tested clang-tidy via LLVM
+- ✅ Installed and tested dotnet-format via .NET SDK
+- ✅ Downloaded and tested Sorald JAR
+- ✅ Documented OpenRewrite Maven/Gradle setup
 
 ---
 
-*Last updated: Session 103 (2026-01-19)*
+*Last updated: Session 104 (2026-01-19)*

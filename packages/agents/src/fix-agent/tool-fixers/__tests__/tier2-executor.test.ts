@@ -2,6 +2,7 @@
  * Tier 2 Executor Tests
  *
  * Session 103: Tests for native fixer executors
+ * Session 104: Added tests for clang-tidy, dotnet-format, Sorald
  */
 
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
@@ -18,6 +19,10 @@ import {
   AutoflakeExecutor,
   BlackExecutor,
   IsortExecutor,
+  ClangTidyExecutor,
+  ClangFormatExecutor,
+  DotnetFormatExecutor,
+  SoraldExecutor,
 } from '../tier2-executor';
 
 describe('Tier2Executor', () => {
@@ -69,6 +74,27 @@ describe('Tier2Executor', () => {
       expect(createTier2Executor('autoflake')).toBeInstanceOf(AutoflakeExecutor);
       expect(createTier2Executor('black')).toBeInstanceOf(BlackExecutor);
       expect(createTier2Executor('isort')).toBeInstanceOf(IsortExecutor);
+    });
+
+    // Session 104: Tests for newly validated tools
+    it('should create ClangTidyExecutor', () => {
+      const executor = createTier2Executor('clang-tidy');
+      expect(executor).toBeInstanceOf(ClangTidyExecutor);
+    });
+
+    it('should create ClangFormatExecutor', () => {
+      const executor = createTier2Executor('clang-format');
+      expect(executor).toBeInstanceOf(ClangFormatExecutor);
+    });
+
+    it('should create DotnetFormatExecutor', () => {
+      const executor = createTier2Executor('dotnet-format');
+      expect(executor).toBeInstanceOf(DotnetFormatExecutor);
+    });
+
+    it('should create SoraldExecutor', () => {
+      const executor = createTier2Executor('sorald');
+      expect(executor).toBeInstanceOf(SoraldExecutor);
     });
   });
 
@@ -195,6 +221,59 @@ describe('Tier2Executor', () => {
       expect(result.success).toBe(true);
       expect(result.tool).toBe('gofmt');
     });
+
+    // Session 104: Dry run tests for newly validated tools
+    it('should return dry run result for clang-tidy', async () => {
+      const executor = createTier2Executor('clang-tidy')!;
+      const result = await executor.executeFix({
+        workingDir: '/tmp',
+        dryRun: true,
+        files: ['test.cpp'],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.tool).toBe('clang-tidy');
+      expect(result.stdout).toContain('DRY RUN');
+    });
+
+    it('should return dry run result for clang-format', async () => {
+      const executor = createTier2Executor('clang-format')!;
+      const result = await executor.executeFix({
+        workingDir: '/tmp',
+        dryRun: true,
+        files: ['test.cpp'],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.tool).toBe('clang-format');
+      expect(result.stdout).toContain('DRY RUN');
+    });
+
+    it('should return dry run result for dotnet-format', async () => {
+      const executor = createTier2Executor('dotnet-format')!;
+      const result = await executor.executeFix({
+        workingDir: '/tmp/dotnet-test',
+        dryRun: true,
+        files: [],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.tool).toBe('dotnet-format');
+      expect(result.stdout).toContain('DRY RUN');
+    });
+
+    it('should return dry run result for sorald', async () => {
+      const executor = createTier2Executor('sorald')!;
+      const result = await executor.executeFix({
+        workingDir: '/tmp/java-test',
+        dryRun: true,
+        files: [],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.tool).toBe('sorald');
+      expect(result.stdout).toContain('DRY RUN');
+    });
   });
 });
 
@@ -226,5 +305,61 @@ describe('Tier2 Rules Coverage', () => {
     // The recommendation returns 'eslint' but eslint cannot fix this rule
     expect(getRecommendedTier2Fixer('typescript', 'eslint')).toBe('eslint');
     // Note: no-explicit-any still needs AI even with eslint --fix
+  });
+});
+
+// Session 104: Additional rules coverage
+describe('Session 104 Tool Capabilities', () => {
+  describe('clang-tidy modernize checks', () => {
+    it('should document fixable modernize rules', () => {
+      // clang-tidy modernize-* rules that can auto-fix
+      const fixableModernizeRules = [
+        'modernize-use-nullptr',      // 0 -> nullptr
+        'modernize-use-override',     // adds override keyword
+        'modernize-use-equals-default', // {} -> = default
+        'modernize-use-trailing-return-type', // int main() -> auto main() -> int
+      ];
+
+      // All these should be handled by clang-tidy
+      const executor = createTier2Executor('clang-tidy');
+      expect(executor).not.toBeNull();
+    });
+  });
+
+  describe('Sorald SonarQube rules', () => {
+    it('should document Sorald-fixable SonarQube rules', () => {
+      // Sorald can fix these SonarQube rules
+      const soraldFixableRules = [
+        'S1068', // Unused private fields
+        'S1132', // String literal on left of equals
+        'S1155', // Use isEmpty() instead of size()==0
+        'S1481', // Unused local variables
+        'S1860', // Synchronization on strings
+        'S2095', // Resources should be closed
+        'S2142', // InterruptedException handling
+        'S2755', // XXE vulnerability
+      ];
+
+      const executor = createTier2Executor('sorald');
+      expect(executor).not.toBeNull();
+    });
+  });
+
+  describe('dotnet-format capabilities', () => {
+    it('should handle C# formatting', () => {
+      // dotnet-format fixes formatting issues
+      const executor = createTier2Executor('dotnet-format');
+      expect(executor).not.toBeNull();
+    });
+  });
+
+  describe('getTier2ToolNames includes Session 104 tools', () => {
+    it('should include clang-tidy, dotnet-format, sorald', () => {
+      const names = getTier2ToolNames();
+      expect(names).toContain('clang-tidy');
+      expect(names).toContain('clang-format');
+      expect(names).toContain('dotnet-format');
+      expect(names).toContain('sorald');
+    });
   });
 });

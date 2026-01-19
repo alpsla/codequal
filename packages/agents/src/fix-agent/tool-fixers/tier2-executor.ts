@@ -19,23 +19,30 @@ import {
 
 /**
  * Sorald Executor - Repairs SonarQube violations in Java
+ * Session 104: Updated to use JAR-based execution
+ * Supported rules: S1068, S1132, S1155, S1481, S1860, S2095, S2142, S2755, etc.
  */
 export class SoraldExecutor extends ToolExecutorBase {
-  constructor() {
+  private jarPath: string;
+  private ruleKey: string;
+
+  constructor(ruleKey = 'S1155', jarPath = '~/tools/sorald.jar') {
     super({
       name: 'sorald',
-      command: 'sorald repair',
-      fixCommand: 'sorald repair',
+      command: `java -jar ${jarPath}`,
+      fixCommand: `java -jar ${jarPath} repair`,
     });
+    this.jarPath = jarPath;
+    this.ruleKey = ruleKey;
   }
 
   protected getVersionCommand(): string {
-    return 'sorald --version';
+    return `java -jar ${this.jarPath} --version`;
   }
 
   async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
     // Sorald requires specific rule IDs to fix
-    const command = `${this.config.fixCommand} --source "${options.workingDir}" --stats-output-file /tmp/sorald-stats.json`;
+    const command = `${this.config.fixCommand} --source "${options.workingDir}" --rule-key ${this.ruleKey}`;
 
     if (options.dryRun) {
       return {
@@ -54,15 +61,23 @@ export class SoraldExecutor extends ToolExecutorBase {
     return this.executeCommand(command, options);
   }
 
-  protected parseFixedFiles(_stdout: string, stderr: string): string[] {
-    // Sorald logs fixed files to stderr
-    const matches = stderr.match(/Fixed: (.+\.java)/g) || [];
-    return matches.map(m => m.replace('Fixed: ', ''));
+  protected parseFixedFiles(stdout: string, _stderr: string): string[] {
+    // Sorald reports number of fixes per processor
+    const matches = stdout.match(/(\w+Processor): (\d+)/g) || [];
+    return matches.length > 0 ? ['(files modified)'] : [];
   }
 
-  protected countFixedIssues(_stdout: string, stderr: string): number {
-    const match = stderr.match(/Total fixes: (\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
+  protected countFixedIssues(stdout: string, _stderr: string): number {
+    // Parse "ProcessorName: N" format
+    const matches = stdout.match(/(\w+Processor): (\d+)/g) || [];
+    let total = 0;
+    for (const match of matches) {
+      const numMatch = match.match(/: (\d+)/);
+      if (numMatch) {
+        total += parseInt(numMatch[1], 10);
+      }
+    }
+    return total;
   }
 }
 
@@ -269,14 +284,22 @@ export class BlackExecutor extends ToolExecutorBase {
 
 /**
  * Clang-Tidy Executor - C/C++ linting and fixing
+ * Session 104: Supports modernize-* checks with auto-fix
+ * - modernize-use-nullptr: 0 -> nullptr
+ * - modernize-use-override: Add override keyword
+ * - modernize-use-equals-default: {} -> = default
+ * Note: Requires LLVM in PATH and SDK path for macOS
  */
 export class ClangTidyExecutor extends ToolExecutorBase {
-  constructor() {
+  private checks: string;
+
+  constructor(checks = 'modernize-*') {
     super({
       name: 'clang-tidy',
       command: 'clang-tidy',
       fixCommand: 'clang-tidy --fix',
     });
+    this.checks = checks;
   }
 
   protected getVersionCommand(): string {
@@ -284,7 +307,9 @@ export class ClangTidyExecutor extends ToolExecutorBase {
   }
 
   async executeFix(options: ToolExecutionOptions): Promise<ToolExecutionResult> {
-    const command = this.buildFixCommand(this.config.fixCommand!, options.files);
+    // Build command with checks and C++ standard
+    const files = options.files?.join(' ') || '';
+    const command = `${this.config.fixCommand} --checks='${this.checks}' ${files} -- -std=c++17`;
 
     if (options.dryRun) {
       return {
@@ -301,6 +326,12 @@ export class ClangTidyExecutor extends ToolExecutorBase {
     }
 
     return this.executeCommand(command, options);
+  }
+
+  protected countFixedIssues(stdout: string, _stderr: string): number {
+    // Parse "clang-tidy applied N of M suggested fixes"
+    const match = stdout.match(/applied (\d+) of \d+ suggested fixes/);
+    return match ? parseInt(match[1], 10) : 0;
   }
 }
 
@@ -732,6 +763,7 @@ export function getRecommendedTier2Fixer(language: string, sourceTool: string): 
 
 /**
  * Get installation instructions for a Tier 2 tool
+ * Session 104: Updated with verified installation methods
  */
 export function getInstallInstructions(toolName: string): string | null {
   const instructions: Record<string, string> = {
@@ -744,20 +776,20 @@ export function getInstallInstructions(toolName: string): string | null {
 
     // Go tools
     'gofmt': 'Included with Go installation',
-    'goimports': 'go install golang.org/x/tools/cmd/goimports@latest',
+    'goimports': 'go install golang.org/x/tools/cmd/goimports@latest && export PATH=$PATH:$(go env GOPATH)/bin',
     'golangci-lint': 'brew install golangci-lint',
 
     // Java tools
     'google-java-format': 'brew install google-java-format',
-    'sorald': 'brew install sorald (or download JAR from GitHub)',
-    'openrewrite': 'Add Maven/Gradle plugin to pom.xml or build.gradle',
+    'sorald': 'curl -L -o ~/tools/sorald.jar https://github.com/ASSERT-KTH/sorald/releases/download/sorald-0.8.6/sorald-0.8.6-jar-with-dependencies.jar',
+    'openrewrite': 'Add Maven/Gradle plugin to pom.xml or build.gradle (see docs/OPENREWRITE_SETUP.md)',
 
     // C/C++ tools
     'clang-format': 'brew install clang-format (or included with Xcode)',
-    'clang-tidy': 'brew install llvm (clang-tidy is part of LLVM)',
+    'clang-tidy': 'brew install llvm && export PATH="/opt/homebrew/opt/llvm/bin:$PATH"',
 
     // C# tools
-    'dotnet-format': 'brew install dotnet',
+    'dotnet-format': 'brew install dotnet (then use: dotnet format <project>)',
 
     // JavaScript/TypeScript tools
     'eslint': 'npm install eslint --save-dev',
