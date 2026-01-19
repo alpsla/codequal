@@ -167,3 +167,75 @@ Commit: [main bbfef771] Session 90: Test stabilization & KB-First Fix Bypass
  create mode 100644 packages/agents/src/fix-agent/state/kb-fix-applicator.ts
 bbfef771
 
+---
+
+# SESSION 102: Manual Patterns & Tier 2 Native Fixer Validation
+# Source: rex-session-102-manual-patterns.md
+# Started: 2026-01-19
+
+## Learnings
+
+### Tasks 1-6: Manual Patterns for Failing Rules
+- Added 5 new patterns to FALLBACK_GUIDANCE in fix-pattern-guidance.ts
+- UseUtilityClass already existed (skipped)
+- New patterns added:
+  - UselessParentheses:java:pmd - remove unnecessary parentheses
+  - F632:python:ruff - use == for literal comparisons
+  - @typescript-eslint/no-explicit-any:typescript:eslint - replace any with proper types
+  - AvoidDollarSigns:java:pmd - rename identifiers without $
+  - UnnecessaryAnnotationValueElement:java:pmd - remove value= shorthand
+
+### Tasks 9-12: Tier 2 Native Fixer Validation
+
+#### ESLint --fix (TypeScript)
+- Auto-fixable: formatting rules (semi, quotes, indent, comma-dangle)
+- NOT auto-fixable: @typescript-eslint/no-explicit-any (needs AI)
+- Recommendation: Run eslint --fix first, then AI for semantic rules
+
+#### Ruff --fix (Python)
+- Auto-fixable with --fix: F632 (is vs ==), F401 (unused imports)
+- Auto-fixable with --unsafe-fixes: E711 (== None), E712 (== True/False)
+- KEY FINDING: F632 IS auto-fixable by ruff! Can use tier 2.
+- NOT auto-fixable: E402 (import order), E501 (line too long)
+
+#### Go Native Fixers
+- gofmt: Auto-fixes ALL formatting issues
+- goimports: Auto-fixes unused imports + formatting (not installed)
+- golangci-lint --fix: Limited auto-fix capability
+- NOT auto-fixable: errcheck, unused (semantic issues)
+
+#### Java Native Fixers
+- PMD: Detection only, NO auto-fix capability
+- Checkstyle: Detection only, NO auto-fix
+- google-java-format: Formatting only (not installed)
+- ALL PMD rules need AI (tier 3): UselessParentheses, AvoidDollarSigns, etc.
+
+### Task 13: Tier 2 Native Fixer Integration
+- Added 6 new executors to tier2-executor.ts:
+  - ESLintExecutor: eslint --fix
+  - RuffExecutor: ruff check --fix (with --unsafe-fixes option)
+  - GofmtExecutor: gofmt -w
+  - GoimportsExecutor: goimports -w
+  - GoogleJavaFormatExecutor: google-java-format --replace
+  - GolangciLintExecutor: golangci-lint run --fix
+- Added getRecommendedTier2Fixer() function for language/tool → native fixer mapping
+
+## Summary
+
+Session 102 completed Phase 1 (patterns) and Phase 2 (tier 2 validation):
+- 5 new manual patterns added for AI tier 3 guidance
+- Tier 2 native fixers validated and integrated
+- Key insight: Python F632 is fixable by ruff (no AI needed)
+- Key insight: Java PMD rules have NO native fix (all need AI)
+
+Fix Pipeline Architecture:
+- Tier 1: Pattern cache (0 API calls)
+- Tier 2: Native --fix tools (0 API calls)
+- Tier 3: AI-based fixing (uses API calls)
+
+=== Session 102 Tasks 1-13 (2026-01-19) ===
+Status: COMPLETE
+Commits:
+- fdd68b4f: rex(1-6): Add manual patterns for 5 failing rules
+- c0ea0976: rex(9-13): Add native linter --fix executors to tier 2
+
