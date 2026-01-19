@@ -1,201 +1,262 @@
 {
-  "source": "docs/rex-session-108-fix-patterns-push.md",
-  "createdAt": "2026-01-19T22:00:00Z",
-  "maxIterations": 20,
-  "currentIteration": 10,
-  "status": "complete",
+  "source": "docs/rex-session-109-v9-data-audit.md",
+  "createdAt": "2026-01-19T18:00:00Z",
+  "maxIterations": 15,
+  "currentIteration": 0,
+  "status": "ready",
   "validation": {
-    "type": "supabase-patterns",
-    "build": "cd packages/agents && npm test -- --testPathPattern='live-' --verbose --passWithNoTests 2>&1 | head -100",
-    "typecheck": "echo 'Session 108 - pattern insertion'",
-    "lint": "echo 'Session 108 - lint passed'"
+    "type": "v9-data-audit",
+    "build": "echo 'Session 109 - data audit task'",
+    "typecheck": "echo 'Session 109 - no typecheck needed'",
+    "lint": "echo 'Session 109 - lint passed'"
   },
   "tasks": [
     {
       "id": 1,
       "parentId": null,
-      "title": "Create Pattern for UselessParentheses (pmd/java)",
-      "description": "Add guidance pattern for UselessParentheses rule with operator precedence guidance",
+      "title": "Run V9 Analysis on Test Repository",
+      "description": "Generate a complete V9 analysis output for auditing. Run V9 analysis with complete mode and save raw JSON output.",
       "steps": [
-        "Insert pattern into Supabase fix_pattern_guidance table",
-        "Include antiPatterns: removing ALL parentheses without checking precedence",
-        "Include correctPatterns: check Java operator precedence",
-        "Verify pattern is active"
+        "Check if test-v9-lite-e2e.ts exists in packages/agents/tests/integration/",
+        "If not, create a simple V9 test script that runs analysis",
+        "Run V9 analysis and capture JSON output",
+        "Save to /tmp/v9-raw-output.json"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/tests/integration/test-v9-lite-e2e.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 2,
       "parentId": null,
-      "title": "Create Pattern for F632 (ruff/python)",
-      "description": "Add guidance pattern for F632 rule (is literal comparison)",
+      "title": "Audit Quality Scores Section",
+      "description": "Verify quality score data exists for dashboard. Check for overall score, security score, code quality score, performance score, maintainability score, grade, and trend data.",
       "steps": [
-        "Insert pattern into Supabase fix_pattern_guidance table",
-        "Include antiPatterns: Using is True/False for comparisons",
-        "Include correctPatterns: Remove comparison for truthiness checks",
-        "Verify pattern is active"
+        "Read V9 output from /tmp/v9-raw-output.json or examine V9PRAnalyzer output types",
+        "Search for score-related fields",
+        "Document which fields exist: overall, security, codeQuality, performance, maintainability, grade",
+        "Document which fields are MISSING",
+        "Note field locations in output structure"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts",
+        "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 3,
       "parentId": null,
-      "title": "Create Pattern for @typescript-eslint/no-explicit-any",
-      "description": "Add guidance pattern for no-explicit-any rule with type inference guidance",
+      "title": "Audit Issue Summary Section",
+      "description": "Verify issue categorization data exists. Check for total, new, fixed, existingModified, existingRest, bySeverity, byCategory, blocking, autoFixed, manualRequired counts.",
       "steps": [
-        "Insert pattern into Supabase fix_pattern_guidance table",
-        "Include antiPatterns: Replacing any with unknown without updating usage",
-        "Include correctPatterns: Use specific interface based on usage",
-        "Verify pattern is active"
+        "Search V9 output for issue count fields",
+        "Verify NEW/FIXED/EXISTING categorization exists",
+        "Verify severity breakdown (critical, high, medium, low, info) exists",
+        "Verify category breakdown (security, codeQuality, performance, dependency, architecture) exists",
+        "Document missing fields"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 4,
       "parentId": null,
-      "title": "Create Pattern for AvoidDollarSigns (pmd/java)",
-      "description": "Add guidance pattern for AvoidDollarSigns rule with generated code handling",
+      "title": "Audit Issue Details Section",
+      "description": "Verify individual issue data is complete. Check for id, ruleId, tool, file, line, column, message, description, severity, category, codeSnippet, hasFix, fixAvailable, fixConfidence, suggestedFix, status, blocksMerge, documentationUrl.",
       "steps": [
-        "Insert pattern into Supabase fix_pattern_guidance table",
-        "Include antiPatterns: Removing $ from generated code or inner classes",
-        "Include correctPatterns: Rename user-defined vars, suppress for generated",
-        "Verify pattern is active"
+        "Find issue array in V9 output",
+        "Pick 5 sample issues",
+        "Check each required field exists",
+        "Document missing fields per issue",
+        "Note if fields are inconsistent across issues"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 5,
       "parentId": null,
-      "title": "Create Pattern for UnnecessaryAnnotationValueElement (pmd/java)",
-      "description": "Add guidance pattern for UnnecessaryAnnotationValueElement rule",
+      "title": "Audit Fix Details Section",
+      "description": "Verify fix data is complete for showing diffs. Check for issueId, file, line, originalCode, fixedCode, diff, tier, tool, confidence, applied, verified, suggestion, steps.",
       "steps": [
-        "Insert pattern into Supabase fix_pattern_guidance table",
-        "Include antiPatterns: Removing value= when multiple elements exist",
-        "Include correctPatterns: Only simplify when value is single element",
-        "Verify pattern is active"
+        "Find CategorizedFix[] or similar in V9 output",
+        "Verify originalCode and fixedCode fields exist",
+        "Check diff generation capability",
+        "Document missing fields"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/fix-agent/types.ts",
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 6,
       "parentId": null,
-      "title": "Create Pattern for UseUtilityClass (pmd/java)",
-      "description": "Add guidance pattern for UseUtilityClass rule with Spring bean detection",
+      "title": "Audit Unfixed Issues Section",
+      "description": "Verify manual guidance data exists. Check for issueId, reason, explanation, authorAction (type, description, steps, blocksMerge), reviewPriority, estimatedEffort, suggestedApproach, documentationLinks.",
       "steps": [
-        "Insert pattern into Supabase fix_pattern_guidance table",
-        "Include antiPatterns: Adding private constructor to Spring beans",
-        "Include correctPatterns: Check for @Component/@Service annotations",
-        "Verify pattern is active"
+        "Find UnfixedIssue[] or similar in V9 output",
+        "Verify guidance fields exist",
+        "Check authorAction has actionable steps",
+        "Document missing fields"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 7,
       "parentId": null,
-      "title": "Remove Fixed Patterns from fix_failure_tracking",
-      "description": "Clean up the failure tracking table by removing entries that now have guidance patterns",
+      "title": "Audit Educational Content Section",
+      "description": "Verify learning resources data exists. Check for issueExplanations (title, whatItMeans, whyItMatters, howToFix, examples), recommendedResources, skillGaps.",
       "steps": [
-        "Query fix_failure_tracking for the 6 rules",
-        "Delete entries for rules that now have guidance patterns",
-        "Verify table is clean"
+        "Search for educational content in V9 output",
+        "Check if rule explanations exist",
+        "Check if learning resources are generated",
+        "Document what AI enrichment provides vs what's static"
       ],
-      "files": [],
+      "files": [
+        "packages/agents/src/two-branch/analyzers/v9-educational-resources.ts",
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:15:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 8,
       "parentId": null,
-      "title": "Run Validation Tests",
-      "description": "Verify patterns work correctly by running live integration tests",
+      "title": "Audit Gamification Section",
+      "description": "Verify XP, levels, badges, skills data exists. Check for user (level, xp, xpToNextLevel, rank), prContribution (xpEarned, issuesFixed, newBadges, skillsImproved), badges array, skills array.",
       "steps": [
-        "Run npm test -- --testPathPattern=live- --verbose",
-        "Verify no regressions",
-        "Check pattern lookup works"
+        "Search for gamification data in V9 output",
+        "Check if XP calculation exists",
+        "Check if badge/achievement system outputs data",
+        "Check if skills tracking exists",
+        "Document what's missing"
       ],
-      "files": [],
-      "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "files": [
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:16:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 9,
       "parentId": null,
-      "title": "Commit Changes",
-      "description": "Commit pattern additions with descriptive message",
+      "title": "Audit Export Metadata Section",
+      "description": "Verify data needed for SARIF/GitLab exports exists. Check for sarif structure, gitlabCodeQuality structure, analysisId, repositoryUrl, prNumber, baseBranch, prBranch, analyzedAt, duration.",
       "steps": [
-        "git add -A",
-        "git status",
-        "git commit with descriptive message for 6 guidance patterns"
+        "Check if SARIF export structure exists",
+        "Check if GitLab Code Quality format exists",
+        "Verify metadata fields",
+        "Document missing export data"
       ],
-      "files": [],
-      "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "files": [
+        "packages/agents/src/two-branch/services/v9-pr-analyzer.ts",
+        "packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.ts"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:17:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 10,
       "parentId": null,
-      "title": "Push to Main",
-      "description": "Push validated changes to main branch",
+      "title": "Create Data Gap Report",
+      "description": "Document all missing fields for UI development. Create docs/V9_DATA_GAP_REPORT.md with P0 (blocks UI), P1 (important), P2 (nice-to-have) categorization.",
       "steps": [
-        "Verify on main branch",
-        "git push origin main",
-        "Verify push succeeded"
+        "Compile all missing fields from tasks 2-9",
+        "Categorize by priority (P0 = blocks UI, P1 = important, P2 = nice-to-have)",
+        "Create action items for filling gaps",
+        "Save report to docs/V9_DATA_GAP_REPORT.md"
       ],
-      "files": [],
+      "files": [
+        "docs/V9_DATA_GAP_REPORT.md"
+      ],
       "priority": "high",
-      "passes": true,
-      "attempts": 1,
+      "passes": false,
+      "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T22:18:00Z",
-      "commitHash": "13adff22"
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 11,
+      "parentId": null,
+      "title": "Run Oracle Cloud V9 E2E and Generate BASIC/PRO Reports",
+      "description": "Run established V9 E2E script on Oracle Cloud against a real PR to generate BASIC and PRO tier reports for manual review. Uses packages/agents/scripts/testing/oracle/oracle-run-v9-e2e-complete.sh",
+      "steps": [
+        "SSH to Oracle Cloud (129.213.49.128) and verify infrastructure is ready",
+        "Run the established oracle-run-v9-e2e-complete.sh script which executes test-v9-e2e-complete.ts",
+        "Wait for V9 analysis to complete on Apache Kafka repository (5-8 minutes expected)",
+        "Download generated BASIC tier report (analysis-only, all issues listed) from /tmp/v9-reports/",
+        "Run V9 with fix generation enabled (PRO tier) - includes three-tier fix cascade",
+        "Download generated PRO tier report (with fixes applied, fix summary, remaining issues)",
+        "Copy both reports to docs/sample-reports/ for user manual review",
+        "Create docs/sample-reports/README.md documenting which PR was analyzed and how to interpret reports"
+      ],
+      "files": [
+        "packages/agents/scripts/testing/oracle/oracle-run-v9-e2e-complete.sh",
+        "packages/agents/tests/integration/oracle-e2e-v9-complete.ts",
+        "docs/sample-reports/BASIC_TIER_REPORT.md",
+        "docs/sample-reports/PRO_TIER_REPORT.md",
+        "docs/sample-reports/README.md"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
     }
   ],
   "iterations": []
