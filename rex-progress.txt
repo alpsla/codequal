@@ -401,3 +401,47 @@ Commit: [main 65f994a4] rex(#3): E2E Tests for Java Fixers
 
 - Typical C++ fix order: clang-format → clang-tidy → AI
 
+
+=== Task #4 (2026-01-19 08:58:34) ===
+Title: E2E Tests for C++ Fixers
+Status: COMPLETE
+Commit: [main 0e86eadd] rex(#4): E2E Tests for C++ Fixers
+ 5 files changed, 867 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-cpp.test.ts
+0e86eadd
+
+### Task 5: E2E Tests for C# Fixers
+- Created e2e-csharp.test.ts with comprehensive tests for C# tier 2 fixers
+- Test categories:
+  - Tier 2 Tool Recommendations: Validates getRecommendedTier2Fixer() for csharp
+  - Executor creation: Validates DotnetFormatExecutor
+  - Dry run results: Validates executor returns proper dry run output
+  - Tier 2 Pipeline Flow: Tests conceptual flow where tier 2 tools run before AI
+  - Project Context Requirements: Documents .csproj requirement for dotnet-format
+  - Rules Coverage Documentation: Documents which rules are auto-fixable vs need AI
+
+- Added csharp language mappings to getRecommendedTier2Fixer():
+  - csharp/dotnet-format → dotnet-format
+  - csharp/roslyn → dotnet-format
+  - csharp/stylecop → dotnet-format
+  - csharp/sonarqube → null (no native fix)
+
+- C# rules auto-fixable by tier 2 (dotnet-format):
+  - IDE0055 (formatting), IDE0003/IDE0009 (this qualification)
+  - IDE0007/IDE0008 (var usage), IDE0065 (using placement)
+  - SA1000-SA1028 (spacing rules), SA1200-SA1217 (using directives)
+  - SA1500-SA1520 (layout rules)
+
+- C# rules needing AI (tier 3):
+  - Roslyn CA rules (CA1822, CA1062, CA2000, CA2227)
+  - IDE semantic rules (IDE0044, IDE0051, IDE0059, IDE0060)
+  - SonarQube C# rules (S1118, S1144, S1172, S2583)
+  - StyleCop documentation rules (SA1600)
+
+- Key C# specifics documented:
+  - dotnet-format requires .csproj context
+  - .editorconfig configures formatting rules
+  - EnforceCodeStyleInBuild enables code style analysis
+  - CI/CD integration: dotnet format --verify-no-changes
+  - Typical fix order: dotnet-format → AI
+

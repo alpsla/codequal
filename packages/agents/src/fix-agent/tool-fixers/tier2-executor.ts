@@ -759,6 +759,12 @@ export function getRecommendedTier2Fixer(language: string, sourceTool: string): 
       'cppcheck': null, // cppcheck has NO auto-fix capability
       'clang': 'clang-format', // compiler warnings → format first
     },
+    csharp: {
+      'dotnet-format': 'dotnet-format', // Formatting and style
+      'roslyn': 'dotnet-format', // Roslyn analyzers → format first
+      'stylecop': 'dotnet-format', // StyleCop rules → format
+      'sonarqube': null, // SonarQube C# rules need AI
+    },
   };
 
   const langRecs = recommendations[language.toLowerCase()];
