@@ -2,7 +2,7 @@
   "source": "rex-session-105-e2e-validation.md",
   "createdAt": "2026-01-19T17:00:00Z",
   "maxIterations": 30,
-  "currentIteration": 6,
+  "currentIteration": 1,
   "status": "ready",
   "validation": {
     "type": "shell",
@@ -132,11 +132,11 @@
         "packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-typescript.test.ts"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "attempts": 0,
       "lastError": null,
-      "completedAt": null,
-      "commitHash": null
+      "completedAt": "2026-01-19T14:03:47Z",
+      "commitHash": "[main a52fdeaa] rex(#6): E2E Tests for TypeScript Fixers\n 3 files changed, 596 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-typescript.test.ts\na52fdeaa"
     },
     {
       "id": 7,
@@ -154,11 +154,11 @@
         "docs/E2E_CLOUD_TEST_RESULTS.md"
       ],
       "priority": "medium",
-      "passes": false,
-      "attempts": 0,
+      "passes": true,
+      "attempts": 1,
       "lastError": null,
-      "completedAt": null,
-      "commitHash": null
+      "completedAt": "2026-01-19T14:06:00Z",
+      "commitHash": "e40556e4"
     },
     {
       "id": 8,

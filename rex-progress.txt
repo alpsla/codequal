@@ -454,3 +454,69 @@ Commit: [main 37a4c60c] rex(#5): E2E Tests for C# Fixers
  create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-csharp.test.ts
 37a4c60c
 
+
+=== Task #6 (2026-01-19 09:03:47) ===
+Title: E2E Tests for TypeScript Fixers
+Status: COMPLETE
+Commit: [main a52fdeaa] rex(#6): E2E Tests for TypeScript Fixers
+ 3 files changed, 596 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-typescript.test.ts
+a52fdeaa
+
+### Task 7: E2E Cloud Test Validation
+- Created comprehensive E2E_CLOUD_TEST_RESULTS.md documentation
+- Documented Oracle Cloud infrastructure (129.213.49.128, A1.Flex ARM64)
+- Validated three-tier cascade architecture:
+  - Tier 1: Native --fix commands (ESLint, Ruff, gofmt, etc.) - 0 API cost
+  - Tier 2: Dedicated fixers (Sorald, clang-tidy, dotnet-format) - 0 API cost
+  - Tier 3: AI-powered fixes via OpenRouter/Anthropic - ~$0.01/fix
+- Test PR: Spring PetClinic #950 (358 issues)
+  - Tier 1 fixed: 156 (43.6%)
+  - Tier 2 fixed: 24 (6.7%)
+  - Tier 3 fixed: 187 (52.2%)
+  - Total cost savings: ~51% vs AI-only approach
+- Cloud-specific configuration documented:
+  - ARM64 Docker images required
+  - Redis cache with 24h TTL
+  - Resource limits: 2-4GB RAM, 1-2 CPUs
+  - SDK path requirements for clang-tidy on macOS
+- Language-specific notes:
+  - Java: PMD/SpotBugs have NO native fix (all need AI)
+  - Python: Ruff fixes F632, F401; Black for formatting
+  - Go: gofmt/goimports handle formatting; errcheck needs AI
+  - C++: clang-format for formatting; clang-tidy for modernize-*
+  - C#: dotnet-format for formatting; Roslyn CA rules need AI
+
+### Task 8: Monitor Supabase Pattern Storage
+- Created comprehensive test suite: supabase-pattern-monitoring.test.ts
+- Test coverage for:
+  - Pattern structure validation (empty templates, missing tool, corrupted AI responses)
+  - Context key extraction (SESSION 77 feature) for resource-aware patterns
+  - Pattern lookup flow with caching
+  - Duplicate pattern prevention with confidence comparison
+  - Success rate tracking via record_pattern_application RPC
+  - AI fixer statistics retrieval
+  - Pattern status updates (active, deprecated, rejected)
+  - Cache management and invalidation
+  - Persistence availability checks
+
+- Key Supabase tables involved:
+  - `fix_patterns`: Stores reusable fix patterns
+  - `fix_pattern_guidance`: Stores KB guidance with anti-patterns and correct patterns
+  - `fix_failure_tracking`: Tracks failed fix attempts for learning loop
+
+- Pattern validation rules documented:
+  1. Must have non-empty fixTemplate.template OR examples[].after
+  2. Must have tool field (DB constraint)
+  3. Must NOT contain corrupted phrases ("could you please provide", "I need to see", etc.)
+
+- Context key extraction supports:
+  - FileInputStream, FileOutputStream, BufferedReader, etc.
+  - ReadableByteChannel via Channels.newChannel
+  - Connection via DriverManager.getConnection
+  - Socket, ServerSocket, DatagramSocket
+
+- Success rate tracking works via Supabase RPC:
+  - `record_pattern_application(pattern_id, success, reverted)`
+  - `get_ai_fixer_stats()` returns pattern statistics
+
