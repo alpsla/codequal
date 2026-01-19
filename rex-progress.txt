@@ -961,3 +961,41 @@ aa288c8d
 - ioutil IS used in fixture (fetchURL) so won't be removed by goimports
 
 
+
+=== Task #6 (2026-01-19 14:56:04) ===
+Title: Run Live Go Tests - Tier 1 & 2
+Status: COMPLETE
+Commit: [main 41280e63] rex(#6): Run Live Go Tests - Tier 1 & 2
+ 3 files changed, 954 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-go.test.ts
+41280e63
+
+### Task 7: Run Live C++ Tests - Tier 1 & 2
+- Created live-cpp.test.ts with comprehensive tests for C++ native fixers
+- Test features:
+  - clang-format: Formatting fixes (spacing, braces, indentation)
+  - clang-tidy --fix: modernize-use-nullptr (NULL → nullptr)
+  - clang-tidy --fix: modernize-use-override (add override specifier)
+  - Multi-tool sequence: clang-format → clang-tidy
+- SDK path requirements documented:
+  - macOS: export SDKROOT=$(xcrun --show-sdk-path) - required for system headers
+  - Linux: apt-get install clang clang-tools libc++-dev
+  - compile_commands.json recommended for accurate analysis
+- clang-tidy command pattern:
+  - clang-tidy --checks=-*,modernize-use-nullptr --fix file.cpp -- -std=c++17
+  - On macOS: add -isysroot $(xcrun --show-sdk-path)
+- C++ rules auto-fixable by tier 2:
+  - clang-format: ALL formatting (indentation, spacing, braces, line wrapping)
+  - clang-tidy modernize-use-nullptr: NULL/0 → nullptr
+  - clang-tidy modernize-use-override: add override keyword
+  - clang-tidy modernize-use-auto: verbose iterators
+  - clang-tidy modernize-loop-convert: C-style → range-based
+- C++ rules needing AI (tier 3):
+  - cppcheck memleak: Memory leak detection
+  - cppcheck nullPointer: Null pointer dereference
+  - cppcheck uninitvar: Uninitialized variable use
+  - cppcheck resourceLeak: File handles not closed
+  - bugprone-* and cppcoreguidelines-* checks
+- Fix order: clang-format → clang-tidy modernize-* → AI
+
+
