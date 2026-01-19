@@ -749,6 +749,16 @@ export function getRecommendedTier2Fixer(language: string, sourceTool: string): 
       checkstyle: 'google-java-format', // formatting only
       spotbugs: null, // NOT auto-fixable
     },
+    cpp: {
+      'clang-tidy': 'clang-format', // Format first, then tidy
+      'cppcheck': null, // cppcheck has NO auto-fix capability
+      'clang': 'clang-format', // compiler warnings → format first
+    },
+    c: {
+      'clang-tidy': 'clang-format', // Format first, then tidy
+      'cppcheck': null, // cppcheck has NO auto-fix capability
+      'clang': 'clang-format', // compiler warnings → format first
+    },
   };
 
   const langRecs = recommendations[language.toLowerCase()];

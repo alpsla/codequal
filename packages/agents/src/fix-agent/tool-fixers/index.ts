@@ -45,6 +45,10 @@ export {
   // Factory and helpers
   createTier2Executor,
   getTier2ToolNames,
+  getRecommendedTier2Fixer,
+  getInstallInstructions,
+  checkTier2ToolAvailability,
+  getAllTier2ToolsStatus,
   // Individual executors
   SoraldExecutor,
   OpenRewriteExecutor,
@@ -55,6 +59,13 @@ export {
   ClangTidyExecutor,
   ClangFormatExecutor,
   DotnetFormatExecutor,
+  // SESSION 102: Native linter --fix executors
+  ESLintExecutor as Tier2ESLintExecutor,
+  RuffExecutor as Tier2RuffExecutor,
+  GofmtExecutor,
+  GoimportsExecutor,
+  GoogleJavaFormatExecutor,
+  GolangciLintExecutor,
 } from './tier2-executor';
 
 // Tier 3 Executor - AI-based fixing

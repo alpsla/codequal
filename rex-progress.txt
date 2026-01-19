@@ -350,3 +350,54 @@ d0e19cae
   - Typical fix order: google-java-format → Sorald → AI
 
 
+
+=== Task #3 (2026-01-19 08:55:11) ===
+Title: E2E Tests for Java Fixers
+Status: COMPLETE
+Commit: [main 65f994a4] rex(#3): E2E Tests for Java Fixers
+ 3 files changed, 715 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-java.test.ts
+65f994a4
+
+### Task 4: E2E Tests for C++ Fixers
+- Created e2e-cpp.test.ts with comprehensive tests for C++ tier 2 fixers
+- Test categories:
+  - Tier 2 Tool Recommendations: Validates getRecommendedTier2Fixer() for cpp/c
+  - Executor creation: Validates ClangFormatExecutor, ClangTidyExecutor
+  - Dry run results: Validates each executor returns proper dry run output
+  - Tier 2 Pipeline Flow: Tests conceptual flow where tier 2 tools run before AI
+  - Multi-Tool Fix Sequence: Tests running clang-format → clang-tidy in sequence
+  - SDK Path Requirements: Documents macOS/CI configuration needs
+  - Rules Coverage Documentation: Documents which rules are auto-fixable vs need AI
+
+- Added cpp/c language mappings to getRecommendedTier2Fixer():
+  - cpp/clang-tidy → clang-format (format first, then modernize)
+  - cpp/clang → clang-format
+  - cpp/cppcheck → null (no native fix)
+  - c/clang-tidy → clang-format
+  - c/clang → clang-format
+  - c/cppcheck → null (no native fix)
+
+- C++ rules auto-fixable by tier 2:
+  - clang-format: ALL formatting (indentation, spacing, braces, alignment)
+  - clang-tidy modernize-*: use-nullptr, use-override, use-equals-default, use-auto
+  - clang-tidy modernize-*: make-unique, make-shared, loop-convert, use-emplace
+
+- C++ rules needing AI (tier 3):
+  - cppcheck issues (memleak, nullPointer, uninitvar)
+  - cppcoreguidelines-* (complex semantic issues)
+  - bugprone-* (use-after-move, narrowing-conversions)
+  - readability-magic-numbers (needs semantic understanding)
+
+- SDK path requirements for CI documented:
+  - macOS: export SDKROOT=$(xcrun --show-sdk-path)
+  - Linux: apt-get install clang clang-tools
+  - compile_commands.json recommended for accurate analysis
+
+- Exported additional functions from index.ts:
+  - getRecommendedTier2Fixer, getInstallInstructions
+  - checkTier2ToolAvailability, getAllTier2ToolsStatus
+  - Session 102 executors (GofmtExecutor, GoimportsExecutor, etc.)
+
+- Typical C++ fix order: clang-format → clang-tidy → AI
+
