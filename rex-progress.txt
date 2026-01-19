@@ -1135,3 +1135,39 @@ Commit: [main 8187ad8a] rex(#9): Run Live Rust Tests - Tier 1 & 2
 - Fix order: rubocop --autocorrect → rubocop --autocorrect-all → AI
 
 
+
+=== Task #10 (2026-01-19 15:08:48) ===
+Title: Run Live Ruby Tests - Tier 1 & 2
+Status: COMPLETE
+Commit: [main 33e645c5] rex(#10): Run Live Ruby Tests - Tier 1 & 2
+ 3 files changed, 874 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-ruby.test.ts
+33e645c5
+
+### Task 11: Run Live TypeScript Prettier Test
+- Created live-prettier.test.ts with comprehensive tests for Prettier formatting
+- Created fixtures/live-test-prettier.ts with intentional formatting issues
+- Test features:
+  - Prettier --write: Pure formatting fixes (NOT code quality)
+  - ESLint-Prettier integration: eslint-config-prettier documentation
+  - Before/after file comparison to verify actual modification
+  - Detailed logging of formatting changes
+- Prettier formatting issues tested:
+  - printWidth: Long lines exceeding 80 chars → wrapped
+  - singleQuote: Double quotes → single quotes
+  - trailingComma: Missing trailing commas → added
+  - bracketSpacing: { no space } → { with space }
+  - useTabs: Tab characters → spaces
+  - semi: Missing semicolons → added
+- Key distinction documented:
+  - Prettier: Pure formatting (indentation, quotes, spacing, line wrapping)
+  - ESLint: Code quality rules (no-explicit-any, no-unused-vars, best practices)
+  - eslint-config-prettier: Disables ESLint formatting rules to avoid conflicts
+- Recommended workflow:
+  1. Tier 1a: Prettier --write (formatting)
+  2. Tier 1b: ESLint --fix (auto-fixable code quality)
+  3. Tier 2: Dedicated fixers (Sorald, clang-tidy)
+  4. Tier 3: AI-based fixes (semantic issues)
+- PrettierExecutor already exists in tier1-executor.ts (lines 86-124)
+- Factory pattern: createTier1Executor('prettier') returns PrettierExecutor
+
