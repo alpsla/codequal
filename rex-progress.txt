@@ -888,3 +888,39 @@ Commit: [main 6ac6281e] rex(#3): Create Live Test Fixture - C#
 - Verified: cargo clippy detects needless_return, redundant_clone, etc.
 - File structure: Cargo.toml + main.rs in same directory (not src/ subfolder)
 
+
+=== Task #4 (2026-01-19 14:47:49) ===
+Title: Create Live Test Fixture - Rust
+Status: COMPLETE
+Commit: [main 67dbb819] rex(#4): Create Live Test Fixture - Rust
+ 30 files changed, 397 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/Cargo.lock
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/Cargo.toml
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/main.rs
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/.rustc_info.json
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/CACHEDIR.TAG
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.cargo-lock
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b6793bc0aa4a1b1a/bin-live-test-rust
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b6793bc0aa4a1b1a/bin-live-test-rust.json
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b6793bc0aa4a1b1a/dep-bin-live-test-rust
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b6793bc0aa4a1b1a/invoked.timestamp
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b6793bc0aa4a1b1a/output-bin-live-test-rust
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b8550db495b56c21/bin-live-test-rust
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b8550db495b56c21/bin-live-test-rust.json
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b8550db495b56c21/dep-bin-live-test-rust
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b8550db495b56c21/invoked.timestamp
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/.fingerprint/live-test-rust-b8550db495b56c21/output-bin-live-test-rust
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/deps/liblive_test_rust-b6793bc0aa4a1b1a.rmeta
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/deps/liblive_test_rust-b8550db495b56c21.rmeta
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/deps/live_test_rust-b6793bc0aa4a1b1a.d
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/deps/live_test_rust-b8550db495b56c21.d
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-1ppxplm3vp3o4/s-hf07eqmpbe-1w66b0f-a7z5eafpm6rp1qyc9g79csoby/dep-graph.bin
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-1ppxplm3vp3o4/s-hf07eqmpbe-1w66b0f-a7z5eafpm6rp1qyc9g79csoby/query-cache.bin
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-1ppxplm3vp3o4/s-hf07eqmpbe-1w66b0f-a7z5eafpm6rp1qyc9g79csoby/work-products.bin
+ create mode 100755 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-1ppxplm3vp3o4/s-hf07eqmpbe-1w66b0f.lock
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-2bq8hauveqqgu/s-hf07ekuy3t-0mitxkl-a3e6rxw0lzpbo0d83s41bogk1/dep-graph.bin
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-2bq8hauveqqgu/s-hf07ekuy3t-0mitxkl-a3e6rxw0lzpbo0d83s41bogk1/query-cache.bin
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-2bq8hauveqqgu/s-hf07ekuy3t-0mitxkl-a3e6rxw0lzpbo0d83s41bogk1/work-products.bin
+ create mode 100755 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-2bq8hauveqqgu/s-hf07ekuy3t-0mitxkl.lock
+67dbb819
+
