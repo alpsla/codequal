@@ -277,3 +277,40 @@ Commits:
   - Dry run validation (no actual tool execution needed)
   - Command string inspection
 
+
+=== Task #1 (2026-01-19 08:49:35) ===
+Title: E2E Tests for Python Fixers
+Status: COMPLETE
+Commit: [main 2b544d4e] rex(#1): E2E Tests for Python Fixers
+ 3 files changed, 653 insertions(+), 146 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-python.test.ts
+2b544d4e
+
+### Task 2: E2E Tests for Go Fixers
+- Created e2e-go.test.ts with comprehensive tests for Go tier 2 fixers
+- Test categories:
+  - Tier 2 Tool Recommendations: Validates getRecommendedTier2Fixer() for go
+  - Executor creation: Validates GofmtExecutor, GoimportsExecutor, GolangciLintExecutor
+  - Dry run results: Validates each executor returns proper dry run output
+  - Tier 2 Pipeline Flow: Tests conceptual flow where tier 2 tools run before AI
+  - Multi-Tool Fix Sequence: Tests running multiple fixers in sequence (goimports → gofmt → golangci-lint)
+  - Rules Coverage Documentation: Documents which rules are auto-fixable vs need AI
+
+- Go rules auto-fixable by tier 2:
+  - gofmt: ALL formatting (indentation, spacing, braces)
+  - goimports: formatting + unused imports removal
+  - golangci-lint --fix: limited (formatting, misspell)
+
+- Go rules needing AI (tier 3):
+  - errcheck (unchecked errors)
+  - unused (unused code)
+  - ineffassign (ineffective assignments)
+  - staticcheck (semantic issues)
+  - gosec (security)
+  - deadcode (unreachable code)
+
+- Key difference from Python tests:
+  - golangci-lint works on directory level, not individual files
+  - goimports is a superset of gofmt (preferred)
+  - Typical fix order: goimports → golangci-lint → AI
+
