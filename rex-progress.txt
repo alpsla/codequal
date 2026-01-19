@@ -924,3 +924,40 @@ Commit: [main 67dbb819] rex(#4): Create Live Test Fixture - Rust
  create mode 100755 packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/target/debug/incremental/live_test_rust-2bq8hauveqqgu/s-hf07ekuy3t-0mitxkl.lock
 67dbb819
 
+
+=== Task #5 (2026-01-19 14:49:23) ===
+Title: Create Live Test Fixture - Ruby
+Status: COMPLETE
+Commit: [main aa288c8d] rex(#5): Create Live Test Fixture - Ruby
+ 3 files changed, 353 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-ruby/main.rb
+aa288c8d
+
+### Task 6: Run Live Go Tests - Tier 1 & 2
+- Created live-go.test.ts with 25 comprehensive tests for Go native fixers
+- Test features:
+  - gofmt: Formatting fixes (spacing, braces, indentation)
+  - goimports: Unused import removal + formatting (superset of gofmt)
+  - golangci-lint --fix: Limited auto-fixes (misspell, whitespace)
+- Test patterns:
+  - Copy fixture to temp directory for isolation
+  - Before/after file comparison to verify actual modification
+  - Detailed logging of what changed
+  - Graceful skipping when tools not installed
+- Key findings:
+  - gofmt fixes ALL formatting (comes with Go)
+  - goimports fixes formatting + removes unused imports (needs go install)
+  - golangci-lint --fix fixes misspell, whitespace; NOT errcheck, staticcheck
+- Tool availability handling:
+  - isGoimportsInPath(): Check if goimports in PATH (for executor class)
+  - getGoimportsCommand(): Returns full path to goimports (~/go/bin/ fallback)
+  - GoimportsExecutor requires goimports in PATH
+- Issues needing AI (tier 3):
+  - errcheck: Unchecked error returns (need if err != nil checks)
+  - staticcheck (SA4006): Ineffective assignments
+  - unused: Unused variables/code
+  - gosec: Security issues
+  - ineffassign: Ineffective assignments
+- ioutil IS used in fixture (fetchURL) so won't be removed by goimports
+
+
