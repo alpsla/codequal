@@ -752,3 +752,38 @@ Commit: [main 24dbe49e] rex(#7): Run Live Tier 3 Test - AI Fixer with Pattern Cr
 - If Task 7 pattern confidence is low, test documents behavior (no hard failure)
 - Key validation: If KB cache hit, processIssue() returns model='kb-bypass' and cost=0
 
+
+=== Task #8 (2026-01-19 10:50:21) ===
+Title: Test Pattern Cache Hit Flow
+Status: COMPLETE
+Commit: [main dda50357] rex(#8): Test Pattern Cache Hit Flow
+ 3 files changed, 585 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-pattern-cache.test.ts
+dda50357
+
+### Task 9: Run Full Pipeline Integration Test
+- Created live-full-pipeline.test.ts for end-to-end three-tier cascade testing
+- Test creates multi-issue files (Python and TypeScript) with 10+ issues across all tiers
+- Test fixture content:
+  - Python: F401 (unused imports), F632 (is literal), E711/E712 (None/True/False comparisons),
+    N802 (non-lowercase function names), formatting issues, complex nested logic
+  - TypeScript: Missing semicolons, quote style issues, any types, missing trailing commas
+- Three-tier cascade execution:
+  - Tier 1: ESLint --fix, Ruff --fix - 0 API cost
+  - Tier 2: autoflake, black, isort - 0 API cost
+  - Tier 3: AI fixer for semantic issues - tracked API cost
+- Comprehensive tracking:
+  - TrackedIssue interface for per-issue classification
+  - PipelineSummary interface for aggregate metrics
+  - Pattern creation/cache hit tracking via Supabase
+- Summary report includes:
+  - Per-tier fix counts and percentages
+  - Actual API cost vs estimated all-AI cost
+  - Cost savings percentage
+  - Pattern learning metrics
+- Key test patterns:
+  - createPythonTestFile() and createTypeScriptTestFile() for fixture generation
+  - Tool availability checks (isESLintAvailable, isRuffAvailable, etc.)
+  - Supabase pattern count tracking
+  - AI fixer with submitToRegistry enabled
+
