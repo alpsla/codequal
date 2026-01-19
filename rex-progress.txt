@@ -805,3 +805,40 @@ Commit: [main 0d9f8efa] rex(#10): Query Supabase and Generate Report
  create mode 100644 docs/LIVE_INTEGRATION_RESULTS.md
 0d9f8efa
 
+
+=== Task #1 (2026-01-19 14:42:43) ===
+Title: Create Live Test Fixture - Go
+Status: COMPLETE
+Commit: [main 7a6a516a] rex(#1): Create Live Test Fixture - Go
+ 5 files changed, 563 insertions(+), 114 deletions(-)
+ create mode 100644 docs/rex-session-107-complete-coverage.md
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-go/go.mod
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-go/main.go
+7a6a516a
+
+### Task 2: Create Live Test Fixture - C++
+- Created fixtures/live-test-cpp/main.cpp with intentional issues for all tiers
+- C++ Tier 1 (clang-format) issues:
+  - Inconsistent spacing around operators and parameters
+  - Missing/extra whitespace
+  - Bad brace placement
+  - Mixed indentation (tabs vs spaces)
+  - Long lines that should be wrapped
+  - Multiple statements on one line
+  - Bad struct formatting
+- C++ Tier 2 (clang-tidy modernize-*) issues:
+  - modernize-use-nullptr: NULL and 0 instead of nullptr (10+ occurrences)
+  - modernize-use-override: Missing override on virtual methods in derived classes
+  - modernize-use-auto: Verbose iterator declarations
+  - modernize-loop-convert: C-style loops that could be range-based
+- C++ Tier 3 (cppcheck - AI required) issues:
+  - memleak: Memory allocated but not freed (new int[], new char[], malloc)
+  - nullPointer: Dereference before null check
+  - uninitvar: Uninitialized variable usage
+  - resourceLeak: FILE* and ifstream* not closed
+  - useafterfree: Using pointer after delete
+  - doublefree: Potential double deletion
+- File structure follows existing fixture patterns (Go, Java, Python, TypeScript)
+- All issues are intentional and documented with comments
+- Used class inheritance to demonstrate override issues
+
