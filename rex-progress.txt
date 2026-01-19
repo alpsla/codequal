@@ -445,3 +445,12 @@ Commit: [main 0e86eadd] rex(#4): E2E Tests for C++ Fixers
   - CI/CD integration: dotnet format --verify-no-changes
   - Typical fix order: dotnet-format → AI
 
+
+=== Task #5 (2026-01-19 09:01:12) ===
+Title: E2E Tests for C# Fixers
+Status: COMPLETE
+Commit: [main 37a4c60c] rex(#5): E2E Tests for C# Fixers
+ 4 files changed, 750 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/tool-fixers/__tests__/e2e-csharp.test.ts
+37a4c60c
+
