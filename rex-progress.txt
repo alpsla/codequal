@@ -999,3 +999,50 @@ Commit: [main 41280e63] rex(#6): Run Live Go Tests - Tier 1 & 2
 - Fix order: clang-format → clang-tidy modernize-* → AI
 
 
+
+=== Task #7 (2026-01-19 14:58:48) ===
+Title: Run Live C++ Tests - Tier 1 & 2
+Status: COMPLETE
+Commit: [main fff5b12a] rex(#7): Run Live C++ Tests - Tier 1 & 2
+ 3 files changed, 953 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-cpp.test.ts
+fff5b12a
+
+### Task 8: Run Live C# Tests - Tier 1 & 2
+- Created live-csharp.test.ts with comprehensive tests for C# native fixers
+- Test features:
+  - dotnet format: Formatting fixes (IDE0055, SA1000, SA1xxx)
+  - Verifies parameter spacing, keyword spacing, brace positioning
+  - Verifies indentation fixes, multiple whitespace removal
+  - Documents .csproj context requirements
+- .csproj requirements documented:
+  - EnforceCodeStyleInBuild=true required for code style rules
+  - EnableNETAnalyzers=true required for Roslyn analyzers
+  - AnalysisLevel=latest for newest rules
+  - .editorconfig optional for custom formatting rules
+- C# rules auto-fixable by dotnet-format:
+  - IDE0055: Formatting violations (spacing, indentation)
+  - SA1000: Keyword spacing (if(, for(, while()
+  - SA1003: Symbol spacing
+  - SA1008/SA1009: Parenthesis spacing
+  - SA1024: Colon spacing (ternary)
+  - SA1025: Multiple whitespace characters
+  - IDE0003/IDE0009: This qualification preferences
+  - IDE0007/IDE0008: Var usage preferences
+  - IDE0065: Using directive placement
+  - SA1200: Using directives placement
+  - SA1500-SA1520: Layout rules
+- C# rules needing AI (tier 3):
+  - CA1822: Member should be static (no instance access)
+  - CA2000: Dispose objects before losing scope
+  - CA2227: Collection properties should be read only
+  - IDE0044: Make field readonly
+  - IDE0051: Remove unused private members
+  - IDE0059: Unnecessary value assignment
+  - IDE0060: Remove unused parameter
+  - SonarQube rules (S1118, S1144, S1172)
+- Key insight documented: No tier 2 "semantic fixer" for C# beyond dotnet-format
+- All semantic issues (CA1822, CA2000, IDE0044, etc.) require AI
+- Fix order: dotnet-format → AI
+
+
