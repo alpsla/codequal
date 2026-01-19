@@ -64,6 +64,335 @@ function ensureRepoCloned(repo: string): string {
   return repoDir;
 }
 
+// =============================================================================
+// LANGUAGE-SPECIFIC SCANNERS
+// =============================================================================
+
+// Run ESLint and collect issues for TypeScript/JavaScript
+function runESLintAndCollectIssues(
+  repoDir: string,
+  limit: number
+): AIFixerIssue[] {
+  console.log('Running ESLint analysis...');
+
+  const outputFile = '/tmp/eslint-output.json';
+
+  // Find TypeScript/JavaScript files
+  const allTsFilesRaw = execSync(
+    `find ${repoDir} -type f \\( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \\) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/.git/*" 2>/dev/null || true`,
+    { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
+  ).trim();
+
+  const allTsFiles = allTsFilesRaw.split('\n').filter(f => f);
+  const totalFiles = allTsFiles.length;
+
+  if (totalFiles === 0) {
+    console.log('No TypeScript/JavaScript files found');
+    return [];
+  }
+
+  console.log(`Found ${totalFiles} TypeScript/JavaScript files`);
+
+  // Install dependencies if package.json exists
+  if (fs.existsSync(path.join(repoDir, 'package.json'))) {
+    const nodeModulesPath = path.join(repoDir, 'node_modules');
+    if (!fs.existsSync(nodeModulesPath)) {
+      console.log('Installing npm dependencies...');
+      try {
+        execSync('npm install --ignore-scripts --no-audit --no-fund 2>/dev/null', {
+          cwd: repoDir,
+          stdio: 'pipe',
+          timeout: 120000,
+        });
+      } catch (e) {
+        console.log('npm install completed (with warnings)');
+      }
+    }
+  }
+
+  // Limit files for large repos
+  const MAX_FILES = 200;
+  const filesToScan = totalFiles > MAX_FILES
+    ? allTsFiles.sort(() => Math.random() - 0.5).slice(0, MAX_FILES)
+    : allTsFiles;
+
+  // Write file list
+  const fileListPath = '/tmp/eslint-file-list.txt';
+  fs.writeFileSync(fileListPath, filesToScan.join('\n'));
+
+  // Run ESLint with JSON output - try repo's config first, fall back to basic
+  let eslintResult = '';
+  try {
+    // Try with repo's own config
+    eslintResult = execSync(
+      `cd ${repoDir} && npx eslint --format json ${filesToScan.slice(0, 50).join(' ')} 2>/dev/null || true`,
+      { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
+    );
+  } catch (e) {
+    // Fall back to basic config
+    try {
+      eslintResult = execSync(
+        `cd ${repoDir} && npx eslint --no-eslintrc --env es2020,node --parser-options=ecmaVersion:2020 --format json ${filesToScan.slice(0, 50).join(' ')} 2>/dev/null || true`,
+        { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
+      );
+    } catch (e2) {
+      console.log('ESLint failed to run');
+    }
+  }
+
+  if (!eslintResult || eslintResult.trim() === '') {
+    console.log('ESLint produced no output');
+    return [];
+  }
+
+  // Parse ESLint output
+  let eslintOutput;
+  try {
+    eslintOutput = JSON.parse(eslintResult);
+  } catch (e) {
+    console.log('Failed to parse ESLint JSON output');
+    console.log('Raw output (first 500 chars):', eslintResult.substring(0, 500));
+    return [];
+  }
+  const issues: AIFixerIssue[] = [];
+
+  for (const file of eslintOutput) {
+    for (const message of file.messages || []) {
+      if (!message.ruleId) continue; // Skip parsing errors
+
+      // Read code context
+      let codeContext = '';
+      try {
+        const fileContent = fs.readFileSync(file.filePath, 'utf-8');
+        const lines = fileContent.split('\n');
+        const startLine = Math.max(0, message.line - 5);
+        const endLine = Math.min(lines.length, message.line + 10);
+        codeContext = lines.slice(startLine, endLine).join('\n');
+      } catch (e) {
+        // Skip if can't read file
+      }
+
+      issues.push({
+        id: `eslint-${issues.length + 1}`,
+        validatorToolId: 'eslint',
+        ruleId: message.ruleId,
+        file: file.filePath,
+        line: message.line,
+        message: message.message,
+        severity: message.severity === 2 ? 'high' : 'medium',
+        codeContext,
+        language: 'typescript',
+        originalConfidence: 30,
+      });
+
+      if (issues.length >= limit) break;
+    }
+    if (issues.length >= limit) break;
+  }
+
+  return issues;
+}
+
+// Run Ruff and collect issues for Python
+function runRuffAndCollectIssues(
+  repoDir: string,
+  limit: number
+): AIFixerIssue[] {
+  console.log('Running Ruff analysis...');
+
+  const outputFile = '/tmp/ruff-output.json';
+
+  // Check if Ruff is installed
+  try {
+    execSync('ruff --version', { stdio: 'pipe' });
+  } catch (e) {
+    console.log('Ruff not installed. Please install with: pip install ruff');
+    return [];
+  }
+
+  // Find Python files
+  const allPyFilesRaw = execSync(
+    `find ${repoDir} -name "*.py" -type f ! -path "*/.git/*" ! -path "*/venv/*" ! -path "*/__pycache__/*" 2>/dev/null || true`,
+    { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
+  ).trim();
+
+  const allPyFiles = allPyFilesRaw.split('\n').filter(f => f);
+  const totalFiles = allPyFiles.length;
+
+  if (totalFiles === 0) {
+    console.log('No Python files found');
+    return [];
+  }
+
+  console.log(`Found ${totalFiles} Python files`);
+
+  // Run Ruff with JSON output
+  try {
+    execSync(
+      `cd ${repoDir} && ruff check . --output-format json > ${outputFile} 2>/dev/null || true`,
+      { stdio: 'pipe', maxBuffer: 50 * 1024 * 1024 }
+    );
+  } catch (e) {
+    console.log('Ruff completed (may have violations)');
+  }
+
+  if (!fs.existsSync(outputFile)) {
+    console.log('Ruff output not found');
+    return [];
+  }
+
+  // Parse Ruff output
+  const ruffOutput = JSON.parse(fs.readFileSync(outputFile, 'utf-8'));
+  const issues: AIFixerIssue[] = [];
+
+  for (const violation of ruffOutput) {
+    // Read code context
+    let codeContext = '';
+    try {
+      const fileContent = fs.readFileSync(violation.filename, 'utf-8');
+      const lines = fileContent.split('\n');
+      const startLine = Math.max(0, violation.location.row - 5);
+      const endLine = Math.min(lines.length, violation.location.row + 10);
+      codeContext = lines.slice(startLine, endLine).join('\n');
+    } catch (e) {
+      // Skip if can't read file
+    }
+
+    issues.push({
+      id: `ruff-${issues.length + 1}`,
+      validatorToolId: 'ruff',
+      ruleId: violation.code,
+      file: violation.filename,
+      line: violation.location.row,
+      message: violation.message,
+      severity: violation.code.startsWith('E') || violation.code.startsWith('F') ? 'high' : 'medium',
+      codeContext,
+      language: 'python',
+      originalConfidence: 30,
+    });
+
+    if (issues.length >= limit) break;
+  }
+
+  return issues;
+}
+
+// Run golangci-lint and collect issues for Go
+function runGolangciLintAndCollectIssues(
+  repoDir: string,
+  limit: number
+): AIFixerIssue[] {
+  console.log('Running golangci-lint analysis...');
+
+  const outputFile = '/tmp/golangci-lint-output.json';
+
+  // Check if golangci-lint is installed
+  try {
+    execSync('golangci-lint --version', { stdio: 'pipe' });
+  } catch (e) {
+    console.log('golangci-lint not installed. Please install from: https://golangci-lint.run/');
+    return [];
+  }
+
+  // Check for go.mod
+  if (!fs.existsSync(path.join(repoDir, 'go.mod'))) {
+    console.log('No go.mod found - not a Go module');
+    return [];
+  }
+
+  // Run golangci-lint with JSON output (v2 syntax)
+  try {
+    execSync(
+      `cd ${repoDir} && golangci-lint run --output.json.path ${outputFile} 2>/dev/null || true`,
+      { stdio: 'pipe', maxBuffer: 50 * 1024 * 1024, timeout: 120000 }
+    );
+  } catch (e) {
+    console.log('golangci-lint completed (may have violations)');
+  }
+
+  if (!fs.existsSync(outputFile)) {
+    console.log('golangci-lint output not found');
+    return [];
+  }
+
+  // Parse golangci-lint output
+  let golangciOutput;
+  try {
+    golangciOutput = JSON.parse(fs.readFileSync(outputFile, 'utf-8'));
+  } catch (e) {
+    console.log('Failed to parse golangci-lint output');
+    return [];
+  }
+
+  const issues: AIFixerIssue[] = [];
+
+  for (const issue of golangciOutput.Issues || []) {
+    // Read code context
+    let codeContext = '';
+    const filePath = path.join(repoDir, issue.Pos.Filename);
+    try {
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const lines = fileContent.split('\n');
+      const startLine = Math.max(0, issue.Pos.Line - 5);
+      const endLine = Math.min(lines.length, issue.Pos.Line + 10);
+      codeContext = lines.slice(startLine, endLine).join('\n');
+    } catch (e) {
+      // Skip if can't read file
+    }
+
+    issues.push({
+      id: `golangci-${issues.length + 1}`,
+      validatorToolId: 'golangci-lint',
+      ruleId: issue.FromLinter,
+      file: filePath,
+      line: issue.Pos.Line,
+      message: issue.Text,
+      severity: issue.Severity === 'error' ? 'high' : 'medium',
+      codeContext,
+      language: 'go',
+      originalConfidence: 30,
+    });
+
+    if (issues.length >= limit) break;
+  }
+
+  return issues;
+}
+
+// =============================================================================
+// LANGUAGE ROUTER
+// =============================================================================
+
+function collectIssuesForLanguage(
+  repoDir: string,
+  language: string,
+  limit: number
+): AIFixerIssue[] {
+  switch (language.toLowerCase()) {
+    case 'java':
+      return runPMDAndCollectIssues(repoDir, limit);
+    case 'typescript':
+    case 'javascript':
+    case 'ts':
+    case 'js':
+      return runESLintAndCollectIssues(repoDir, limit);
+    case 'python':
+    case 'py':
+      return runRuffAndCollectIssues(repoDir, limit);
+    case 'go':
+    case 'golang':
+      return runGolangciLintAndCollectIssues(repoDir, limit);
+    default:
+      console.log(`Unsupported language: ${language}`);
+      console.log('Supported languages: java, typescript, python, go');
+      return [];
+  }
+}
+
+// =============================================================================
+// JAVA (PMD)
+// =============================================================================
+
 // Run PMD and collect issues (ALL rules, no filtering)
 function runPMDAndCollectIssues(
   repoDir: string,
@@ -208,8 +537,8 @@ async function main() {
   // Clone repo
   const repoDir = ensureRepoCloned(repo);
 
-  // Collect issues - ALL rules, no filtering
-  const issues = runPMDAndCollectIssues(repoDir, limit);
+  // Collect issues using language-specific scanner
+  const issues = collectIssuesForLanguage(repoDir, language, limit);
   console.log(`\nCollected ${issues.length} issues to process`);
 
   if (issues.length === 0) {
