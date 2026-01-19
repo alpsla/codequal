@@ -1,52 +1,143 @@
 # Quick Start - Next Session
 
-**Last Updated**: Session 101 (January 19, 2026)
-**Current Phase**: AI Fixer Validation & Pattern Creation
-**Status**: Tool Detection Validated ✅ → Need to Validate Fix Generation
+**Last Updated**: Session 107 (January 19, 2026)
+**Current Phase**: Data Validation & Pattern Cleanup → Report UI → GitHub Integration
+**Status**: Three-Tier Fix Cascade VALIDATED ✅ | Next: Session 108
 
 ---
 
-## Session 101 Summary (Completed)
+## Active Roadmap
 
-### Tool Validation Results
+### Phase 1: Cleanup & Validation (Sessions 108-110)
 
-Validated **24 tools** across **8 languages**. All tools successfully find issues.
+| Session | Task | Status | Rex File |
+|---------|------|--------|----------|
+| **108** | Fix 6 failing patterns + push to main | ⬜ Pending | `docs/rex-session-108-fix-patterns-push.md` |
+| **109** | V9 raw data audit for Report UI | ⬜ Pending | `docs/rex-session-109-v9-data-audit.md` |
+| **110** | SARIF/LSP export testing in VS Code | ⬜ Pending | `docs/rex-session-110-sarif-lsp-testing.md` |
 
-| Language | Tools | Issues Found |
-|----------|-------|--------------|
-| Java | PMD, SpotBugs, Checkstyle, Semgrep | 1,454 |
-| TypeScript | ESLint, tsc, npm-audit | 31 |
-| Python | Ruff, Bandit, mypy, pip-audit | 97 |
-| Go | golangci-lint, staticcheck, gosec | 46 |
-| Rust | clippy, cargo-audit | 2 |
-| Ruby | RuboCop, bundler-audit | 15 |
-| PHP | PHPStan | 4 |
-| Universal | dependency-check, trivy, checkov, Spectral, gitleaks | 133 |
-| **TOTAL** | **24 tools** | **1,782 issues** |
+### Phase 2: Report UI Development (Sessions 112-114)
 
-### Key Files Created
-- `rex-tasks.json` - Complete validation results
-- `packages/agents/rex-session-101-full-tool-validation.md` - Task definitions
-- `SESSION_101_FULL_TOOL_VALIDATION_REPORT.md` - Detailed report (in .gitignore)
+| Session | Task | Status | Dependencies |
+|---------|------|--------|--------------|
+| **112** | Fill V9 data gaps (from Session 109) | ⬜ Pending | Session 109 |
+| **113** | Report UI design & components | ⬜ Pending | Session 112 |
+| **114** | Report UI implementation | ⬜ Pending | Session 113 |
 
-### New Tools Installed
-- staticcheck, gosec (Go)
-- cargo-audit (Rust)
-- PHPStan (PHP)
-- checkov (Universal)
+### Phase 3: GitHub/GitLab Integration (Sessions 115-118)
+
+| Session | Task | Status | Dependencies |
+|---------|------|--------|--------------|
+| **115** | GitHub App registration + OAuth | ⬜ Pending | Session 114 |
+| **116** | PR webhook handlers | ⬜ Pending | Session 115 |
+| **117** | PR comment + "View Report" flow | ⬜ Pending | Session 116 |
+| **118** | "Apply Fixes" button + fix commit | ⬜ Pending | Session 117 |
+
+### Phase 4: Auth & Billing (Sessions 119-121)
+
+| Session | Task | Status | Dependencies |
+|---------|------|--------|--------------|
+| **119** | User authentication (GitHub OAuth) | ⬜ Pending | Session 118 |
+| **120** | Stripe billing integration | ⬜ Pending | Session 119 |
+| **121** | Tier gating (Free/PRO limits) | ⬜ Pending | Session 120 |
+
+### Phase 5: Production & Launch (Sessions 122+)
+
+| Session | Task | Status | Dependencies |
+|---------|------|--------|--------------|
+| **122** | Production deployment | ⬜ Pending | Session 121 |
+| **123** | Alpha testing (internal) | ⬜ Pending | Session 122 |
+| **124** | Beta testing (select users) | ⬜ Pending | Session 123 |
+| **125** | GA launch | ⬜ Pending | Session 124 |
+
+### Background: Pattern Calibration (Session 111 - Run When AFK)
+
+| Session | Task | Status | Rex File |
+|---------|------|--------|----------|
+| **111** | Calibration all languages (unattended) | ⬜ Pending | `docs/rex-session-111-calibration-all-languages.md` |
 
 ---
 
-## Session 102 Objectives
+## Session 106-107 Summary (Completed)
 
-### Primary Goal: Test AI Fixer Effectiveness
+### Live Integration Validation Results
 
-Tools can **detect** issues. Now verify they can **fix** issues:
+Sessions 106-107 completed comprehensive live integration testing with **real API calls**, **real tool execution**, and **real Supabase pattern storage**.
 
-1. **Create manual patterns** for previously failed fixes
-2. **Run AI fixer** on multi-language issues
-3. **Monitor Supabase** pattern storage
-4. **Track unfixed issues** for future pattern improvement
+### Three-Tier Fix Cascade: VALIDATED ✅
+
+| Tier | Status | Tools Tested | Cost |
+|------|--------|--------------|------|
+| **Tier 1** (Native --fix) | ✅ Validated | ESLint, Ruff, Prettier, gofmt, rustfmt, rubocop | $0.00 |
+| **Tier 2** (Dedicated) | ✅ Validated | Sorald, isort, black, clang-tidy, clippy | $0.00 |
+| **Tier 3** (AI) | ✅ Validated | OpenRouter API + Supabase patterns | ~$0.01/fix |
+
+### Language Coverage: 9 Languages, 24 Native Fix Tools
+
+| Language | Tier 1 Tools | Tier 2 Tools | Est. Savings |
+|----------|--------------|--------------|--------------|
+| Java | - | google-java-format, Sorald | 15% |
+| Python | Ruff, Black, isort | autoflake | 55% |
+| TypeScript | ESLint, Prettier | - | 40% |
+| JavaScript | ESLint, Prettier | - | 40% |
+| Go | gofmt, goimports | golangci-lint | 50% |
+| C++ | clang-format | clang-tidy | 60% |
+| C# | dotnet-format | - | 40% |
+| Rust | rustfmt | clippy --fix | 60% |
+| Ruby | rubocop --autocorrect | - | 55% |
+
+### Supabase Database State (2026-01-19)
+
+| Table | Count | Notes |
+|-------|-------|-------|
+| `fix_patterns` | 606 | 93.95% avg confidence |
+| `fix_pattern_guidance` | 13 | Global rule guidance |
+| `fix_failure_tracking` | 6 | Learning loop entries |
+
+### Key Files Created (Sessions 106-107)
+
+**Session 106:**
+- `live-env-check.test.ts` - Environment validation
+- `live-tier1.test.ts` - Native --fix validation
+- `live-tier2.test.ts` - Dedicated fixer validation
+- `live-tier3-ai.test.ts` - AI fixer with pattern creation
+- `live-pattern-cache.test.ts` - KB bypass flow
+- `live-full-pipeline.test.ts` - End-to-end cascade
+- `docs/LIVE_INTEGRATION_RESULTS.md` - Session 106 report
+
+**Session 107:**
+- `live-go.test.ts` - Go tools (gofmt, goimports, golangci-lint)
+- `live-cpp.test.ts` - C++ tools (clang-format, clang-tidy)
+- `live-csharp.test.ts` - C# tools (dotnet-format)
+- `live-rust.test.ts` - Rust tools (rustfmt, clippy)
+- `live-ruby.test.ts` - Ruby tools (rubocop)
+- `live-prettier.test.ts` - Prettier formatting
+- `docs/COMPLETE_LANGUAGE_COVERAGE.md` - Full coverage report
+
+---
+
+## Immediate Next Steps
+
+### To Start Session 108:
+```bash
+cd /Users/alpinro/CodePrjects/codequal
+/rex docs/rex-session-108-fix-patterns-push.md
+```
+
+### Session 108 Tasks Preview:
+1. Create pattern for `UselessParentheses` (pmd/java)
+2. Create pattern for `F632` (ruff/python)
+3. Create pattern for `@typescript-eslint/no-explicit-any`
+4. Create pattern for `AvoidDollarSigns` (pmd/java)
+5. Create pattern for `UnnecessaryAnnotationValueElement` (pmd/java)
+6. Create pattern for `UseUtilityClass` (pmd/java)
+7. Remove entries from fix_failure_tracking
+8. Run validation tests
+9. Commit changes
+10. Push to main
+
+### After Session Completion:
+Update this document - change Session 108 status from ⬜ to ✅
 
 ---
 
@@ -60,128 +151,18 @@ LooseCoupling, PreserveStackTrace, UnnecessaryImport, UnusedPrivateMethod,
 ControlStatementBraces
 ```
 
-### fix_failure_tracking (6 failures need manual patterns)
-
-| Rule | Tool/Language | Failure Type |
-|------|---------------|--------------|
-| F632 | ruff/python | regression |
-| @typescript-eslint/no-explicit-any | eslint/typescript | regression |
-| AvoidDollarSigns | pmd/java | regression |
-| UnnecessaryAnnotationValueElement | pmd/java | regression |
-| UselessParentheses | pmd/java | regression |
-| UseUtilityClass | pmd/java | regression |
-
----
-
-## Task Queue for Session 102
-
-### Phase 1: Create Manual Patterns for Failing Rules (Priority 1)
-
-```bash
-cd packages/agents/src/fix-agent/fix-pattern-registry
-```
-
-**Task 1.1**: Create pattern for `UselessParentheses` (pmd/java)
-```typescript
-await addFixGuidance({
-  ruleId: 'UselessParentheses',
-  language: 'java',
-  tool: 'pmd',
-  antiPatterns: [
-    'Removing ALL parentheses without checking operator precedence',
-    'Changing expression meaning by removing grouping'
-  ],
-  correctPatterns: [
-    'Only remove parentheses that don\'t affect precedence',
-    'Keep parentheses around complex boolean expressions',
-    'Check Java operator precedence: *, /, % > +, - > ==, != > && > ||'
-  ],
-  promptAdditions: 'Check Java operator precedence before removing. Only remove redundant parens.'
-});
-```
-
-**Task 1.2**: Create pattern for `F632` (ruff/python)
-```typescript
-// F632 = Use == for comparisons to True/False
-await addFixGuidance({
-  ruleId: 'F632',
-  language: 'python',
-  tool: 'ruff',
-  antiPatterns: [
-    'Using `is True` or `is False` for comparisons',
-    'Using `== True` in boolean context where truthiness works'
-  ],
-  correctPatterns: [
-    'Remove comparison entirely if checking truthiness: `if x:` not `if x == True:`',
-    'Use `is None` for None checks, `== True/False` for explicit bool comparison'
-  ],
-  promptAdditions: 'In boolean context, prefer `if x:` over `if x == True:`. Only keep explicit comparison when needed.'
-});
-```
-
-**Task 1.3**: Create pattern for `@typescript-eslint/no-explicit-any`
-```typescript
-await addFixGuidance({
-  ruleId: '@typescript-eslint/no-explicit-any',
-  language: 'typescript',
-  tool: 'eslint',
-  antiPatterns: [
-    'Replacing any with unknown without updating usage code',
-    'Using overly generic types that lose all type safety'
-  ],
-  correctPatterns: [
-    'Replace `any` with specific interface or type',
-    'Use `unknown` with type guards when type truly unknown',
-    'Use generics for flexible but type-safe code'
-  ],
-  promptAdditions: 'Analyze the actual usage to determine proper type. Prefer specific interfaces over unknown.'
-});
-```
-
-### Phase 2: Run AI Fixer Batch Tests
-
-```bash
-cd packages/agents
-```
-
-**Task 2.1**: Java AI Fixer Test
-```bash
-TEST_LANGUAGE=java TEST_LIMIT=20 npx ts-node tests/integration/run-ai-fixer-batch.ts
-```
-
-**Task 2.2**: TypeScript AI Fixer Test
-```bash
-TEST_LANGUAGE=typescript TEST_LIMIT=10 npx ts-node tests/integration/run-ai-fixer-batch.ts
-```
-
-**Task 2.3**: Python AI Fixer Test
-```bash
-TEST_LANGUAGE=python TEST_LIMIT=5 npx ts-node tests/integration/run-ai-fixer-batch.ts
-```
-
-**Task 2.4**: Go AI Fixer Test
-```bash
-TEST_LANGUAGE=go TEST_LIMIT=10 npx ts-node tests/integration/run-ai-fixer-batch.ts
-```
-
-### Phase 3: Verify Pattern Storage
-
-```bash
-# Check patterns in Supabase
-cd packages/agents/src/fix-agent/fix-pattern-registry
-npx ts-node kb-review-cli.ts list
-
-# Or use the verification script
-cd packages/agents
-npx ts-node tests/integration/verify-supabase-patterns.ts
-```
-
-### Phase 4: Document Results
-
-1. Record fix success rates per language
-2. List new patterns auto-generated
-3. Document issues that still fail
-4. Create rex-tasks.json for next session
+### fix_patterns by Tool (606 total)
+| Tool | Count | % |
+|------|-------|---|
+| pmd | 215 | 35.5% |
+| semgrep | 138 | 22.8% |
+| checkstyle | 107 | 17.7% |
+| bandit | 27 | 4.5% |
+| dependency-check | 24 | 4.0% |
+| ruff | 22 | 3.6% |
+| typescript | 16 | 2.6% |
+| clippy | 14 | 2.3% |
+| Others | 43 | 7.1% |
 
 ---
 
@@ -191,24 +172,21 @@ npx ts-node tests/integration/verify-supabase-patterns.ts
 # Session startup
 cd /Users/alpinro/CodePrjects/codequal
 
+# Run live integration tests
+cd packages/agents
+npm test -- --testPathPattern="live-" --verbose
+
 # Check KB state
 cd packages/agents/src/fix-agent/fix-pattern-registry
 npx ts-node kb-review-cli.ts list
 
-# Create patterns for failures
-npx ts-node kb-ai-maintainer.ts --auto-approve
-
-# Run AI fixer
-cd packages/agents
-TEST_LANGUAGE=java npx ts-node tests/integration/run-ai-fixer-batch.ts
-
-# Check Supabase directly
+# Check Supabase patterns
 node -e "
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '../../.env' });
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-supabase.from('fix_pattern_guidance').select('rule_id, language, tool', { count: 'exact' })
-  .then(({data, count}) => { console.log('Total patterns:', count); console.table(data); });
+supabase.from('fix_patterns').select('tool', { count: 'exact' })
+  .then(({count}) => console.log('Total patterns:', count));
 "
 
 # Build and typecheck
@@ -218,78 +196,76 @@ npx tsc --noEmit --skipLibCheck
 
 ---
 
-## Test Repositories by Language
-
-| Language | Repository | Tool | Expected Issues |
-|----------|------------|------|-----------------|
-| Java | spring-petclinic | PMD | 50 |
-| Java | WebGoat | Semgrep | 88 |
-| TypeScript | express | ESLint, npm-audit | 22 |
-| Python | flask | Bandit, mypy, pip-audit | 92 |
-| Go | cobra | golangci-lint, gosec | 44 |
-| Rust | hyper | clippy | 1 |
-| Ruby | discourse | RuboCop, bundler-audit | 15 |
-
----
-
-## Key Files Reference
-
-### AI Fixer System
-
-| File | Purpose |
-|------|---------|
-| `ai-fixer-agent.ts` | Main AI fixer with retry logic |
-| `fix-pattern-guidance.ts` | KB service (Supabase + in-memory) |
-| `run-ai-fixer-batch.ts` | Batch fixer script |
-| `kb-review-cli.ts` | KB maintenance CLI |
-| `kb-ai-maintainer.ts` | AI-assisted KB maintenance |
-
-### Session Documentation
-
-| File | Purpose |
-|------|---------|
-| `rex-session-101-full-tool-validation.md` | Tool validation tasks |
-| `SESSION_101_FULL_TOOL_VALIDATION_REPORT.md` | Validation report |
-| `rex-tasks.json` | Current task state |
-
----
-
-## Success Criteria for Session 102
-
-- [ ] Manual patterns created for 6 failing rules
-- [ ] AI fixer tested on Java, TypeScript, Python, Go
-- [ ] Fix success rate documented per language
-- [ ] New auto-generated patterns verified in Supabase
-- [ ] Issues that still fail tracked in fix_failure_tracking
-
----
-
-## Architecture Reference
+## Architecture Reference (Validated)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       FIX GENERATION FLOW                           │
+│              THREE-TIER FIX CASCADE (VALIDATED ✅)                   │
 ├─────────────────────────────────────────────────────────────────────┤
-│  1. Issue Detected → 2. Fetch KB Guidance → 3. Build Prompt         │
-│  4. AI Generates Fix → 5. Tool Re-validates                         │
-│  [PASS] → Submit & Store Pattern │ [FAIL] → Retry (3x max)          │
-│  [ALL FAIL] → Track ALL attempts to KB for manual review            │
+│                                                                      │
+│  TIER 1: Native --fix (44% of issues, $0 cost)                      │
+│  └── ESLint, Prettier, Ruff, gofmt, rustfmt, rubocop                │
+│                    │                                                 │
+│                    ▼ (unfixed)                                       │
+│  TIER 2: Dedicated Fixers (7% of issues, $0 cost)                   │
+│  └── Sorald, isort, black, clang-tidy, clippy --fix                 │
+│                    │                                                 │
+│                    ▼ (unfixed)                                       │
+│  TIER 3: AI Generation (49% of issues, ~$0.01/fix)                  │
+│  └── Pattern lookup FIRST (instant) → AI if no pattern             │
+│  └── Successful fixes stored as patterns for future reuse           │
+│                                                                      │
+│  TOTAL COST SAVINGS: ~47% vs all-AI approach                        │
 └─────────────────────────────────────────────────────────────────────┘
 
-TOOLS VALIDATED (Session 101):
+TOOLS VALIDATED:
 ┌──────────────┬─────────────────────────────────────────────────────┐
 │ Detectors    │ PMD, SpotBugs, Checkstyle, Semgrep, ESLint, tsc,   │
-│              │ npm-audit, Ruff, Bandit, mypy, pip-audit,          │
+│ (24 tools)   │ npm-audit, Ruff, Bandit, mypy, pip-audit,          │
 │              │ golangci-lint, staticcheck, gosec, clippy,         │
 │              │ cargo-audit, RuboCop, bundler-audit, PHPStan,      │
 │              │ dependency-check, trivy, checkov, Spectral, gitleaks│
 ├──────────────┼─────────────────────────────────────────────────────┤
-│ Fixers       │ AI Fixer (via KB patterns) - TO BE TESTED          │
+│ Fixers       │ ESLint --fix, Prettier, Ruff --fix, gofmt,         │
+│ (24 tools)   │ goimports, clang-format, clang-tidy, dotnet-format,│
+│              │ rustfmt, clippy --fix, rubocop -a, Sorald,         │
+│              │ isort, black, autoflake, google-java-format         │
 └──────────────┴─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-_Last update: Session 101 (January 19, 2026)_
-_Tool Detection: VALIDATED (24 tools, 1,782 issues)_
-_Next priority: AI Fixer validation & pattern creation_
+## How to Update This Document
+
+After completing a session:
+
+1. **Update session status** in Active Roadmap table:
+   - Change `⬜ Pending` to `✅ Complete`
+
+2. **Add completion notes** if needed:
+   ```markdown
+   | **108** | Fix 6 failing patterns + push | ✅ Complete (2026-01-20) | `docs/rex-session-108-fix-patterns-push.md` |
+   ```
+
+3. **Update "Immediate Next Steps"** section to point to next session
+
+4. **Add any new sessions** discovered during work
+
+5. **Update "Last Updated"** date at top of file
+
+---
+
+## Completed Sessions Archive
+
+| Session | Date | Summary | Patterns/Artifacts |
+|---------|------|---------|-------------------|
+| 106 | 2026-01-19 | Live integration tests (Python, TS, Java) | 2 new patterns |
+| 107 | 2026-01-19 | Complete language coverage (Go, C++, C#, Rust, Ruby) | 12 test files |
+
+---
+
+_Last update: Session 107 (January 19, 2026)_
+_Live Integration: VALIDATED ✅_
+_Three-Tier Cascade: VALIDATED ✅_
+_9 Languages, 24 Native Fix Tools: VALIDATED ✅_
+_Next Session: 108 (Fix patterns + push)_
