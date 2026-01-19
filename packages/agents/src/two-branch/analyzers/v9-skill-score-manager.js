@@ -1,0 +1,336 @@
+"use strict";
+/**
+ * Skill Score Manager
+ *
+ * Handles developer skill tracking with Supabase persistence:
+ * - Baseline score retrieval (average of last 5 PRs)
+ * - Score trend tracking
+ * - Database persistence
+ * - Developer metrics aggregation
+ * - Leaderboard ranking
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SkillScoreManager = void 0;
+class SkillScoreManager {
+    constructor(supabase) {
+        this.supabase = supabase;
+    }
+    /**
+     * Get baseline score (average of last 5 analyses)
+     * Returns 50 for first-time developers
+     */
+    async getBaselineScore(developerEmail, repository) {
+        try {
+            const { data, error } = await this.supabase
+                .from('skill_scores')
+                .select('overall_score')
+                .eq('developer_email', developerEmail)
+                .eq('repo_name', repository)
+                .order('analyzed_at', { ascending: false })
+                .limit(1); // FIX: Get only the LATEST score, not last 5
+            if (error) {
+                console.warn('[SkillScoreManager] Error fetching baseline:', error.message);
+                return 50; // Default baseline for first-time users
+            }
+            if (!data || data.length === 0) {
+                console.log(`[SkillScoreManager] No previous scores for ${developerEmail} in ${repository} - using default baseline 50`);
+                return 50; // First analysis - default baseline
+            }
+            // FIX: Return LATEST score only (not average of last 5)
+            // Latest score becomes baseline for next scan
+            const baseline = data[0].overall_score;
+            console.log(`[SkillScoreManager] Baseline for ${developerEmail}: ${baseline} (latest score)`);
+            return baseline;
+        }
+        catch (error) {
+            console.error('[SkillScoreManager] Unexpected error fetching baseline:', error);
+            return 50;
+        }
+    }
+    /**
+     * Get score trend (last N scores)
+     * Returns empty array if no history exists
+     *
+     * BUG #4 FIX: Filter duplicate commits to show only unique analysis runs
+     * Example: 60→30→30→30 becomes 60→30 (removes re-analysis of same commit)
+     */
+    async getScoreTrend(developerEmail, repository, limit = 5) {
+        try {
+            // BUG-089 FIX: Remove commit_hash from select (column doesn't exist in schema)
+            // Fetch records ordered by timestamp
+            const { data, error } = await this.supabase
+                .from('skill_scores')
+                .select('overall_score, pr_number, analyzed_at')
+                .eq('developer_email', developerEmail)
+                .eq('repo_name', repository) // Fixed: use 'repo_name' column
+                .order('analyzed_at', { ascending: false }) // BUG-080 FIX: Get NEWEST records first
+                .limit(limit * 2); // Fetch 2x to handle duplicates
+            if (error) {
+                console.warn('[SkillScoreManager] Error fetching trend:', error.message);
+                return [];
+            }
+            if (!data || data.length === 0) {
+                return [];
+            }
+            // BUG #4 FIX: Remove duplicate PRs, keep only latest analysis per PR
+            // BUG-089 FIX: Use pr_number instead of commit_hash (column doesn't exist)
+            const seenPRs = new Set();
+            const uniqueScores = [];
+            for (const record of data) {
+                const prNumber = record.pr_number || 0;
+                if (!seenPRs.has(prNumber)) {
+                    seenPRs.add(prNumber);
+                    uniqueScores.push(record.overall_score);
+                    if (uniqueScores.length >= limit)
+                        break;
+                }
+            }
+            const trend = uniqueScores.slice(0, limit).reverse(); // BUG-080 FIX: Reverse to show Oldest -> Newest
+            console.log(`[SkillScoreManager] Trend for ${developerEmail}: [${trend.join(', ')}] (${data.length - trend.length} duplicates filtered)`);
+            return trend;
+        }
+        catch (error) {
+            console.error('[SkillScoreManager] Unexpected error fetching trend:', error);
+            return [];
+        }
+    }
+    /**
+     * Save skill score to database
+     * Also updates aggregated developer metrics
+     */
+    async saveSkillScore(scoreData) {
+        try {
+            console.log(`[SkillScoreManager] Saving skill score for ${scoreData.developerEmail} (PR #${scoreData.prNumber}): ${scoreData.overallScore}/100`);
+            // BUG-089 FIX: Removed commit_hash (column doesn't exist in schema)
+            const { error } = await this.supabase.from('skill_scores').insert({
+                developer_email: scoreData.developerEmail,
+                developer_name: scoreData.developerName,
+                repo_name: scoreData.repository, // Fixed: use 'repo_name' column
+                pr_number: scoreData.prNumber,
+                branch: scoreData.branch,
+                overall_score: scoreData.overallScore,
+                quality_score: scoreData.qualityScore,
+                security_score: scoreData.categoryScores.security,
+                performance_score: scoreData.categoryScores.performance,
+                architecture_score: scoreData.categoryScores.architecture,
+                dependency_score: scoreData.categoryScores.dependency,
+                code_quality_score: scoreData.categoryScores.codeQuality,
+                new_issues_count: scoreData.issueCounts.new,
+                resolved_issues_count: scoreData.issueCounts.resolved,
+                critical_issues_count: scoreData.issueCounts.critical,
+                high_issues_count: scoreData.issueCounts.high,
+                medium_issues_count: scoreData.issueCounts.medium,
+                low_issues_count: scoreData.issueCounts.low,
+                language: scoreData.language,
+                analysis_duration_ms: scoreData.analysisDuration,
+                analyzed_at: new Date().toISOString()
+            });
+            if (error) {
+                console.error('[SkillScoreManager] Error saving skill score:', error);
+                throw new Error(`Failed to save skill score: ${error.message}`);
+            }
+            console.log('[SkillScoreManager] Skill score saved successfully');
+            // Update aggregated developer metrics
+            await this.updateDeveloperMetrics(scoreData.developerEmail, scoreData.developerName, scoreData.overallScore, scoreData.categoryScores, scoreData.issueCounts);
+        }
+        catch (error) {
+            console.error('[SkillScoreManager] Failed to save skill score:', error);
+            // Don't throw - allow analysis to continue even if DB save fails
+        }
+    }
+    /**
+     * Update aggregated developer metrics
+     * Creates new record if developer doesn't exist
+     */
+    async updateDeveloperMetrics(developerEmail, developerName, newScore, categoryScores, issueCounts) {
+        try {
+            // Get or create developer metrics
+            const { data: existing, error: fetchError } = await this.supabase
+                .from('developer_metrics')
+                .select('*')
+                .eq('developer_email', developerEmail)
+                .single();
+            if (fetchError && fetchError.code !== 'PGRST116') {
+                // PGRST116 = no rows returned (not an error for new developers)
+                console.error('[SkillScoreManager] Error fetching developer metrics:', fetchError);
+                return;
+            }
+            if (existing) {
+                // Update existing metrics
+                const totalPrs = existing.total_prs_analyzed + 1;
+                const newAverage = Math.round((existing.average_score * existing.total_prs_analyzed + newScore) / totalPrs);
+                // Update category averages
+                const avgSecurity = Math.round((existing.avg_security_score * existing.total_prs_analyzed + categoryScores.security) / totalPrs);
+                const avgPerformance = Math.round((existing.avg_performance_score * existing.total_prs_analyzed + categoryScores.performance) / totalPrs);
+                const avgArchitecture = Math.round((existing.avg_architecture_score * existing.total_prs_analyzed + categoryScores.architecture) / totalPrs);
+                const avgDependency = Math.round((existing.avg_dependency_score * existing.total_prs_analyzed + categoryScores.dependency) / totalPrs);
+                const avgCodeQuality = Math.round((existing.avg_code_quality_score * existing.total_prs_analyzed + categoryScores.codeQuality) / totalPrs);
+                const { error: updateError } = await this.supabase
+                    .from('developer_metrics')
+                    .update({
+                    developer_name: developerName || existing.developer_name,
+                    current_score: newScore,
+                    best_score: Math.max(existing.best_score, newScore),
+                    average_score: newAverage,
+                    avg_security_score: avgSecurity,
+                    avg_performance_score: avgPerformance,
+                    avg_architecture_score: avgArchitecture,
+                    avg_dependency_score: avgDependency,
+                    avg_code_quality_score: avgCodeQuality,
+                    total_prs_analyzed: totalPrs,
+                    total_issues_resolved: existing.total_issues_resolved + issueCounts.resolved,
+                    total_issues_introduced: existing.total_issues_introduced + issueCounts.new,
+                    last_analysis_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+                    .eq('developer_email', developerEmail);
+                if (updateError) {
+                    console.error('[SkillScoreManager] Error updating developer metrics:', updateError);
+                }
+                else {
+                    console.log(`[SkillScoreManager] Updated metrics for ${developerEmail}: ${newAverage} avg (${totalPrs} PRs)`);
+                }
+            }
+            else {
+                // Create new metrics
+                const { error: insertError } = await this.supabase
+                    .from('developer_metrics')
+                    .insert({
+                    developer_email: developerEmail,
+                    developer_name: developerName,
+                    current_score: newScore,
+                    best_score: newScore,
+                    average_score: newScore,
+                    avg_security_score: categoryScores.security,
+                    avg_performance_score: categoryScores.performance,
+                    avg_architecture_score: categoryScores.architecture,
+                    avg_dependency_score: categoryScores.dependency,
+                    avg_code_quality_score: categoryScores.codeQuality,
+                    total_prs_analyzed: 1,
+                    total_issues_resolved: issueCounts.resolved,
+                    total_issues_introduced: issueCounts.new,
+                    first_analysis_at: new Date().toISOString(),
+                    last_analysis_at: new Date().toISOString()
+                });
+                if (insertError) {
+                    console.error('[SkillScoreManager] Error creating developer metrics:', insertError);
+                }
+                else {
+                    console.log(`[SkillScoreManager] Created new metrics for ${developerEmail}: ${newScore}/100`);
+                }
+            }
+        }
+        catch (error) {
+            console.error('[SkillScoreManager] Unexpected error updating developer metrics:', error);
+        }
+    }
+    /**
+     * Calculate score delta compared to baseline
+     */
+    async calculateDelta(developerEmail, repository, currentScore) {
+        const baseline = await this.getBaselineScore(developerEmail, repository);
+        const delta = currentScore - baseline;
+        console.log(`[SkillScoreManager] Delta for ${developerEmail}: ${delta > 0 ? '+' : ''}${delta} (${currentScore} vs baseline ${baseline})`);
+        return { delta, baseline };
+    }
+    /**
+     * Get developer ranking (leaderboard position)
+     * Returns -1 if developer not found
+     */
+    async getDeveloperRank(developerEmail) {
+        try {
+            const { data, error } = await this.supabase
+                .from('developer_metrics')
+                .select('developer_email, current_score')
+                .order('current_score', { ascending: false });
+            if (error) {
+                console.warn('[SkillScoreManager] Error fetching leaderboard:', error.message);
+                return -1;
+            }
+            if (!data || data.length === 0) {
+                return -1;
+            }
+            const rank = data.findIndex(d => d.developer_email === developerEmail);
+            if (rank === -1) {
+                return -1;
+            }
+            console.log(`[SkillScoreManager] ${developerEmail} rank: ${rank + 1}/${data.length}`);
+            return rank + 1; // 1-indexed
+        }
+        catch (error) {
+            console.error('[SkillScoreManager] Unexpected error fetching rank:', error);
+            return -1;
+        }
+    }
+    /**
+     * Get top N developers (leaderboard) for a specific repository
+     *
+     * BUG FIX #57: Added repository parameter to prevent cross-repo contamination
+     * Now queries skill_scores table (has repo_name) instead of developer_metrics (global)
+     */
+    async getLeaderboard(limit = 10, repository) {
+        try {
+            if (repository) {
+                // BUG FIX #57: Repository-specific leaderboard using skill_scores table
+                const { data, error } = await this.supabase
+                    .from('skill_scores')
+                    .select('developer_email, developer_name, overall_score, repo_name')
+                    .eq('repo_name', repository)
+                    .order('analyzed_at', { ascending: false });
+                if (error) {
+                    console.warn(`[SkillScoreManager] Error fetching repo-specific leaderboard for ${repository}:`, error.message);
+                    return [];
+                }
+                // Group by developer and calculate stats
+                const developerStats = new Map();
+                for (const record of data || []) {
+                    if (!developerStats.has(record.developer_email)) {
+                        developerStats.set(record.developer_email, {
+                            email: record.developer_email,
+                            name: record.developer_name,
+                            scores: []
+                        });
+                    }
+                    developerStats.get(record.developer_email).scores.push(record.overall_score);
+                }
+                // Calculate averages and format
+                const leaderboard = Array.from(developerStats.values()).map(dev => ({
+                    email: dev.email,
+                    name: dev.name,
+                    score: dev.scores[0] || 0, // Latest score
+                    avgScore: Math.round(dev.scores.reduce((sum, s) => sum + s, 0) / dev.scores.length),
+                    totalPRs: dev.scores.length
+                }));
+                // Sort by current score (descending) and take top N
+                return leaderboard
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limit);
+            }
+            else {
+                // Fallback: Global leaderboard from developer_metrics (for backward compatibility)
+                console.warn('[SkillScoreManager] No repository provided - returning global leaderboard (may mix repos!)');
+                const { data, error } = await this.supabase
+                    .from('developer_metrics')
+                    .select('developer_email, developer_name, current_score, average_score, total_prs_analyzed')
+                    .order('current_score', { ascending: false })
+                    .limit(limit);
+                if (error) {
+                    console.warn('[SkillScoreManager] Error fetching leaderboard:', error.message);
+                    return [];
+                }
+                return (data || []).map(d => ({
+                    email: d.developer_email,
+                    name: d.developer_name,
+                    score: d.current_score,
+                    avgScore: d.average_score,
+                    totalPRs: d.total_prs_analyzed
+                }));
+            }
+        }
+        catch (error) {
+            console.error('[SkillScoreManager] Unexpected error fetching leaderboard:', error);
+            return [];
+        }
+    }
+}
+exports.SkillScoreManager = SkillScoreManager;

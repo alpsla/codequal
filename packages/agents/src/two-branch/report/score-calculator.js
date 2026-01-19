@@ -1,0 +1,489 @@
+"use strict";
+/**
+ * Score Calculator Service
+ *
+ * Handles all quality score calculations including:
+ * - Full V9 category-based scoring with Supabase
+ * - Cached score retrieval
+ * - Simplified scoring (fallback)
+ * - Score interpretation
+ *
+ * Phase 9 of v9-grouped-report-formatter.ts refactoring
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.calculateQualityScore = calculateQualityScore;
+exports.checkCachedScoresForCommit = checkCachedScoresForCommit;
+exports.calculateFullV9Score = calculateFullV9Score;
+exports.calculateCategoryScore = calculateCategoryScore;
+exports.calculateSimplifiedScore = calculateSimplifiedScore;
+exports.getScoreInterpretation = getScoreInterpretation;
+/**
+ * Calculate overall quality score with full V9 scoring or simplified fallback
+ */
+async function calculateQualityScore(issues, metadata, appScoreManager, skillScoreManager) {
+    // Use full V9 scoring if Supabase is available
+    if (appScoreManager && skillScoreManager && metadata.repository) {
+        // BUG FIX #9: Check for cached scores if commit SHA provided (prevents score decay on re-runs)
+        if (metadata.commitSHA && metadata.prNumber) {
+            const cached = await checkCachedScoresForCommit(metadata, appScoreManager, skillScoreManager);
+            if (cached) {
+                console.log(`[ScoreCalculator] ⚡ Using cached scores for commit ${metadata.commitSHA.slice(0, 7)} - no recalculation needed`);
+                return cached;
+            }
+        }
+        return await calculateFullV9Score(issues, metadata, appScoreManager, skillScoreManager);
+    }
+    // Fall back to simplified scoring
+    return calculateSimplifiedScore(issues);
+}
+/**
+ * Check if we already have scores for this exact commit
+ * Prevents score decay when re-running analysis on unchanged code
+ *
+ * BUG FIX #9: Commit SHA caching
+ */
+async function checkCachedScoresForCommit(metadata, appScoreManager, skillScoreManager) {
+    var _a, _b, _c, _d, _e;
+    if (!appScoreManager || !skillScoreManager || !metadata.commitSHA) {
+        return null;
+    }
+    try {
+        const supabase = appScoreManager.supabase;
+        // Query both scores in parallel
+        const [appResult, skillResult] = await Promise.all([
+            supabase
+                .from('app_scores')
+                .select('*')
+                .eq('repo_name', metadata.repository)
+                .eq('pr_number', metadata.prNumber)
+                .eq('commit_sha', metadata.commitSHA)
+                .order('analyzed_at', { ascending: false })
+                .limit(1)
+                .single(),
+            supabase
+                .from('skill_scores')
+                .select('*')
+                .eq('developer_email', metadata.prAuthorEmail)
+                .eq('repo_name', metadata.repository)
+                .eq('pr_number', metadata.prNumber)
+                .eq('commit_sha', metadata.commitSHA)
+                .order('analyzed_at', { ascending: false })
+                .limit(1)
+                .single()
+        ]);
+        const appScore = appResult.data;
+        const skillScore = skillResult.data;
+        // Only use cache if BOTH scores exist
+        if (appScore && skillScore) {
+            console.log(`[ScoreCalculator] ✅ Found cached scores - APP: ${appScore.overall_score}, Skill: ${skillScore.overall_score}`);
+            // BUG FIX #10, #50, SESSION_13_FIX#1: Reconstruct categoryScores from individual columns
+            // Use nullish coalescing to allow 0 scores (not falsy fallback)
+            // SESSION 13 FIX: Categories without issues should show 100/100 (perfect score), not 50/100
+            const categoryScores = {
+                security: (_a = appScore.security_score) !== null && _a !== void 0 ? _a : 100,
+                performance: (_b = appScore.performance_score) !== null && _b !== void 0 ? _b : 100,
+                architecture: (_c = appScore.architecture_score) !== null && _c !== void 0 ? _c : 100,
+                dependency: (_d = appScore.dependency_score) !== null && _d !== void 0 ? _d : 100,
+                codeQuality: (_e = appScore.code_quality_score) !== null && _e !== void 0 ? _e : 100
+            };
+            // Determine grade
+            const score = appScore.overall_score;
+            let grade;
+            if (score >= 90)
+                grade = 'A';
+            else if (score >= 80)
+                grade = 'B';
+            else if (score >= 70)
+                grade = 'C';
+            else if (score >= 60)
+                grade = 'D';
+            else
+                grade = 'F';
+            return {
+                score: appScore.overall_score,
+                grade,
+                categoryScores,
+                appScore: appScore.overall_score,
+                skillScore: skillScore.overall_score,
+                fromCache: true,
+                breakdown: {
+                    baseScore: 50,
+                    categoryScores,
+                    overallMethod: 'APP = MIN(categories) - weakest link',
+                    skillScoreMethod: 'Skill = AVG(categories)',
+                    cachedFromCommit: metadata.commitSHA.slice(0, 7)
+                }
+            };
+        }
+        return null;
+    }
+    catch (error) {
+        // No cached scores found or error - will calculate fresh
+        if (error.code !== 'PGRST116') { // Not a "no rows" error
+            console.log(`[ScoreCalculator] Cache lookup error:`, error.message);
+        }
+        return null;
+    }
+}
+/**
+ * Full V9 category-based scoring with Supabase persistence
+ *
+ * BUG FIXES INCLUDED:
+ * - #7: Baseline 50 (prevents score decay)
+ * - #8: Save actual PR number (not 0)
+ * - #9: Save commit SHA for caching
+ */
+async function calculateFullV9Score(issues, metadata, appScoreManager, skillScoreManager) {
+    var _a, _b;
+    try {
+        // Separate issues by type
+        const newIssues = issues.filter(i => i.category === 'NEW');
+        const existingModified = issues.filter(i => i.category === 'EXISTING_MODIFIED');
+        const existingRest = issues.filter(i => i.category === 'EXISTING_REST');
+        const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
+        // Group issues by detected category (Security, Performance, etc.)
+        // APP Score: Uses ALL issues (repository health)
+        const issuesByCategory = {
+            security: issues.filter(i => i.detectedCategory === 'Security'),
+            performance: issues.filter(i => i.detectedCategory === 'Performance'),
+            architecture: issues.filter(i => i.detectedCategory === 'Architecture'),
+            dependency: issues.filter(i => i.detectedCategory === 'Dependencies'),
+            codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
+        };
+        // SKILL Score: Only issues developer is responsible for (fair scoring)
+        const developerIssues = issues.filter(i => i.category === 'NEW' || i.category === 'EXISTING_MODIFIED');
+        const developerIssuesByCategory = {
+            security: developerIssues.filter(i => i.detectedCategory === 'Security'),
+            performance: developerIssues.filter(i => i.detectedCategory === 'Performance'),
+            architecture: developerIssues.filter(i => i.detectedCategory === 'Architecture'),
+            dependency: developerIssues.filter(i => i.detectedCategory === 'Dependencies'),
+            codeQuality: developerIssues.filter(i => i.detectedCategory === 'Code Quality')
+        };
+        // SESSION 13 FIX: Calculate category scores for APP (base=100)
+        const appCategoryScores = {
+            security: calculateCategoryScore(issuesByCategory.security, 100),
+            performance: calculateCategoryScore(issuesByCategory.performance, 100),
+            architecture: calculateCategoryScore(issuesByCategory.architecture, 100),
+            dependency: calculateCategoryScore(issuesByCategory.dependency, 100),
+            codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
+        };
+        // BUG #5 FIX (Session 30): Fetch baseline score from Supabase for skill calculation
+        // Use developer's historical baseline instead of hardcoded 50
+        let baselineScore = 50; // Default for first-time developers
+        if (skillScoreManager && metadata.prAuthorEmail && metadata.repository) {
+            try {
+                baselineScore = await skillScoreManager.getBaselineScore(metadata.prAuthorEmail, metadata.repository);
+                console.log(`[ScoreCalculator] Using baseline ${baselineScore} for skill category scores (from Supabase)`);
+            }
+            catch (error) {
+                console.log('[ScoreCalculator] Could not fetch baseline, using default 50');
+            }
+        }
+        // SKILL SCORE FIX: Use baseline from Supabase for each category
+        // This ensures developers are scored relative to their historical performance
+        const skillCategoryScores = {
+            security: calculateCategoryScore(developerIssuesByCategory.security, baselineScore),
+            performance: calculateCategoryScore(developerIssuesByCategory.performance, baselineScore),
+            architecture: calculateCategoryScore(developerIssuesByCategory.architecture, baselineScore),
+            dependency: calculateCategoryScore(developerIssuesByCategory.dependency, baselineScore),
+            codeQuality: calculateCategoryScore(developerIssuesByCategory.codeQuality, baselineScore)
+        };
+        // Debug logging for skill category scores
+        console.log(`[ScoreCalculator] Skill Category Scores (baseline=${baselineScore}):`);
+        console.log(`  Security: ${skillCategoryScores.security} (${developerIssuesByCategory.security.length} issues)`);
+        console.log(`  Performance: ${skillCategoryScores.performance} (${developerIssuesByCategory.performance.length} issues)`);
+        console.log(`  Architecture: ${skillCategoryScores.architecture} (${developerIssuesByCategory.architecture.length} issues)`);
+        console.log(`  Dependencies: ${skillCategoryScores.dependency} (${developerIssuesByCategory.dependency.length} issues)`);
+        console.log(`  Code Quality: ${skillCategoryScores.codeQuality} (${developerIssuesByCategory.codeQuality.length} issues)`);
+        // BUG FIX #44: Calculate APP score (minimum of categories - weakest link)
+        const appScore = Math.min(appCategoryScores.security, appCategoryScores.performance, appCategoryScores.architecture, appCategoryScores.dependency, appCategoryScores.codeQuality);
+        // SESSION 13 FIX: Calculate Skill score with base=50 categories
+        const skillScore = Math.round((skillCategoryScores.security + skillCategoryScores.performance +
+            skillCategoryScores.architecture + skillCategoryScores.dependency +
+            skillCategoryScores.codeQuality) / 5);
+        // Use appCategoryScores for saving to database (repository health)
+        const categoryScores = appCategoryScores;
+        // FIX BUG #2: Calculate blocking issues (NEW + EXISTING_MODIFIED with CRITICAL/HIGH)
+        const blockingIssuesCount = issues.filter(i => (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED') &&
+            (i.severity === 'critical' || i.severity === 'high')).length;
+        // Save to Supabase with commit SHA for caching (BUG FIXES #7, #8, #9, #10)
+        if (appScoreManager && metadata.repository) {
+            console.log(`[ScoreCalculator] 💾 Saving APP score: ${appScore}/100 for ${metadata.repository} PR #${metadata.prNumber || 0} (commit: ${((_a = metadata.commitSHA) === null || _a === void 0 ? void 0 : _a.slice(0, 7)) || 'unknown'})`);
+            const supabase = appScoreManager.supabase;
+            const { error } = await supabase.from('app_scores').insert({
+                repo_name: metadata.repository,
+                pr_number: metadata.prNumber || 0,
+                commit_sha: metadata.commitSHA || undefined,
+                overall_score: appScore,
+                // BUG FIX #10: Map categoryScores to individual columns (not JSONB)
+                security_score: categoryScores.security,
+                performance_score: categoryScores.performance,
+                architecture_score: categoryScores.architecture,
+                dependency_score: categoryScores.dependency,
+                code_quality_score: categoryScores.codeQuality,
+                // FIX BUG #2: Decision based on blocking issues, not score
+                decision: blockingIssuesCount > 0 ? 'DECLINED' : 'APPROVED',
+                quality_score: appScore,
+                analyzed_at: new Date().toISOString(),
+                new_issues_count: newIssues.length,
+                existing_issues_count: existingModified.length + existingRest.length,
+                resolved_issues_count: resolvedIssues.length,
+                // FIX BUG #2: Use correct blocking issues count
+                blocking_issues_count: blockingIssuesCount
+            });
+            if (error) {
+                console.error('[ScoreCalculator] ❌ Failed to save APP score:', error.message);
+            }
+            else {
+                console.log('[ScoreCalculator] ✅ APP score saved successfully');
+            }
+        }
+        if (skillScoreManager && metadata.prAuthorEmail && metadata.repository) {
+            console.log(`[ScoreCalculator] 💾 Saving Skill score: ${skillScore}/100 for ${metadata.prAuthorEmail} PR #${metadata.prNumber || 0} (commit: ${((_b = metadata.commitSHA) === null || _b === void 0 ? void 0 : _b.slice(0, 7)) || 'unknown'})`);
+            const supabase = skillScoreManager.supabase;
+            const { error } = await supabase.from('skill_scores').insert({
+                developer_email: metadata.prAuthorEmail,
+                developer_name: metadata.prAuthor || metadata.prAuthorEmail,
+                repo_name: metadata.repository,
+                pr_number: metadata.prNumber || 0,
+                commit_sha: metadata.commitSHA || undefined,
+                overall_score: skillScore,
+                // BUG FIX #90: Use skillCategoryScores (base=50) for skill_scores table
+                security_score: skillCategoryScores.security,
+                performance_score: skillCategoryScores.performance,
+                architecture_score: skillCategoryScores.architecture,
+                dependency_score: skillCategoryScores.dependency,
+                code_quality_score: skillCategoryScores.codeQuality,
+                analyzed_at: new Date().toISOString(),
+                new_issues_count: newIssues.length,
+                resolved_issues_count: resolvedIssues.length,
+                critical_issues_count: issues.filter(i => i.severity === 'critical').length,
+                high_issues_count: issues.filter(i => i.severity === 'high').length,
+                medium_issues_count: issues.filter(i => i.severity === 'medium').length,
+                low_issues_count: issues.filter(i => i.severity === 'low').length
+            });
+            if (error) {
+                console.error('[ScoreCalculator] ❌ Failed to save Skill score:', error.message);
+            }
+            else {
+                console.log('[ScoreCalculator] ✅ Skill score saved successfully');
+            }
+        }
+        // Determine grade based on appScore
+        let grade;
+        if (appScore >= 90)
+            grade = 'A';
+        else if (appScore >= 80)
+            grade = 'B';
+        else if (appScore >= 70)
+            grade = 'C';
+        else if (appScore >= 60)
+            grade = 'D';
+        else
+            grade = 'F';
+        return {
+            score: appScore,
+            grade,
+            categoryScores,
+            skillCategoryScores,
+            appScore,
+            skillScore,
+            breakdown: {
+                baseScore: 100,
+                categoryScores,
+                skillCategoryScores,
+                overallMethod: 'APP = MIN(categories) - weakest link',
+                skillScoreMethod: 'Skill = AVG(categories)'
+            }
+        };
+    }
+    catch (error) {
+        console.error('[ScoreCalculator] Error calculating full V9 score:', error);
+        // Fall back to simplified scoring
+        return calculateSimplifiedScore(issues);
+    }
+}
+/**
+ * Calculate APP SCORE for a single category (Security, Performance, etc.)
+ * BUG FIXES #20-23: Simplified scoring logic
+ *
+ * Base: 100/100 (app health per category)
+ * Counts ALL issues: NEW, EXISTING_MODIFIED, EXISTING_REST, RESOLVED
+ * All have same weight (only sign differs)
+ */
+function calculateCategoryScore(categoryIssues, baseScore = 100) {
+    // SESSION 13 FIX: Use provided baseScore (100 for APP, 50 for Skill)
+    let score = baseScore;
+    // BUG-102 FIX: Only count active issues (exclude RESOLVED) for cleaner scoring
+    // RESOLVED issues are already fixed, so they don't affect current health score
+    const activeIssues = categoryIssues.filter(i => i.category !== 'RESOLVED');
+    activeIssues.forEach(issue => {
+        // User-specified deduction values
+        const deduction = {
+            critical: 5.0, // -5 points
+            high: 3.0, // -3 points
+            medium: 1.0, // -1 point
+            low: 0.5 // -0.5 points
+        }[issue.severity] || 1.0;
+        // NEW, EXISTING_MODIFIED, EXISTING_REST all deduct
+        score -= deduction;
+    });
+    // Ensure score stays within 0-100 range
+    return Math.max(0, Math.min(100, Math.round(score)));
+}
+/**
+ * Simplified scoring (fallback when Supabase unavailable)
+ */
+function calculateSimplifiedScore(issues) {
+    const baseScore = 100.0;
+    let deduction = 0;
+    // BUG-102 FIX: Only count active issues (exclude RESOLVED) for cleaner scoring
+    const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+    // Separate issues by category for breakdown
+    const newIssues = activeIssues.filter(i => i.category === 'NEW');
+    const existingModified = activeIssues.filter(i => i.category === 'EXISTING_MODIFIED');
+    const existingRest = activeIssues.filter(i => i.category === 'EXISTING_REST');
+    const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
+    // Count blocking issues (critical or high severity NEW/EXISTING_MODIFIED)
+    const blockingIssues = activeIssues.filter(i => (i.severity === 'critical' || i.severity === 'high') &&
+        (i.category === 'NEW' || i.category === 'EXISTING_MODIFIED'));
+    // Apply severity weights to calculate deduction (only active issues)
+    activeIssues.forEach(issue => {
+        // Severity weight
+        const severityWeight = {
+            critical: 5.0,
+            high: 3.0,
+            medium: 1.0,
+            low: 0.5
+        }[issue.severity] || 1.0;
+        // All categories count equally toward score - no category multiplier
+        // Only difference: NEW and EXISTING_MODIFIED can block PR (decision logic)
+        deduction += severityWeight;
+    });
+    // Extra penalty for blocking issues
+    const blockingPenalty = blockingIssues.length * 2.5;
+    deduction += blockingPenalty;
+    // BUG-102 FIX: No bonus for resolved issues - they're excluded from deduction calculation
+    // This makes scoring intuitive: if you see N high issues, score = 100 - (N * 3)
+    // Calculate final score
+    let finalScore = baseScore - deduction;
+    // Clamp score between 0 and 100
+    finalScore = Math.max(0, Math.min(100, finalScore));
+    // Determine grade
+    let grade;
+    if (finalScore >= 90)
+        grade = 'A';
+    else if (finalScore >= 80)
+        grade = 'B';
+    else if (finalScore >= 70)
+        grade = 'C';
+    else if (finalScore >= 60)
+        grade = 'D';
+    else
+        grade = 'F';
+    // Calculate individual category deductions for breakdown
+    // All categories use 100% weight (equal impact on score)
+    const newIssuesDeduction = newIssues.reduce((sum, i) => {
+        const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
+        return sum + weight;
+    }, 0);
+    const existingModifiedDeduction = existingModified.reduce((sum, i) => {
+        const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
+        return sum + weight;
+    }, 0);
+    const existingRestDeduction = existingRest.reduce((sum, i) => {
+        const weight = { critical: 5, high: 3, medium: 1, low: 0.5 }[i.severity] || 1;
+        return sum + weight;
+    }, 0);
+    // P0 FIX: Calculate category scores even without Supabase
+    // Group issues by detectedCategory (Security, Performance, etc.)
+    const issuesByCategory = {
+        security: issues.filter(i => i.detectedCategory === 'Security'),
+        performance: issues.filter(i => i.detectedCategory === 'Performance'),
+        architecture: issues.filter(i => i.detectedCategory === 'Architecture'),
+        dependency: issues.filter(i => i.detectedCategory === 'Dependency' || i.detectedCategory === 'Dependencies'),
+        codeQuality: issues.filter(i => i.detectedCategory === 'Code Quality')
+    };
+    // Calculate score for each category with base=100 (for APP Score)
+    const categoryScores = {
+        security: calculateCategoryScore(issuesByCategory.security, 100),
+        performance: calculateCategoryScore(issuesByCategory.performance, 100),
+        architecture: calculateCategoryScore(issuesByCategory.architecture, 100),
+        dependency: calculateCategoryScore(issuesByCategory.dependency, 100),
+        codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 100)
+    };
+    // P0 ISSUE #3 FIX: Calculate skill category scores with base=50 (for Skill Score)
+    // Skill Score uses base=50 to distinguish developers: 0 issues = 50/100 (passing threshold)
+    // Developers with issues score <50 (clear signal of problems needing improvement)
+    const skillCategoryScores = {
+        security: calculateCategoryScore(issuesByCategory.security, 50),
+        performance: calculateCategoryScore(issuesByCategory.performance, 50),
+        architecture: calculateCategoryScore(issuesByCategory.architecture, 50),
+        dependency: calculateCategoryScore(issuesByCategory.dependency, 50),
+        codeQuality: calculateCategoryScore(issuesByCategory.codeQuality, 50)
+    };
+    // APP Score = MIN of all categories (weakest link)
+    const appScore = Math.min(categoryScores.security, categoryScores.performance, categoryScores.architecture, categoryScores.dependency, categoryScores.codeQuality);
+    // Skill Score = AVG of skill category scores (base=50)
+    const skillScore = Math.round((skillCategoryScores.security + skillCategoryScores.performance + skillCategoryScores.architecture +
+        skillCategoryScores.dependency + skillCategoryScores.codeQuality) / 5);
+    return {
+        score: Math.round(finalScore * 10) / 10, // Round to 1 decimal
+        grade,
+        breakdown: {
+            baseScore,
+            newIssuesDeduction: -newIssuesDeduction,
+            existingModifiedDeduction: -existingModifiedDeduction,
+            existingRestDeduction: -existingRestDeduction,
+            blockingPenalty: -blockingPenalty,
+            resolutionBonus: 0, // BUG-102 FIX: No bonus, RESOLVED issues are excluded from deduction
+            totalDeduction: -deduction,
+            finalScore: Math.round(finalScore * 10) / 10
+        },
+        // P0 FIX: Include category scores even without Supabase
+        categoryScores, // APP Score uses base=100
+        skillCategoryScores, // Skill Score uses base=50
+        appScore,
+        skillScore
+    };
+}
+/**
+ * Get quality score interpretation
+ */
+function getScoreInterpretation(score) {
+    if (score >= 90) {
+        return {
+            emoji: '🏆',
+            label: 'Excellent',
+            description: 'Outstanding code quality with minimal issues'
+        };
+    }
+    else if (score >= 80) {
+        return {
+            emoji: '✨',
+            label: 'Good',
+            description: 'High code quality with minor improvements needed'
+        };
+    }
+    else if (score >= 70) {
+        return {
+            emoji: '👍',
+            label: 'Fair',
+            description: 'Acceptable quality but consider addressing issues'
+        };
+    }
+    else if (score >= 60) {
+        return {
+            emoji: '⚠️',
+            label: 'Poor',
+            description: 'Multiple issues need attention'
+        };
+    }
+    else {
+        return {
+            emoji: '❌',
+            label: 'Critical',
+            description: 'Significant quality issues require immediate action'
+        };
+    }
+}

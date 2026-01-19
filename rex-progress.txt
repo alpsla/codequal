@@ -646,3 +646,12 @@ Commit: [main 7df5bab3] rex(#5): Run Live Tier 1 Test - Native Fix Commands
  create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier1.test.ts
 7df5bab3
 
+
+=== Task #6 (2026-01-19 10:45:09) ===
+Title: Run Live Tier 2 Test - Dedicated Fixers
+Status: COMPLETE
+Commit: [main 522d1228] rex(#6): Run Live Tier 2 Test - Dedicated Fixers
+ 3 files changed, 716 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier2.test.ts
+522d1228
+

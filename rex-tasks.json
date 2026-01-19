@@ -2,7 +2,7 @@
   "source": "docs/rex-session-106-live-integration.md",
   "createdAt": "2026-01-19T18:00:00Z",
   "maxIterations": 30,
-  "currentIteration": 6,
+  "currentIteration": 7,
   "status": "ready",
   "validation": {
     "type": "live-integration",
@@ -134,11 +134,11 @@
         "packages/agents/src/fix-agent/__tests__/live-tier2.test.ts"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "attempts": 0,
       "lastError": null,
-      "completedAt": null,
-      "commitHash": null
+      "completedAt": "2026-01-19T15:45:09Z",
+      "commitHash": "[main 522d1228] rex(#6): Run Live Tier 2 Test - Dedicated Fixers\n 3 files changed, 716 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier2.test.ts\n522d1228"
     },
     {
       "id": 7,
