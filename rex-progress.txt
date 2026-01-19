@@ -601,3 +601,39 @@ Commit: [main 18063e5c] rex(#3): Create Live Test Fixture - TypeScript
  create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-typescript.ts
 18063e5c
 
+
+=== Task #4 (2026-01-19 10:40:46) ===
+Title: Create Live Test Fixture - Java
+Status: COMPLETE
+Commit: [main d42fe218] rex(#4): Create Live Test Fixture - Java
+ 3 files changed, 253 insertions(+), 4 deletions(-)
+ create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-java/TestClass.java
+d42fe218
+
+### Task 5: Run Live Tier 1 Test - Native Fix Commands
+- Created live-tier1.test.ts that runs REAL native --fix tools
+- Test features:
+  - Copies fixtures to temp directory for isolated testing
+  - Runs ESLint --fix on TypeScript fixture
+  - Runs Ruff --fix on Python fixture
+  - Verifies files are actually modified (before/after comparison)
+  - Creates minimal .eslintrc.json and ruff.toml configs
+  - Tests FAIL if tools are not installed (with helpful install messages)
+- Key patterns:
+  - Use fs.mkdtempSync() for temp test directories
+  - Use spawnSync to check tool availability
+  - Compare original vs modified content to verify fix
+  - Count pattern occurrences to verify specific issues fixed
+- ESLint fixes tested:
+  - semi: Missing semicolons
+  - quotes: Single quote style
+  - comma-dangle: Trailing commas
+- Ruff fixes tested:
+  - F401: Unused imports (removed)
+  - F632: `is` literal comparisons (→ ==)
+  - E711: `== None` (→ is None, with --unsafe-fixes)
+  - E712: `== True/False` (→ if cond, with --unsafe-fixes)
+- Tool availability checks:
+  - isESLintAvailable(): npx eslint --version
+  - isRuffAvailable(): ruff --version
+
