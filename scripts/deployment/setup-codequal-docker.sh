@@ -66,7 +66,7 @@ networks:
 
 services:
   analyzer-java:
-    image: registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v5.1
     container_name: analyzer-java
     cpuset: "0"
     mem_limit: 5g
@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
 
   analyzer-python:
-    image: registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-python-v4.3
     container_name: analyzer-python
     cpuset: "1"
     mem_limit: 5g
@@ -100,7 +100,7 @@ services:
     restart: unless-stopped
 
   analyzer-javascript:
-    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-javascript-v4.3
     container_name: analyzer-javascript
     cpuset: "2"
     mem_limit: 5g
@@ -117,7 +117,7 @@ services:
     restart: unless-stopped
 
   analyzer-security:
-    image: registry.digitalocean.com/codequal/analyzer:security-v4.2
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:security-v4.2
     container_name: analyzer-security
     cpuset: "3"
     mem_limit: 5g
@@ -228,10 +228,10 @@ echo "1. Configure Docker Registry:"
 echo "   docker login registry.digitalocean.com"
 echo ""
 echo "2. Pull analyzer images:"
-echo "   docker pull registry.digitalocean.com/codequal/analyzer:lang-java-v5.1"
-echo "   docker pull registry.digitalocean.com/codequal/analyzer:lang-python-v4.3"
-echo "   docker pull registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3"
-echo "   docker pull registry.digitalocean.com/codequal/analyzer:security-v4.2"
+echo "   docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v5.1"
+echo "   docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-python-v4.3"
+echo "   docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-javascript-v4.3"
+echo "   docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:security-v4.2"
 echo ""
 echo "3. Run analysis:"
 echo "   /mnt/workspace/run-analysis.sh <repo-url> [branch]"

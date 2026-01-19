@@ -37,18 +37,18 @@ echo ""
 # Primary language analyzers (most commonly used)
 cat << 'EOF'
 # Pull primary language analyzers
-docker pull registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
-docker pull registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
-docker pull registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
-docker pull registry.digitalocean.com/codequal/analyzer:lang-typescript-v4.6
-docker pull registry.digitalocean.com/codequal/analyzer:lang-go-v4.6
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v5.1
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-python-v4.3
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-javascript-v4.3
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-typescript-v4.6
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-go-v4.6
 
 # Pull additional language analyzers if needed
-docker pull registry.digitalocean.com/codequal/analyzer:rust-v3
-docker pull registry.digitalocean.com/codequal/analyzer:lang-cpp-v4.7
-docker pull registry.digitalocean.com/codequal/analyzer:lang-csharp-v4.6
-docker pull registry.digitalocean.com/codequal/analyzer:lang-php-v4.3
-docker pull registry.digitalocean.com/codequal/analyzer:lang-ruby-v4.3
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:rust-v3
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-cpp-v4.7
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-csharp-v4.6
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-php-v4.3
+docker pull iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-ruby-v4.3
 
 # Verify images were pulled
 docker images | grep codequal
@@ -67,16 +67,16 @@ cat << 'SCRIPT'
 # Save this as /mnt/workspace/pull-images.sh on the Oracle instance
 
 IMAGES=(
-  "registry.digitalocean.com/codequal/analyzer:lang-java-v5.1"
-  "registry.digitalocean.com/codequal/analyzer:lang-python-v4.3"
-  "registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3"
-  "registry.digitalocean.com/codequal/analyzer:lang-typescript-v4.6"
-  "registry.digitalocean.com/codequal/analyzer:lang-go-v4.6"
-  "registry.digitalocean.com/codequal/analyzer:rust-v3"
-  "registry.digitalocean.com/codequal/analyzer:lang-cpp-v4.7"
-  "registry.digitalocean.com/codequal/analyzer:lang-csharp-v4.6"
-  "registry.digitalocean.com/codequal/analyzer:lang-php-v4.3"
-  "registry.digitalocean.com/codequal/analyzer:lang-ruby-v4.3"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v5.1"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-python-v4.3"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-javascript-v4.3"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-typescript-v4.6"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-go-v4.6"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:rust-v3"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-cpp-v4.7"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-csharp-v4.6"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-php-v4.3"
+  "iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-ruby-v4.3"
 )
 
 echo "Pulling ${#IMAGES[@]} analyzer images..."

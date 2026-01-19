@@ -26,7 +26,7 @@ services:
   
   # JAVA ANALYZER - Main Branch
   main-java:
-    image: registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v5.1
     container_name: main-java-analyzer
     cpuset: "0"  # Dedicated CPU 0
     mem_limit: 6g  # Java analysis needs more memory
@@ -46,7 +46,7 @@ services:
 
   # JAVA ANALYZER - PR Branch
   pr-java:
-    image: registry.digitalocean.com/codequal/analyzer:lang-java-v5.1
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-java-v5.1
     container_name: pr-java-analyzer
     cpuset: "1"  # Dedicated CPU 1
     mem_limit: 6g
@@ -66,7 +66,7 @@ services:
 
   # PYTHON ANALYZER - Main Branch
   main-python:
-    image: registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-python-v4.3
     container_name: main-python-analyzer
     cpuset: "2"  # Dedicated CPU 2
     mem_limit: 4g
@@ -86,7 +86,7 @@ services:
 
   # PYTHON ANALYZER - PR Branch
   pr-python:
-    image: registry.digitalocean.com/codequal/analyzer:lang-python-v4.3
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-python-v4.3
     container_name: pr-python-analyzer
     cpuset: "3"  # Dedicated CPU 3
     mem_limit: 4g
@@ -106,7 +106,7 @@ services:
 
   # JAVASCRIPT/TYPESCRIPT ANALYZER - Main Branch
   main-javascript:
-    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-javascript-v4.3
     container_name: main-js-analyzer
     cpuset: "0,1"  # Can share CPUs with less intensive tasks
     mem_limit: 3g
@@ -126,7 +126,7 @@ services:
 
   # JAVASCRIPT/TYPESCRIPT ANALYZER - PR Branch  
   pr-javascript:
-    image: registry.digitalocean.com/codequal/analyzer:lang-javascript-v4.3
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-javascript-v4.3
     container_name: pr-js-analyzer
     cpuset: "2,3"  # Can share CPUs
     mem_limit: 3g
@@ -146,7 +146,7 @@ services:
 
   # GO ANALYZER - Main Branch (if needed)
   main-go:
-    image: registry.digitalocean.com/codequal/analyzer:lang-go-v4.6
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-go-v4.6
     container_name: main-go-analyzer
     cpuset: "0,1"
     mem_limit: 4g
@@ -168,7 +168,7 @@ services:
 
   # GO ANALYZER - PR Branch (if needed)
   pr-go:
-    image: registry.digitalocean.com/codequal/analyzer:lang-go-v4.6
+    image: iad.ocir.io/idzaw9ddo1h5/codequal/analyzer:lang-go-v4.6
     container_name: pr-go-analyzer
     cpuset: "2,3"
     mem_limit: 4g

@@ -26,13 +26,13 @@ done
 echo "Deploying $SERVICE to $ENV environment..."
 
 # Build Docker image
-docker build -t registry.digitalocean.com/codequal/$SERVICE:$ENV ./services/$SERVICE
+docker build -t iad.ocir.io/idzaw9ddo1h5/codequal/$SERVICE:$ENV ./services/$SERVICE
 
 # Push to registry
-docker push registry.digitalocean.com/codequal/$SERVICE:$ENV
+docker push iad.ocir.io/idzaw9ddo1h5/codequal/$SERVICE:$ENV
 
 # Update Kubernetes deployment
-kubectl set image deployment/$SERVICE $SERVICE=registry.digitalocean.com/codequal/$SERVICE:$ENV -n codequal-$ENV
+kubectl set image deployment/$SERVICE $SERVICE=iad.ocir.io/idzaw9ddo1h5/codequal/$SERVICE:$ENV -n codequal-$ENV
 
 echo "Deployment complete!"
 
