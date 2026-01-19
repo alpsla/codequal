@@ -1,229 +1,271 @@
 {
-  "source": "docs/rex-session-106-live-integration.md",
-  "createdAt": "2026-01-19T18:00:00Z",
+  "source": "docs/rex-session-107-complete-coverage.md",
+  "createdAt": "2026-01-19T19:00:00Z",
   "maxIterations": 30,
-  "currentIteration": 10,
+  "currentIteration": 1,
   "status": "ready",
   "validation": {
     "type": "live-integration",
-    "build": "echo 'Live integration - build check passed'",
-    "typecheck": "echo 'Live integration - typecheck passed'",
-    "lint": "echo 'Live integration - lint passed'"
+    "build": "echo 'Session 107 - build check passed'",
+    "typecheck": "echo 'Session 107 - typecheck passed'",
+    "lint": "echo 'Session 107 - lint passed'"
   },
   "tasks": [
     {
       "id": 1,
       "parentId": null,
-      "title": "Verify Environment Configuration",
-      "description": "Ensure all required environment variables and connections are active for live testing",
+      "title": "Create Live Test Fixture - Go",
+      "description": "Create a Go test file with REAL fixable issues (formatting, unused imports, golangci-lint)",
       "steps": [
-        "Check for OPENROUTER_API_KEY in environment",
-        "Check for SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
-        "Verify Supabase connection by querying current pattern count",
-        "Document baseline pattern count before testing"
+        "Create fixtures/live-test-go directory with go.mod",
+        "Create main.go with formatting issues (gofmt)",
+        "Add unused imports (goimports)",
+        "Add issues that golangci-lint can fix",
+        "Add errcheck issue that requires AI (tier 3)"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/live-env-check.test.ts"
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-go/main.go",
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-go/go.mod"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:37:21Z",
-      "commitHash": "[main 25beddf1] rex(#1): Verify Environment Configuration\n 4 files changed, 605 insertions(+), 114 deletions(-)\n create mode 100644 docs/rex-session-106-live-integration.md\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-env-check.test.ts\n25beddf1"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 2,
       "parentId": null,
-      "title": "Create Live Test Fixture - Python",
-      "description": "Create a Python test file with REAL fixable issues (F401, F632, E711, formatting)",
+      "title": "Create Live Test Fixture - C++",
+      "description": "Create a C++ test file with REAL fixable issues (clang-format, clang-tidy modernize)",
       "steps": [
-        "Create packages/agents/src/fix-agent/__tests__/fixtures directory if needed",
-        "Create live-test-python.py with unused imports (F401)",
-        "Add 'is' comparison issues (F632)",
-        "Add '== None' comparison (E711)",
-        "Add formatting issues for black/ruff to fix"
+        "Create fixtures/live-test-cpp directory",
+        "Create main.cpp with formatting issues (clang-format)",
+        "Add modernize-use-nullptr issues (clang-tidy)",
+        "Add modernize-use-override issues",
+        "Add cppcheck issue that requires AI (tier 3)"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-python.py"
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-cpp/main.cpp"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:38:22Z",
-      "commitHash": "[main d8b8fed2] rex(#2): Create Live Test Fixture - Python\n 3 files changed, 155 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-python.py\nd8b8fed2"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 3,
       "parentId": null,
-      "title": "Create Live Test Fixture - TypeScript",
-      "description": "Create a TypeScript test file with REAL fixable issues",
+      "title": "Create Live Test Fixture - C#",
+      "description": "Create a C# test file with REAL fixable issues (dotnet-format, IDE0055, SA1000)",
       "steps": [
-        "Create live-test-typescript.ts with missing semicolons",
-        "Add quote style violations",
-        "Add @typescript-eslint/no-explicit-any usage (requires AI to fix)",
-        "Ensure file has mix of tier 1 and tier 3 issues"
+        "Create fixtures/live-test-csharp directory with .csproj",
+        "Create Program.cs with formatting issues (dotnet-format)",
+        "Add IDE0055 (formatting) issues",
+        "Add SA1000 (spacing) issues",
+        "Add CA1822 issue that requires AI (tier 3)"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-typescript.ts"
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-csharp/Program.cs",
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-csharp/LiveTest.csproj"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:39:29Z",
-      "commitHash": "[main 18063e5c] rex(#3): Create Live Test Fixture - TypeScript\n 3 files changed, 245 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-typescript.ts\n18063e5c"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 4,
       "parentId": null,
-      "title": "Create Live Test Fixture - Java",
-      "description": "Create a Java test file with REAL fixable issues",
+      "title": "Create Live Test Fixture - Rust",
+      "description": "Create a Rust test file with REAL fixable issues (rustfmt, clippy)",
       "steps": [
-        "Create fixtures/live-test-java directory",
-        "Create TestClass.java with formatting issues",
-        "Add S1155 isEmpty() pattern for Sorald",
-        "Add PMD rule violation that requires AI"
+        "Create fixtures/live-test-rust directory with Cargo.toml",
+        "Create main.rs with rustfmt issues",
+        "Add clippy-fixable issues (needless_return, redundant_clone)",
+        "Add clippy issue that requires AI (tier 3)"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-java/TestClass.java"
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/main.rs",
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-rust/Cargo.toml"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:40:46Z",
-      "commitHash": "[main d42fe218] rex(#4): Create Live Test Fixture - Java\n 3 files changed, 253 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/fixtures/live-test-java/TestClass.java\nd42fe218"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 5,
       "parentId": null,
-      "title": "Run Live Tier 1 Test - Native Fix Commands",
-      "description": "Execute REAL tier 1 fixes and verify files are modified",
+      "title": "Create Live Test Fixture - Ruby",
+      "description": "Create a Ruby test file with REAL fixable issues (rubocop)",
       "steps": [
-        "Create live-tier1.test.ts that runs actual ESLint --fix",
-        "Run Ruff --fix on Python fixture",
-        "Verify files were actually modified (check file content before/after)",
-        "Assert that fixable issues are resolved",
-        "Test should FAIL if tools are not installed"
+        "Create fixtures/live-test-ruby directory",
+        "Create main.rb with rubocop auto-correctable issues",
+        "Add Style/StringLiterals issues",
+        "Add Layout issues (spacing, indentation)",
+        "Add Metrics/MethodLength that requires AI"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/live-tier1.test.ts"
+        "packages/agents/src/fix-agent/__tests__/fixtures/live-test-ruby/main.rb"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:42:57Z",
-      "commitHash": "[main 7df5bab3] rex(#5): Run Live Tier 1 Test - Native Fix Commands\n 3 files changed, 623 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier1.test.ts\n7df5bab3"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 6,
       "parentId": null,
-      "title": "Run Live Tier 2 Test - Dedicated Fixers",
-      "description": "Execute REAL tier 2 dedicated fixers",
+      "title": "Run Live Go Tests - Tier 1 & 2",
+      "description": "Execute REAL Go fixes and verify files are modified",
       "steps": [
-        "Create live-tier2.test.ts that runs isort on Python",
-        "Run black on Python fixture",
-        "Run autoflake on Python fixture",
-        "Verify files were actually modified",
-        "Log which tools successfully fixed issues"
+        "Create live-go.test.ts",
+        "Run gofmt on Go fixture and verify formatting fixed",
+        "Run goimports and verify unused imports removed",
+        "Run golangci-lint --fix and verify applicable fixes",
+        "Document which issues need AI (errcheck, staticcheck)"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/live-tier2.test.ts"
+        "packages/agents/src/fix-agent/__tests__/live-go.test.ts"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:45:09Z",
-      "commitHash": "[main 522d1228] rex(#6): Run Live Tier 2 Test - Dedicated Fixers\n 3 files changed, 716 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier2.test.ts\n522d1228"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 7,
       "parentId": null,
-      "title": "Run Live Tier 3 Test - AI Fixer with Pattern Creation",
-      "description": "Execute REAL AI fixes and verify patterns are created in Supabase",
+      "title": "Run Live C++ Tests - Tier 1 & 2",
+      "description": "Execute REAL C++ fixes and verify files are modified",
       "steps": [
-        "Create live-tier3-ai.test.ts",
-        "Query Supabase for current pattern count (baseline)",
-        "Run AI fixer on @typescript-eslint/no-explicit-any issue",
-        "Verify AI generates a fix via OpenRouter API",
-        "Query Supabase again - pattern count should increase by 1",
-        "Verify pattern structure is correct (rule_id, tool, fix_template)"
+        "Create live-cpp.test.ts",
+        "Run clang-format and verify formatting fixed",
+        "Run clang-tidy --fix with modernize-* checks",
+        "Verify nullptr and override fixes applied",
+        "Document SDK path requirements for CI"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/live-tier3-ai.test.ts"
+        "packages/agents/src/fix-agent/__tests__/live-cpp.test.ts"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:47:34Z",
-      "commitHash": "[main 24dbe49e] rex(#7): Run Live Tier 3 Test - AI Fixer with Pattern Creation\n 73 files changed, 38689 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier3-ai.test.js\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-tier3-ai.test.ts\n create mode 100644 packages/agents/src/fix-agent/agents/ai-fixer-agent.js\n create mode 100644 packages/agents/src/fix-agent/ai-fix-prompts.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/ai-fixer-verifier.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/fix-capture-api.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-applicator.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-guidance.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/fix-pattern-registry.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/fix-security-validator.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/index.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/rule-normalizer.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/supabase-pattern-store.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/tool-revalidator.js\n create mode 100644 packages/agents/src/fix-agent/fix-pattern-registry/types.js\n create mode 100644 packages/agents/src/fix-agent/fix-router.js\n create mode 100644 packages/agents/src/fix-agent/issue-classifier.js\n create mode 100644 packages/agents/src/fix-agent/manual-review-reasons.js\n create mode 100644 packages/agents/src/fix-agent/rules/eslint-rules.js\n create mode 100644 packages/agents/src/fix-agent/rules/index.js\n create mode 100644 packages/agents/src/fix-agent/rules/typescript-eslint-rules.js\n create mode 100644 packages/agents/src/fix-agent/state/fresh-context-fixer.js\n create mode 100644 packages/agents/src/fix-agent/state/kb-fix-applicator.js\n create mode 100644 packages/agents/src/fix-agent/state/pr-fix-state.js\n create mode 100644 packages/agents/src/fix-agent/state/repository-learnings.js\n create mode 100644 packages/agents/src/fix-agent/state/story-decomposer.js\n create mode 100644 packages/agents/src/standard/orchestrator/model-config-resolver.js\n create mode 100644 packages/agents/src/standard/services/ai-service.js\n create mode 100644 packages/agents/src/standard/services/dynamic-model-selector.js\n create mode 100644 packages/agents/src/standard/utils/env-loader.js\n create mode 100644 packages/agents/src/standard/utils/index.js\n create mode 100644 packages/agents/src/standard/utils/markdown-to-html-converter.js\n create mode 100644 packages/agents/src/standard/utils/owasp-mapper.js\n create mode 100644 packages/agents/src/standard/utils/real-data-env-helper.js\n create mode 100644 packages/agents/src/standard/utils/v8-html-generator.js\n create mode 100644 packages/agents/src/two-branch/agents/examples-database.js\n create mode 100644 packages/agents/src/two-branch/agents/specialized-agents.js\n create mode 100644 packages/agents/src/two-branch/analyzers/gitlab-codequality-converter.js\n create mode 100644 packages/agents/src/two-branch/analyzers/lsp-sarif-converter.js\n create mode 100644 packages/agents/src/two-branch/analyzers/v9-app-score-manager.js\n create mode 100644 packages/agents/src/two-branch/analyzers/v9-grouped-report-formatter.js\n create mode 100644 packages/agents/src/two-branch/analyzers/v9-skill-score-manager.js\n create mode 100644 packages/agents/src/two-branch/analyzers/v9-types.js\n create mode 100644 packages/agents/src/two-branch/config/rule-descriptions.js\n create mode 100644 packages/agents/src/two-branch/fix-agent/tool-fix-registry.js\n create mode 100644 packages/agents/src/two-branch/monitoring/service-health-tracker.js\n create mode 100644 packages/agents/src/two-branch/report/achievements.js\n create mode 100644 packages/agents/src/two-branch/report/ai-enrichment.js\n create mode 100644 packages/agents/src/two-branch/report/business-impact.js\n create mode 100644 packages/agents/src/two-branch/report/category-detector.js\n create mode 100644 packages/agents/src/two-branch/report/community-impact.js\n create mode 100644 packages/agents/src/two-branch/report/documentation-links.js\n create mode 100644 packages/agents/src/two-branch/report/educational-resources.js\n create mode 100644 packages/agents/src/two-branch/report/fix-capability-utils.js\n create mode 100644 packages/agents/src/two-branch/report/formatter-utils.js\n create mode 100644 packages/agents/src/two-branch/report/header-sections.js\n create mode 100644 packages/agents/src/two-branch/report/metadata-footer.js\n create mode 100644 packages/agents/src/two-branch/report/score-calculator.js\n create mode 100644 packages/agents/src/two-branch/report/types.js\n create mode 100644 packages/agents/src/two-branch/research-services/model-researcher-service.js\n create mode 100644 packages/agents/src/two-branch/services/dynamic-model-selector.js\n create mode 100644 packages/agents/src/two-branch/services/emergency-fallback-provider.js\n create mode 100644 packages/agents/src/two-branch/services/openrouter-key-manager.js\n create mode 100644 packages/agents/src/two-branch/services/resilient-ai-client.js\n create mode 100644 packages/agents/src/two-branch/services/simple-openrouter-client.js\n create mode 100644 packages/agents/src/two-branch/utils/code-snippet-extractor.js\n create mode 100644 packages/agents/src/two-branch/utils/issue-grouping.js\n create mode 100644 packages/agents/src/utils/index.js\n create mode 100644 packages/agents/src/utils/logger.js\n create mode 100644 packages/agents/src/utils/model-types.js\n create mode 100644 packages/agents/src/utils/types.js\n24dbe49e"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 8,
       "parentId": null,
-      "title": "Test Pattern Cache Hit Flow",
-      "description": "Verify second issue of same type uses cached pattern (no AI call)",
+      "title": "Run Live C# Tests - Tier 1 & 2",
+      "description": "Execute REAL C# fixes and verify files are modified",
       "steps": [
-        "Create live-pattern-cache.test.ts",
-        "Create a second file with SAME issue type as task 7",
-        "Run fix pipeline on this new file",
-        "Verify fix is applied WITHOUT making AI API call",
-        "Confirm pattern was retrieved from KB cache",
-        "Verify Supabase pattern count did NOT increase"
+        "Create live-csharp.test.ts",
+        "Run dotnet-format and verify formatting fixed",
+        "Verify IDE0055, SA1000 fixes applied",
+        "Document .csproj context requirements",
+        "Document which rules need AI (CA1822, CA2000)"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/live-pattern-cache.test.ts"
+        "packages/agents/src/fix-agent/__tests__/live-csharp.test.ts"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:50:21Z",
-      "commitHash": "[main dda50357] rex(#8): Test Pattern Cache Hit Flow\n 3 files changed, 585 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-pattern-cache.test.ts\ndda50357"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 9,
       "parentId": null,
-      "title": "Run Full Pipeline Integration Test",
-      "description": "Execute complete three-tier cascade on multi-issue file",
+      "title": "Run Live Rust Tests - Tier 1 & 2",
+      "description": "Execute REAL Rust fixes and verify files are modified",
       "steps": [
-        "Create live-full-pipeline.test.ts",
-        "Create a test file with 10+ issues across all tiers",
-        "Run full fix orchestrator",
-        "Track which issues went to tier 1, tier 2, tier 3",
-        "Verify tier 1 and tier 2 issues were fixed without API calls",
-        "Verify tier 3 issues created/used patterns",
-        "Generate summary with actual API cost"
+        "Create live-rust.test.ts",
+        "Run rustfmt and verify formatting fixed",
+        "Run cargo clippy --fix and verify clippy fixes",
+        "Verify needless_return, redundant_clone fixed",
+        "Document which clippy rules need AI"
       ],
       "files": [
-        "packages/agents/src/fix-agent/__tests__/live-full-pipeline.test.ts"
+        "packages/agents/src/fix-agent/__tests__/live-rust.test.ts"
       ],
       "priority": "high",
-      "passes": true,
+      "passes": false,
       "attempts": 0,
       "lastError": null,
-      "completedAt": "2026-01-19T15:54:29Z",
-      "commitHash": "[main 7dbefca2] rex(#9): Run Full Pipeline Integration Test\n 3 files changed, 1077 insertions(+), 4 deletions(-)\n create mode 100644 packages/agents/src/fix-agent/__tests__/live-full-pipeline.test.ts\n7dbefca2"
+      "completedAt": null,
+      "commitHash": null
     },
     {
       "id": 10,
       "parentId": null,
-      "title": "Query Supabase and Generate Report",
-      "description": "Final validation - query Supabase and document results",
+      "title": "Run Live Ruby Tests - Tier 1 & 2",
+      "description": "Execute REAL Ruby fixes and verify files are modified",
       "steps": [
-        "Query fix_patterns table for patterns created today",
-        "Compare to baseline from task 1",
-        "Document: new patterns created, cache hits, API costs",
-        "Generate LIVE_INTEGRATION_RESULTS.md with actual data",
-        "Include recommendations for production deployment"
+        "Create live-ruby.test.ts",
+        "Run rubocop --autocorrect and verify fixes",
+        "Verify Style and Layout rules fixed",
+        "Document which rules need AI (Metrics/*)"
       ],
       "files": [
-        "docs/LIVE_INTEGRATION_RESULTS.md"
+        "packages/agents/src/fix-agent/__tests__/live-ruby.test.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 11,
+      "parentId": null,
+      "title": "Run Live TypeScript Prettier Test",
+      "description": "Test Prettier separately from ESLint",
+      "steps": [
+        "Create live-prettier.test.ts",
+        "Create fixture with formatting issues that Prettier handles",
+        "Run prettier --write and verify formatting",
+        "Verify integration with ESLint (eslint-config-prettier)"
+      ],
+      "files": [
+        "packages/agents/src/fix-agent/__tests__/live-prettier.test.ts"
+      ],
+      "priority": "high",
+      "passes": false,
+      "attempts": 0,
+      "lastError": null,
+      "completedAt": null,
+      "commitHash": null
+    },
+    {
+      "id": 12,
+      "parentId": null,
+      "title": "Update Coverage Report",
+      "description": "Document complete language coverage across all sessions",
+      "steps": [
+        "Query Supabase for updated pattern counts",
+        "Document all languages now tested",
+        "Update LIVE_INTEGRATION_RESULTS.md with Session 107 results",
+        "Create COMPLETE_LANGUAGE_COVERAGE.md summary"
+      ],
+      "files": [
+        "docs/COMPLETE_LANGUAGE_COVERAGE.md"
       ],
       "priority": "high",
       "passes": false,
