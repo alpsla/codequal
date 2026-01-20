@@ -92,8 +92,8 @@ const arrayOfObjects = [{id: 1, name: "first"},{id: 2, name: "second"},{id: 3, n
 function manyParams(param1: string, param2: number, param3: boolean, param4: object, param5: string[], param6: number) {return param1 + String(param2)}
 
 // Issue: Ternary operator formatting
+var someCondition = true
 const ternaryResult = someCondition ? "this is the truthy value that is very long and should be formatted" : "this is the falsy value that is also very long"
-let someCondition = true
 
 // Issue: Template literal formatting
 const template = `This is a template literal with ${VERY_LONG_CONFIG_STRING_THAT_EXCEEDS_PRINT_WIDTH} interpolation that exceeds line width`
