@@ -16,8 +16,8 @@
 
 import { groupIssues } from '../utils/issue-grouping';
 import { SkillScoreManager } from '../analyzers/v9-skill-score-manager';
+// SESSION 112: V9GroupedReportFormatter is now the only formatter
 import { V9GroupedReportFormatter } from '../analyzers/v9-grouped-report-formatter';
-import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
 import { enrichIssuesWithAI } from '../report/ai-enrichment';
 
@@ -42,6 +42,7 @@ export interface CompileReportInput {
 }
 
 export interface CompileReportOptions {
+  /** @deprecated SESSION 112: Always uses grouped report now */
   useGroupedReport?: boolean;
   modelConfigResolver?: ModelConfigResolver;
   detectedLanguage?: string;
@@ -93,7 +94,8 @@ export async function compileV9Report(
   console.log(`[DEBUG-PR#] ======================================\n`);
 
   const {
-    useGroupedReport = true,
+    // SESSION 112: useGroupedReport is deprecated, always true
+    useGroupedReport: _useGroupedReportDeprecated = true,
     modelConfigResolver,
     detectedLanguage = 'unknown',
     detectedRepoSize = 'medium',
@@ -503,11 +505,12 @@ export async function compileV9Report(
   // Add team members (placeholder - requires Supabase)
   completeMetadata.teamMembers = discoverTeamFromGit(['/tmp/kafka-repo']);
 
-  // Generate report
+  // Generate report - SESSION 112: Always use V9GroupedReportFormatter
   let markdown: string;
   let reportAttachments: any = {};
 
-  if (useGroupedReport) {
+  // Always use grouped report (V9ReportFormatterFinal is deprecated)
+  {
     const allProcessedIssues = [...formattedNewIssues, ...formattedExistingIssues, ...formattedResolvedIssues];
 
     // BUG #89 DEBUG: Check categories in allProcessedIssues
@@ -581,16 +584,15 @@ export async function compileV9Report(
       ideFixFiles: result.ideFixFiles,
       mapping: result.mapping
     };
-  } else {
-    const fullFormatter = new V9ReportFormatterFinal();
-    markdown = await fullFormatter.generateCompleteReport(analysisResult, completeMetadata, detectedLanguage);
   }
+  // SESSION 112: Removed else branch - V9ReportFormatterFinal is deprecated
 
   return {
     analysisResult,
     completeMetadata: {
       ...completeMetadata,
-      ...(useGroupedReport && reportAttachments ? {
+      // SESSION 112: Always include attachments (grouped report is always used)
+      ...(reportAttachments ? {
         attachments: reportAttachments.locationAttachments,
         ideFixFiles: reportAttachments.ideFixFiles,
         issueGroupMapping: reportAttachments.mapping

@@ -5,8 +5,8 @@
 
 import { RedisToolOutputManager, ToolOutput } from '../utils/redis-tool-output-manager';
 import { KubernetesRepositoryManager } from '../utils/kubernetes-repository-manager';
-import { V9ReportFormatterFinal } from './v9-report-formatter';
-import { V9GroupedReportFormatter } from './v9-grouped-report-formatter';  // Phase B+C: Cost-optimized reports
+// SESSION 112: V9ReportFormatterFinal deprecated, use V9GroupedReportFormatter only
+import { V9GroupedReportFormatter } from './v9-grouped-report-formatter';
 import { DynamicModelSelector } from '../services/dynamic-model-selector';
 import { SkillScoreManager } from './v9-skill-score-manager';  // Moved to V9 core
 import { V9CleanupService } from '../services/v9-cleanup-service';  // Automatic cleanup after analysis
@@ -42,8 +42,8 @@ interface AIInsight {
 export class V9IntegratedAnalyzer {
   private redisManager: RedisToolOutputManager;
   private repoManager: KubernetesRepositoryManager;
-  private reportFormatter: V9ReportFormatterFinal;
-  private groupedFormatter: V9GroupedReportFormatter;  // Phase B+C: Cost-optimized formatter
+  // SESSION 112: Unified to single formatter
+  private reportFormatter: V9GroupedReportFormatter;
   private modelSelector: DynamicModelSelector;
   private cleanupService: V9CleanupService;  // Automatic cleanup service
   private aiClient = getResilientAIClient();
@@ -53,21 +53,13 @@ export class V9IntegratedAnalyzer {
   private detectedLanguage = 'unknown';
   private detectedRepoSize: 'small' | 'medium' | 'large' | 'enterprise' = 'medium';
 
-  // Phase B+C: Report format configuration
-  private useGroupedReport = true;  // Default to grouped (99.8% cost savings)
+  // SESSION 112: Unified formatter (V9GroupedReportFormatter replaces V9ReportFormatterFinal)
 
-  constructor(options?: { useGroupedReport?: boolean }) {
+  constructor() {
     this.redisManager = new RedisToolOutputManager();
     this.repoManager = new KubernetesRepositoryManager();
-    this.reportFormatter = new V9ReportFormatterFinal();
-    this.groupedFormatter = new V9GroupedReportFormatter();  // Phase B+C: Initialize grouped formatter
-    
-    // Allow override via options or environment variable
-    if (options?.useGroupedReport !== undefined) {
-      this.useGroupedReport = options.useGroupedReport;
-    } else if (process.env.V9_USE_FULL_REPORT === 'true') {
-      this.useGroupedReport = false;
-    }
+    // SESSION 112: Use only V9GroupedReportFormatter
+    this.reportFormatter = new V9GroupedReportFormatter();
 
     // Use the existing DynamicModelSelector that fetches from Supabase
     this.modelSelector = new DynamicModelSelector(process.env.OPENROUTER_API_KEY);
@@ -468,7 +460,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
         aiInsights: data.aiInsights
       },
       {
-        useGroupedReport: this.useGroupedReport,
+        // SESSION 112: useGroupedReport is deprecated (always true now)
         modelConfigResolver: this.modelConfigResolver,
         detectedLanguage: this.detectedLanguage,
         detectedRepoSize: this.detectedRepoSize,
@@ -529,7 +521,7 @@ and actionable recommendations. Focus on business value and team productivity.`;
         parallelExecution: true,
         parallelFixGeneration: true,
         fixGenerationTime: `${(result.completeMetadata.fixGenerationTime / 1000).toFixed(2)}s`,
-        reportType: this.useGroupedReport ? 'grouped' : 'full',
+        reportType: 'grouped', // SESSION 112: Always grouped
         agentMetrics: (result.completeMetadata.agentsUsed || []).map((a: any) => ({
           agent: a.agentName,
           issues: a.issuesFound,
@@ -543,7 +535,8 @@ and actionable recommendations. Focus on business value and team productivity.`;
         }))
       },
       
-      ...(this.useGroupedReport && result.attachments ? {
+      // SESSION 112: Always include attachments (grouped report is always used)
+      ...(result.attachments ? {
         attachments: result.attachments.locationAttachments,
         ideFixFiles: result.attachments.ideFixFiles,
         issueGroupMapping: result.attachments.mapping

@@ -75,8 +75,10 @@ export { V9KotlinAnalyzer } from './two-branch/analyzers/v9-kotlin-analyzer';
 export * from './two-branch/analyzers/v9-types';
 
 // Export report formatters
-export { V9ReportFormatterFinal } from './two-branch/analyzers/v9-report-formatter';
+// SESSION 112: V9GroupedReportFormatter is the primary formatter
 export { V9GroupedReportFormatter } from './two-branch/analyzers/v9-grouped-report-formatter';
+// NOTE: V9ReportFormatterFinal has been deprecated and moved to analyzers/deprecated/
+// If you need it for backward compatibility, import directly from that path
 
 // Export other working modules
 export * from './standard/utils';

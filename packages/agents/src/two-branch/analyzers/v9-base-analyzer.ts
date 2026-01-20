@@ -32,7 +32,8 @@ import { V9ScoringCalculator } from './v9-scoring-calculator';
 import { V9IssueComparator } from './v9-issue-comparator';
 import { V9EducationalResources } from './v9-educational-resources';
 import { V9BusinessImpact } from './v9-business-impact';
-import { V9ReportFormatterFinal as V9ReportFormatter } from './v9-report-formatter';
+// SESSION 112: Use V9GroupedReportFormatter as the primary formatter
+import { V9GroupedReportFormatter as V9ReportFormatter } from './v9-grouped-report-formatter';
 
 // Import utilities
 import { getRepoManager, getFileSelector } from '../utils/repository-utils-factory';
@@ -261,8 +262,42 @@ export abstract class V9BaseAnalyzer {
         analyzedAt: timestamp
       };
 
-      const report = await this.reportFormatter.generateCompleteReport(result, completeMetadata, config.name);
-      await this.saveReport(report, prNumber);
+      // SESSION 112: Use V9GroupedReportFormatter.generateGroupedReport
+      // Convert AnalysisResult issues to EnrichedIssue format for the grouped formatter
+      const convertToEnrichedIssue = (i: Issue, cat: string) => ({
+        file: i.file,
+        line: i.line,
+        column: undefined,
+        rule: i.rule || i.title,
+        tool: i.tool,
+        severity: i.severity as 'critical' | 'high' | 'medium' | 'low',
+        message: i.description || i.title,
+        category: cat,
+        detectedCategory: i.category as string,
+        snippet: i.codeSnippet
+      });
+
+      const allIssues = [
+        ...newIssues.map(i => convertToEnrichedIssue(i, 'NEW')),
+        ...existingIssues.map(i => convertToEnrichedIssue(i, 'EXISTING_REST')),
+        ...resolvedIssues.map(i => convertToEnrichedIssue(i, 'RESOLVED'))
+      ];
+
+      // Import groupIssues to create groups
+      const { groupIssues } = await import('../utils/issue-grouping');
+      const groupingResult = groupIssues(allIssues);
+
+      // Generate grouped report
+      const reportOutput = await this.reportFormatter.generateGroupedReport(
+        allIssues,
+        groupingResult.groups,
+        {
+          ...completeMetadata,
+          decision: result.decision,
+          blockingCount: blockingIssues.length
+        }
+      );
+      await this.saveReport(reportOutput.markdown, prNumber);
       
       this.logger.log('✅ Analysis complete!');
       

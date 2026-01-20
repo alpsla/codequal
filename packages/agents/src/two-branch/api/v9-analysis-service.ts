@@ -37,7 +37,7 @@ import {
 } from '../utils/security-utils';
 import { SpecializedAgentFactory } from '../agents/specialized-agents';
 import { V9EducationalResources } from '../analyzers/v9-educational-resources';
-import { V9ReportFormatterFinal } from '../analyzers/v9-report-formatter';
+import { V9GroupedReportFormatter } from '../analyzers/v9-grouped-report-formatter';
 import { ModelConfigResolver } from '../../standard/orchestrator/model-config-resolver';
 import { CodeSnippetExtractor } from '../utils/code-snippet-extractor';
 import { groupIssues, prioritizeGroups, generateGroupingSummary } from '../utils/issue-grouping';
@@ -879,51 +879,78 @@ export class V9AnalysisService {
       console.log(`[Report] Scanner guidance saved`);
     }
 
-    // Generate main markdown report using existing formatter
+    // SESSION 112: Use V9GroupedReportFormatter (with progressHistory, tier support)
+    // Replaces V9ReportFormatterFinal for all new reports
     try {
-      const formatter = new V9ReportFormatterFinal();
+      const formatter = new V9GroupedReportFormatter();
 
-      // SESSION 92: Split issues by category for formatter
-      // V9ReportFormatterFinal expects newIssues, existingIssues, resolvedIssues arrays
-      const newIssues = issues.filter(i => i.category === 'NEW');
-      const existingModifiedIssues = issues.filter(i => i.category === 'EXISTING_MODIFIED');
-      const existingRestIssues = issues.filter(i => i.category === 'EXISTING_REST');
-      const resolvedIssues = issues.filter(i => i.category === 'RESOLVED');
+      // Generate issue groups for the formatter
+      const groupingResult = groupIssues(issues);
 
-      // Build result object for formatter with proper structure
-      const analysisResult: any = {
-        issues,
-        newIssues,
-        existingIssues: [...existingModifiedIssues, ...existingRestIssues],
-        resolvedIssues,
+      // Build metadata object for grouped formatter
+      const reportMetadata = {
+        repository: metadata.repository,
+        repoUrl: metadata.repoUrl,
+        repoPath: metadata.repoPath,
+        prNumber: metadata.prNumber,
+        prTitle: metadata.prTitle,
+        branch: metadata.branch || metadata.prBranch,
+        baseBranch: metadata.baseBranch,
+        prAuthor: metadata.prAuthor,
+        prAuthorEmail: metadata.prAuthorEmail,
+        organizationName: metadata.organizationName,
+        totalFiles: metadata.totalFiles || 0,
+        totalLinesOfCode: metadata.totalLinesOfCode,
+        filesModified: metadata.filesModified,
+        linesAdded: metadata.linesAdded,
+        linesDeleted: metadata.linesDeleted,
+        languageBreakdown: metadata.languageBreakdown,
         decision,
-        score: Math.max(0, 100 - (blockingIssues.length * 10) - (newIssues.length * 0.5)),
-        categoryScores: {},
-        duration: 0,
-        cost: 0
+        blockingCount: blockingIssues.length,
+        totalDuration: metadata.totalDuration || 0,
+        cloneTime: metadata.cloneTime,
+        analysisTime: metadata.analysisTime,
+        reportGenerationTime: metadata.reportGenerationTime,
+        analyzedAt: new Date().toISOString(),
+        analyzerVersion: metadata.analyzerVersion || '9.0.0',
+        toolPerformance: metadata.toolPerformance || [],
+        agentPerformance: metadata.agentPerformance,
+        modelsUsed: metadata.modelsUsed,
+        userTier: metadata.userTier || 'basic'
       };
 
-      // Build metadata object for formatter
-      const reportMetadata: any = {
-        ...metadata,
-        analysisTimestamp: new Date().toISOString(),
-        totalDuration: 0
-      };
-
-      const report = await formatter.generateCompleteReport(
-        analysisResult,
-        reportMetadata,
-        metadata.language
+      // Generate grouped report with all Session 112 enhancements
+      const reportOutput = await formatter.generateGroupedReport(
+        issues,
+        groupingResult.groups,
+        reportMetadata
       );
 
       // lgtm[js/path-injection] - outputDir is internally computed, 'report.md' is hardcoded
       const markdownPath = path.join(outputDir, 'report.md');
-      fs.writeFileSync(markdownPath, report); // lgtm[js/path-injection]
+      fs.writeFileSync(markdownPath, reportOutput.markdown); // lgtm[js/path-injection]
       console.log(`[Report] Markdown saved`);
+
+      // Save IDE fix files if available
+      if (reportOutput.ideFixFiles && reportOutput.ideFixFiles.length > 0) {
+        for (const fixFile of reportOutput.ideFixFiles) {
+          const fixPath = path.join(outputDir, fixFile.filename);
+          fs.writeFileSync(fixPath, JSON.stringify(fixFile.content, null, 2));
+        }
+        console.log(`[Report] ${reportOutput.ideFixFiles.length} IDE fix files saved`);
+      }
+
+      // Save group mapping for API consumers
+      if (reportOutput.mapping) {
+        const mappingPath = path.join(outputDir, 'issue-groups.json');
+        fs.writeFileSync(mappingPath, JSON.stringify(reportOutput.mapping, null, 2));
+        console.log(`[Report] Issue group mapping saved`);
+      }
 
       return { markdown: markdownPath };
     } catch (error: any) {
       console.log(`   ⚠️  Report generation error: ${error.message}`);
+      console.error(error);
       return {};
     }
   }

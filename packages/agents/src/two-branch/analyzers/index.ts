@@ -22,9 +22,11 @@
 // Factory - ALWAYS use this to create analyzers
 export { V9AnalyzerFactory, type SupportedLanguage } from './v9-analyzer-factory';
 
-// Report Generation - Use the MAIN formatter (formerly v9-report-formatter-final)
-export { V9ReportFormatterFinal as V9ReportFormatter } from './v9-report-formatter';
+// Report Generation - SESSION 112: V9GroupedReportFormatter is now the primary formatter
+export { V9GroupedReportFormatter as V9ReportFormatter } from './v9-grouped-report-formatter';
+export { V9GroupedReportFormatter } from './v9-grouped-report-formatter';
 export { V9PRCommentGenerator } from './v9-pr-comment-generator';
+// NOTE: V9ReportFormatterFinal has been deprecated and moved to deprecated/v9-report-formatter.ts
 
 // Core Types
 export * from './v9-types';

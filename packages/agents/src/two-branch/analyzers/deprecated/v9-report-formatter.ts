@@ -1,6 +1,21 @@
 /**
- * V9 Report Formatter - Final Production Version
- * 
+ * @deprecated SESSION 112 - This formatter has been replaced by V9GroupedReportFormatter
+ *
+ * ARCHIVED: 2026-01-19
+ * REASON: V9GroupedReportFormatter provides:
+ *   - Progress history tracking
+ *   - User tier support (basic/pro/enterprise)
+ *   - Better issue grouping
+ *   - IDE integration files
+ *   - Community impact tracking
+ *   - XP/achievements system
+ *
+ * DO NOT USE FOR NEW CODE - Use V9GroupedReportFormatter instead
+ * Location: ../v9-grouped-report-formatter.ts
+ *
+ * ---
+ * V9 Report Formatter - Final Production Version (DEPRECATED)
+ *
  * This formatter generates the complete V9 report with all improvements:
  * - Summary statistics
  * - Proper category breakdown
