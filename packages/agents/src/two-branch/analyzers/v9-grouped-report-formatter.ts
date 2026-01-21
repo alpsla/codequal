@@ -2486,17 +2486,19 @@ ${this.SHOW_FIX_COVERAGE ? `**Fix Coverage** (excluding ${issues.length - issues
 ### 🤖 AI Fix Recommendations
 
 ${(() => {
+        // SESSION 113 FIX: Use activeIssueCount consistently for all percentages
+        const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
+        const activeIssueCount = issues.length - resolvedCount;
+
         const breakdown = this.calculateTierBreakdown(groups);
         const patternFixable = breakdown.tier1.issues + breakdown.tier2.issues;
-        const patternPercent = issues.length > 0 ? (patternFixable / issues.length * 100).toFixed(1) : '0.0';
-        const guidanceNeeded = issues.length - patternFixable;
+        // Use activeIssueCount for percentage calculation (not total)
+        const patternPercent = activeIssueCount > 0 ? (patternFixable / activeIssueCount * 100).toFixed(1) : '0.0';
+        const guidanceNeeded = activeIssueCount - patternFixable;
 
         // BUG-105 FIX: Get pattern count dynamically (no longer hardcoded 500)
         const patternCount = this.getPatternCountFromCache() || 600;
-        // BUG-103 FIX: Exclude resolved issues from counts
-        const resolvedCount = issues.filter(i => i.category === 'RESOLVED').length;
-        const activeIssueCount = issues.length - resolvedCount;
-        const activeIssuesNeedingGuidance = Math.max(0, guidanceNeeded - resolvedCount);
+        const activeIssuesNeedingGuidance = Math.max(0, guidanceNeeded);
 
         // Session 91: Tier-aware content - PRO users see results, BASIC users see upgrade path
         if (this.userTier === 'pro' || this.userTier === 'enterprise') {
@@ -2518,15 +2520,17 @@ ${(() => {
 > Code fixes are shown inline with each issue below. Apply them using \`codequal apply\` or copy the corrected code.`;
         } else {
           // BASIC tier: Show upgrade path
+          // SESSION 113 FIX: Make counts consistent - all based on activeIssueCount
           return `**Your Tier: BASIC** (Pattern Library + IDE Guidance)
 
 | Available | Count | Description |
 |-----------|-------|-------------|
-| 📚 **Pattern Fixes** | ${patternFixable.toLocaleString()} (${patternPercent}%) | Pre-learned fixes from ${patternCount}+ patterns |
+| 📚 **Pattern Fixes** | ${patternFixable.toLocaleString()} | Pre-learned fixes from ${patternCount}+ patterns |
+| 📖 **Guidance** | ${activeIssuesNeedingGuidance.toLocaleString()} | Step-by-step fix instructions |
 | 💡 **IDE Integration** | ✅ | Export to VS Code, JetBrains |
-| 📖 **Guidance** | ${activeIssuesNeedingGuidance.toLocaleString()} | Step-by-step instructions |
+| **Total Active** | ${activeIssueCount.toLocaleString()} | Issues requiring attention |
 
-> 💡 **Upgrade to PRO** for AI-generated fixes on all ${activeIssueCount.toLocaleString()} issues with automatic verification.`;
+> 💡 **Upgrade to PRO** for AI-generated fixes on all ${activeIssueCount.toLocaleString()} active issues with automatic verification.`;
         }
       })()}
 

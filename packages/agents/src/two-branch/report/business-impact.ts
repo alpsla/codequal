@@ -340,7 +340,7 @@ ${autoFixableBlockingCount} of ${blocking.length} blocking issues (${autoFixPerc
 
 **Understanding the metrics:**
 - **Linter Auto-Fix**: Instant fixes via \`eslint --fix\`, \`prettier\`, etc. (${autoFixPercentage.toFixed(0)}% of blocking issues)
-- **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL ${issues.length} issues (100%)
+- **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL ${activeIssues.length} active issues (100%)
 - **Financial Impact**: Fixing these issues now costs ~${fixDays} days vs $${minExploitCost.toLocaleString()}+ if they cause production incidents
 
 **💡 Bonus Opportunity:** Beyond the ${autoFixableBlockingCount} blocking issues, ${bonusOpportunities > 0 ? `you can fix ${bonusOpportunities} additional non-blocking issues` : 'all remaining issues are already RESOLVED in this PR'}. 
@@ -410,12 +410,12 @@ ${autoFixableTotalCount > 0 ? `**🔧 Auto-Fixable:** ${autoFixableTotalCount} o
 ### Recommendations
 ${blocking.length > 0 ? `
 1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment
-2. **Priority:** Address critical blockers first
+2. **Priority:** ${blockingCritical.length > 0 ? 'Address critical issues first, then high-priority issues' : 'Address high-priority issues by severity'}
 3. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
 4. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
 ` : blockingCritical.length + blockingHigh.length > 0 ? `
-1. **Priority:** Address ${blockingCritical.length} critical issues in current sprint
-2. **Planning:** Schedule ${blockingHigh.length} high-severity issues for upcoming work
+1. **Priority:** Address ${blockingCritical.length > 0 ? `${blockingCritical.length} critical issues` : `${blockingHigh.length} high-priority issues`} in current sprint
+2. **Planning:** Schedule remaining issues for upcoming work
 3. **Continuous Improvement:** Integrate static analysis into CI/CD to prevent new issues
 ` : `
 1. **Maintain Quality:** Continue current development practices
@@ -541,7 +541,6 @@ function generateBasicTierSection(
 - ✅ Pattern-based fixes for ${autoFixableCount} issues (~${patternFixTime} min via IDE)
 - ✅ AI recommendations for IDE agents (Cursor, Copilot)
 - ✅ Detailed fix guidance for ${manualReviewTime} remaining issues
-- 💡 **Contribute patterns**: When you manually fix issues via IDE, consider contributing the pattern to help others
 
 ---
 
@@ -556,8 +555,7 @@ function generateBasicTierSection(
 | Educational Resources | ✅ | ✅ |
 | Achievements & XP | ✅ | ✅ |
 | Skills Tracking | ✅ | ✅ |
-| **Community Impact** | ✅ Contribute patterns | ❌ Auto-learned |
-| IDE Integration | ✅ LSP/SARIF exports | ❌ Not needed |
+| IDE Integration | ✅ LSP/SARIF exports | ✅ CLI apply |
 | **Auto-Apply Fixes** | ❌ | ✅ One-click |
 | **Historical Analytics** | ✅ 5 PRs | ✅ Unlimited |
 

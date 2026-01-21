@@ -200,18 +200,7 @@ export function generateAnalysisMetadata(
 - **Analyzer Version:** ${metadata.analyzerVersion || 'V9 Grouped Report Formatter'}
 - **Analysis Date:** ${metadata.analyzedAt ? new Date(metadata.analyzedAt).toLocaleString() : new Date().toLocaleString()}
 - **Report Format:** Grouped (Compact with 99.8% cost reduction)
-- **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types
-
-### Understanding Fix Fields
-
-| Field | Meaning |
-|-------|---------|
-| **fixable: true** | Original linter has native auto-fix (e.g., \`eslint --fix\`) |
-| **fixable: false** | Linter detects only - use CodeQual AI fixes or manual review |
-| **issueType** | Category: style, quality, security, performance, maintainability, dependency |
-| **fixTier** | 1=Native tool fix, 2=Dedicated fixer (Sorald, etc), 3=AI-generated |
-
-> **Note:** \`fixable: false\` doesn't mean "unfixable" - it means the original linter lacks native auto-fix. CodeQual can generate AI fixes for all issues regardless of this field.`;
+- **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types`;
   }
 
   return content;

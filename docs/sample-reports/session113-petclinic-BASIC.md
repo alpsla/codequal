@@ -8,9 +8,8 @@
 **Organization:** spring-projects  
 **Source Branch:** pr-950  
 **Target Branch:** main  
-**Analysis Date:** January 20, 2026 at 10:28 PM EST (1m 33s)
-**Repository Size:** 151 files
-**Report Tier:** 📋 Basic | 3,712 lines  
+**Analysis Date:** January 21, 2026 at 01:04 AM GMT  
+**Repository Size:** 152 files | 3,712 lines  
 **Analyzer Version:** 9.0.0
 
 ## PR Impact
@@ -22,7 +21,13 @@
 
 ## Analysis Performance
 
-**Total Duration:** 1m 33s  
+**Total Duration:** 1m 34s  
+
+## Quality Decision
+
+**Result:** ⛔ **DECLINED** (1 blocking issues)
+
+---
 
 ## 📊 Executive Summary
 
@@ -39,18 +44,9 @@
 
 **Overall Scores**:
 - 📱 **APP Score**: 0/100 (MIN of categories - "weakest link")
-- 👨‍💻 **Skill Score**: 1/100 (AVG of categories)
+- 👨‍💻 **Skill Score**: 38/100 (AVG of categories)
 
-
-**📈 Progress History** (Last 5 PRs):
-- PR #950: 0/100 (F)
-- PR #950: 0/100 (F)
-- PR #950: 0/100 (F)
-- PR #950: 0/100 (F)
-- PR #950: 0/100 (F)
-
-**Trend**: ➡️ Stable
-
+> Scores saved to Supabase for tracking trends over time
 
 
 
@@ -58,7 +54,7 @@
 
 ### Issue Summary
 
-**Active Issues**: 330 (21 unique types)
+**Active Issues**: 329 (20 unique types)
 **Resolved in PR**: 1 ✅
 
 
@@ -66,20 +62,18 @@
 **By Severity** (active issues):
 - 🔴 Critical: 0 (0.0%)
 - 🟠 High: 1 (0.3%)
-- 🟡 Medium: 2 (0.6%)
-- 🟢 Low: 327 (99.1%)
+- 🟡 Medium: 1 (0.3%)
+- 🟢 Low: 327 (99.4%)
 
 **By Category & Severity**:
 
 | Category | Critical | High | Medium | Low | Total |
 |----------|----------|------|--------|-----|-------|
-| 🆕 NEW | 0 | 1 | 2 | 248 | **251** |
+| 🆕 NEW | 0 | 1 | 1 | 248 | **250** |
 | ⚠️ EXISTING_MODIFIED | 0 | 0 | 0 | 0 | **0** |
 | ✅ RESOLVED | 0 | 0 | 0 | 1 | **1** |
 | 📝 EXISTING_REST | 0 | 0 | 0 | 79 | **79** |
-| **TOTAL** | **0** | **1** | **2** | **328** | **331** |
-
-> **Note:** TOTAL includes RESOLVED issues (1). Active issues affecting your score: 330.
+| **TOTAL** | **0** | **1** | **1** | **328** | **330** |
 
 **App Health Score by Category**:
 
@@ -89,8 +83,8 @@
 | ⚡ Performance | 0 | 0 | 0 | 0 | **0** | **100/100** |
 | 🏗️ Architecture | 0 | 0 | 0 | 38 | **38** | **81/100** |
 | 📦 Dependencies | 0 | 0 | 0 | 0 | **0** | **100/100** |
-| ✨ Code Quality | 0 | 1 | 2 | 289 | **292** | **0/100** |
-| **TOTAL** | **0** | **1** | **2** | **327** | **330** | - |
+| ✨ Code Quality | 0 | 1 | 1 | 289 | **291** | **0/100** |
+| **TOTAL** | **0** | **1** | **1** | **327** | **329** | - |
 
 > **Score Calculation:** Each category starts at 100 (perfect health), then deducts: Critical (-5), High (-3), Medium (-1), Low (-0.5). Table shows active issues only (excludes RESOLVED). APP Score = MIN(all categories).
 >
@@ -107,10 +101,10 @@
 
 
 **Analysis Results**:
-- AI-analyzed groups: 21
-- Cost-optimized analysis: 93.7% reduction
+- AI-analyzed groups: 20
+- Cost-optimized analysis: 93.9% reduction
 - Coverage: 100% of detected issues
-- Duration: 1m 33s
+- Duration: 1m 34s
 
 ---
 
@@ -120,12 +114,11 @@
 
 | Available | Count | Description |
 |-----------|-------|-------------|
-| 📚 **Pattern Fixes** | 2 | Pre-learned fixes from 606+ patterns |
-| 📖 **Guidance** | 328 | Step-by-step fix instructions |
+| 📚 **Pattern Fixes** | 1 (0.3%) | Pre-learned fixes from 606+ patterns |
 | 💡 **IDE Integration** | ✅ | Export to VS Code, JetBrains |
-| **Total Active** | 330 | Issues requiring attention |
+| 📖 **Guidance** | 328 | Step-by-step instructions |
 
-> 💡 **Upgrade to PRO** for AI-generated fixes on all 330 active issues with automatic verification.
+> 💡 **Upgrade to PRO** for AI-generated fixes on all 329 issues with automatic verification.
 
 ---
 
@@ -148,13 +141,13 @@
 **Primary Focus Areas:** 1 code quality
 
 **Action Required:**
-All blocking issues are detailed in the "High Priority Issues" section below with:
+All blocking issues are detailed in the "Critical Issues" and "High Priority Issues" sections below with:
 - ✅ Full AI analysis and explanations
-- ✅ Code examples and fix recommendations
+- ✅ Code examples and fix recommendations  
 - ✅ IDE integration files for automated fixes
 
 **Priority:**
-Review high-priority issues by category to maximize impact.
+Review critical issues first, then tackle high-priority issues by category to maximize impact.
 
 ---
 
@@ -166,7 +159,7 @@ Review high-priority issues by category to maximize impact.
 
 1. **Immediate Action**: 1 blocking issues (1 high) require review before deployment
 2. **Security Posture**: Security practices are adequate
-3. **Code Review Process**: High issue count (251 new) suggests need for more thorough pre-commit review
+3. **Code Review Process**: High issue count (250 new) suggests need for more thorough pre-commit review
 4. **Automation Opportunity**: 100% of issues auto-fixable - consider pre-commit hooks
 
 
@@ -288,60 +281,6 @@ This issue appears in **1 file** across your codebase.
 ---
 
 
-### 🟡 Active Debug Code Printstacktrace
-
-**Severity**: MEDIUM | **Tool**: semgrep | **Found in**: 1 files | **Category**: NEW
-
----
-
-#### 📋 What is this issue?
-
-This issue was detected by semgrep as a medium severity problem. Rule: java.lang.security.audit.active-debug-code-printstacktrace.active-debug-code-printstacktrace
-
-#### 🎯 Why does it matter?
-
-This pattern can lead to technical debt or maintenance issues.
-
-#### 🔍 Common causes:
-
-- Code pattern flagged by semgrep
-- May need refactoring or review
-
-#### ⚠️ Impact if not fixed:
-
-Consider addressing to improve code quality.
-
-#### 📊 Risk Assessment
-
-**Overall Risk**: 🟡 **MODERATE RISK**
-
-Should be addressed - may impact system quality or maintainability
-
-**Category**: Security  
-**Focus**: Protecting against attacks, vulnerabilities, and unauthorized access
-
-#### 📍 Representative Example
-
-**Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 92)
-
-> ℹ️ Original code snippet could not be extracted. AI-generated fix code available with PRO tier.
-
-#### 🔧 How to Fix
-
-Possible active debug code detected. Deploying an application with debug code can create unintended entry points or expose sensitive information.
-
-> 💡 **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.
-> See the IDE Integration section below to export issues for manual fixing.
-
-#### 📎 All Occurrences
-
-This issue appears in **1 file** across your codebase.
-
-> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
-
----
-
-
 
 ## 🟢 Low Priority Issues
 
@@ -379,19 +318,9 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java` (Line 198)
+**Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 48)
 
-**Code**:
-
-```java
-   195 | 	@Test
-   196 | 	void testProcessUpdateOwnerFormUnchangedSuccess() throws Exception {
-   197 | 		mockMvc.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID))
->  198 | 			.andExpect(status().is3xxRedirection())
-   199 | 			.andExpect(view().name("redirect:/owners/{ownerId}"));
-   200 | 	}
-   201 | 
-```
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
@@ -444,19 +373,9 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java` (Line 44)
+**Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 23)
 
-**Code**:
-
-```java
-    41 |  */
-    42 | 
-    43 | @WebMvcTest(VetController.class)
->   44 | @DisabledInNativeImage
-    45 | @DisabledInAotMode
-    46 | class VetControllerTests {
-    47 | 
-```
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
@@ -508,18 +427,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/vet/Vet.java` (Line 53)
+**Location**: `src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java` (Line 34)
 
 **Code**:
 
 ```java
-    50 | 	private Set<Specialty> specialties;
-    51 | 
-    52 | 	protected Set<Specialty> getSpecialtiesInternal() {
->   53 | 		if (this.specialties == null) {
-    54 | 			this.specialties = new HashSet<>();
-    55 | 		}
-    56 | 		return this.specialties;
+    31 | public class NamedEntity extends BaseEntity {
+    32 | 
+    33 | 	@Column
+>   34 | 	@NotBlank
+    35 | 	private String name;
+    36 | 
+    37 | 	public String getName() {
 ```
 
 #### 🔧 How to Fix
@@ -570,19 +489,9 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/vet/Vet.java` (Line 64)
+**Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 48)
 
-**Code**:
-
-```java
-    61 | 		return getSpecialtiesInternal().stream()
-    62 | 			.sorted(Comparator.comparing(NamedEntity::getName))
-    63 | 			.collect(Collectors.toList());
->   64 | 	}
-    65 | 
-    66 | 	public int getNrOfSpecialties() {
-    67 | 		return getSpecialtiesInternal().size();
-```
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
@@ -633,18 +542,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java` (Line 44)
+**Location**: `src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java` (Line 31)
 
 **Code**:
 
 ```java
-    41 |  */
-    42 | 
-    43 | @WebMvcTest(VetController.class)
->   44 | @DisabledInNativeImage
-    45 | @DisabledInAotMode
-    46 | class VetControllerTests {
-    47 | 
+    28 |  * @author Wick Dynex
+    29 |  */
+    30 | @MappedSuperclass
+>   31 | public class NamedEntity extends BaseEntity {
+    32 | 
+    33 | 	@Column
+    34 | 	@NotBlank
 ```
 
 #### 🔧 How to Fix
@@ -693,18 +602,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java` (Line 85)
+**Location**: `src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java` (Line 38)
 
 **Code**:
 
 ```java
-    82 | 	@Autowired
-    83 | 	protected VetRepository vets;
-    84 | 
->   85 | 	private final Pageable pageable = Pageable.unpaged();
-    86 | 
-    87 | 	@Test
-    88 | 	void shouldFindOwnersByLastName() {
+    35 | 	private String name;
+    36 | 
+    37 | 	public String getName() {
+>   38 | 		return this.name;
+    39 | 	}
+    40 | 
+    41 | 	public void setName(String name) {
 ```
 
 #### 🔧 How to Fix
@@ -759,18 +668,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java` (Line 56)
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/Owner.java` (Line 59)
 
 **Code**:
 
 ```java
-    53 | 
-    54 | 	private static final int TEST_OWNER_ID = 1;
-    55 | 
->   56 | 	private static final int TEST_PET_ID = 1;
-    57 | 
-    58 | 	@Autowired
-    59 | 	private MockMvc mockMvc;
+    56 | 	@NotBlank
+    57 | 	private String city;
+    58 | 
+>   59 | 	@Column
+    60 | 	@NotBlank
+    61 | 	@Pattern(regexp = "\\d{10}", message = "{telephone.invalid}")
+    62 | 	private String telephone;
 ```
 
 #### 🔧 How to Fix
@@ -822,18 +731,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/owner/VisitController.java` (Line 60)
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/Owner.java` (Line 112)
 
 **Code**:
 
 ```java
-    57 | 	 * we always have fresh data - Since we do not use the session scope, make sure that
-    58 | 	 * Pet object always has an id (Even though id is not part of the form fields)
-    59 | 	 * @param petId
->   60 | 	 * @return Pet
-    61 | 	 */
-    62 | 	@ModelAttribute("visit")
-    63 | 	public Visit loadPetWithVisit(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
+   109 | 		return getPet(name, false);
+   110 | 	}
+   111 | 
+>  112 | 	/**
+   113 | 	 * Return the Pet with the given id, or null if none found for this Owner.
+   114 | 	 * @param id to test
+   115 | 	 * @return the Pet with the given id, or null if no such Pet exists for this Owner
 ```
 
 #### 🔧 How to Fix
@@ -885,19 +794,9 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java` (Line 35)
+**Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 16)
 
-**Code**:
-
-```java
-    32 | import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-    33 | 
-    34 | import static org.mockito.ArgumentMatchers.any;
->   35 | import static org.mockito.BDDMockito.given;
-    36 | import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-    37 | import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-    38 | 
-```
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
@@ -948,18 +847,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/owner/VisitController.java` (Line 85)
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java` (Line 70)
 
 **Code**:
 
 ```java
-    82 | 	// Spring MVC calls method loadPetWithVisit(...) before initNewVisitForm is
-    83 | 	// called
-    84 | 	@GetMapping("/owners/{ownerId}/pets/{petId}/visits/new")
->   85 | 	public String initNewVisitForm() {
-    86 | 		return "pets/createOrUpdateVisitForm";
-    87 | 	}
-    88 | 
+    67 | 				: this.owners.findById(ownerId)
+    68 | 					.orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId
+    69 | 							+ ". Please ensure the ID is correct " + "and the owner exists in the database."));
+>   70 | 	}
+    71 | 
+    72 | 	@GetMapping("/owners/new")
+    73 | 	public String initCreationForm() {
 ```
 
 #### 🔧 How to Fix
@@ -1010,7 +909,7 @@ Nice to fix - improves code quality and developer experience
 
 **Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 57)
 
-> ℹ️ Original code snippet could not be extracted. AI-generated fix code available with PRO tier.
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
@@ -1063,11 +962,74 @@ Nice to fix - improves code quality and developer experience
 
 **Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 57)
 
-> ℹ️ Original code snippet could not be extracted. AI-generated fix code available with PRO tier.
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
 AI-generated fix pattern for WhitespaceAroundCheck
+
+> 💡 **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.
+> See the IDE Integration section below to export issues for manual fixing.
+
+#### 📎 All Occurrences
+
+This issue appears in **4 files** across your codebase.
+
+> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
+
+---
+
+
+### 🟢 RedundantModifierCheck
+
+**Severity**: LOW | **Tool**: checkstyle | **Found in**: 4 files | **Category**: NEW
+
+---
+
+#### 📋 What is this issue?
+
+Code contains redundant modifiers (e.g., public in interface methods, final in final classes).
+
+#### 🎯 Why does it matter?
+
+Redundant modifiers add noise without value and can be confusing.
+
+#### 🔍 Common causes:
+
+- Common code pattern that may need attention
+
+#### ⚠️ Impact if not fixed:
+
+May contribute to technical debt. Consider addressing during regular maintenance.
+
+#### ✨ Risk Assessment
+
+**Overall Risk**: 🟢 **LOW RISK**
+
+Nice to fix - improves code quality and developer experience
+
+**Category**: Code Quality  
+**Focus**: Maintaining clean, readable, and maintainable code
+
+#### 📍 Representative Example
+
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java` (Line 50)
+
+**Code**:
+
+```java
+    47 |  */
+    48 | @Controller
+    49 | class OwnerController {
+>   50 | 
+    51 | 	private static final String VIEWS_OWNER_CREATE_OR_UPDATE_FORM = "owners/createOrUpdateOwnerForm";
+    52 | 
+    53 | 	private final OwnerRepository owners;
+```
+
+#### 🔧 How to Fix
+
+Redundant &apos;public&apos; modifier.
 
 > 💡 **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.
 > See the IDE Integration section below to export issues for manual fixing.
@@ -1115,86 +1077,23 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java` (Line 37)
+**Location**: `src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java` (Line 76)
 
 **Code**:
 
 ```java
-    34 | @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-    35 | public class PetClinicIntegrationTests {
-    36 | 
->   37 | 	@LocalServerPort
-    38 | 	int port;
-    39 | 
-    40 | 	@Autowired
+    73 | // @TestPropertySource("/application-postgres.properties")
+    74 | class ClinicServiceTests {
+    75 | 
+>   76 | 	@Autowired
+    77 | 	protected OwnerRepository owners;
+    78 | 
+    79 | 	@Autowired
 ```
 
 #### 🔧 How to Fix
 
 AI-generated fix pattern for VisibilityModifierCheck
-
-> 💡 **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.
-> See the IDE Integration section below to export issues for manual fixing.
-
-#### 📎 All Occurrences
-
-This issue appears in **4 files** across your codebase.
-
-> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.
-
----
-
-
-### 🟢 RedundantModifierCheck
-
-**Severity**: LOW | **Tool**: checkstyle | **Found in**: 4 files | **Category**: NEW
-
----
-
-#### 📋 What is this issue?
-
-Code contains redundant modifiers (e.g., public in interface methods, final in final classes).
-
-#### 🎯 Why does it matter?
-
-Redundant modifiers add noise without value and can be confusing.
-
-#### 🔍 Common causes:
-
-- Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
-#### ✨ Risk Assessment
-
-**Overall Risk**: 🟢 **LOW RISK**
-
-Nice to fix - improves code quality and developer experience
-
-**Category**: Code Quality  
-**Focus**: Maintaining clean, readable, and maintainable code
-
-#### 📍 Representative Example
-
-**Location**: `src/main/java/org/springframework/samples/petclinic/owner/VisitController.java` (Line 43)
-
-**Code**:
-
-```java
-    40 |  */
-    41 | @Controller
-    42 | class VisitController {
->   43 | 
-    44 | 	private final OwnerRepository owners;
-    45 | 
-    46 | 	public VisitController(OwnerRepository owners) {
-```
-
-#### 🔧 How to Fix
-
-Redundant &apos;public&apos; modifier.
 
 > 💡 **AI Fix Available**: Upgrade to PRO tier to see the AI-generated fix code for this issue.
 > See the IDE Integration section below to export issues for manual fixing.
@@ -1241,19 +1140,9 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java` (Line 28)
+**Location**: `.mvn/wrapper/MavenWrapperDownloader.java` (Line 21)
 
-**Code**:
-
-```java
-    25 |  *
-    26 |  * @author Dave Syer
-    27 |  */
->   28 | @SpringBootApplication
-    29 | @ImportRuntimeHints(PetClinicRuntimeHints.class)
-    30 | public class PetClinicApplication {
-    31 | 
-```
+> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.
 
 #### 🔧 How to Fix
 
@@ -1540,22 +1429,22 @@ mvn spotless:check  # Verify (use in CI)
 | **Auto-Fix Time** | **1 minutes** (run formatters + linters) |
 | **Manual Review Time** | **0.0 hours** (0 issues × 15 min with AI guidance = $0) |
 | **🟢 Safe Auto-Fix (Tier 1)** | **Subset of Tier 2** - Apply immediately, no testing needed |
-| **🟡 Advanced Auto-Fix (Tier 2)** | **100%** (330/330 active issues) - Includes security/critical, requires testing |
-| **🔴 Manual Review (Tier 3)** | **0%** (0/330 active issues) - AI guidance available |
+| **🟡 Advanced Auto-Fix (Tier 2)** | **100%** (329/329 active issues) - Includes security/critical, requires testing |
+| **🔴 Manual Review (Tier 3)** | **0%** (0/329 active issues) - AI guidance available |
 | **✅ Already Resolved** | **1** issues fixed by developer in this PR |
-| **AI Code Suggestions** | **100%** (330/330 active issues) - Every issue has AI-generated fix code |
+| **AI Code Suggestions** | **100%** (329/329 active issues) - Every issue has AI-generated fix code |
 | **Potential Exploit Cost** | **$5,000 - $50,000** |
 | **Security Risk** | Technical debt accumulation, slower development velocity |
 | **Return on Investment** | **5x minimum return** by preventing issues now vs. fixing in production |
-| **Risk-Adjusted Savings** | **$4,019 minimum** (prevention vs. remediation) |
+| **Risk-Adjusted Savings** | **$4,022 minimum** (prevention vs. remediation) |
 | **Recommendation** | Apply Safe fixes → Test Advanced fixes → Review remaining with AI guidance |
 
 **Understanding the metrics:**
 - **Linter Auto-Fix**: Instant fixes via `eslint --fix`, `prettier`, etc. (100% of blocking issues)
-- **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL 330 active issues (100%)
+- **AI Code Suggestions**: AI has generated copy-paste ready fix code for ALL 330 issues (100%)
 - **Financial Impact**: Fixing these issues now costs ~1 days vs $5,000+ if they cause production incidents
 
-**💡 Bonus Opportunity:** Beyond the 1 blocking issues, you can fix 329 additional non-blocking issues. 
+**💡 Bonus Opportunity:** Beyond the 1 blocking issues, you can fix 328 additional non-blocking issues. 
 
 > ⚠️ **Always review auto-fixed code** - verify fixes maintain expected behavior before committing.
 
@@ -1566,7 +1455,7 @@ mvn spotless:check  # Verify (use in CI)
   - 1 high-severity issues should be prioritized
   
 - **Future Risk:** 🟡 Medium
-  - Technical debt will compound if 329 backlog issues are not addressed
+  - Technical debt will compound if 328 backlog issues are not addressed
   - Code maintainability may decrease over time
   - Security posture is acceptable
 
@@ -1577,7 +1466,7 @@ mvn spotless:check  # Verify (use in CI)
 | **Performance** | 0 | 0 | 0 | ⚪ None |
 | **Architecture** | 25 | 13 | 0 | 🟢 Low |
 | **Dependencies** | 0 | 0 | 0 | ⚪ None |
-| **Code Quality** | 226 | 66 | 251 | 🔴 High |
+| **Code Quality** | 225 | 66 | 250 | 🔴 High |
 
 **Legend:**
 - **This PR:** Issues in files modified by this PR (NEW + EXISTING_MODIFIED)
@@ -1588,8 +1477,8 @@ mvn spotless:check  # Verify (use in CI)
 ### Recommendations
 
 1. **Immediate Action:** Resolve 1 blocking issues before deployment
-2. **Priority:** Address high-priority issues by severity
-3. **Planning:** Schedule time for 2 medium-severity issues in upcoming sprints
+2. **Priority:** Address critical blockers first
+3. **Planning:** Schedule time for 1 medium-severity issues in upcoming sprints
 4. **Continuous Improvement:** Track and reduce 327 low-severity issues over time
 
 
@@ -1601,16 +1490,17 @@ mvn spotless:check  # Verify (use in CI)
 
 | Metric | Manual Fix | With IDE Autofix |
 |--------|------------|------------------|
-| **Developer Time** | 27.5 hours | **1.9 hours** |
-| **Cost (@$150/hr)** | $4,125 | **$289** |
+| **Developer Time** | 27.4 hours | **1.9 hours** |
+| **Cost (@$150/hr)** | $4,113 | **$288** |
 | **Time Reduction** | — | **93%** ✅ |
 
-*Time savings based on applying 330 auto-fixable issues via IDE integration (LSP/SARIF files).*
+*Time savings based on applying 329 auto-fixable issues via IDE integration (LSP/SARIF files).*
 
 **What BASIC includes:**
-- ✅ Pattern-based fixes for 330 issues (~2 min via IDE)
+- ✅ Pattern-based fixes for 329 issues (~2 min via IDE)
 - ✅ AI recommendations for IDE agents (Cursor, Copilot)
 - ✅ Detailed fix guidance for 0 remaining issues
+- 💡 **Contribute patterns**: When you manually fix issues via IDE, consider contributing the pattern to help others
 
 ---
 
@@ -1625,7 +1515,8 @@ mvn spotless:check  # Verify (use in CI)
 | Educational Resources | ✅ | ✅ |
 | Achievements & XP | ✅ | ✅ |
 | Skills Tracking | ✅ | ✅ |
-| IDE Integration | ✅ LSP/SARIF exports | ✅ CLI apply |
+| **Community Impact** | ✅ Contribute patterns | ❌ Auto-learned |
+| IDE Integration | ✅ LSP/SARIF exports | ❌ Not needed |
 | **Auto-Apply Fixes** | ❌ | ✅ One-click |
 | **Historical Analytics** | ✅ 5 PRs | ✅ Unlimited |
 
@@ -1655,13 +1546,12 @@ mvn spotless:check  # Verify (use in CI)
 
 ### 📚 Phase 3: Code Style & Formatting (Optional)
 
-**330 style/formatting issues** can be addressed to improve code consistency.
+**329 style/formatting issues** can be addressed to improve code consistency.
 
 | Tool | Issues | Reference |
 |------|--------|----------|
 | Checkstyle | 328 | [📚 Checkstyle Rules Reference](https://checkstyle.org/checks.html) |
 | PMD | 1 | [📚 PMD Rules Reference](https://pmd.github.io/latest/pmd_rules_java.html) |
-| semgrep | 1 | See tool documentation |
 
 > 💡 **Tip**: These are style issues with no runtime impact. Fix via IDE auto-format or linter `--fix` commands.
 
@@ -1669,19 +1559,19 @@ mvn spotless:check  # Verify (use in CI)
 
 ### Stéphane Nicoll's Performance
 
-**Overall Score:** 1/100
+**Overall Score:** 28/100
 **Ranking:** #10 of 10 developers
-**Team Average:** 45/100
+**Team Average:** 48/100
 
 ### Category Breakdown
 
 | Category | Your Score | Team Avg | Status |
 |----------|------------|----------|--------|
-| 🔒 Security | 1/100 | 45/100 | ⚠️ Below Average |
-| ⚡ Performance | 1/100 | 45/100 | ⚠️ Below Average |
-| 🏗️  Architecture | 0/100 | 45/100 | ⚠️ Below Average |
-| 📦 Dependencies | 1/100 | 45/100 | ⚠️ Below Average |
-| ✨ Code Quality | 0/100 | 45/100 | ⚠️ Below Average |
+| 🔒 Security | 38/100 | 48/100 | ⚠️ Average |
+| ⚡ Performance | 38/100 | 48/100 | ⚠️ Average |
+| 🏗️  Architecture | 26/100 | 48/100 | ⚠️ Below Average |
+| 📦 Dependencies | 38/100 | 48/100 | ⚠️ Average |
+| ✨ Code Quality | 0/100 | 48/100 | ⚠️ Below Average |
 
 ### 🏆 Top Performers
 
@@ -1697,12 +1587,12 @@ mvn spotless:check  # Verify (use in CI)
 
 ## 🎮 XP Progress & Achievements
 
-### Level 2: Apprentice
+### Level 1: Novice
 
-**Total XP:** 250
-> 📊 **Breakdown:** 10 analyses (250 XP) + 0 high scores (0 XP)
+**Total XP:** 25
+> 📊 **Breakdown:** 1 analyses (25 XP) + 0 high scores (0 XP)
 
-[████████████████░░░░] 83% to next level
+[█████░░░░░░░░░░░░░░░] 25% to next level
 
 ### Achievement Collection
 
@@ -1710,19 +1600,16 @@ mvn spotless:check  # Verify (use in CI)
 |------|----------|
 | 🏆 Legendary | 0 |
 | 💜 Epic | 0 |
-| 💙 Rare | 1 |
+| 💙 Rare | 0 |
 | ⚪ Common | 1 |
 
-> 💡 **How to earn XP:** Apply auto-fixes and commit them → re-run analysis → earn XP for resolved issues!
-> - Each resolved issue = +5 XP
-> - Critical/High severity = +15-20 XP bonus
-> - Security fixes = +10 XP bonus
+> 💡 **How to earn more XP:** Fix issues in your PR before analysis! Each resolved issue = +5 XP, critical = +20 XP bonus.
 > [📖 Full Scoring Guide](https://codequal.dev/docs/scoring-guide)
 
 
 ## 📜 Professional Certifications
 
-You have earned **2 certifications**
+You have earned **1 certification**
 demonstrating expertise in code quality and security practices.
 
 ### Recent Certifications
@@ -1740,21 +1627,8 @@ Completed your first code quality analysis, beginning the journey toward excelle
 
 ---
 
-#### Dedicated Developer
 
-Reached the milestone of 10+ code analyses, demonstrating commitment to quality.
-
-| Field | Value |
-|-------|-------|
-| **Awarded** | January 20, 2026 |
-| **Credential ID** | `MIL-2026-dedica` |
-| **Category** | Milestone |
-
-
----
-
-
-[Download Certificates] | [Add to LinkedIn] | [View All (2)]
+[Download Certificates] | [Add to LinkedIn] | [View All (1)]
 
 
 
@@ -1773,9 +1647,9 @@ instant, proven solutions for common issues.
 
 **Upgrade to PRO for:**
 - 🤖 AI-generated fixes for ALL issues
-- ✅ Automatic fix verification against tool rules
-- 🏆 Earn XP for fixing issues
-- 📈 Track your progress over time
+- 📝 Contribute your own patterns to help others
+- 🏆 Recognition on community leaderboards
+- ⏱️ Track your community impact
 
 
 ## 📊 Analysis Metadata
@@ -1783,36 +1657,19 @@ instant, proven solutions for common issues.
 ### Analysis Coverage
 | Metric | Value |
 |--------|-------|
-| Total Repository Files | 151 |
+| Total Repository Files | 152 |
 | Lines of Code | 3,712 |
 | Files Modified | 2 |
 | Note | Files Modified is clamped to Total Repository Files to avoid overcount (renames/moves) |
 | Lines Changed | 3 (+2/-1) |
 
 ### Tool Performance
+| Tool | Issues Found | Duration |
+|------|--------------|----------|
+| pmd | 1 | 6.2s |
+| semgrep | 1 | 7.7s |
+| checkstyle | 327 | 7.9s |
 
-**12 tools executed** | **330 total issues found**
-
-| Tool | Issues Found | Duration | Status |
-|------|--------------|----------|--------|
-| checkstyle | 327 | 6.5s | 🔍 Found |
-| semgrep | 2 | 23.4s | 🔍 Found |
-| pmd | 1 | 6.4s | 🔍 Found |
-| spotbugs | 0 | 12.6s | ✅ Clean |
-| checkov | 0 | 11.1s | ✅ Clean |
-| trivy | 0 | 2.7s | ✅ Clean |
-| grype | 0 | 2.0s | ✅ Clean |
-| dependency-check | 0 | 1.2s | ✅ Clean |
-| gitleaks | 0 | 0.3s | ✅ Clean |
-| jdepend | 0 | 0.2s | ✅ Clean |
-| spectral | 0 | 0.0s | ✅ Clean |
-| graphql-cop | 0 | 0.0s | ✅ Clean |
-
-### System Information
-- **Analyzer Version:** 9.0.0
-- **Analysis Date:** 1/20/2026, 10:28:21 PM
-- **Report Format:** Grouped (Compact with 99.8% cost reduction)
-- **Issue Grouping:** Enabled unique issue types
 
 ## 💬 PR Comment Template
 
@@ -1826,10 +1683,10 @@ Hi @Stéphane Nicoll! I've completed a comprehensive analysis of your PR.
 Just one small issue to fix before we can merge. You've got this! 💪
 
 ### Summary
-- **Total Issues:** 331 (21 unique types)
+- **Total Issues:** 330 (20 unique types)
 - **Blocking Issues:** 1 ⛔
 - **Resolved Issues:** 1 🎉
-- **Analysis Time:** 78.1s
+- **Analysis Time:** 84.0s
 
 ### ⛔ Blocking Issues
 Please fix these before merge:
@@ -1837,10 +1694,10 @@ Please fix these before merge:
 
 
 ### 💡 Quick Stats
-- Auto-fixable: 331/331 issues (21/21 types)
+- Auto-fixable: 330/330 issues (20/20 types)
 - Critical: 0
 - High: 1
-- Medium: 2
+- Medium: 1
 - Low: 328
 ```
 
@@ -1855,14 +1712,14 @@ Please fix these before merge:
 
 ### 🎯 Method 1: LSP Batch Actions (Best for IDEs) ⚡
 
-**✨ Best for IDEs**: Apply ALL 331 fixes with 1 click!
+**✨ Best for IDEs**: Apply ALL 330 fixes with 1 click!
 
 **Download**: `codequal-lsp-actions.json`
-- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/codequal-lsp-actions.json)
+- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768957479759/codequal-lsp-actions.json)
 - Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE
 
 **How LSP Works**:
-- 📦 **Single file**: All 331 fixes in one JSON file (no lazy loading)
+- 📦 **Single file**: All 330 fixes in one JSON file (no lazy loading)
 - ⚡ **Parallel editing**: Batch actions apply fixes to multiple files simultaneously
 - 🎯 **Grouped by severity**: Batch actions organized by severity for easy filtering
 - 🔄 **IDE-native**: Uses LSP protocol for instant, reliable fixes
@@ -1872,23 +1729,22 @@ Please fix these before merge:
 2. Load file in your IDE (method varies by IDE)
 3. Open any file with issues
 4. Press `Cmd+.` (or `Ctrl+.`) to open Quick Fix menu
-5. Select **"Apply All Fixes (331 issues)"** at top of menu
+5. Select **"Apply All Fixes (330 issues)"** at top of menu
 6. All fixes applied across all files in < 1 second! ✅
 
 **Batch Actions Available**:
-- 🔥 **"Apply All Fixes"** - All 331 issues across all files in one click
+- 🔥 **"Apply All Fixes"** - All 330 issues across all files in one click
 - 🟠 **"Apply High Severity Fixes"** - 1 issues
-- 🟡 **"Apply Medium Severity Fixes"** - 1 issues
 - 🟢 **"Apply Low Severity Fixes"** - 249 issues
 - 📝 Individual fixes available for granular control
 
-> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. When you click "Apply All", your IDE applies all 331 fixes across multiple files simultaneously (parallel editing)! All fixes are in one file - no lazy loading needed.
+> 💡 **How it works**: LSP batch actions group all fixes into a single IDE operation. When you click "Apply All", your IDE applies all 330 fixes across multiple files simultaneously (parallel editing)! All fixes are in one file - no lazy loading needed.
 
 **Three Ways to Use Batch Actions**:
 
-1. **🚀 Apply All (Fastest)** - 1 click for all 331 fixes (~5 seconds)
+1. **🚀 Apply All (Fastest)** - 1 click for all 330 fixes (~5 seconds)
 2. **🎯 Severity Batches** - E.g., "Apply All Low Severity" for safe bulk fixes
-3. **👁️ Individual Review** - Review each fix before applying (331 clicks)
+3. **👁️ Individual Review** - Review each fix before applying (330 clicks)
 
 ---
 
@@ -1935,7 +1791,7 @@ When you click "Apply Fix" in your IDE:
 ### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)
 
 **Download**: `codequal-sarif-report.json`
-- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/codequal-sarif-report.json)
+- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768957479759/codequal-sarif-report.json)
 - Works with: GitHub Code Scanning, CI/CD pipelines, VSCode/Cursor (with extension)
 
 **For GitHub Code Scanning**:
@@ -1957,7 +1813,7 @@ When you click "Apply Fix" in your IDE:
 ### 🦊 Method 3: Code Climate / GitLab Code Quality
 
 **Download**: `codequal-gitlab-codequality.json`
-- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/codequal-gitlab-codequality.json)
+- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768957479759/codequal-gitlab-codequality.json)
 - Works with: GitLab CI/CD, GitHub Actions (via Code Climate), Jenkins, CircleCI
 - Format: Code Climate (industry standard)
 
@@ -1979,7 +1835,7 @@ When you click "Apply Fix" in your IDE:
 - 📋 Standardized issue format for any CI tool
 
 **Features**:
-- All 331 issues in Code Climate format
+- All 330 issues in Code Climate format
 - Severity mapping: Critical→Blocker, High→Critical, Medium→Major, Low→Minor
 - File paths, line numbers, and fix suggestions included
 - Automatic issue tracking across commits (fingerprints)
@@ -1990,11 +1846,11 @@ When you click "Apply Fix" in your IDE:
 
 ## 🔗 Additional Files
 
-📦 **Manifest file**: [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/all-issues-manifest.json)
-- Contains: All 331 issues with fix patterns
-- **Use this if**: LSP approach doesn't work in your IDE
-- **Works with**: AI assistants (Cursor Chat, GitHub Copilot, Claude)
-- **Format**: JSON with lazy loading by severity for large codebases
+📦 **Manifest file** (for AI assistants with lazy loading): [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768957479759/all-issues-manifest.json)
+- Contains: All 330 auto-fixable issues with fix patterns
+- **Lazy loading**: Critical issues embedded (instant), high/medium/low lazy loaded in background
+- **Use with**: AI assistants (Cursor Chat, GitHub Copilot) if LSP doesn't work in your IDE
+- **Difference from LSP**: Manifest uses lazy loading by severity; LSP has all fixes in one file
 
 > ⚠️ **Important**: Critical and high-severity auto-fixes require manual code review before applying. Auto-generated fixes are suggestions that should be validated by a developer to ensure they don't introduce regressions or break business logic.
 
@@ -2002,4 +1858,4 @@ When you click "Apply Fix" in your IDE:
 ---
 
 *Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  
-*2026-01-21T03:28:37.138Z*
+*2026-01-21T01:04:47.398Z*

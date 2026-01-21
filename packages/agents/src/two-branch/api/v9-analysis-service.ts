@@ -77,6 +77,11 @@ export interface AnalysisRequest {
   skipCache?: boolean;
   maxAIAnalysis?: number;  // Max issue groups to analyze with AI (default: 20)
   includeEducation?: boolean;  // Generate educational resources (default: true)
+  // SESSION 112 FIX: Added for complete metadata support
+  prTitle?: string;           // PR title for report header
+  prAuthor?: string;          // PR author username
+  prAuthorEmail?: string;     // PR author email
+  userTier?: 'basic' | 'pro' | 'enterprise';  // User tier for report features
 }
 
 /**
@@ -225,13 +230,15 @@ export class V9AnalysisService {
       // Step 3: Tool Execution
       // SESSION 69: Default to 'complete' mode for maximum tool coverage during testing
       // Later: Users will configure their preferred mode via settings page
+      // SESSION 113: Pass userTier to orchestrator for tier-aware tool execution
       const toolStart = Date.now();
       const toolResults = await this.executeTools(
         repoSetup.repoPath,
         language,
         repoSetup.baseBranch,
         repoSetup.prBranch,
-        request.analysisMode || 'complete'
+        request.analysisMode || 'complete',
+        request.userTier || 'basic'
       );
       const toolDuration = Date.now() - toolStart;
 
@@ -268,6 +275,12 @@ export class V9AnalysisService {
 
       const decision = this.calculateDecision(blockingIssues.length, enrichedIssues.length);
 
+      // SESSION 112 FIX: Collect complete metadata for report generation
+      // This ensures all report sections have the data they need
+      const repoStats = this.getRepoStats(repoSetup.repoPath);
+      const prStats = this.getPRStats(repoSetup.repoPath, repoSetup.baseBranch, repoSetup.prBranch);
+      const authorInfo = this.getAuthorInfo(repoSetup.repoPath, request);
+
       // Step 9: Generate Report
       const reportStart = Date.now();
       const reportPaths = await this.generateReport(
@@ -275,11 +288,40 @@ export class V9AnalysisService {
         blockingIssues,
         decision,
         {
+          // Repository Information
           repository: request.repositoryUrl,
+          repoUrl: request.repositoryUrl,
+          repoPath: repoSetup.repoPath,
           prNumber: request.prNumber,
+          prTitle: request.prTitle || `PR #${request.prNumber}`,
+          branch: repoSetup.prBranch,
           baseBranch: repoSetup.baseBranch,
-          prBranch: repoSetup.prBranch,
-          language
+
+          // Author Information (SESSION 112 FIX)
+          prAuthor: authorInfo.author,
+          prAuthorEmail: authorInfo.email,
+          organizationName: this.extractOrgName(request.repositoryUrl),
+
+          // Code Statistics (SESSION 112 FIX)
+          totalFiles: repoStats.totalFiles,
+          totalLinesOfCode: repoStats.totalLines,
+          filesModified: repoSetup.modifiedFiles.size,
+          linesAdded: prStats.linesAdded,
+          linesDeleted: prStats.linesDeleted,
+          languageBreakdown: { [language]: 100 },
+
+          // Performance Metrics (SESSION 112 FIX)
+          totalDuration: Date.now() - startTime,
+          cloneTime: 0, // Not tracked separately
+          analysisTime: toolDuration,
+          reportGenerationTime: 0, // Will be set after
+
+          // Tool Performance (SESSION 112 FIX - critical for report!)
+          toolPerformance: toolResults.toolPerformance,
+
+          // Additional
+          analyzerVersion: '9.0.0',
+          userTier: request.userTier || 'basic'
         },
         outputDir
       );
@@ -481,8 +523,22 @@ export class V9AnalysisService {
     language: SupportedLanguage,
     baseBranch: string,
     prBranch: string,
-    mode: AnalysisMode
-  ): Promise<{ prIssues: RawIssue[]; baseIssues: RawIssue[] }> {
+    mode: AnalysisMode,
+    userTier: 'basic' | 'pro' | 'enterprise' = 'basic'  // SESSION 113: Pass to orchestrator
+  ): Promise<{
+    prIssues: RawIssue[];
+    baseIssues: RawIssue[];
+    // SESSION 112 FIX: Added for complete report metadata
+    toolPerformance: Array<{
+      tool: string;
+      duration: number;
+      issuesFound: number;
+      exitCode: number;
+      success: boolean;
+    }>;
+    prTotalDuration: number;
+    baseTotalDuration: number;
+  }> {
     console.log(`🔧 Step 2: Tool Execution (${language})\n`);
 
     const orchestrator = this.getOrchestrator(language);
@@ -495,9 +551,11 @@ export class V9AnalysisService {
     console.log(`   Analyzing PR branch...`);
     execFileSync('git', ['checkout', safePrBranch], { cwd: repoPath, stdio: 'ignore' });
     // BUG FIX: orchestrate() takes 3 params (repoPath, branch, options) - was passing undefined as options
+    // SESSION 113: Pass userTier for tier-aware tool execution and report generation
     const prResult = await orchestrator.orchestrate(repoPath, 'pr', {
       includeAllSeverities: mode === 'complete',
-      analysisMode: mode
+      analysisMode: mode,
+      userTier: userTier
     });
     const prIssues = prResult.toolResults.flatMap((t: any) => t.issues);
 
@@ -523,9 +581,11 @@ export class V9AnalysisService {
     console.log(`   Analyzing base branch...`);
     execFileSync('git', ['checkout', safeBaseBranch], { cwd: repoPath, stdio: 'ignore' });
     // BUG FIX: orchestrate() takes 3 params (repoPath, branch, options) - was passing undefined as options
+    // SESSION 113: Pass userTier for tier-aware tool execution and report generation
     const baseResult = await orchestrator.orchestrate(repoPath, 'base', {
       includeAllSeverities: mode === 'complete',
-      analysisMode: mode
+      analysisMode: mode,
+      userTier: userTier
     });
     const baseIssues = baseResult.toolResults.flatMap((t: any) => t.issues);
 
@@ -551,7 +611,16 @@ export class V9AnalysisService {
     const combinedDuration = (prTotalDuration + baseTotalDuration) / 1000;
     console.log(`\n   📊 Combined: ${combinedDuration.toFixed(1)}s total, ${prIssues.length + baseIssues.length} issues (PR: ${prIssues.length}, Base: ${baseIssues.length})\n`);
 
-    return { prIssues, baseIssues };
+    // SESSION 112 FIX: Return toolPerformance for complete report metadata
+    const toolPerformance = prResult.toolResults.map((tr: any) => ({
+      tool: tr.tool,
+      duration: tr.duration || 0,
+      issuesFound: tr.issues?.length || 0,
+      exitCode: tr.exitCode || 0,
+      success: tr.exitCode === 0
+    }));
+
+    return { prIssues, baseIssues, toolPerformance, prTotalDuration, baseTotalDuration };
   }
 
   private getOrchestrator(language: SupportedLanguage): any {
@@ -940,6 +1009,23 @@ export class V9AnalysisService {
         console.log(`[Report] ${reportOutput.ideFixFiles.length} IDE fix files saved`);
       }
 
+      // SESSION 112: Save LSP, SARIF, and GitLab code quality files locally
+      if (reportOutput.lspContent) {
+        const lspPath = path.join(outputDir, 'codequal-lsp-actions.json');
+        fs.writeFileSync(lspPath, JSON.stringify(reportOutput.lspContent, null, 2));
+        console.log(`[Report] LSP code actions saved`);
+      }
+      if (reportOutput.sarifContent) {
+        const sarifPath = path.join(outputDir, 'codequal-sarif-report.json');
+        fs.writeFileSync(sarifPath, JSON.stringify(reportOutput.sarifContent, null, 2));
+        console.log(`[Report] SARIF report saved`);
+      }
+      if (reportOutput.gitlabContent) {
+        const gitlabPath = path.join(outputDir, 'codequal-gitlab-codequality.json');
+        fs.writeFileSync(gitlabPath, JSON.stringify(reportOutput.gitlabContent, null, 2));
+        console.log(`[Report] GitLab code quality report saved`);
+      }
+
       // Save group mapping for API consumers
       if (reportOutput.mapping) {
         const mappingPath = path.join(outputDir, 'issue-groups.json');
@@ -952,6 +1038,125 @@ export class V9AnalysisService {
       console.log(`   ⚠️  Report generation error: ${error.message}`);
       console.error(error);
       return {};
+    }
+  }
+
+  // ============================================================================
+  // SESSION 112 FIX: Helper methods for collecting complete metadata
+  // ============================================================================
+
+  /**
+   * Get repository statistics (file count, lines of code)
+   */
+  private getRepoStats(repoPath: string): { totalFiles: number; totalLines: number } {
+    try {
+      // Count files (excluding common non-source directories)
+      const countFilesResult = execFileSync('find', [
+        repoPath,
+        '-type', 'f',
+        '-not', '-path', '*/node_modules/*',
+        '-not', '-path', '*/.git/*',
+        '-not', '-path', '*/dist/*',
+        '-not', '-path', '*/build/*',
+        '-not', '-path', '*/target/*',
+        '-not', '-path', '*/__pycache__/*'
+      ], { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const totalFiles = countFilesResult.trim().split('\n').filter(f => f).length;
+
+      // Count lines of code (simple approach)
+      const countLinesResult = execFileSync('sh', ['-c',
+        `find "${repoPath}" -type f \\( -name "*.java" -o -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.rb" -o -name "*.php" -o -name "*.cs" \\) -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/dist/*" -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print $1}'`
+      ], { encoding: 'utf-8' });
+      const totalLines = parseInt(countLinesResult.trim()) || 0;
+
+      return { totalFiles, totalLines };
+    } catch (error) {
+      console.warn('[RepoStats] Error getting repo stats:', error);
+      return { totalFiles: 0, totalLines: 0 };
+    }
+  }
+
+  /**
+   * Get PR statistics (lines added/deleted)
+   */
+  private getPRStats(repoPath: string, baseBranch: string, prBranch: string): { linesAdded: number; linesDeleted: number } {
+    try {
+      const diffStats = execFileSync('git', [
+        'diff', '--numstat', `${baseBranch}...${prBranch}`
+      ], { cwd: repoPath, encoding: 'utf-8' });
+
+      let linesAdded = 0;
+      let linesDeleted = 0;
+
+      diffStats.trim().split('\n').forEach(line => {
+        const parts = line.split('\t');
+        if (parts.length >= 2) {
+          const added = parseInt(parts[0]) || 0;
+          const deleted = parseInt(parts[1]) || 0;
+          if (!isNaN(added)) linesAdded += added;
+          if (!isNaN(deleted)) linesDeleted += deleted;
+        }
+      });
+
+      return { linesAdded, linesDeleted };
+    } catch (error) {
+      console.warn('[PRStats] Error getting PR stats:', error);
+      return { linesAdded: 0, linesDeleted: 0 };
+    }
+  }
+
+  /**
+   * Get author information from git or request
+   */
+  private getAuthorInfo(repoPath: string, request: AnalysisRequest): { author: string; email: string } {
+    // First try from request
+    if (request.prAuthor) {
+      return {
+        author: request.prAuthor,
+        email: request.prAuthorEmail || `${request.prAuthor}@github.com`
+      };
+    }
+
+    // Fall back to git log
+    try {
+      const authorResult = execFileSync('git', [
+        'log', '-1', '--format=%an'
+      ], { cwd: repoPath, encoding: 'utf-8' });
+
+      const emailResult = execFileSync('git', [
+        'log', '-1', '--format=%ae'
+      ], { cwd: repoPath, encoding: 'utf-8' });
+
+      const author = authorResult.trim() || 'Developer';
+      const email = emailResult.trim() || 'developer@example.com';
+
+      return { author, email };
+    } catch (error) {
+      console.warn('[AuthorInfo] Error getting author info:', error);
+      return { author: 'Developer', email: 'developer@example.com' };
+    }
+  }
+
+  /**
+   * Extract organization name from repository URL
+   */
+  private extractOrgName(repoUrl: string): string {
+    try {
+      // Handle GitHub URLs: https://github.com/org/repo or git@github.com:org/repo
+      const githubMatch = repoUrl.match(/github\.com[/:]([\w-]+)\//);
+      if (githubMatch) return githubMatch[1];
+
+      // Handle GitLab URLs
+      const gitlabMatch = repoUrl.match(/gitlab\.com[/:]([\w-]+)\//);
+      if (gitlabMatch) return gitlabMatch[1];
+
+      // Handle Bitbucket URLs
+      const bitbucketMatch = repoUrl.match(/bitbucket\.org[/:]([\w-]+)\//);
+      if (bitbucketMatch) return bitbucketMatch[1];
+
+      return 'Organization';
+    } catch {
+      return 'Organization';
     }
   }
 }

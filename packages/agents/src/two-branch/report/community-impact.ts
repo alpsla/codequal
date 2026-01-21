@@ -62,9 +62,10 @@ export function generateCommunityImpactSection(
   }
 
   // No contributions yet (PRO/Enterprise only reach here)
+  // SESSION 113 FIX: Don't show Pattern Auto-Save section
+  // We save patterns based on our own decision, not requiring user cooperation
   if (impact.totalPatternsContributed === 0) {
-    // SESSION 73: PRO tier auto-saves patterns, so show different message
-    return generateProAutoSaveSection();
+    return ''; // No section needed until user has actual contributions
   }
 
   // Anonymous contributor
@@ -97,9 +98,9 @@ instant, proven solutions for common issues.
 
 **Upgrade to PRO for:**
 - 🤖 AI-generated fixes for ALL issues
-- 📝 Contribute your own patterns to help others
-- 🏆 Recognition on community leaderboards
-- ⏱️ Track your community impact
+- ✅ Automatic fix verification against tool rules
+- 🏆 Earn XP for fixing issues
+- 📈 Track your progress over time
 `;
 }
 
