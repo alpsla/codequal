@@ -254,6 +254,9 @@ export function generatePRComment(issues: EnrichedIssue[], groups: IssueGroup[],
   const greeting = getPersonalizedGreeting(metadata.prAuthor);
   const encouragement = getPersonalizedEncouragement(blocking.length, resolved.length);
 
+  // SESSION 113 FIX: Use active issues (exclude RESOLVED) for all counts
+  const activeIssues = issues.filter(i => i.category !== 'RESOLVED');
+
   return `## 💬 PR Comment Template
 
 **Ready-to-paste comment for your pull request:**
@@ -266,7 +269,7 @@ ${greeting} @${(metadata.prAuthor && metadata.prAuthor !== 'undefined') ? metada
 ${encouragement}
 
 ### Summary
-- **Total Issues:** ${issues.length} (${groups.length} unique types)
+- **Active Issues:** ${activeIssues.length} (${groups.length} unique types)
 - **Blocking Issues:** ${blocking.length} ${blocking.length > 0 ? '⛔' : '✅'}
 - **Resolved Issues:** ${resolved.length} ${resolved.length > 0 ? '🎉' : ''}
 - **Analysis Time:** ${((metadata.analysisTime || 0) / 1000).toFixed(1)}s
@@ -277,11 +280,11 @@ ${blocking.slice(0, 5).map(i => `- **${i.rule}** in \`${i.file}\`${i.line ? `:${
 ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### ✅ No Blocking Issues\nThis PR can be merged once approved by reviewers.'}
 
 ### 💡 Quick Stats
-- Auto-fixable: ${issues.filter(i => canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length}/${issues.length} issues (${groups.filter(g => canAutoFix(g)).length}/${groups.length} types)
-- Critical: ${issues.filter(i => i.severity === 'critical').length}
-- High: ${issues.filter(i => i.severity === 'high').length}
-- Medium: ${issues.filter(i => i.severity === 'medium').length}
-- Low: ${issues.filter(i => i.severity === 'low').length}
+- Auto-fixable: ${activeIssues.filter(i => canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as any)).length}/${activeIssues.length} issues (${groups.filter(g => canAutoFix(g)).length}/${groups.length} types)
+- Critical: ${activeIssues.filter(i => i.severity === 'critical').length}
+- High: ${activeIssues.filter(i => i.severity === 'high').length}
+- Medium: ${activeIssues.filter(i => i.severity === 'medium').length}
+- Low: ${activeIssues.filter(i => i.severity === 'low').length}
 \`\`\``;
 }
 
@@ -316,7 +319,11 @@ export function generateFooter(
 
     // BUG FIX: Filter out manifest file (groupId='all-issues') and use optional chaining
     const issueFiles = ideFixFiles.filter(f => f.groupId !== 'all-issues');
-    const totalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    // SESSION 113 FIX: Use active issues count (exclude RESOLVED) for display
+    // IDE fix files might include all issues, but we display active count
+    const rawTotalFixable = issueFiles.reduce((sum, f) => sum + (f.content.metadata?.total_occurrences || 0), 0);
+    const activeCount = enrichedIssues?.filter(i => i.category !== 'RESOLVED').length || rawTotalFixable;
+    const totalFixable = activeCount; // Use active count for consistency
 
     // BUG #6 FIX: Calculate actual auto-fixable count from manifest data
     let autoFixableCount = totalFixable;
