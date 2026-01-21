@@ -644,60 +644,117 @@ export class V9AnalysisService {
   ): EnrichedIssue[] {
     console.log(`📊 Step 3: Issue Categorization\n`);
 
+    // SESSION 113 FIX: Use fuzzy matching with line-shift tolerance
+    // When code is added/removed, line numbers shift but issues are still the same
+    const LINE_SHIFT_THRESHOLD = 15; // Allow up to 15 lines of shift
+
     const normalizePath = (p: string) => {
       if (p.startsWith('/workspace/')) return p.replace('/workspace/', '');
       if (p.startsWith('workspace/')) return p.replace('workspace/', '');
       return p;
     };
 
-    const getSig = (i: RawIssue) => `${normalizePath(i.file)}:${i.line}:${i.rule}`;
-    const baseSigs = new Set(baseIssues.map(getSig));
-    const prSigs = new Set(prIssues.map(getSig));
+    // Exact signature: file:line:rule
+    const getExactSig = (i: RawIssue) => `${normalizePath(i.file)}:${i.line}:${i.rule}`;
+    // Fuzzy signature: file:rule (ignores line for grouping)
+    const getFuzzySig = (i: RawIssue) => `${normalizePath(i.file)}:${i.rule}`;
+
+    const baseExactSigs = new Set(baseIssues.map(getExactSig));
+    const prExactSigs = new Set(prIssues.map(getExactSig));
     const prFileExists = new Set(prIssues.map(i => normalizePath(i.file)));
 
-    const categorizedIssues: EnrichedIssue[] = [];
-
-    // NEW: In PR but not in base
-    prIssues.forEach(issue => {
-      if (!baseSigs.has(getSig(issue))) {
-        categorizedIssues.push({
-          ...issue,
-          category: 'NEW',
-          detectedCategory: detectCategory(issue.tool, issue.rule, issue.message)
-        });
-      }
-    });
-
-    // EXISTING_MODIFIED: In both, in modified files
-    prIssues.forEach(issue => {
-      if (baseSigs.has(getSig(issue)) && modifiedFiles.has(normalizePath(issue.file))) {
-        categorizedIssues.push({
-          ...issue,
-          category: 'EXISTING_MODIFIED',
-          detectedCategory: detectCategory(issue.tool, issue.rule, issue.message)
-        });
-      }
-    });
-
-    // RESOLVED: In base but not in PR, file was modified and still exists
+    // Group base issues by fuzzy signature for line-shift matching
+    const baseByFuzzySig = new Map<string, RawIssue[]>();
     baseIssues.forEach(issue => {
-      const sig = getSig(issue);
+      const fuzzySig = getFuzzySig(issue);
+      if (!baseByFuzzySig.has(fuzzySig)) {
+        baseByFuzzySig.set(fuzzySig, []);
+      }
+      baseByFuzzySig.get(fuzzySig)!.push(issue);
+    });
+
+    // Check if a PR issue matches a base issue (exact or with line shift)
+    const hasMatchInBase = (prIssue: RawIssue): boolean => {
+      // First check exact match
+      if (baseExactSigs.has(getExactSig(prIssue))) {
+        return true;
+      }
+      // Then check line-shifted match (same file + rule, nearby line)
+      const fuzzySig = getFuzzySig(prIssue);
+      const candidates = baseByFuzzySig.get(fuzzySig) || [];
+      return candidates.some(baseIssue =>
+        Math.abs(prIssue.line - baseIssue.line) <= LINE_SHIFT_THRESHOLD
+      );
+    };
+
+    // Group PR issues by fuzzy signature for RESOLVED detection
+    const prByFuzzySig = new Map<string, RawIssue[]>();
+    prIssues.forEach(issue => {
+      const fuzzySig = getFuzzySig(issue);
+      if (!prByFuzzySig.has(fuzzySig)) {
+        prByFuzzySig.set(fuzzySig, []);
+      }
+      prByFuzzySig.get(fuzzySig)!.push(issue);
+    });
+
+    // Check if a base issue still exists in PR (exact or with line shift)
+    const hasMatchInPR = (baseIssue: RawIssue): boolean => {
+      if (prExactSigs.has(getExactSig(baseIssue))) {
+        return true;
+      }
+      const fuzzySig = getFuzzySig(baseIssue);
+      const candidates = prByFuzzySig.get(fuzzySig) || [];
+      return candidates.some(prIssue =>
+        Math.abs(baseIssue.line - prIssue.line) <= LINE_SHIFT_THRESHOLD
+      );
+    };
+
+    const categorizedIssues: EnrichedIssue[] = [];
+    const processedPrSigs = new Set<string>(); // Track processed to avoid duplicates
+
+    // Pass 1: Categorize PR issues
+    prIssues.forEach(issue => {
+      const exactSig = getExactSig(issue);
+      if (processedPrSigs.has(exactSig)) return;
+      processedPrSigs.add(exactSig);
+
       const normalizedFile = normalizePath(issue.file);
-      if (!prSigs.has(sig) && modifiedFiles.has(normalizedFile) && prFileExists.has(normalizedFile)) {
+      const existsInBase = hasMatchInBase(issue);
+      const isModifiedFile = modifiedFiles.has(normalizedFile);
+
+      let category: IssueCategory;
+      if (!existsInBase) {
+        category = 'NEW';
+      } else if (isModifiedFile) {
+        category = 'EXISTING_MODIFIED';
+      } else {
+        category = 'EXISTING_REST';
+      }
+
+      categorizedIssues.push({
+        ...issue,
+        category,
+        detectedCategory: detectCategory(issue.tool, issue.rule, issue.message)
+      });
+    });
+
+    // Pass 2: Find RESOLVED issues (in base but not in PR)
+    const processedBaseSigs = new Set<string>();
+    baseIssues.forEach(issue => {
+      const exactSig = getExactSig(issue);
+      if (processedBaseSigs.has(exactSig)) return;
+      processedBaseSigs.add(exactSig);
+
+      const normalizedFile = normalizePath(issue.file);
+      const existsInPR = hasMatchInPR(issue);
+      const isModifiedFile = modifiedFiles.has(normalizedFile);
+      const fileStillExists = prFileExists.has(normalizedFile);
+
+      // RESOLVED: Was in base, not in PR, file was modified and still exists
+      if (!existsInPR && isModifiedFile && fileStillExists) {
         categorizedIssues.push({
           ...issue,
           category: 'RESOLVED',
-          detectedCategory: detectCategory(issue.tool, issue.rule, issue.message)
-        });
-      }
-    });
-
-    // EXISTING_REST: In both, in unmodified files
-    prIssues.forEach(issue => {
-      if (baseSigs.has(getSig(issue)) && !modifiedFiles.has(normalizePath(issue.file))) {
-        categorizedIssues.push({
-          ...issue,
-          category: 'EXISTING_REST',
           detectedCategory: detectCategory(issue.tool, issue.rule, issue.message)
         });
       }
@@ -713,7 +770,8 @@ export class V9AnalysisService {
     console.log(`   NEW: ${counts.NEW}`);
     console.log(`   EXISTING_MODIFIED: ${counts.EXISTING_MODIFIED}`);
     console.log(`   RESOLVED: ${counts.RESOLVED}`);
-    console.log(`   EXISTING_REST: ${counts.EXISTING_REST}\n`);
+    console.log(`   EXISTING_REST: ${counts.EXISTING_REST}`);
+    console.log(`   (Using line-shift tolerance of ${LINE_SHIFT_THRESHOLD} lines)\n`);
 
     return categorizedIssues;
   }
