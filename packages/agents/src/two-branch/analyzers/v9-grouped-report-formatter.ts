@@ -1352,7 +1352,8 @@ export class V9GroupedReportFormatter {
     // Session 91: Only show manual guide for BASIC tier; PRO has AI fixes inline
     const checkstyleGroups = groups.filter(g => g.tool === 'checkstyle');
     if (checkstyleGroups.length > 0 && this.userTier !== 'pro' && this.userTier !== 'enterprise') {
-      const checkstyleCount = enrichedIssues.filter(i => i.tool === 'checkstyle').length;
+      // SESSION 113 FIX: Exclude RESOLVED issues from count (they're already fixed)
+      const checkstyleCount = enrichedIssues.filter(i => i.tool === 'checkstyle' && i.category !== 'RESOLVED').length;
       markdown.push(this.generateCheckStyleAutoFixGuide(checkstyleCount));
       markdown.push('');
     }
@@ -2796,8 +2797,9 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     // Session 91 FIX: Distinguish between "can be auto-fixed" and "has AI fix generated"
     // - autoFixableIssues = Issues that CAN be auto-fixed (by rule type)
     // - aiFixedIssues = Issues that actually HAVE AI-generated fixes (SESSION 92: exclude placeholders)
+    // SESSION 113 FIX: Use canAutoFix() (not isSafeToAutoApply) to match Key Findings count
     const autoFixableIssues = activeIssues.filter(i =>
-      this.isSafeToAutoApply({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
+      this.canAutoFix({ rule: i.rule, tool: i.tool, severity: i.severity } as IssueGroup)
     );
     // SESSION 92 FIX: Use hasActualCodeFix to exclude placeholder fixes
     const aiFixedIssues = activeIssues.filter(i => this.hasActualCodeFix(i));

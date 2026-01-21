@@ -843,7 +843,8 @@ export async function generateEducationalResourcesBrave(issues: EnrichedIssue[],
 
   // SESSION 26: Add Phase 3 for LOW severity style issues (grouped by tool)
   // Instead of listing 543 individual links, provide ONE aggregated reference per tool
-  const lowIssues = issues.filter(i => i.severity === 'low' || i.severity === 'medium');
+  // SESSION 113 FIX: Exclude RESOLVED issues (they're already fixed)
+  const lowIssues = issues.filter(i => (i.severity === 'low' || i.severity === 'medium') && i.category !== 'RESOLVED');
   if (lowIssues.length > 0) {
     // Group by tool
     const toolCounts = new Map<string, number>();
