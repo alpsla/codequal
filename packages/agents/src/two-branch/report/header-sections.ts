@@ -62,8 +62,7 @@ export function generateHeader(
   console.log(`[DEBUG-PR#] About to render: **Pull Request:** #${metadata.prNumber}`);
   console.log(`[DEBUG-PR#] ======================================\n`);
 
-  // BUG FIX #71: Support both 'APPROVE' and 'APPROVED' (metadata uses 'APPROVE', but some places use 'APPROVED')
-  const icon = (metadata.decision === 'APPROVE' || metadata.decision === 'APPROVED') ? '✅' : '⛔';
+  // SESSION 112: Removed icon variable - Quality Decision section removed (redundant with Quality Assessment)
   const analysisDate = formatDate(metadata.analyzedAt);
   
   // Calculate net change in lines
@@ -94,7 +93,8 @@ export function generateHeader(
 **Target Branch:** ${metadata.baseBranch}  `;
   }
   
-  header += `\n**Analysis Date:** ${analysisDate}  
+  // SESSION 113: Add duration next to Analysis Date per user feedback
+  header += `\n**Analysis Date:** ${analysisDate}${metadata.totalDuration ? ` (${durationDisplay})` : ''}
 **Repository Size:** ${(metadata.totalFiles || 0).toLocaleString()} files`;
 
   // SESSION 112: Add tier field to report metadata
@@ -154,15 +154,8 @@ export function generateHeader(
     }
   }
   
-  // Add Decision section
-  header += `
+  // SESSION 112: Removed Quality Decision section - redundant with Quality Assessment section
 
-## Quality Decision
-
-**Result:** ${icon} **${metadata.decision}**${metadata.blockingCount > 0 ? ` (${metadata.blockingCount} blocking issues)` : ''}
-
----`;
-  
   return header;
 }
 
@@ -209,9 +202,11 @@ export function generateKeyFindings(
   }
   
   // Finding 4: Auto-fix availability
+  // SESSION 113 FIX: Exclude RESOLVED issues from auto-fix count (they're already fixed)
   const autoFixable = groups.filter(g => canAutoFix(g));
   if (autoFixable.length > 0) {
-    const autoFixableCount = issues.filter(i => 
+    const autoFixableCount = issues.filter(i =>
+      i.category !== 'RESOLVED' &&  // Exclude already-resolved issues
       autoFixable.some(g => g.rule === i.rule && g.tool === i.tool)
     ).length;
     findings.push(`🔧 **Auto-Fix Available**: ${autoFixableCount} issues can be fixed automatically (see IDE integration files)`);
@@ -281,6 +276,17 @@ export async function generateCriticalBlockers(
     .map(([cat, count]) => `${count} ${cat.toLowerCase()}`)
     .join(', ');
 
+  // SESSION 113 FIX: Dynamic section references based on actual severities present
+  const sectionRefs = criticalCount > 0 && highCount > 0
+    ? '"Critical Issues" and "High Priority Issues" sections'
+    : criticalCount > 0
+    ? '"Critical Issues" section'
+    : '"High Priority Issues" section';
+
+  const priorityAdvice = criticalCount > 0
+    ? 'Review critical issues first, then tackle high-priority issues by category to maximize impact.'
+    : 'Review high-priority issues by category to maximize impact.';
+
   return `⛔ **${blockingIssues.length} issues must be fixed before merge**
 
 **Breakdown:**
@@ -288,13 +294,13 @@ ${criticalCount > 0 ? `- 🔴 Critical: ${criticalCount} issue${criticalCount > 
 **Primary Focus Areas:** ${topCategories}
 
 **Action Required:**
-All blocking issues are detailed in the "Critical Issues" and "High Priority Issues" sections below with:
+All blocking issues are detailed in the ${sectionRefs} below with:
 - ✅ Full AI analysis and explanations
-- ✅ Code examples and fix recommendations  
+- ✅ Code examples and fix recommendations
 - ✅ IDE integration files for automated fixes
 
 **Priority:**
-Review critical issues first, then tackle high-priority issues by category to maximize impact.`;
+${priorityAdvice}`;
 }
 
 /**

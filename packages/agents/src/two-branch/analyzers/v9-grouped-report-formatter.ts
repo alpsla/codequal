@@ -140,7 +140,11 @@ export interface GroupedReportOutput {
   markdown: string;              // Main report (compact)
   attachments: LocationAttachment[];  // Location files
   mapping: IssueGroupMapping;    // Group index
-  ideFixFiles: IDEFixFile[];     // IDE integration files
+  ideFixFiles: IDEFixFile[];     // IDE integration files (Cursor fix files)
+  // SESSION 112: Add LSP/SARIF/GitLab content for local file saving
+  lspContent?: any;              // LSP code actions (codequal-lsp-actions.json)
+  sarifContent?: any;            // SARIF report (codequal-sarif-report.json)
+  gitlabContent?: any;           // GitLab code quality (codequal-gitlab-codequality.json)
 }
 
 export interface LocationAttachment {
@@ -1226,6 +1230,11 @@ export class V9GroupedReportFormatter {
       }
     }
 
+    // SESSION 112: Declare content variables for LSP/SARIF/GitLab local file saving
+    let lspContent: any;
+    let sarifContent: any;
+    let gitlabContent: any;
+
     // SESSION 25 FIX: Upload fix files FIRST (without manifest) to get public URLs
     // Then create manifest with public URLs, then upload manifest
     if (ideFixFiles.length > 0) {
@@ -1298,7 +1307,13 @@ export class V9GroupedReportFormatter {
         return groupIssues.length > 0;
       });
       console.log(`[LSP/SARIF] Filtering: ${enrichedIssues.length} total → ${activeIssuesForFix.length} active (excluding RESOLVED)`);
-      const { lspUrl, sarifUrl, gitlabUrl } = await this.generateLSPAndSARIFFormats(activeIssuesForFix, activeGroupsForFix, metadata, analysisTimestamp);
+      // SESSION 112: Also capture content for local file saving
+      const lspSarifResult = await this.generateLSPAndSARIFFormats(activeIssuesForFix, activeGroupsForFix, metadata, analysisTimestamp);
+      const { lspUrl, sarifUrl, gitlabUrl } = lspSarifResult;
+      // Assign to outer variables for return statement access
+      lspContent = lspSarifResult.lspContent;
+      sarifContent = lspSarifResult.sarifContent;
+      gitlabContent = lspSarifResult.gitlabContent;
 
       // SESSION 26-27: Store URLs for metadata footer (type assertion needed for dynamic properties)
       if (lspUrl) (metadata as any).lspUrl = lspUrl;
@@ -1392,7 +1407,11 @@ export class V9GroupedReportFormatter {
       markdown: markdown.join('\n'),
       attachments: [],  // BUG FIX #33: Empty for backward compatibility, will be removed in future version
       mapping,
-      ideFixFiles
+      ideFixFiles,
+      // SESSION 112: Include LSP/SARIF/GitLab content for local file saving
+      lspContent,
+      sarifContent,
+      gitlabContent
     };
   }
 
@@ -1688,14 +1707,7 @@ ${errorMessage || 'Unknown error - check tool orchestrator logs for details'}
       }
     }
 
-    // Add Decision section
-    header += `
-
-## Quality Decision
-
-**Result:** ${icon} **${metadata.decision}**${metadata.blockingCount > 0 ? ` (${metadata.blockingCount} blocking issues)` : ''}
-
----`;
+    // SESSION 112: Removed Quality Decision section - redundant with Quality Assessment section
 
     return header;
   }
@@ -2313,7 +2325,6 @@ ${progressHistory.history.map(h => `- PR #${h.prNumber}: ${h.score}/100 (${h.gra
 ` : progressHistory?.isFirstTimeUser ? `
 > 🆕 First analysis for this repository - future PRs will show progress trends
 ` : ''}
-> Scores saved to Supabase for tracking trends over time
 
 ` : `
 - Base Score: 100.0
@@ -2408,7 +2419,9 @@ ${(() => {
 | ⚠️ EXISTING_MODIFIED | ${categorySeverity.EXISTING_MODIFIED.critical} | ${categorySeverity.EXISTING_MODIFIED.high} | ${categorySeverity.EXISTING_MODIFIED.medium} | ${categorySeverity.EXISTING_MODIFIED.low} | **${byCategory.EXISTING_MODIFIED}** |
 | ✅ RESOLVED | ${categorySeverity.RESOLVED.critical} | ${categorySeverity.RESOLVED.high} | ${categorySeverity.RESOLVED.medium} | ${categorySeverity.RESOLVED.low} | **${byCategory.RESOLVED}** |
 | 📝 EXISTING_REST | ${categorySeverity.EXISTING_REST.critical} | ${categorySeverity.EXISTING_REST.high} | ${categorySeverity.EXISTING_REST.medium} | ${categorySeverity.EXISTING_REST.low} | **${byCategory.EXISTING_REST}** |
-| **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** |`;
+| **TOTAL** | **${bySeverity.critical}** | **${bySeverity.high}** | **${bySeverity.medium}** | **${bySeverity.low}** | **${issues.length}** |
+
+> **Note:** TOTAL includes RESOLVED issues (${byCategory.RESOLVED || 0}). Active issues affecting your score: ${issues.length - (byCategory.RESOLVED || 0)}.`;
       })()}
 
 **App Health Score by Category**:
@@ -2502,7 +2515,7 @@ ${(() => {
 | ✅ **Verified Fixes** | All code fixes validated against tool rules |
 | 🔄 **Pattern Learning** | New patterns saved for future cost savings |
 
-> Code fixes are shown inline with each issue below. Apply them with the IDE integration files or CLI.`;
+> Code fixes are shown inline with each issue below. Apply them using \`codequal apply\` or copy the corrected code.`;
         } else {
           // BASIC tier: Show upgrade path
           return `**Your Tier: BASIC** (Pattern Library + IDE Guidance)
@@ -2584,12 +2597,11 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     }
 
     // Finding 4: Auto-fix availability
-    const autoFixable = groups.filter(g => this.canAutoFix(g));
-    if (autoFixable.length > 0) {
-      const autoFixableCount = issues.filter(i =>
-        autoFixable.some(g => g.rule === i.rule && g.tool === i.tool)
-      ).length;
-      findings.push(`🔧 **Auto-Fix Available**: ${autoFixableCount} issues can be fixed automatically (see IDE integration files)`);
+    // SESSION 113 FIX: Show code fix count (not total auto-fixable which includes text guidance)
+    // This matches the PRO Analysis section numbers for consistency
+    const codeFixIssues = issues.filter(i => this.hasActualCodeFix(i));
+    if (codeFixIssues.length > 0) {
+      findings.push(`🔧 **Code Fixes Available**: ${codeFixIssues.length} issues have ready-to-apply fixes`);
     }
 
     return findings.map(f => `- ${f}`).join('\n');
@@ -2707,10 +2719,20 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
       content += `${idx + 1}. **${this.getUserFriendlyTitle(group.rule, group.tool)}** (${group.count} occurrences)\n`;
       content += `   - Effort: Low (automated fix available)\n`;
       content += `   - Impact: Improves code quality and consistency\n`;
-      content += `   - Action: Download IDE fix file from attachments\n\n`;
+      // SESSION 113: Tier-aware action
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        content += `   - Action: Run \`codequal apply\` or copy code from issue details\n\n`;
+      } else {
+        content += `   - Action: Download IDE fix file from attachments\n\n`;
+      }
     });
 
-    content += `> 💡 **Tip**: Use Cursor IDE integration to apply all fixes with one click!`;
+    // SESSION 113: Tier-aware tip
+    if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+      content += `> 💡 **Tip**: Run \`codequal apply --severity low\` to apply all quick wins automatically!`;
+    } else {
+      content += `> 💡 **Tip**: Use the IDE integration files to apply all fixes with one click!`;
+    }
 
     return content;
   }
@@ -4880,8 +4902,9 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
             section += '\n```\n\n';
             alreadyShowedAICode = true; // Track that we showed AI code here
           } else {
-            // BASIC tier: Show that code is available but not displayed
-            section += `> 📋 **Code Example Available**: Upgrade to PRO to see AI-generated code examples.\n\n`;
+            // SESSION 113 FIX: BASIC tier message clarifies what's available
+            // Original snippet failed to extract, but AI-generated fix code exists
+            section += `> ℹ️ Original code snippet could not be extracted. AI-generated fix code available with PRO tier.\n\n`;
           }
         } else {
           section += `> Code snippet unavailable. See fix recommendation below.\n\n`;
@@ -4995,8 +5018,9 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
 
     if (canAutoFix) {
       // SESSION 73: Tier-aware messaging
+      // SESSION 113: PRO shows fix is ready, BASIC directs to IDE integration
       if (this.userTier === 'pro' || this.userTier === 'enterprise') {
-        section += `> ✅ **Auto-fixed**: This issue has been automatically fixed. See the **Applied Fixes** section below for details.\n\n`;
+        section += `> ✅ **Fix Ready**: AI-generated fix code is shown above. Apply using CodeQual CLI or copy the corrected code.\n\n`;
       } else {
         section += `> 💡 **Auto-fixable**: This issue can be resolved using the 1-click solution in the IDE Integration section below.\n\n`;
       }
@@ -5218,11 +5242,50 @@ mvn spotless:check  # Verify (use in CI)
     groups: IssueGroup[],
     metadata: any,
     analysisTimestamp: number  // BUG-DOG-04 FIX: Use consistent timestamp across all uploads
-  ): Promise<{ lspUrl?: string; sarifUrl?: string; gitlabUrl?: string }> {
+  ): Promise<{
+    lspUrl?: string; sarifUrl?: string; gitlabUrl?: string;
+    // SESSION 112: Also return content for local file saving
+    lspContent?: any; sarifContent?: any; gitlabContent?: any;
+  }> {
     try {
       const converter = new LSPSARIFConverter();
       const gitlabConverter = new GitLabCodeQualityConverter();
       const workspaceRoot = this.repoPath || process.cwd();
+
+      // SESSION 113: Extract snippets for issues that don't have them
+      // This ensures LSP/SARIF files have code snippets like the markdown report
+      if (this.repoPath) {
+        const { CodeSnippetExtractor } = await import('../utils/code-snippet-extractor');
+        const SNIPPET_LIMIT = 500; // Extract snippets for first 500 issues to keep performance reasonable
+        let snippetsExtracted = 0;
+
+        for (let i = 0; i < Math.min(enrichedIssues.length, SNIPPET_LIMIT); i++) {
+          const issue = enrichedIssues[i];
+          if (!issue.snippet || issue.snippet.trim().length === 0 || issue.snippet === 'N/A') {
+            try {
+              let normalizedPath = issue.file;
+              if (normalizedPath.startsWith('/workspace/')) {
+                normalizedPath = normalizedPath.replace('/workspace/', '');
+              } else if (normalizedPath.startsWith('workspace/')) {
+                normalizedPath = normalizedPath.replace('workspace/', '');
+              }
+
+              const fullPath = path.join(this.repoPath, normalizedPath);
+              const snippet = await CodeSnippetExtractor.extractSnippet(fullPath, issue.line || 1, 3);
+              if (snippet && snippet.trim().length > 0) {
+                issue.snippet = snippet;
+                snippetsExtracted++;
+              }
+            } catch (error) {
+              // Extraction failed - leave snippet empty
+            }
+          }
+        }
+
+        if (snippetsExtracted > 0) {
+          console.log(`[LSP/SARIF/GitLab] Extracted ${snippetsExtracted} code snippets for LSP file`);
+        }
+      }
 
       // PERF-OPT: Generate all three formats in parallel (CPU work)
       console.log('[LSP/SARIF/GitLab] Generating all formats in parallel...');
@@ -5308,7 +5371,13 @@ mvn spotless:check  # Verify (use in CI)
         });
       }
 
-      return { lspUrl, sarifUrl, gitlabUrl };
+      // SESSION 112: Return both URLs and content for local file saving
+      return {
+        lspUrl, sarifUrl, gitlabUrl,
+        lspContent: lspCodeActions,
+        sarifContent: sarifReport,
+        gitlabContent: gitlabReport
+      };
 
     } catch (error) {
       console.error('[LSP/SARIF] Error generating formats:', error);
@@ -6287,21 +6356,42 @@ ${(() => {
         const allBlockingAutoFixable = blockingAutoFixable === blocking.length && blocking.length > 0;
 
         if (blocking.length > 0) {
+          // SESSION 113: Tier-aware recommendations
+          const isPro = this.userTier === 'pro' || this.userTier === 'enterprise';
           if (allBlockingAutoFixable) {
-            return `
-1. **Immediate Action:** Apply fixes for ${blocking.length} blocking issues using 1-click autofix (see IDE Integration section above)
+            if (isPro) {
+              return `
+1. **Immediate Action:** Review and apply AI-generated fixes for ${blocking.length} blocking issues (code shown inline above)
+2. **Apply Fixes:** Run \`codequal apply --severity high\` or copy corrected code from each issue section
+3. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
+4. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
+`;
+            } else {
+              return `
+1. **Immediate Action:** Apply fixes for ${blocking.length} blocking issues using 1-click autofix (see IDE Integration section below)
 2. **Quick Fix:** All blocking issues are auto-fixable - use LSP batch actions to fix in < 1 second
 3. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
 4. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
 `;
+            }
           } else {
-            return `
-1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment (${blockingAutoFixable} auto-fixable, ${blocking.length - blockingAutoFixable} require manual review)
-2. **Quick Fix:** Apply ${blockingAutoFixable} auto-fixable issues using 1-click autofix (see IDE Integration section)
+            if (isPro) {
+              return `
+1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment (${blockingAutoFixable} have AI fixes, ${blocking.length - blockingAutoFixable} require manual review)
+2. **Apply Fixes:** Run \`codequal apply\` or copy corrected code from issue sections above
 3. **Priority:** Address remaining ${blocking.length - blockingAutoFixable} blockers manually
 4. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
 5. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
 `;
+            } else {
+              return `
+1. **Immediate Action:** Resolve ${blocking.length} blocking issues before deployment (${blockingAutoFixable} auto-fixable, ${blocking.length - blockingAutoFixable} require manual review)
+2. **Quick Fix:** Apply ${blockingAutoFixable} auto-fixable issues using 1-click autofix (see IDE Integration section below)
+3. **Priority:** Address remaining ${blocking.length - blockingAutoFixable} blockers manually
+4. **Planning:** Schedule time for ${backlogMedium.length} medium-severity issues in upcoming sprints
+5. **Continuous Improvement:** Track and reduce ${backlogLow.length} low-severity issues over time
+`;
+            }
           }
         } else if (blockingCritical.length + blockingHigh.length > 0) {
           return `
@@ -6373,9 +6463,17 @@ ${(() => {
     lines.push(`| 🎉 **Already Resolved** | ${resolvedByPR.length} | - |`);
     lines.push('');
 
+    // SESSION 113: Renamed section - these are issues with AVAILABLE fixes, not already fixed
     // Group issues with code fixes by category
     if (codeFixIssues.length > 0) {
-      lines.push('### Successfully Fixed Issues (Code Fixes)');
+      lines.push('### Issues with Available Code Fixes');
+      lines.push('');
+      // SESSION 113: Tier-aware messaging
+      if (this.userTier === 'pro' || this.userTier === 'enterprise') {
+        lines.push('> These issues have AI-generated fixes ready to apply. Run `codequal apply` or copy code from issue details above.');
+      } else {
+        lines.push('> These issues have AI-generated fixes ready to apply. Use the IDE integration files to apply them.');
+      }
       lines.push('');
 
       // Group by detected category
@@ -6399,11 +6497,11 @@ ${(() => {
         displayIssues.forEach((issue, idx) => {
           const fileName = issue.file.split('/').pop() || issue.file;
           const confidence = this.getFixConfidence(issue);
-          lines.push(`| ${idx + 1} | ${fileName}:${issue.line || 0} | ${issue.rule} | ✅ FIXED | ${confidence}% |`);
+          lines.push(`| ${idx + 1} | ${fileName}:${issue.line || 0} | ${issue.rule} | ✅ FIX READY | ${confidence}% |`);
         });
 
         if (categoryIssues.length > 5) {
-          lines.push(`| ... | *${categoryIssues.length - 5} more issues* | | FIXED | |`);
+          lines.push(`| ... | *${categoryIssues.length - 5} more issues* | | FIX READY | |`);
         }
         lines.push('');
       }
@@ -6462,18 +6560,25 @@ ${(() => {
       lines.push('');
     }
 
-    // Business Impact Summary - SESSION 92: Updated calculations
-    const estimatedManualTime = manualReviewIssues.length * 15; // 15 min per issue
-    const autoFixTime = codeFixIssues.length * 5; // 5 min saved per auto-fix
-    const timeSaved = Math.max(0, (codeFixIssues.length * 15) - autoFixTime);
+    // SESSION 113: Fixed Business Impact calculation to make mathematical sense
+    // All issues fixed manually: 15 min per issue
+    const allIssuesCount = codeFixIssues.length + manualReviewIssues.length;
+    const manualFixTimeAll = allIssuesCount * 15; // 15 min per issue if done manually
+
+    // With CodeQual: 2 min to apply auto-fixes + 15 min for manual review issues
+    const withCodeQualTime = (codeFixIssues.length * 2) + (manualReviewIssues.length * 15);
+
+    // Time saved
+    const timeSaved = Math.max(0, manualFixTimeAll - withCodeQualTime);
+    const percentSaved = manualFixTimeAll > 0 ? Math.round((timeSaved / manualFixTimeAll) * 100) : 0;
 
     lines.push('### Business Impact');
     lines.push('');
     lines.push('| Metric | Value |');
     lines.push('|--------|-------|');
-    lines.push(`| Estimated Manual Fix Time | ${Math.round(estimatedManualTime / 60)}h ${estimatedManualTime % 60}m |`);
-    lines.push(`| Auto-Fix Time | ${Math.round(autoFixTime / 60)}h ${autoFixTime % 60}m |`);
-    lines.push(`| **Time Saved** | **${Math.round(timeSaved / 60)}h ${timeSaved % 60}m (${codeFixIssues.length > 0 ? Math.round(timeSaved / (codeFixIssues.length * 15) * 100) : 0}%)** |`);
+    lines.push(`| If Fixed Manually | ${Math.floor(manualFixTimeAll / 60)}h ${manualFixTimeAll % 60}m (${allIssuesCount} issues × 15 min) |`);
+    lines.push(`| With CodeQual | ${Math.floor(withCodeQualTime / 60)}h ${withCodeQualTime % 60}m (${codeFixIssues.length} auto-fix + ${manualReviewIssues.length} manual) |`);
+    lines.push(`| **Time Saved** | **${Math.floor(timeSaved / 60)}h ${timeSaved % 60}m (${percentSaved}%)** |`);
     lines.push('');
 
     lines.push('---');
@@ -7545,8 +7650,11 @@ Continue following best practices and consider integrating static analysis into 
       content += `| 💙 Rare | ${tierCounts.rare} |\n`;
       content += `| ⚪ Common | ${tierCounts.common} |\n\n`;
 
-      // SESSION 69: Add link to scoring guide for transparency
-      content += `> 💡 **How to earn more XP:** Fix issues in your PR before analysis! Each resolved issue = +5 XP, critical = +20 XP bonus.\n`;
+      // SESSION 113: Updated XP message to clarify auto-fix XP earning
+      content += `> 💡 **How to earn XP:** Apply auto-fixes and commit them → re-run analysis → earn XP for resolved issues!\n`;
+      content += `> - Each resolved issue = +5 XP\n`;
+      content += `> - Critical/High severity = +15-20 XP bonus\n`;
+      content += `> - Security fixes = +10 XP bonus\n`;
       content += `> [📖 Full Scoring Guide](https://codequal.dev/docs/scoring-guide)\n\n`;
 
       // Show achievements using the imported function
@@ -8016,6 +8124,7 @@ ${(() => {
 
   /**
    * Generate footer
+   * SESSION 113: Pass userTier for tier-aware IDE integration
    */
   private generateFooter(
     groups: IssueGroup[],
@@ -8023,7 +8132,7 @@ ${(() => {
     metadata: any,
     enrichedIssues?: EnrichedIssue[]
   ): string {
-    return generateFooter(groups, ideFixFiles, metadata, enrichedIssues);
+    return generateFooter(groups, ideFixFiles, metadata, enrichedIssues, this.userTier);
   }
 
   private _REMOVED_generateFooter_LEGACY(

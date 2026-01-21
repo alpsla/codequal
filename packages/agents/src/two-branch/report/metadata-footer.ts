@@ -120,13 +120,12 @@ export function generateAnalysisMetadata(
   }
 
   // Add Tool Performance if available (optional)
-  // USER FEEDBACK (2025-12-14): Filter out tools that didn't actually run (0 issues AND 0 duration)
-  // FIX (2025-12-15): Only show tools that found issues - filter out 0-issue tools entirely
+  // SESSION 113: Show ALL tools that ran, not just those that found issues
+  // User feedback: Want to see all 13 tools executed, not just 3 with issues
   if (showToolPerformance && metadata.toolPerformance && Array.isArray(metadata.toolPerformance) && metadata.toolPerformance.length > 0) {
-    // Filter out tools that didn't find issues OR didn't run
+    // Filter out tools that didn't actually run (no duration)
     const skippedTools = ['performance']; // Tools we skip in first iteration
     const actuallyRanTools = metadata.toolPerformance.filter((tool: any) => {
-      const issues = tool.issuesFound || tool.issues || tool.issueCount || 0;
       const duration = tool.duration || 0;
       const toolName = (tool.tool || tool.name || '').toLowerCase();
 
@@ -135,19 +134,32 @@ export function generateAnalysisMetadata(
         return false;
       }
 
-      // Only include tools that found issues AND actually ran
-      return issues > 0 && duration > 0;
+      // Include ALL tools that actually ran (duration > 0), even if 0 issues found
+      return duration > 0;
     });
 
     if (actuallyRanTools.length > 0) {
+      // Sort by issues found (descending), then by duration
+      actuallyRanTools.sort((a: any, b: any) => {
+        const aIssues = a.issuesFound || a.issues || a.issueCount || 0;
+        const bIssues = b.issuesFound || b.issues || b.issueCount || 0;
+        if (bIssues !== aIssues) return bIssues - aIssues;
+        return (b.duration || 0) - (a.duration || 0);
+      });
+
+      const totalIssues = actuallyRanTools.reduce((sum: number, t: any) => sum + (t.issuesFound || t.issues || t.issueCount || 0), 0);
       content += `\n### Tool Performance
-| Tool | Issues Found | Duration |
-|------|--------------|----------|
+
+**${actuallyRanTools.length} tools executed** | **${totalIssues} total issues found**
+
+| Tool | Issues Found | Duration | Status |
+|------|--------------|----------|--------|
 `;
       actuallyRanTools.forEach((tool: any) => {
         const duration = tool.duration ? (tool.duration / 1000).toFixed(1) + 's' : 'N/A';
         const issues = tool.issuesFound || tool.issues || tool.issueCount || 0;
-        content += `| ${tool.tool || tool.name} | ${issues} | ${duration} |\n`;
+        const status = issues > 0 ? '🔍 Found' : '✅ Clean';
+        content += `| ${tool.tool || tool.name} | ${issues} | ${duration} | ${status} |\n`;
       });
     }
   }
@@ -188,7 +200,18 @@ export function generateAnalysisMetadata(
 - **Analyzer Version:** ${metadata.analyzerVersion || 'V9 Grouped Report Formatter'}
 - **Analysis Date:** ${metadata.analyzedAt ? new Date(metadata.analyzedAt).toLocaleString() : new Date().toLocaleString()}
 - **Report Format:** Grouped (Compact with 99.8% cost reduction)
-- **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types`;
+- **Issue Grouping:** ${metadata.totalGroups || 'Enabled'} unique issue types
+
+### Understanding Fix Fields
+
+| Field | Meaning |
+|-------|---------|
+| **fixable: true** | Original linter has native auto-fix (e.g., \`eslint --fix\`) |
+| **fixable: false** | Linter detects only - use CodeQual AI fixes or manual review |
+| **issueType** | Category: style, quality, security, performance, maintainability, dependency |
+| **fixTier** | 1=Native tool fix, 2=Dedicated fixer (Sorald, etc), 3=AI-generated |
+
+> **Note:** \`fixable: false\` doesn't mean "unfixable" - it means the original linter lacks native auto-fix. CodeQual can generate AI fixes for all issues regardless of this field.`;
   }
 
   return content;
@@ -249,7 +272,7 @@ export function generatePRComment(issues: EnrichedIssue[], groups: IssueGroup[],
 \`\`\`markdown
 ## ${emoji} Code Quality Analysis: ${decision}
 
-${greeting} @${metadata.prAuthor || 'developer'}! I've completed a comprehensive analysis of your PR.
+${greeting} @${(metadata.prAuthor && metadata.prAuthor !== 'undefined') ? metadata.prAuthor : 'developer'}! I've completed a comprehensive analysis of your PR.
 
 ${encouragement}
 
@@ -276,19 +299,28 @@ ${blocking.length > 5 ? `\n... and ${blocking.length - 5} more` : ''}` : '### �
 /**
  * Generate footer with IDE integration instructions
  * Includes PR comment template and file attachments
+ *
+ * SESSION 113: Made tier-aware
+ * - BASIC tier: Shows LSP, SARIF, GitLab files for manual fix application
+ * - PRO tier: Fixes are applied automatically, no IDE integration needed
  */
 export function generateFooter(
   groups: IssueGroup[],
   ideFixFiles: IDEFixFile[],
   metadata?: any,
-  enrichedIssues?: EnrichedIssue[]
+  enrichedIssues?: EnrichedIssue[],
+  userTier: 'basic' | 'pro' | 'enterprise' = 'basic'
 ): string {
   // BUG FIX #48, #49, #70: Updated footer for Bug #34 lazy loading architecture
   // ENHANCEMENT #3: Removed Issue Groups Mapping (not useful for end users)
   // BUG FIX #70: Don't show empty "Attachments" header - combine with IDE Fix Files section
   let footer = '';
 
-  if (ideFixFiles.length > 0) {
+  // SESSION 113: PRO tier - fixes are applied automatically, no IDE integration section
+  // Skip the entire "How to Apply Fixes" section for PRO/Enterprise
+  const isPro = userTier === 'pro' || userTier === 'enterprise';
+
+  if (ideFixFiles.length > 0 && !isPro) {
     // SESSION 24: Extract manifest public URL
     const manifestFile = ideFixFiles.find(f => f.filename === 'all-issues-manifest.json');
     const manifestUrl = manifestFile ? (manifestFile as any).publicUrl : null;
@@ -512,14 +544,15 @@ export function generateFooter(
     // Previously had BUG FIX #20 here which caused duplicate PR Comment Template sections
 
     // Add attachments section at the end (manifest file for reference)
+    // SESSION 113: Only show for BASIC tier, with clearer message
     footer += `---\n\n`;
     footer += `## 🔗 Additional Files\n\n`;
     if (manifestUrl) {
-      footer += `📦 **Manifest file** (for AI assistants with lazy loading): [all-issues-manifest.json](${manifestUrl})\n`;
-      footer += `- Contains: All ${totalFixable.toLocaleString()} auto-fixable issues with fix patterns\n`;
-      footer += `- **Lazy loading**: Critical issues embedded (instant), high/medium/low lazy loaded in background\n`;
-      footer += `- **Use with**: AI assistants (Cursor Chat, GitHub Copilot) if LSP doesn't work in your IDE\n`;
-      footer += `- **Difference from LSP**: Manifest uses lazy loading by severity; LSP has all fixes in one file\n\n`;
+      footer += `📦 **Manifest file**: [all-issues-manifest.json](${manifestUrl})\n`;
+      footer += `- Contains: All ${totalFixable.toLocaleString()} issues with fix patterns\n`;
+      footer += `- **Use this if**: LSP approach doesn't work in your IDE\n`;
+      footer += `- **Works with**: AI assistants (Cursor Chat, GitHub Copilot, Claude)\n`;
+      footer += `- **Format**: JSON with lazy loading by severity for large codebases\n\n`;
     }
 
     // Add manual review disclaimer for critical/high severity issues

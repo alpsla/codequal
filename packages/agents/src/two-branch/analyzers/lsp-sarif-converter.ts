@@ -1327,35 +1327,50 @@ export class LSPSARIFConverter {
 
   /**
    * Determine issue type from tool and category
+   * SESSION 113 FIX: Return values must match the fixTier.issueType interface
+   * Valid values: 'style' | 'quality' | 'security' | 'performance' | 'maintainability' | 'compatibility' | 'dependency' | 'unknown'
    */
-  private determineIssueType(issue: EnrichedIssue): 'code_quality' | 'security' | 'performance' | 'architecture' | 'dependency' {
+  private determineIssueType(issue: EnrichedIssue): 'style' | 'quality' | 'security' | 'performance' | 'maintainability' | 'compatibility' | 'dependency' | 'unknown' {
     const tool = issue.tool?.toLowerCase() || '';
     const category = issue.category?.toLowerCase() || '';
+    const rule = issue.rule?.toLowerCase() || '';
+    const detectedCategory = issue.detectedCategory?.toLowerCase() || '';
 
-    // Security tools
+    // Security tools and categories
     if (tool.includes('semgrep') || tool.includes('snyk') || tool.includes('dependency-check') ||
-      category.includes('security') || category.includes('vulnerability')) {
+      tool.includes('gitleaks') || tool.includes('trivy') || tool.includes('grype') ||
+      category.includes('security') || category.includes('vulnerability') ||
+      detectedCategory.includes('security')) {
       return 'security';
     }
 
     // Dependency tools
     if (tool.includes('dependency') || tool.includes('ossindex') ||
-      category.includes('dependency')) {
+      category.includes('dependency') || detectedCategory.includes('dependenc')) {
       return 'dependency';
     }
 
     // Performance tools
-    if (tool.includes('performance') || category.includes('performance')) {
+    if (tool.includes('performance') || category.includes('performance') ||
+      detectedCategory.includes('performance')) {
       return 'performance';
     }
 
-    // Architecture tools
-    if (tool.includes('architecture') || category.includes('architecture')) {
-      return 'architecture';
+    // Architecture/Maintainability tools - map to 'maintainability' (architecture not in interface)
+    if (tool.includes('architecture') || category.includes('architecture') ||
+      detectedCategory.includes('architecture') || rule.includes('design')) {
+      return 'maintainability';
     }
 
-    // Default to code quality
-    return 'code_quality';
+    // Style issues (formatting, whitespace, naming)
+    if (rule.includes('whitespace') || rule.includes('format') || rule.includes('indent') ||
+      rule.includes('naming') || rule.includes('style') || rule.includes('tab') ||
+      tool.includes('prettier') || tool.includes('stylint')) {
+      return 'style';
+    }
+
+    // Default to quality (not 'code_quality' which isn't in the interface)
+    return 'quality';
   }
 
   /**
