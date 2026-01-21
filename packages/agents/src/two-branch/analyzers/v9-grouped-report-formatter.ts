@@ -329,7 +329,7 @@ export class V9GroupedReportFormatter {
   // Feature toggles for optional sections
   private readonly SHOW_FIX_COVERAGE: boolean = false;
   private readonly SHOW_QUICK_WINS: boolean = false;
-  private readonly SHOW_SYSTEM_INFO: boolean = false;
+  private readonly SHOW_SYSTEM_INFO: boolean = true;  // SESSION 113: Enable to show fix field documentation
   private readonly SHOW_AGENT_PERFORMANCE: boolean = false;  // BUG-110: Disabled - not useful for users
   private readonly SHOW_TOOL_PERFORMANCE: boolean = true;   // BUG #8 FIX: Enable tool performance tracking
   private readonly SHOW_EFFICIENCY_ANALYSIS: boolean = true; // BUG #10 FIX: Enable cost analysis
