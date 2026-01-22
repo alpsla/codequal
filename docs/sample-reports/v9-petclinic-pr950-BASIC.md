@@ -8,7 +8,7 @@
 **Organization:** spring-projects  
 **Source Branch:** pr-950  
 **Target Branch:** main  
-**Analysis Date:** January 22, 2026 at 03:55 AM GMT (1m 32s)
+**Analysis Date:** January 22, 2026 at 04:09 AM GMT (1m 33s)
 **Repository Size:** 152 files
 **Report Tier:** 📋 Basic | 3,712 lines  
 **Analyzer Version:** 9.0.0
@@ -22,7 +22,7 @@
 
 ## Analysis Performance
 
-**Total Duration:** 1m 32s  
+**Total Duration:** 1m 33s  
 
 ## 📊 Executive Summary
 
@@ -109,7 +109,7 @@
 - AI-analyzed groups: 20
 - Cost-optimized analysis: 93.2% reduction
 - Coverage: 100% of detected issues
-- Duration: 1m 32s
+- Duration: 1m 33s
 
 ---
 
@@ -177,10 +177,6 @@ Actuator endpoints expose sensitive information about your application (health, 
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-Should be reviewed and addressed to maintain code quality.
-
 #### ⚡ Risk Assessment
 
 **Overall Risk**: 🟠 **HIGH RISK**
@@ -243,10 +239,6 @@ Reduces nesting depth and improves readability.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -296,10 +288,6 @@ Final parameters prevent accidental reassignment and make code intent clearer.
 
 - Standard coding style in most projects
 - Rarely needed but enforces immutability
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -362,10 +350,6 @@ Field documentation clarifies the purpose and constraints of public fields.
 - Self-documenting field names
 - Generated code
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -426,10 +410,6 @@ Methods that can be overridden should be explicitly designed for inheritance to 
 - Framework classes designed for extension
 - Consider if class needs to be extendable at all
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -487,10 +467,6 @@ Undocumented code is harder for other developers to understand and maintain corr
 - Rapid development without documentation
 - Private methods made public later
 - Generated code
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -551,10 +527,6 @@ Tabs display differently in different editors, causing inconsistent formatting.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -609,10 +581,6 @@ In non-setter/constructor methods, this can lead to bugs where you accidentally 
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -676,10 +644,6 @@ Magic numbers make code less readable and harder to maintain. Their meaning is u
 - Loop bounds
 - Annotation values (often acceptable)
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -738,10 +702,6 @@ Complete documentation helps developers use methods correctly without reading im
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -802,10 +762,6 @@ Wildcard imports hide where classes come from and can cause conflicts.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -865,10 +821,6 @@ Consistent brace placement improves code structure visibility.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -925,10 +877,6 @@ Consistent whitespace improves readability.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -978,10 +926,6 @@ Spaces around operators improve readability and follow standard conventions.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1030,10 +974,6 @@ Redundant modifiers add noise without value and can be confusing.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1095,10 +1035,6 @@ Public fields expose internal implementation and make it impossible to add valid
 - Quick prototyping
 - DTOs without validation needs (consider records in Java 16+)
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1157,10 +1093,6 @@ Utility classes should not be instantiated as they only provide static methods.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1221,10 +1153,6 @@ Consistent array declaration style improves readability.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1272,10 +1200,6 @@ Consistent whitespace formatting improves code appearance.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1336,10 +1260,6 @@ Unused code increases maintenance burden, slows module loading, and can indicate
 - Copy-pasted code
 - IDE auto-import leftovers
 - Abandoned code paths
-
-#### ⚠️ Impact if not fixed:
-
-Code clutter, slower imports, maintenance confusion. Remove unused code.
 
 #### ✨ Risk Assessment
 
@@ -1707,22 +1627,22 @@ instant, proven solutions for common issues.
 
 | Tool | Issues Found | Duration | Status |
 |------|--------------|----------|--------|
-| checkstyle | 327 | 7.6s | 🔍 Found |
-| semgrep | 1 | 7.8s | 🔍 Found |
-| pmd | 1 | 6.0s | 🔍 Found |
+| checkstyle | 327 | 8.5s | 🔍 Found |
+| semgrep | 1 | 7.7s | 🔍 Found |
+| pmd | 1 | 6.2s | 🔍 Found |
 | dependency-check | 0 | 21.7s | ✅ Clean |
-| spotbugs | 0 | 18.2s | ✅ Clean |
-| checkov | 0 | 13.8s | ✅ Clean |
-| grype | 0 | 4.1s | ✅ Clean |
-| spectral | 0 | 2.0s | ✅ Clean |
-| trivy | 0 | 0.7s | ✅ Clean |
-| gitleaks | 0 | 0.7s | ✅ Clean |
+| spotbugs | 0 | 19.5s | ✅ Clean |
+| checkov | 0 | 14.2s | ✅ Clean |
+| grype | 0 | 4.2s | ✅ Clean |
+| spectral | 0 | 1.4s | ✅ Clean |
+| gitleaks | 0 | 0.6s | ✅ Clean |
+| trivy | 0 | 0.6s | ✅ Clean |
 | jdepend | 0 | 0.1s | ✅ Clean |
-| graphql-cop | 0 | 0.1s | ✅ Clean |
+| graphql-cop | 0 | 0.0s | ✅ Clean |
 
 ### System Information
 - **Analyzer Version:** 9.0.0
-- **Analysis Date:** 1/22/2026, 3:55:15 AM
+- **Analysis Date:** 1/22/2026, 4:09:55 AM
 - **Report Format:** Grouped (Compact with 99.8% cost reduction)
 - **Issue Grouping:** Enabled unique issue types
 
@@ -1741,7 +1661,7 @@ Hi @Stéphane Nicoll! I've completed a comprehensive analysis of your PR.
 - **Active Issues:** 296 (20 unique types)
 - **Blocking Issues:** 0 ✅
 - **Resolved Issues:** 0 
-- **Analysis Time:** 86.0s
+- **Analysis Time:** 85.9s
 
 ### ✅ No Blocking Issues
 This PR can be merged once approved by reviewers.
@@ -1768,7 +1688,7 @@ This PR can be merged once approved by reviewers.
 **✨ Best for IDEs**: Apply ALL 296 fixes with 1 click!
 
 **Download**: `codequal-lsp-actions.json`
-- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054115094/codequal-lsp-actions.json)
+- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054995824/codequal-lsp-actions.json)
 - Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE
 
 **How LSP Works**:
@@ -1844,7 +1764,7 @@ When you click "Apply Fix" in your IDE:
 ### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)
 
 **Download**: `codequal-sarif-report.json`
-- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054115094/codequal-sarif-report.json)
+- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054995824/codequal-sarif-report.json)
 - Works with: GitHub Code Scanning, CI/CD pipelines, VSCode/Cursor (with extension)
 
 **For GitHub Code Scanning**:
@@ -1866,7 +1786,7 @@ When you click "Apply Fix" in your IDE:
 ### 🦊 Method 3: Code Climate / GitLab Code Quality
 
 **Download**: `codequal-gitlab-codequality.json`
-- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054115094/codequal-gitlab-codequality.json)
+- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054995824/codequal-gitlab-codequality.json)
 - Works with: GitLab CI/CD, GitHub Actions (via Code Climate), Jenkins, CircleCI
 - Format: Code Climate (industry standard)
 
@@ -1899,7 +1819,7 @@ When you click "Apply Fix" in your IDE:
 
 ## 🔗 Additional Files
 
-📦 **Manifest file**: [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054115094/all-issues-manifest.json)
+📦 **Manifest file**: [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1769054995824/all-issues-manifest.json)
 - Contains: All 296 issues with fix patterns
 - **Use this if**: LSP approach doesn't work in your IDE
 - **Works with**: AI assistants (Cursor Chat, GitHub Copilot, Claude)
@@ -1911,4 +1831,4 @@ When you click "Apply Fix" in your IDE:
 ---
 
 *Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  
-*2026-01-22T03:55:22.091Z*
+*2026-01-22T04:10:03.094Z*

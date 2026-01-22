@@ -8,7 +8,7 @@
 **Organization:** spring-projects  
 **Source Branch:** pr-950  
 **Target Branch:** main  
-**Analysis Date:** January 22, 2026 at 03:57 AM GMT (1m 33s)
+**Analysis Date:** January 22, 2026 at 04:11 AM GMT (1m 30s)
 **Repository Size:** 152 files
 **Report Tier:** ⭐ PRO | 3,712 lines  
 **Analyzer Version:** 9.0.0
@@ -22,7 +22,7 @@
 
 ## Analysis Performance
 
-**Total Duration:** 1m 33s  
+**Total Duration:** 1m 30s  
 
 ## 📊 Executive Summary
 
@@ -109,7 +109,7 @@
 - AI-analyzed groups: 20
 - Cost-optimized analysis: 93.2% reduction
 - Coverage: 100% of detected issues
-- Duration: 1m 33s
+- Duration: 1m 30s
 
 ---
 
@@ -260,10 +260,6 @@ Actuator endpoints expose sensitive information about your application (health, 
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-Should be reviewed and addressed to maintain code quality.
-
 #### ⚡ Risk Assessment
 
 **Overall Risk**: 🟠 **HIGH RISK**
@@ -307,6 +303,27 @@ Spring Boot Actuator is fully enabled. This exposes sensitive endpoints such as 
 
 + // After:
 + management.endpoints.web.exposure.include=health,info
++ management.endpoint.health.show-details=when-authorized
++ 
++ # Secure all actuator endpoints using Spring Security
++ security.basic.enabled=true
++ security.user.name=admin
++ security.user.password=secure_password
++ management.security.roles=ACTUATOR_ADMIN
++ 
++ #Alternative using Spring Security configuration class
++ #@Configuration
++ #@EnableWebSecurity
++ #public class ActuatorSecurity extends WebSecurityConfigurerAdapter {
++ #    @Override
++ #    protected void configure(HttpSecurity http) throws Exception {
++ #        http.requestMatcher(EndpointRequest.toAnyEndpoint())
++ #            .authorizeRequests()
++ #            .anyRequest().hasRole("ACTUATOR_ADMIN")
++ #            .and()
++ #        .httpBasic();
++ #    }
++ #}
 ```
 
 #### 📎 All Occurrences
@@ -338,10 +355,6 @@ Reduces nesting depth and improves readability.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -392,10 +405,6 @@ Final parameters prevent accidental reassignment and make code intent clearer.
 
 - Standard coding style in most projects
 - Rarely needed but enforces immutability
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -462,10 +471,6 @@ Field documentation clarifies the purpose and constraints of public fields.
 - Rapid development
 - Self-documenting field names
 - Generated code
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -534,10 +539,6 @@ Methods that can be overridden should be explicitly designed for inheritance to 
 - Framework classes designed for extension
 - Consider if class needs to be extendable at all
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -595,10 +596,6 @@ Undocumented code is harder for other developers to understand and maintain corr
 - Rapid development without documentation
 - Private methods made public later
 - Generated code
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -658,10 +655,6 @@ Tabs display differently in different editors, causing inconsistent formatting.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -716,10 +709,6 @@ In non-setter/constructor methods, this can lead to bugs where you accidentally 
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -803,10 +792,6 @@ Magic numbers make code less readable and harder to maintain. Their meaning is u
 - Loop bounds
 - Annotation values (often acceptable)
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -865,7 +850,7 @@ This issue appears in **18 files** across your codebase.
 
 ### 🟢 JavadocMethodCheck
 
-**Severity**: LOW | **Tool**: checkstyle | **Found in**: 8 files | **Category**: NEW
+**Severity**: LOW | **Tool**: checkstyle | **Found in**: 8 files | **Category**: EXISTING_REST
 
 ---
 
@@ -881,10 +866,6 @@ Complete documentation helps developers use methods correctly without reading im
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -896,18 +877,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/owner/Owner.java` (Line 112)
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/VisitController.java` (Line 60)
 
 **Code**:
 
 ```java
-   109 | 		return getPet(name, false);
-   110 | 	}
-   111 | 
->  112 | 	/**
-   113 | 	 * Return the Pet with the given id, or null if none found for this Owner.
-   114 | 	 * @param id to test
-   115 | 	 * @return the Pet with the given id, or null if no such Pet exists for this Owner
+    57 | 	 * we always have fresh data - Since we do not use the session scope, make sure that
+    58 | 	 * Pet object always has an id (Even though id is not part of the form fields)
+    59 | 	 * @param petId
+>   60 | 	 * @return Pet
+    61 | 	 */
+    62 | 	@ModelAttribute("visit")
+    63 | 	public Visit loadPetWithVisit(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
 ```
 
 #### 🔧 How to Fix
@@ -918,13 +899,13 @@ AI-generated fix pattern for JavadocMethodCheck
 
 ```diff
 - // Before:
--    109 | 		return getPet(name, false);
--    110 | 	}
--    111 | 
-- >  112 | 	/**
--    113 | 	 * Return the Pet with the given id, or null if none found for this Owner.
--    114 | 	 * @param id to test
--    115 | 	 * @return the Pet with the given id, or null if no such Pet exists for this Owner
+-     57 | 	 * we always have fresh data - Since we do not use the session scope, make sure that
+-     58 | 	 * Pet object always has an id (Even though id is not part of the form fields)
+-     59 | 	 * @param petId
+- >   60 | 	 * @return Pet
+-     61 | 	 */
+-     62 | 	@ModelAttribute("visit")
+-     63 | 	public Visit loadPetWithVisit(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
 
 + // After:
 + /**
@@ -965,10 +946,6 @@ Wildcard imports hide where classes come from and can cause conflicts.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1028,10 +1005,6 @@ Consistent brace placement improves code structure visibility.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1043,18 +1016,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java` (Line 70)
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/PetController.java` (Line 82)
 
 **Code**:
 
 ```java
-    67 | 				: this.owners.findById(ownerId)
-    68 | 					.orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId
-    69 | 							+ ". Please ensure the ID is correct " + "and the owner exists in the database."));
->   70 | 	}
-    71 | 
-    72 | 	@GetMapping("/owners/new")
-    73 | 	public String initCreationForm() {
+    79 | 			return new Pet();
+    80 | 		}
+    81 | 
+>   82 | 		Optional<Owner> optionalOwner = this.owners.findById(ownerId);
+    83 | 		Owner owner = optionalOwner.orElseThrow(() -> new IllegalArgumentException(
+    84 | 				"Owner not found with id: " + ownerId + ". Please ensure the ID is correct "));
+    85 | 		return owner.getPet(petId);
 ```
 
 #### 🔧 How to Fix
@@ -1087,10 +1060,6 @@ Consistent whitespace improves readability.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1142,10 +1111,6 @@ Spaces around operators improve readability and follow standard conventions.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1196,10 +1161,6 @@ Redundant modifiers add noise without value and can be confusing.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1211,18 +1172,18 @@ Nice to fix - improves code quality and developer experience
 
 #### 📍 Representative Example
 
-**Location**: `src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java` (Line 50)
+**Location**: `src/main/java/org/springframework/samples/petclinic/owner/PetController.java` (Line 41)
 
 **Code**:
 
 ```java
-    47 |  */
-    48 | @Controller
-    49 | class OwnerController {
->   50 | 
-    51 | 	private static final String VIEWS_OWNER_CREATE_OR_UPDATE_FORM = "owners/createOrUpdateOwnerForm";
-    52 | 
-    53 | 	private final OwnerRepository owners;
+    38 | import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+    39 | 
+    40 | /**
+>   41 |  * @author Juergen Hoeller
+    42 |  * @author Ken Krebs
+    43 |  * @author Arjen Poutsma
+    44 |  * @author Wick Dynex
 ```
 
 #### 🔧 How to Fix
@@ -1233,13 +1194,13 @@ Redundant &apos;public&apos; modifier.
 
 ```diff
 - // Before:
--     47 |  */
--     48 | @Controller
--     49 | class OwnerController {
-- >   50 | 
--     51 | 	private static final String VIEWS_OWNER_CREATE_OR_UPDATE_FORM = "owners/createOrUpdateOwnerForm";
--     52 | 
--     53 | 	private final OwnerRepository owners;
+-     38 | import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+-     39 | 
+-     40 | /**
+- >   41 |  * @author Juergen Hoeller
+-     42 |  * @author Ken Krebs
+-     43 |  * @author Arjen Poutsma
+-     44 |  * @author Wick Dynex
 
 + // After:
 + VetController(VetRepository vetRepository) {
@@ -1272,10 +1233,6 @@ Public fields expose internal implementation and make it impossible to add valid
 
 - Quick prototyping
 - DTOs without validation needs (consider records in Java 16+)
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1349,10 +1306,6 @@ Utility classes should not be instantiated as they only provide static methods.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1411,10 +1364,6 @@ Consistent array declaration style improves readability.
 
 - Common code pattern that may need attention
 
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
-
 #### ✨ Risk Assessment
 
 **Overall Risk**: 🟢 **LOW RISK**
@@ -1462,10 +1411,6 @@ Consistent whitespace formatting improves code appearance.
 #### 🔍 Common causes:
 
 - Common code pattern that may need attention
-
-#### ⚠️ Impact if not fixed:
-
-May contribute to technical debt. Consider addressing during regular maintenance.
 
 #### ✨ Risk Assessment
 
@@ -1537,10 +1482,6 @@ Unused code increases maintenance burden, slows module loading, and can indicate
 - Copy-pasted code
 - IDE auto-import leftovers
 - Abandoned code paths
-
-#### ⚠️ Impact if not fixed:
-
-Code clutter, slower imports, maintenance confusion. Remove unused code.
 
 #### ✨ Risk Assessment
 
@@ -1816,22 +1757,22 @@ Completed your first code quality analysis, beginning the journey toward excelle
 
 | Tool | Issues Found | Duration | Status |
 |------|--------------|----------|--------|
-| checkstyle | 327 | 8.8s | 🔍 Found |
+| checkstyle | 327 | 8.5s | 🔍 Found |
 | semgrep | 1 | 7.7s | 🔍 Found |
-| pmd | 1 | 6.0s | 🔍 Found |
-| dependency-check | 0 | 21.7s | ✅ Clean |
-| spotbugs | 0 | 18.3s | ✅ Clean |
-| checkov | 0 | 13.8s | ✅ Clean |
-| grype | 0 | 4.1s | ✅ Clean |
+| pmd | 1 | 5.5s | 🔍 Found |
+| dependency-check | 0 | 21.6s | ✅ Clean |
+| spotbugs | 0 | 18.7s | ✅ Clean |
+| checkov | 0 | 14.6s | ✅ Clean |
+| grype | 0 | 4.0s | ✅ Clean |
 | spectral | 0 | 1.8s | ✅ Clean |
-| trivy | 0 | 0.6s | ✅ Clean |
 | gitleaks | 0 | 0.6s | ✅ Clean |
+| trivy | 0 | 0.6s | ✅ Clean |
 | jdepend | 0 | 0.1s | ✅ Clean |
 | graphql-cop | 0 | 0.0s | ✅ Clean |
 
 ### System Information
 - **Analyzer Version:** 9.0.0
-- **Analysis Date:** 1/22/2026, 3:57:17 AM
+- **Analysis Date:** 1/22/2026, 4:11:55 AM
 - **Report Format:** Grouped (Compact with 99.8% cost reduction)
 - **Issue Grouping:** Enabled unique issue types
 
@@ -1850,7 +1791,7 @@ Hi @Stéphane Nicoll! I've completed a comprehensive analysis of your PR.
 - **Active Issues:** 296 (20 unique types)
 - **Blocking Issues:** 0 ✅
 - **Resolved Issues:** 0 
-- **Analysis Time:** 84.6s
+- **Analysis Time:** 85.7s
 
 ### ✅ No Blocking Issues
 This PR can be merged once approved by reviewers.
@@ -1867,4 +1808,4 @@ This PR can be merged once approved by reviewers.
 ---
 
 *Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  
-*2026-01-22T03:57:23.860Z*
+*2026-01-22T04:12:02.300Z*
