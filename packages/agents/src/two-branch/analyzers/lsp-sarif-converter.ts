@@ -601,7 +601,7 @@ export class LSPSARIFConverter {
       // Rich metadata for IDE AI to generate fix
       data: {
         issue: {
-          type: issueType,
+          type: this.mapIssueTypeToCategory(issueType),
           rule: issue.rule,
           severity: issue.severity,
           category: issue.category || 'code_quality',
@@ -1023,7 +1023,7 @@ export class LSPSARIFConverter {
       // Enhanced metadata for IDE AI (hybrid approach)
       data: {
         issue: {
-          type: issueType,
+          type: this.mapIssueTypeToCategory(issueType),
           rule: issue.rule,
           severity: issue.severity,
           category: issue.category || 'code_quality',
@@ -1371,6 +1371,27 @@ export class LSPSARIFConverter {
 
     // Default to quality (not 'code_quality' which isn't in the interface)
     return 'quality';
+  }
+
+  /**
+   * Map internal issue type to expected category type
+   * SESSION 113: Fix TypeScript type mismatch
+   */
+  private mapIssueTypeToCategory(issueType: string): 'security' | 'performance' | 'architecture' | 'code_quality' | 'dependency' {
+    switch (issueType) {
+      case 'security': return 'security';
+      case 'performance': return 'performance';
+      case 'dependency': return 'dependency';
+      case 'architecture': return 'architecture';
+      // Map all other types to code_quality
+      case 'style':
+      case 'quality':
+      case 'maintainability':
+      case 'compatibility':
+      case 'unknown':
+      default:
+        return 'code_quality';
+    }
   }
 
   /**
