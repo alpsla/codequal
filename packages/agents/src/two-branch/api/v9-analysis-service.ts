@@ -644,6 +644,16 @@ export class V9AnalysisService {
   ): EnrichedIssue[] {
     console.log(`📊 Step 3: Issue Categorization\n`);
 
+    // SESSION 113: Deduplication monitoring
+    const dedupeStats = {
+      prRawCount: prIssues.length,
+      baseRawCount: baseIssues.length,
+      prDuplicatesFiltered: 0,
+      baseDuplicatesFiltered: 0,
+      prUniqueCount: 0,
+      baseUniqueCount: 0
+    };
+
     // SESSION 113 FIX: Use fuzzy matching with line-shift tolerance
     // When code is added/removed, line numbers shift but issues are still the same
     const LINE_SHIFT_THRESHOLD = 15; // Allow up to 15 lines of shift
@@ -715,7 +725,10 @@ export class V9AnalysisService {
     // Pass 1: Categorize PR issues
     prIssues.forEach(issue => {
       const exactSig = getExactSig(issue);
-      if (processedPrSigs.has(exactSig)) return;
+      if (processedPrSigs.has(exactSig)) {
+        dedupeStats.prDuplicatesFiltered++;
+        return;
+      }
       processedPrSigs.add(exactSig);
 
       const normalizedFile = normalizePath(issue.file);
@@ -738,11 +751,16 @@ export class V9AnalysisService {
       });
     });
 
+    dedupeStats.prUniqueCount = processedPrSigs.size;
+
     // Pass 2: Find RESOLVED issues (in base but not in PR)
     const processedBaseSigs = new Set<string>();
     baseIssues.forEach(issue => {
       const exactSig = getExactSig(issue);
-      if (processedBaseSigs.has(exactSig)) return;
+      if (processedBaseSigs.has(exactSig)) {
+        dedupeStats.baseDuplicatesFiltered++;
+        return;
+      }
       processedBaseSigs.add(exactSig);
 
       const normalizedFile = normalizePath(issue.file);
@@ -760,6 +778,8 @@ export class V9AnalysisService {
       }
     });
 
+    dedupeStats.baseUniqueCount = processedBaseSigs.size;
+
     const counts = {
       NEW: categorizedIssues.filter(i => i.category === 'NEW').length,
       EXISTING_MODIFIED: categorizedIssues.filter(i => i.category === 'EXISTING_MODIFIED').length,
@@ -767,11 +787,17 @@ export class V9AnalysisService {
       EXISTING_REST: categorizedIssues.filter(i => i.category === 'EXISTING_REST').length
     };
 
-    console.log(`   NEW: ${counts.NEW}`);
-    console.log(`   EXISTING_MODIFIED: ${counts.EXISTING_MODIFIED}`);
-    console.log(`   RESOLVED: ${counts.RESOLVED}`);
-    console.log(`   EXISTING_REST: ${counts.EXISTING_REST}`);
-    console.log(`   (Using line-shift tolerance of ${LINE_SHIFT_THRESHOLD} lines)\n`);
+    // SESSION 113: Log deduplication stats
+    console.log(`   📊 Deduplication Summary:`);
+    console.log(`      PR Branch:   ${dedupeStats.prRawCount} raw → ${dedupeStats.prUniqueCount} unique (${dedupeStats.prDuplicatesFiltered} duplicates removed)`);
+    console.log(`      Base Branch: ${dedupeStats.baseRawCount} raw → ${dedupeStats.baseUniqueCount} unique (${dedupeStats.baseDuplicatesFiltered} duplicates removed)`);
+    console.log(`   📋 Categorization:`);
+    console.log(`      NEW: ${counts.NEW}`);
+    console.log(`      EXISTING_MODIFIED: ${counts.EXISTING_MODIFIED}`);
+    console.log(`      RESOLVED: ${counts.RESOLVED}`);
+    console.log(`      EXISTING_REST: ${counts.EXISTING_REST}`);
+    console.log(`      TOTAL: ${categorizedIssues.length}`);
+    console.log(`   ⚙️  Line-shift tolerance: ±${LINE_SHIFT_THRESHOLD} lines\n`);
 
     return categorizedIssues;
   }
