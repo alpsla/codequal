@@ -303,13 +303,11 @@ export class JavaToolOrchestrator extends BaseToolOrchestrator {
     }
 
     // Semgrep - Security analysis
-    // SESSION 34 OPTIMIZATION:
-    // - BASIC tier (default): Run Semgrep here (Step 3), skip Step 5.5
-    // - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+    // SESSION 34 FIX: Always run Semgrep in Step 3 for all tiers
+    // The PRO tier optimization was incomplete - scan-fix-executor doesn't run Semgrep,
+    // so skipping here meant PRO tier missed security scanning entirely!
     if (this.config.semgrep.enabled && shouldJavaToolRun('semgrep', mode)) {
-      if (userTier !== 'pro') {
-        tools.push('semgrep');
-      }
+      tools.push('semgrep');
     }
 
     // Checkstyle - Only in thorough/complete modes

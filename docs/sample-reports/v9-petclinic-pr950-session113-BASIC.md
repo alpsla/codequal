@@ -8,7 +8,7 @@
 **Organization:** spring-projects  
 **Source Branch:** pr-950  
 **Target Branch:** main  
-**Analysis Date:** January 20, 2026 at 10:28 PM EST (1m 33s)
+**Analysis Date:** January 20, 2026 at 10:49 PM EST (1m 20s)
 **Repository Size:** 151 files
 **Report Tier:** 📋 Basic | 3,712 lines  
 **Analyzer Version:** 9.0.0
@@ -22,7 +22,7 @@
 
 ## Analysis Performance
 
-**Total Duration:** 1m 33s  
+**Total Duration:** 1m 20s  
 
 ## 📊 Executive Summary
 
@@ -110,7 +110,7 @@
 - AI-analyzed groups: 21
 - Cost-optimized analysis: 93.7% reduction
 - Coverage: 100% of detected issues
-- Duration: 1m 33s
+- Duration: 1m 20s
 
 ---
 
@@ -162,7 +162,7 @@ Review high-priority issues by category to maximize impact.
 
 ### 📈 Trends & Recommendations
 
-🚀 **Easy Fixes Available**: 327 issues (99%) can be auto-fixed using your IDE or linter.
+🚀 **Easy Fixes Available**: 330 issues (100%) can be auto-fixed using your IDE or linter.
 
 1. **Immediate Action**: 1 blocking issues (1 high) require review before deployment
 2. **Security Posture**: Security practices are adequate
@@ -1453,7 +1453,7 @@ This issue appears in **1 file** across your codebase.
 
 ## 🛠️ Auto-Fixing CheckStyle Issues
 
-**Good news! All 328 CheckStyle issues can be fixed automatically!**
+**Good news! All 327 CheckStyle issues can be fixed automatically!**
 
 ### Option 1: Using Google Java Format
 
@@ -1655,11 +1655,11 @@ mvn spotless:check  # Verify (use in CI)
 
 ### 📚 Phase 3: Code Style & Formatting (Optional)
 
-**330 style/formatting issues** can be addressed to improve code consistency.
+**329 style/formatting issues** can be addressed to improve code consistency.
 
 | Tool | Issues | Reference |
 |------|--------|----------|
-| Checkstyle | 328 | [📚 Checkstyle Rules Reference](https://checkstyle.org/checks.html) |
+| Checkstyle | 327 | [📚 Checkstyle Rules Reference](https://checkstyle.org/checks.html) |
 | PMD | 1 | [📚 PMD Rules Reference](https://pmd.github.io/latest/pmd_rules_java.html) |
 | semgrep | 1 | See tool documentation |
 
@@ -1795,22 +1795,22 @@ instant, proven solutions for common issues.
 
 | Tool | Issues Found | Duration | Status |
 |------|--------------|----------|--------|
-| checkstyle | 327 | 6.5s | 🔍 Found |
-| semgrep | 2 | 23.4s | 🔍 Found |
-| pmd | 1 | 6.4s | 🔍 Found |
-| spotbugs | 0 | 12.6s | ✅ Clean |
-| checkov | 0 | 11.1s | ✅ Clean |
-| trivy | 0 | 2.7s | ✅ Clean |
-| grype | 0 | 2.0s | ✅ Clean |
+| checkstyle | 327 | 2.7s | 🔍 Found |
+| semgrep | 2 | 22.9s | 🔍 Found |
+| pmd | 1 | 2.3s | 🔍 Found |
+| checkov | 0 | 9.7s | ✅ Clean |
+| spotbugs | 0 | 7.4s | ✅ Clean |
+| grype | 0 | 2.1s | ✅ Clean |
+| trivy | 0 | 1.8s | ✅ Clean |
 | dependency-check | 0 | 1.2s | ✅ Clean |
-| gitleaks | 0 | 0.3s | ✅ Clean |
+| gitleaks | 0 | 0.5s | ✅ Clean |
 | jdepend | 0 | 0.2s | ✅ Clean |
 | spectral | 0 | 0.0s | ✅ Clean |
 | graphql-cop | 0 | 0.0s | ✅ Clean |
 
 ### System Information
 - **Analyzer Version:** 9.0.0
-- **Analysis Date:** 1/20/2026, 10:28:21 PM
+- **Analysis Date:** 1/20/2026, 10:49:04 PM
 - **Report Format:** Grouped (Compact with 99.8% cost reduction)
 - **Issue Grouping:** Enabled unique issue types
 
@@ -1829,7 +1829,7 @@ Just one small issue to fix before we can merge. You've got this! 💪
 - **Total Issues:** 331 (21 unique types)
 - **Blocking Issues:** 1 ⛔
 - **Resolved Issues:** 1 🎉
-- **Analysis Time:** 78.1s
+- **Analysis Time:** 69.5s
 
 ### ⛔ Blocking Issues
 Please fix these before merge:
@@ -1858,7 +1858,7 @@ Please fix these before merge:
 **✨ Best for IDEs**: Apply ALL 331 fixes with 1 click!
 
 **Download**: `codequal-lsp-actions.json`
-- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/codequal-lsp-actions.json)
+- URL: [Download LSP file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768967344852/codequal-lsp-actions.json)
 - Works with: Cursor, VSCode, IntelliJ, any LSP-compatible IDE
 
 **How LSP Works**:
@@ -1935,7 +1935,7 @@ When you click "Apply Fix" in your IDE:
 ### 📋 Method 2: SARIF Report (Best for GitHub Code Scanning)
 
 **Download**: `codequal-sarif-report.json`
-- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/codequal-sarif-report.json)
+- URL: [Download SARIF file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768967344852/codequal-sarif-report.json)
 - Works with: GitHub Code Scanning, CI/CD pipelines, VSCode/Cursor (with extension)
 
 **For GitHub Code Scanning**:
@@ -1957,7 +1957,7 @@ When you click "Apply Fix" in your IDE:
 ### 🦊 Method 3: Code Climate / GitLab Code Quality
 
 **Download**: `codequal-gitlab-codequality.json`
-- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/codequal-gitlab-codequality.json)
+- URL: [Download Code Climate file](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768967344852/codequal-gitlab-codequality.json)
 - Works with: GitLab CI/CD, GitHub Actions (via Code Climate), Jenkins, CircleCI
 - Format: Code Climate (industry standard)
 
@@ -1990,7 +1990,7 @@ When you click "Apply Fix" in your IDE:
 
 ## 🔗 Additional Files
 
-📦 **Manifest file**: [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768966101764/all-issues-manifest.json)
+📦 **Manifest file**: [all-issues-manifest.json](https://ftjhmbbcuqjqmmbaymqb.supabase.co/storage/v1/object/public/v9-attachments/spring-petclinic.git-pr950-1768967344852/all-issues-manifest.json)
 - Contains: All 331 issues with fix patterns
 - **Use this if**: LSP approach doesn't work in your IDE
 - **Works with**: AI assistants (Cursor Chat, GitHub Copilot, Claude)
@@ -2002,4 +2002,4 @@ When you click "Apply Fix" in your IDE:
 ---
 
 *Generated by CodeQual V9 - Grouped Report Format (Bug #34 Lazy Loading)*  
-*2026-01-21T03:28:37.138Z*
+*2026-01-21T03:49:18.601Z*
