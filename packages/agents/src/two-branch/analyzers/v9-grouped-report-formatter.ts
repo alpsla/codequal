@@ -4787,8 +4787,8 @@ ${await this.generateTrendsAndRecommendations(issues, metadata)}`;
     });
     section += '\n';
 
-    section += `#### ⚠️ Impact if not fixed:\n\n`;
-    section += `${issueDesc.impact}\n\n`;
+    // SESSION 113: Removed generic "Impact if not fixed" section - no value to users
+    // Risk Assessment below provides actionable context instead
 
     // Phase E: Category-specific enhancements
     const detectedCategory = this.detectCategory(group.rule, group.tool, representative?.message || group.description);
