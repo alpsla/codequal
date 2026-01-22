@@ -302,9 +302,8 @@ export class TypeScriptToolOrchestrator extends BaseToolOrchestrator {
   /**
    * Get tools to run based on analysis mode (required by base)
    *
-   * SESSION 34 OPTIMIZATION: userTier parameter for Semgrep skip logic
-   * - BASIC tier: Run Semgrep here (Step 3), Lite Security Agent groups issues
-   * - PRO tier: Skip Semgrep here, run scan+fix combined in Step 5.5
+   * SESSION 34 FIX: Semgrep runs for ALL tiers in Step 3
+   * (Original PRO tier optimization was incomplete - scan-fix-executor never ran Semgrep)
    *
    * CodeQL: Only runs if:
    * 1. config.codeql.enabled = true (explicit opt-in)
