@@ -86,8 +86,28 @@ export async function retry<T>(
     if (retries <= 0) {
       throw error;
     }
-    
+
     await sleep(delay);
     return retry(fn, retries - 1, delay);
   }
+}
+
+/**
+ * Format a log message with consistent structure
+ * @param level Log level
+ * @param name Logger name
+ * @param message Log message
+ * @param data Optional data to include
+ * @returns Formatted log string
+ */
+export function formatLogMessage(
+  level: string,
+  name: string,
+  message: string,
+  data?: unknown
+): string {
+  const timestamp = formatDate(new Date());
+  const prefix = `[${timestamp}] [${level}] [${name}]`;
+  const msg = truncate(message, 500);
+  return data !== undefined ? `${prefix} ${msg} ${JSON.stringify(data)}` : `${prefix} ${msg}`;
 }

@@ -1,6 +1,7 @@
 /**
  * Logger utility for CodeQual
  */
+import { formatLogMessage } from './helpers';
 
 /**
  * Data that can be logged
@@ -27,18 +28,18 @@ export function createLogger(name: string): Logger {
     debug(message: string, data?: LoggableData): void {
       if (process.env.DEBUG === 'true') {
         // eslint-disable-next-line no-console
-        console.log(`[DEBUG] [${name}]`, message, data !== undefined ? data : '');
+        console.log(formatLogMessage('DEBUG', name, message, data));
       }
     },
     info(message: string, data?: LoggableData): void {
       // eslint-disable-next-line no-console
-      console.log(`[INFO] [${name}]`, message, data !== undefined ? data : '');
+      console.log(formatLogMessage('INFO', name, message, data));
     },
     warn(message: string, data?: LoggableData): void {
-      console.warn(`[WARN] [${name}]`, message, data !== undefined ? data : '');
+      console.warn(formatLogMessage('WARN', name, message, data));
     },
     error(message: string, data?: LoggableData): void {
-      console.error(`[ERROR] [${name}]`, message, data !== undefined ? data : '');
+      console.error(formatLogMessage('ERROR', name, message, data));
     },
   };
 }
