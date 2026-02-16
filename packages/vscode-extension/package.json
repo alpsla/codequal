@@ -175,5 +175,8 @@
         "eslint": "^8.50.0",
         "ts-node": "^10.9.2",
         "typescript": "^5.2.0"
+    },
+    "dependencies": {
+        "lodash.debounce": "^4.0.8"
     }
 }
