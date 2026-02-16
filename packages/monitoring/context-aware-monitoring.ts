@@ -5,6 +5,7 @@
  */
 
 import { createLogger } from '@codequal/core/utils';
+import { formatLogMessage } from '@codequal/core/utils/helpers';
 
 const logger = createLogger('ContextAwareMonitoring');
 
@@ -153,6 +154,7 @@ export class ContextAwareMonitoringService {
   generateReport(): string {
     const report: string[] = [];
     
+    logger.info(formatLogMessage('INFO', 'ContextAwareMonitoring', 'Generating performance report'));
     report.push('=== CONTEXT-AWARE MODEL SELECTION REPORT ===');
     report.push('');
     

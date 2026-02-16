@@ -1,6 +1,7 @@
 // Central configuration loader for CodeQual
 import * as fs from 'fs';
 import * as path from 'path';
+import { formatLogMessage } from '@codequal/core/utils/helpers';
 import { Config, PublicConfig } from '../../config/schema';
 
 class ConfigManager {
@@ -48,7 +49,7 @@ class ConfigManager {
         return JSON.parse(fs.readFileSync(filePath, 'utf8'));
       }
     } catch (error) {
-      console.warn(`Failed to load config from ${filePath}:`, error);
+      console.warn(formatLogMessage('WARN', 'ConfigManager', `Failed to load config from ${filePath}`, error));
     }
     return {};
   }
