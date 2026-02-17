@@ -1,6 +1,7 @@
 {
   "name": "testing",
   "version": "1.0.0",
+  "evo_marker": 2,
   "main": "dist/index.js",
   "directories": {
     "test": "tests"

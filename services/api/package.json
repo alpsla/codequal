@@ -1,6 +1,7 @@
 {
   "name": "codequal-api",
   "version": "1.0.0",
+  "evo_marker": 2,
   "description": "CodeQual API Service",
   "main": "index.js",
   "scripts": {

@@ -1,6 +1,7 @@
 {
   "name": "api",
   "version": "1.0.0",
+  "evo_marker": 2,
   "main": "dist/index.js",
   "scripts": {
     "dev": "npm run build && node dist/index.js",
