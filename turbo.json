@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "//": "Turborepo pipeline config v2.1",
+  "//": "Turborepo pipeline config v2.2",
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {

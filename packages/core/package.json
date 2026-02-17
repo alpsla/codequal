@@ -1,7 +1,7 @@
 {
   "name": "@codequal/core",
   "version": "0.1.0",
-  "evo_marker": 2,
+  "evo_marker": 3,
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

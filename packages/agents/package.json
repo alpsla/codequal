@@ -1,7 +1,7 @@
 {
   "name": "@codequal/agents",
   "version": "9.0.0",
-  "evo_marker": 2,
+  "evo_marker": 3,
   "description": "V9 Two-Branch Analyzer - Production Implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
