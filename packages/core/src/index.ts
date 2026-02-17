@@ -2,7 +2,7 @@
  * Core Module
  *
  * Export all core modules for use in other packages
- * @version 2.1.0
+ * @version 2.1.1
  */
 
 // Logging
