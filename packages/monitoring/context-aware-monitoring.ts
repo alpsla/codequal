@@ -1,7 +1,8 @@
 /**
  * Context-Aware Model Selection Monitoring
- * 
+ *
  * Tracks performance improvements from using context-specific model configurations
+ * @version 2.1.0
  */
 
 import { createLogger } from '@codequal/core/utils';

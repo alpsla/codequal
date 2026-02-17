@@ -2,6 +2,7 @@
  * CodeQual Agents Package
  *
  * Main export file for agent functionality
+ * @version 2.1.0
  */
 
 // Export multi-agent compatibility stubs
