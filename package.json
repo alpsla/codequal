@@ -82,7 +82,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@supabase/supabase-js": "^2.49.4",
-    "yaml": "^2.3.1",
+    "yaml": "^2.8.3",
     "lodash": "4.17.15",
     "axios": "0.30.2"
   },
